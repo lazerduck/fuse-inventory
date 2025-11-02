@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen:api": "nswag openapi2tsclient /input:http://localhost:5154/swagger/v1/swagger.json   /output:Fuse.Web/src/httpClients/client.gen.ts /Template:Fetch"
   },
   "dependencies": {
     "@quasar/extras": "^1.17.0",

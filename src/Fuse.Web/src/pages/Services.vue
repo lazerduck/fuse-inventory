@@ -1,6 +1,15 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="text-h4 q-mb-md">Services</div>
+    <div class="row items-center justify-between q-mb-md">
+      <div class="text-h4">Services</div>
+
+      <q-btn
+        round
+        color="primary"
+        icon="add"
+        @click="$router.push('/services/new')"
+      />
+    </div>
     <div class="q-pa-md">
       <q-input
         filled
@@ -53,9 +62,9 @@ const filteredServices = computed(() => {
     return servicesStore.services;
   }
   return servicesStore.services.filter(service =>
-    service.name.toLowerCase().includes(filter.value.toLowerCase()) ||
-    service.type.toLowerCase().includes(filter.value.toLowerCase()) ||
-    service.author?.toLowerCase().includes(filter.value.toLowerCase())
+    (service.name?.toLowerCase() ?? '').includes(filter.value.toLowerCase()) ||
+    (service.type ? service.type.toString().toLowerCase() : '').includes(filter.value.toLowerCase()) ||
+    (service.author?.toLowerCase() ?? '').includes(filter.value.toLowerCase())
   );
 });
 

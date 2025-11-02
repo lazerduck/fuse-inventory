@@ -1,5 +1,6 @@
 namespace Fuse.Core.Enums
 {
+    
     public enum ServiceDeploymentStatus
     {
         Unknown,

@@ -1,3 +1,4 @@
+using Fuse.Core.Commands;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Manifests;
 using Microsoft.AspNetCore.Mvc;
@@ -16,27 +17,35 @@ public class ServicesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetServices()
+    [ProducesResponseType(typeof(IEnumerable<ServiceManifest>), 200)]
+    [ProducesResponseType(204)]
+    public async Task<ActionResult<IEnumerable<ServiceManifest>>> GetServices()
     {
         var data = await _serviceService.GetAllServiceManifestsAsync();
         return Ok(data);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetService(Guid id)
+    [ProducesResponseType(typeof(ServiceManifest), 200)]
+    [ProducesResponseType(404)]
+    public async Task<ActionResult<ServiceManifest>> GetService(Guid id)
     {
         var data = await _serviceService.GetServiceManifestAsync(id);
         return Ok(data);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateService([FromBody] ServiceManifest manifest)
+    [ProducesResponseType(typeof(ServiceManifest), 201)]
+    [ProducesResponseType(400)]
+    public async Task<ActionResult<ServiceManifest>> CreateService([FromBody] CreateServiceCommand command)
     {
-        await _serviceService.CreateServiceManifestAsync(manifest);
+        var manifest = await _serviceService.CreateServiceManifestAsync(command);
         return CreatedAtAction(nameof(GetService), new { id = manifest.Id }, manifest);
     }
 
     [HttpPut("{id}")]
+    [ProducesResponseType(typeof(ServiceManifest), 204)]
+    [ProducesResponseType(400)]
     public async Task<IActionResult> UpdateService(Guid id, [FromBody] ServiceManifest manifest)
     {
         if (id != manifest.Id)
@@ -49,6 +58,7 @@ public class ServicesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [ProducesResponseType(204)]
     public async Task<IActionResult> DeleteService(Guid id)
     {
         await _serviceService.DeleteServiceManifestAsync(id);

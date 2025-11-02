@@ -2,14 +2,31 @@ using Fuse.Core;
 using Fuse.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+    });
 
 builder.Services.AddSpaStaticFiles(opt => opt.RootPath = "Fuse.Web/dist");
 
 FuseCoreModule.RegisterServices(builder.Services);
 FuseDataModule.RegisterServices(builder.Services);
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SchemaGeneratorOptions.UseAllOfToExtendReferenceSchemas = false;
+    c.UseInlineDefinitionsForEnums();
+});
+
+builder.Services.AddSwaggerGenNewtonsoftSupport();
+
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseRouting();
 

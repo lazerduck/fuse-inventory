@@ -1,4 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
 using Fuse.Core.Enums;
 
 namespace Fuse.Core.Manifests
@@ -20,7 +19,7 @@ namespace Fuse.Core.Manifests
         List<Tags> Tags
     );
 
-    public record DeploymentPipeline(string Name, Uri? PipeLineUri);
+    public record DeploymentPipeline(string Name, Uri? PipelineUri);
 
     public record Deployments(
         string EnvironmentName,

@@ -1,3 +1,4 @@
+using Fuse.Core.Commands;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Manifests;
 
@@ -23,26 +24,36 @@ namespace Fuse.Core.Services
             }
         }
 
-        public Task CreateServiceManifestAsync(ServiceManifest manifest)
+        public async Task<ServiceManifest> CreateServiceManifestAsync(CreateServiceCommand command)
         {
-            if (manifest.Id == Guid.Empty)
-            {
-                throw new ArgumentException("Manifest must have a unique non-empty Id.");
-            }
-            if (_serviceManifests.Any(m => m.Id == manifest.Id))
-            {
-                throw new ArgumentException($"A manifest with Id {manifest.Id} already exists.");
-            }
+            var manifest = new ServiceManifest(
+                Guid.NewGuid(),
+                command.Name,
+                command.Version,
+                command.Description,
+                command.Notes,
+                command.Author,
+                command.Framework,
+                command.Type,
+                command.RepositoryUri,
+                DateTime.Now,
+                DateTime.Now,
+                command.DeploymentPipelines,
+                command.Deployments,
+                command.Tags
+            );
+
 
             _serviceManifests.Add(manifest);
-            return _dataRepository.SaveObjectAsync(fileName, _serviceManifests);
+            await _dataRepository.SaveObjectAsync(fileName, _serviceManifests);
+            return manifest;
         }
 
         public Task UpdateServiceManifestAsync(ServiceManifest manifest)
         {
             var existingManifest = _serviceManifests.FirstOrDefault(m => m.Id == manifest.Id)
                 ?? throw new ArgumentException($"No manifest found with Id {manifest.Id}.");
-                
+
             manifest = manifest with { CreatedAt = existingManifest.CreatedAt, UpdatedAt = DateTime.UtcNow };
 
             _serviceManifests.Remove(existingManifest);

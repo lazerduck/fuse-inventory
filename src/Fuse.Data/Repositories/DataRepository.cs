@@ -17,7 +17,7 @@ namespace Fuse.Data.Repositories
 
             if (File.Exists(path))
             {
-                File.Move(path, Path.Combine(_root, name + ".bak"));
+                File.Move(path, Path.Combine(_root, name + ".bak"), true);
             }
 
             using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
