@@ -49,3 +49,12 @@ const DeploymentStatuses = {
 } as const;
 
 export type DeploymentStatuses = typeof DeploymentStatuses[keyof typeof DeploymentStatuses];
+
+export type ServiceManifestCreate = Omit<
+	ServiceManifest,
+	"id" | "createdAt" | "updatedAt"
+> & {
+	id?: string;
+	createdAt?: Date | string | null;
+	updatedAt?: Date | string | null;
+};

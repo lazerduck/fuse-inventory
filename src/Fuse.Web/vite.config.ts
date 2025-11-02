@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     port: 5173,
     // proxy API calls to .NET in dev
-    proxy: { '/api': { target: 'http://localhost:5180', changeOrigin: true } }
+    proxy: { '/api': { target: 'http://localhost:5154', changeOrigin: true } }
   },
   build: { outDir: 'dist' },
 })

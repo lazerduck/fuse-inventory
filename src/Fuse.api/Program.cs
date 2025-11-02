@@ -1,3 +1,4 @@
+using Fuse.Core;
 using Fuse.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,26 +6,30 @@ builder.Services.AddControllers();
 
 builder.Services.AddSpaStaticFiles(opt => opt.RootPath = "Fuse.Web/dist");
 
+FuseCoreModule.RegisterServices(builder.Services);
 FuseDataModule.RegisterServices(builder.Services);
 
 var app = builder.Build();
 
 app.UseRouting();
+
 app.UseSpaStaticFiles();
 
-app.UseSpa(spa =>
-{
-    spa.Options.SourcePath = "Web"; // your Vue app folder
+// Map API controllers BEFORE SPA
+app.MapControllers();
 
-    if (app.Environment.IsDevelopment())
+// Use MapWhen to only apply SPA proxy to non-API routes
+app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), spa =>
+{
+    spa.UseSpa(spaBuilder =>
     {
-        // proxy all non-/api routes to Vite dev server
-        spa.UseProxyToSpaDevelopmentServer("http://localhost:5173");
-    }
-    else
-    {
-        // in prod, UseSpa serves index.html from Web/dist automatically
-    }
+        spaBuilder.Options.SourcePath = "Web";
+
+        if (app.Environment.IsDevelopment())
+        {
+            spaBuilder.UseProxyToSpaDevelopmentServer("http://localhost:5173");
+        }
+    });
 });
 
 app.Run();
