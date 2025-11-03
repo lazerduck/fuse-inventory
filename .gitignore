@@ -1,6 +1,2 @@
-src/Fuse.api/obj/
-src/Fuse.api/bin/
-src/Fuse.Core/obj/
-src/Fuse.Core/bin/
-src/Fuse.Data/obj/
-src/Fuse.Data/bin/
+obj/
+bin/
