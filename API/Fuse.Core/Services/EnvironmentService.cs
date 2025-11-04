@@ -8,17 +8,28 @@ namespace Fuse.Core.Services;
 public class EnvironmentService : IEnvironmentService
 {
     private readonly IFuseStore _fuseStore;
+    private readonly ITagService _tagService;
 
-    public EnvironmentService(IFuseStore fuseStore)
+    public EnvironmentService(IFuseStore fuseStore, ITagService tagService)
     {
         _fuseStore = fuseStore;
+        _tagService = tagService;
     }
 
     public async Task<Result<EnvironmentInfo>> CreateEnvironment(CreateEnvironment command)
     {
-        if(command.Name == string.Empty)
+        if (command.Name == string.Empty)
         {
             return Result<EnvironmentInfo>.Failure("Environment name cannot be empty.", ErrorType.Validation);
+        }
+        
+        foreach (var tagId in command.TagIds)
+        {
+            var tag = await _tagService.GetTagByIdAsync(tagId);
+            if (tag is null)
+            {
+                return Result<EnvironmentInfo>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
+            }
         }
 
         var environments = (await _fuseStore.GetAsync()).Environments;
@@ -71,10 +82,20 @@ public class EnvironmentService : IEnvironmentService
 
     public async Task<Result<EnvironmentInfo>> UpdateEnvironment(UpdateEnvironment command)
     {
-        if(command.Name == string.Empty)
+        if (command.Name == string.Empty)
         {
             return Result<EnvironmentInfo>.Failure("Environment name cannot be empty.", ErrorType.Validation);
         }
+        
+        foreach (var tagId in command.TagIds)
+        {
+            var tag = await _tagService.GetTagByIdAsync(tagId);
+            if (tag is null)
+            {
+                return Result<EnvironmentInfo>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
+            }
+        }
+
         var environments = (await _fuseStore.GetAsync()).Environments;
 
         if (environments.Any(e => e.Id != command.Id && string.Equals(e.Name, command.Name, StringComparison.OrdinalIgnoreCase)))

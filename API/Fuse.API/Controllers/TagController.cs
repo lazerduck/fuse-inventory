@@ -8,29 +8,38 @@ namespace Fuse.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class EnvironmentController : ControllerBase
+    public class TagController : ControllerBase
     {
-        private readonly IEnvironmentService _environmentService;
+        private readonly ITagService _tagService;
 
-        public EnvironmentController(IEnvironmentService environmentService)
+        public TagController(ITagService tagService)
         {
-            _environmentService = environmentService;
+            _tagService = tagService;
         }
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<EnvironmentInfo>))]
-        public async Task<ActionResult<IEnumerable<EnvironmentInfo>>> GetEnvironments()
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Tag>))]
+        public async Task<ActionResult<IEnumerable<Tag>>> GetTags()
         {
-            return Ok(await _environmentService.GetEnvironments());
+            return Ok(await _tagService.GetTagsAsync());
+        }
+
+        [HttpGet("{id}")]
+        [ProducesResponseType(200, Type = typeof(Tag))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<Tag>> GetTagById(Guid id)
+        {
+            var tag = await _tagService.GetTagByIdAsync(id);
+            return Ok(tag);
         }
 
         [HttpPost]
-        [ProducesResponseType(201, Type = typeof(EnvironmentInfo))]
+        [ProducesResponseType(201, Type = typeof(Tag))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
-        public async Task<ActionResult<EnvironmentInfo>> CreateEnvironment([FromBody] CreateEnvironment command)
+        public async Task<ActionResult<Tag>> CreateTag([FromBody] CreateTag command)
         {
-            var result = await _environmentService.CreateEnvironment(command);
+            var result = await _tagService.CreateTagAsync(command);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -40,17 +49,20 @@ namespace Fuse.API.Controllers
                 };
             }
 
-            var environment = result.Value!;
-            return CreatedAtAction(nameof(GetEnvironments), new { id = environment.Id }, environment);
+            var tag = result.Value!;
+            return CreatedAtAction(nameof(GetTags), new { id = tag.Id }, tag);
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(200)]
+        [ProducesResponseType(200, Type = typeof(Tag))]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<EnvironmentInfo>> UpdateEnvironment([FromRoute] Guid id, UpdateEnvironment command)
+        [ProducesResponseType(409)]
+        [ProducesResponseType(400)]
+        public async Task<ActionResult<Tag>> UpdateTag([FromRoute] Guid id, [FromBody] UpdateTag command)
         {
-            command = command with { Id = id };
-            var result = await _environmentService.UpdateEnvironment(command);
+            var merged = command with { Id = id };
+
+            var result = await _tagService.UpdateTagAsync(merged);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -67,11 +79,10 @@ namespace Fuse.API.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> DeleteEnvironment([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteTag([FromRoute] Guid id)
         {
-            var command = new DeleteEnvironment(id);
-            var result = await _environmentService.DeleteEnvironmentAsync(command);
-
+            var command = new DeleteTag(id);
+            var result = await _tagService.DeleteTagAsync(command);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch

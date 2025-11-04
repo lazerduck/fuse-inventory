@@ -9,5 +9,9 @@ public static class FuseCodeModule
     public static void Register(IServiceCollection services)
     {
         services.AddScoped<IEnvironmentService, EnvironmentService>();
+        services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IServerService, ServerService>();
+        services.AddScoped<IDataStoreService, DataStoreService>();
+        services.AddScoped<IExternalResourceService, ExternalResourceService>();
     }
 }

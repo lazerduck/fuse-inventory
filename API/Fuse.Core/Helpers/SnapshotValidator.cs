@@ -42,7 +42,7 @@ public static class SnapshotValidator
         {
             if (!envs.ContainsKey(ds.EnvironmentId))
                 errs.Add($"DataStore {ds.Id}: environment {ds.EnvironmentId} not found");
-            if (!servers.ContainsKey(ds.ServerId))
+            if (ds.ServerId is Guid sid && !servers.ContainsKey(sid))
                 errs.Add($"DataStore {ds.Id}: server {ds.ServerId} not found");
             TagsMustExist(ds.TagIds, $"DataStore {ds.Id}");
         }
@@ -56,7 +56,7 @@ public static class SnapshotValidator
             {
                 if (!envs.ContainsKey(inst.EnvironmentId))
                     errs.Add($"ApplicationInstance {inst.Id}: environment {inst.EnvironmentId} not found");
-                if (!servers.ContainsKey(inst.ServerId))
+                if (inst.ServerId is Guid isid && !servers.ContainsKey(isid))
                     errs.Add($"ApplicationInstance {inst.Id}: server {inst.ServerId} not found");
                 TagsMustExist(inst.TagIds, $"ApplicationInstance {inst.Id}");
 

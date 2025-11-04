@@ -2,20 +2,21 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fuse.Core.Commands;
 
-public record CreateEnvironment (
+public record CreateExternalResource(
     string Name,
     string? Description,
+    Uri ResourceUri,
     HashSet<Guid> TagIds
 );
 
-public record UpdateEnvironment (
+public record UpdateExternalResource(
     Guid Id,
     string Name,
     string? Description,
+    Uri ResourceUri,
     HashSet<Guid> TagIds
 );
 
-public record DeleteEnvironment (
+public record DeleteExternalResource(
     Guid Id
-    //ToDo - Extend with deletion type (Cascase or Reassign)
 );
