@@ -8,7 +8,17 @@ public static class SnapshotValidator
     {
         var errs = new List<string>();
 
-        var tags = s.Tags.ToDictionary(x => x.Id);
+        // Check for duplicate Tag IDs before ToDictionary
+        var tagIdGroups = s.Tags.GroupBy(t => t.Id).ToList();
+        if (tagIdGroups.Any(g => g.Count() > 1))
+        {
+            errs.Add("Duplicate Tag Ids detected");
+        }
+
+        // Use ToDictionary only if no duplicates
+        var tags = tagIdGroups.Any(g => g.Count() > 1)
+            ? tagIdGroups.Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.First())
+            : s.Tags.ToDictionary(x => x.Id);
         var envs = s.Environments.ToDictionary(x => x.Id);
         var servers = s.Servers.ToDictionary(x => x.Id);
         var apps = s.Applications.ToDictionary(x => x.Id);
@@ -79,10 +89,6 @@ public static class SnapshotValidator
         // ExternalResources
         foreach (var er in s.ExternalResources)
             TagsMustExist(er.TagIds, $"ExternalResource {er.Id}");
-
-        // Duplicate IDs (example for Tags; replicate if desired)
-        if (s.Tags.Select(t => t.Id).Distinct().Count() != s.Tags.Count)
-            errs.Add("Duplicate Tag Ids detected");
 
         return errs;
     }
