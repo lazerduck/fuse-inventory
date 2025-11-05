@@ -24,7 +24,9 @@ public class AccountService : IAccountService
 
     public async Task<Result<Account>> CreateAccountAsync(CreateAccount command)
     {
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, command.TagIds);
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+
+        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, tagIds);
         if (validation is not null) return validation;
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
@@ -43,7 +45,7 @@ public class AccountService : IAccountService
             UserName: command.UserName,
             Parameters: command.Parameters,
             Grants: normalizedGrants,
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now
         );
@@ -55,11 +57,12 @@ public class AccountService : IAccountService
     public async Task<Result<Account>> UpdateAccountAsync(UpdateAccount command)
     {
         var store = await _fuseStore.GetAsync();
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
         var existing = store.Accounts.FirstOrDefault(a => a.Id == command.Id);
         if (existing is null)
             return Result<Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, command.TagIds);
+        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, tagIds);
         if (validation is not null) return validation;
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
@@ -77,7 +80,7 @@ public class AccountService : IAccountService
             UserName = command.UserName,
             Parameters = command.Parameters,
             Grants = normalizedGrants,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 

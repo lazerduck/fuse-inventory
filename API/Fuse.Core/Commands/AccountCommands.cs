@@ -11,7 +11,7 @@ public record CreateAccount(
     string? UserName,
     Dictionary<string, string>? Parameters,
     IReadOnlyList<Grant> Grants,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateAccount(
@@ -23,7 +23,7 @@ public record UpdateAccount(
     string? UserName,
     Dictionary<string, string>? Parameters,
     IReadOnlyList<Grant> Grants,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteAccount(

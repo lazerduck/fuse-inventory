@@ -8,7 +8,7 @@ public record CreateServer(
     string Hostname,
     ServerOperatingSystem? OperatingSystem,
     Guid EnvironmentId,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateServer(
@@ -17,7 +17,7 @@ public record UpdateServer(
     string Hostname,
     ServerOperatingSystem? OperatingSystem,
     Guid EnvironmentId,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteServer(

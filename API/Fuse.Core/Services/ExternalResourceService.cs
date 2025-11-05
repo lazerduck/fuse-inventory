@@ -28,7 +28,8 @@ public class ExternalResourceService : IExternalResourceService
             return Result<ExternalResource>.Failure("Resource name cannot be empty.", ErrorType.Validation);
 
         var store = await _fuseStore.GetAsync();
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<ExternalResource>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -43,7 +44,7 @@ public class ExternalResourceService : IExternalResourceService
             Name: command.Name,
             Description: command.Description,
             ResourceUri: command.ResourceUri,
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now
         );
@@ -62,7 +63,8 @@ public class ExternalResourceService : IExternalResourceService
         if (existing is null)
             return Result<ExternalResource>.Failure($"External resource with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<ExternalResource>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -76,7 +78,7 @@ public class ExternalResourceService : IExternalResourceService
             Name = command.Name,
             Description = command.Description,
             ResourceUri = command.ResourceUri,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 

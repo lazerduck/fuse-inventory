@@ -25,7 +25,8 @@ public class ApplicationService : IApplicationService
         if (string.IsNullOrWhiteSpace(command.Name))
             return Result<Application>.Failure("Application name cannot be empty.", ErrorType.Validation);
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<Application>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -45,7 +46,7 @@ public class ApplicationService : IApplicationService
             Notes: command.Notes,
             Framework: command.Framework,
             RepositoryUri: command.RepositoryUri,
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             Instances: Array.Empty<ApplicationInstance>(),
             Pipelines: Array.Empty<ApplicationPipeline>(),
             CreatedAt: now,
@@ -61,7 +62,8 @@ public class ApplicationService : IApplicationService
         if (string.IsNullOrWhiteSpace(command.Name))
             return Result<Application>.Failure("Application name cannot be empty.", ErrorType.Validation);
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<Application>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -84,7 +86,7 @@ public class ApplicationService : IApplicationService
             Notes = command.Notes,
             Framework = command.Framework,
             RepositoryUri = command.RepositoryUri,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -121,7 +123,8 @@ public class ApplicationService : IApplicationService
                 return Result<ApplicationInstance>.Failure("Server and instance environment must match.", ErrorType.Validation);
         }
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<ApplicationInstance>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -137,7 +140,7 @@ public class ApplicationService : IApplicationService
             OpenApiUri: command.OpenApiUri,
             Version: command.Version,
             Dependencies: Array.Empty<ApplicationInstanceDependency>(),
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now
         );
@@ -169,7 +172,8 @@ public class ApplicationService : IApplicationService
                 return Result<ApplicationInstance>.Failure("Server and instance environment must match.", ErrorType.Validation);
         }
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<ApplicationInstance>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -183,7 +187,7 @@ public class ApplicationService : IApplicationService
             HealthUri = command.HealthUri,
             OpenApiUri = command.OpenApiUri,
             Version = command.Version,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 

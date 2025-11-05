@@ -5,14 +5,14 @@ namespace Fuse.Core.Commands;
 public record CreateEnvironment (
     string Name,
     string? Description,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateEnvironment (
     Guid Id,
     string Name,
     string? Description,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteEnvironment (

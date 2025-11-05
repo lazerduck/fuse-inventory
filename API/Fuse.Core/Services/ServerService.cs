@@ -35,7 +35,8 @@ public class ServerService : IServerService
             return Result<Server>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
         // Validate tags
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<Server>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -53,7 +54,7 @@ public class ServerService : IServerService
             Hostname: command.Hostname,
             OperatingSystem: command.OperatingSystem,
             EnvironmentId: command.EnvironmentId,
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now
         );
@@ -77,7 +78,8 @@ public class ServerService : IServerService
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<Server>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<Server>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -92,7 +94,7 @@ public class ServerService : IServerService
             Hostname = command.Hostname,
             OperatingSystem = command.OperatingSystem,
             EnvironmentId = command.EnvironmentId,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 

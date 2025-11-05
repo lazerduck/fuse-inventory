@@ -23,7 +23,9 @@ public class EnvironmentService : IEnvironmentService
             return Result<EnvironmentInfo>.Failure("Environment name cannot be empty.", ErrorType.Validation);
         }
         
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        
+        foreach (var tagId in tagIds)
         {
             var tag = await _tagService.GetTagByIdAsync(tagId);
             if (tag is null)
@@ -42,7 +44,7 @@ public class EnvironmentService : IEnvironmentService
             Guid.NewGuid(),
             command.Name,
             command.Description,
-            command.TagIds
+            tagIds
         );
 
         await _fuseStore.UpdateAsync(store =>
@@ -87,7 +89,9 @@ public class EnvironmentService : IEnvironmentService
             return Result<EnvironmentInfo>.Failure("Environment name cannot be empty.", ErrorType.Validation);
         }
         
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        
+        foreach (var tagId in tagIds)
         {
             var tag = await _tagService.GetTagByIdAsync(tagId);
             if (tag is null)
@@ -115,7 +119,7 @@ public class EnvironmentService : IEnvironmentService
         {
             Name = command.Name,
             Description = command.Description,
-            TagIds = command.TagIds
+            TagIds = tagIds
         };
 
         await _fuseStore.UpdateAsync(store =>

@@ -11,7 +11,7 @@ public record CreateApplication(
     string? Notes,
     string? Framework,
     Uri? RepositoryUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateApplication(
@@ -23,7 +23,7 @@ public record UpdateApplication(
     string? Notes,
     string? Framework,
     Uri? RepositoryUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteApplication(
@@ -39,7 +39,7 @@ public record CreateApplicationInstance(
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateApplicationInstance(
@@ -51,7 +51,7 @@ public record UpdateApplicationInstance(
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteApplicationInstance(

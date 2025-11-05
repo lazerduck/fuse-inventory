@@ -6,7 +6,7 @@ public record CreateExternalResource(
     string Name,
     string? Description,
     Uri? ResourceUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateExternalResource(
@@ -14,7 +14,7 @@ public record UpdateExternalResource(
     string Name,
     string? Description,
     Uri? ResourceUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteExternalResource(

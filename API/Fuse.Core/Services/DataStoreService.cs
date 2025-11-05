@@ -42,7 +42,8 @@ public class DataStoreService : IDataStoreService
                 return Result<DataStore>.Failure("Server and DataStore must belong to the same environment.", ErrorType.Validation);
         }
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<DataStore>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -60,7 +61,7 @@ public class DataStoreService : IDataStoreService
             EnvironmentId: command.EnvironmentId,
             ServerId: command.ServerId,
             ConnectionUri: command.ConnectionUri,
-            TagIds: command.TagIds,
+            TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now
         );
@@ -93,7 +94,8 @@ public class DataStoreService : IDataStoreService
                 return Result<DataStore>.Failure("Server and DataStore must belong to the same environment.", ErrorType.Validation);
         }
 
-        foreach (var tagId in command.TagIds)
+        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
                 return Result<DataStore>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
@@ -109,7 +111,7 @@ public class DataStoreService : IDataStoreService
             EnvironmentId = command.EnvironmentId,
             ServerId = command.ServerId,
             ConnectionUri = command.ConnectionUri,
-            TagIds = command.TagIds,
+            TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };
 

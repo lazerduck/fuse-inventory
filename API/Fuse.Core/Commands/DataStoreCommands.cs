@@ -8,7 +8,7 @@ public record CreateDataStore(
     Guid EnvironmentId,
     Guid? ServerId,
     Uri? ConnectionUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record UpdateDataStore(
@@ -18,7 +18,7 @@ public record UpdateDataStore(
     Guid EnvironmentId,
     Guid? ServerId,
     Uri? ConnectionUri,
-    HashSet<Guid> TagIds
+    HashSet<Guid>? TagIds = null
 );
 
 public record DeleteDataStore(
