@@ -35,7 +35,7 @@ public record CreateApplicationInstance(
     Guid ApplicationId,
     Guid EnvironmentId,
     Guid? ServerId,
-    Uri BaseUri,
+    Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
@@ -47,7 +47,7 @@ public record UpdateApplicationInstance(
     Guid InstanceId,
     Guid EnvironmentId,
     Guid? ServerId,
-    Uri BaseUri,
+    Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
@@ -63,14 +63,14 @@ public record DeleteApplicationInstance(
 public record CreateApplicationPipeline(
     Guid ApplicationId,
     string Name,
-    Uri PipelineUri
+    Uri? PipelineUri
 );
 
 public record UpdateApplicationPipeline(
     Guid ApplicationId,
     Guid PipelineId,
     string Name,
-    Uri PipelineUri
+    Uri? PipelineUri
 );
 
 public record DeleteApplicationPipeline(

@@ -109,6 +109,17 @@ public class DataStoreServiceTests
     }
 
     [Fact]
+    public async Task CreateDataStore_AllowsMissingConnectionUri()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var store = NewStore(envs: new[] { env });
+        var service = new DataStoreService(store, new TagLookupService(store));
+        var result = await service.CreateDataStoreAsync(new CreateDataStore("D1", "sql", env.Id, null, null, new HashSet<Guid>()));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.ConnectionUri.Should().BeNull();
+    }
+
+    [Fact]
     public async Task UpdateDataStore_NotFound()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
@@ -159,6 +170,18 @@ public class DataStoreServiceTests
         got!.Name.Should().Be("New");
         got.Kind.Should().Be("nosql");
         got.ConnectionUri.Should().Be(new Uri("http://new"));
+    }
+
+    [Fact]
+    public async Task UpdateDataStore_AllowsClearingConnectionUri()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var ds = new DataStore(Guid.NewGuid(), "HasUri", null, "sql", env.Id, null, new Uri("http://old"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(envs: new[] { env }, ds: new[] { ds });
+        var service = new DataStoreService(store, new TagLookupService(store));
+        var result = await service.UpdateDataStoreAsync(new UpdateDataStore(ds.Id, "HasUri", "sql", env.Id, null, null, new HashSet<Guid>()));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.ConnectionUri.Should().BeNull();
     }
 
     [Fact]

@@ -7,7 +7,7 @@ public record CreateDataStore(
     string Kind,
     Guid EnvironmentId,
     Guid? ServerId,
-    Uri ConnectionUri,
+    Uri? ConnectionUri,
     HashSet<Guid> TagIds
 );
 
@@ -17,7 +17,7 @@ public record UpdateDataStore(
     string Kind,
     Guid EnvironmentId,
     Guid? ServerId,
-    Uri ConnectionUri,
+    Uri? ConnectionUri,
     HashSet<Guid> TagIds
 );
 

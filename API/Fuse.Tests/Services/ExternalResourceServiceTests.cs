@@ -60,6 +60,16 @@ public class ExternalResourceServiceTests
     }
 
     [Fact]
+    public async Task CreateExternalResource_AllowsMissingUri()
+    {
+        var store = NewStore();
+        var service = new ExternalResourceService(store, new TagLookupService(store));
+        var result = await service.CreateExternalResourceAsync(new CreateExternalResource("Res", null, null, new HashSet<Guid>()));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.ResourceUri.Should().BeNull();
+    }
+
+    [Fact]
     public async Task CreateExternalResource_EmptyName_ReturnsValidation()
     {
         var store = NewStore();
@@ -113,6 +123,17 @@ public class ExternalResourceServiceTests
         got!.Name.Should().Be("New");
         got.Description.Should().Be("d");
         got.ResourceUri.Should().Be(new Uri("http://new"));
+    }
+
+    [Fact]
+    public async Task UpdateExternalResource_AllowsClearingUri()
+    {
+        var existing = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(res: new[] { existing });
+        var service = new ExternalResourceService(store, new TagLookupService(store));
+        var result = await service.UpdateExternalResourceAsync(new UpdateExternalResource(existing.Id, "Res", null, null, new HashSet<Guid>()));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.ResourceUri.Should().BeNull();
     }
 
     [Fact]

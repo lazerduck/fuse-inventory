@@ -107,6 +107,20 @@ public class ApplicationServiceTests
     }
 
     [Fact]
+    public async Task CreateInstance_AllowsMissingUris()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env });
+        var service = new ApplicationService(store, new TagLookupService(store));
+        var result = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, null, null, null, null, new HashSet<Guid>()));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.BaseUri.Should().BeNull();
+        result.Value!.HealthUri.Should().BeNull();
+        result.Value!.OpenApiUri.Should().BeNull();
+    }
+
+    [Fact]
     public async Task CreateInstance_ServerMustMatchEnvironment()
     {
         var e1 = new EnvironmentInfo(Guid.NewGuid(), "E1", null, new HashSet<Guid>());
@@ -145,6 +159,20 @@ public class ApplicationServiceTests
         update.IsSuccess.Should().BeTrue();
         var del = await service.DeletePipelineAsync(new DeleteApplicationPipeline(app.Id, pipeline.Id));
         del.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Pipeline_AllowsMissingUri()
+    {
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app });
+        var service = new ApplicationService(store, new TagLookupService(store));
+        var create = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, "Build", null));
+        create.IsSuccess.Should().BeTrue();
+        create.Value!.PipelineUri.Should().BeNull();
+        var update = await service.UpdatePipelineAsync(new UpdateApplicationPipeline(app.Id, create.Value!.Id, "Build", null));
+        update.IsSuccess.Should().BeTrue();
+        update.Value!.PipelineUri.Should().BeNull();
     }
 
     [Fact]

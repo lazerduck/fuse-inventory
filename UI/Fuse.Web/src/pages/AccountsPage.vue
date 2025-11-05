@@ -12,59 +12,15 @@
       {{ accountError }}
     </q-banner>
 
-    <q-card class="content-card">
-      <q-table
-        flat
-        bordered
-        :rows="accounts"
-        :columns="columns"
-        row-key="id"
-        :loading="isLoading"
-        :pagination="pagination"
-      >
-        <template #body-cell-target="props">
-          <q-td :props="props">
-            {{ resolveTargetName(props.row) }}
-          </q-td>
-        </template>
-        <template #body-cell-tags="props">
-          <q-td :props="props">
-            <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
-                v-for="tagId in props.row.tagIds"
-                :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
-              />
-            </div>
-            <span v-else class="text-grey">—</span>
-          </q-td>
-        </template>
-        <template #body-cell-grants="props">
-          <q-td :props="props">
-            <q-badge color="secondary" :label="`${props.row.grants?.length ?? 0} grants`" />
-          </q-td>
-        </template>
-        <template #body-cell-actions="props">
-          <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" @click="openEditDialog(props.row)" />
-            <q-btn
-              flat
-              dense
-              round
-              icon="delete"
-              color="negative"
-              class="q-ml-xs"
-              @click="confirmDelete(props.row)"
-            />
-          </q-td>
-        </template>
-        <template #no-data>
-          <div class="q-pa-md text-grey-7">No accounts configured.</div>
-        </template>
-      </q-table>
-    </q-card>
+    <AccountsTable
+      :accounts="accounts"
+      :loading="isLoading"
+      :pagination="pagination"
+      :tag-lookup="tagLookup"
+      :target-resolver="resolveTargetName"
+      @edit="openEditDialog"
+      @delete="confirmDelete"
+    />
 
     <q-dialog v-model="isCreateDialogOpen" persistent>
       <q-card class="form-dialog">
@@ -75,62 +31,13 @@
         <q-separator />
         <q-form @submit.prevent="submitCreate">
           <q-card-section>
-            <div class="form-grid">
-              <q-select
-                v-model="createForm.targetKind"
-                label="Target Kind"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="targetKindOptions"
-              />
-              <q-select
-                v-model="createForm.targetId"
-                label="Target"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="targetOptions(createForm.targetKind)"
-              />
-              <q-select
-                v-model="createForm.authKind"
-                label="Auth Kind"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="authKindOptions"
-              />
-              <q-input v-model="createForm.userName" label="Username" dense outlined />
-              <q-input v-model="createForm.secretRef" label="Secret Reference" dense outlined />
-              <q-select
-                v-model="createForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-            </div>
-            <div class="parameters-section">
-              <div class="section-header q-mt-md">
-                <div class="text-subtitle1">Parameters</div>
-                <q-btn dense flat icon="add" label="Add" @click="addParameter(createForm.parameters)" />
-              </div>
-              <div v-if="createForm.parameters.length" class="parameter-grid">
-                <div v-for="(pair, index) in createForm.parameters" :key="index" class="parameter-row">
-                  <q-input v-model="pair.key" label="Key" dense outlined />
-                  <q-input v-model="pair.value" label="Value" dense outlined />
-                  <q-btn flat dense round icon="delete" color="negative" @click="removeParameter(createForm.parameters, index)" />
-                </div>
-              </div>
-              <div v-else class="text-grey">No parameters.</div>
-            </div>
+            <AccountForm
+              v-model="createForm"
+              :target-kind-options="targetKindOptions"
+              :target-options="createTargetOptions"
+              :auth-kind-options="authKindOptions"
+              :tag-options="tagOptions"
+            />
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
@@ -150,62 +57,13 @@
         <q-separator />
         <q-form @submit.prevent="submitEdit">
           <q-card-section>
-            <div class="form-grid">
-              <q-select
-                v-model="editForm.targetKind"
-                label="Target Kind"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="targetKindOptions"
-              />
-              <q-select
-                v-model="editForm.targetId"
-                label="Target"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="targetOptions(editForm.targetKind)"
-              />
-              <q-select
-                v-model="editForm.authKind"
-                label="Auth Kind"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="authKindOptions"
-              />
-              <q-input v-model="editForm.userName" label="Username" dense outlined />
-              <q-input v-model="editForm.secretRef" label="Secret Reference" dense outlined />
-              <q-select
-                v-model="editForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-            </div>
-            <div class="parameters-section">
-              <div class="section-header q-mt-md">
-                <div class="text-subtitle1">Parameters</div>
-                <q-btn dense flat icon="add" label="Add" @click="addParameter(editForm.parameters)" />
-              </div>
-              <div v-if="editForm.parameters.length" class="parameter-grid">
-                <div v-for="(pair, index) in editForm.parameters" :key="index" class="parameter-row">
-                  <q-input v-model="pair.key" label="Key" dense outlined />
-                  <q-input v-model="pair.value" label="Value" dense outlined />
-                  <q-btn flat dense round icon="delete" color="negative" @click="removeParameter(editForm.parameters, index)" />
-                </div>
-              </div>
-              <div v-else class="text-grey">No parameters.</div>
-            </div>
+            <AccountForm
+              v-model="editForm"
+              :target-kind-options="targetKindOptions"
+              :target-options="editTargetOptions"
+              :auth-kind-options="authKindOptions"
+              :tag-options="tagOptions"
+            />
 
             <q-expansion-item dense expand-icon="expand_more" icon="security" label="Grants" class="q-mt-lg">
               <template #default>
@@ -326,6 +184,9 @@ import {
   UpdateAccount,
   UpdateAccountGrant
 } from '../api/client'
+import AccountForm from '../components/accounts/AccountForm.vue'
+import AccountsTable from '../components/accounts/AccountsTable.vue'
+import type { AccountFormModel, KeyValuePair, TargetOption, SelectOption } from '../components/accounts/types'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useTags } from '../composables/useTags'
 import { useApplications } from '../composables/useApplications'
@@ -333,28 +194,11 @@ import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import { getErrorMessage } from '../utils/error'
 
-interface KeyValuePair {
-  key: string
-  value: string
-}
-
-interface AccountForm {
-  targetKind: TargetKind
-  targetId: string | null
-  authKind: AuthKind
-  userName: string
-  secretRef: string
-  parameters: KeyValuePair[]
-  tagIds: string[]
-}
-
 interface GrantForm {
   database: string
   schema: string
   privileges: Privilege[]
 }
-
-type TargetOption = { label: string; value: string }
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
@@ -373,21 +217,12 @@ const { data, isLoading, error } = useQuery({
 const accounts = computed(() => data.value ?? [])
 const accountError = computed(() => (error.value ? getErrorMessage(error.value) : null))
 
-const tagOptions = tagsStore.options
+const tagOptions = computed<TargetOption[]>(() => tagsStore.options.value)
 const tagLookup = tagsStore.lookup
 
-const targetKindOptions = Object.values(TargetKind).map((value) => ({ label: value, value }))
-const authKindOptions = Object.values(AuthKind).map((value) => ({ label: value, value }))
+const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({ label: value, value }))
+const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
 const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))
-
-const columns: QTableColumn<Account>[] = [
-  { name: 'target', label: 'Target', field: 'targetId', align: 'left', sortable: true },
-  { name: 'authKind', label: 'Auth Kind', field: 'authKind', align: 'left' },
-  { name: 'userName', label: 'Username', field: 'userName', align: 'left' },
-  { name: 'grants', label: 'Grants', field: 'grants', align: 'left' },
-  { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
-  { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
-]
 
 const grantColumns: QTableColumn<Grant>[] = [
   { name: 'database', label: 'Database', field: 'database', align: 'left' },
@@ -400,7 +235,7 @@ const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const selectedAccount = ref<Account | null>(null)
 
-const emptyAccountForm = (): AccountForm => ({
+const emptyAccountForm = (): AccountFormModel => ({
   targetKind: TargetKind.Application,
   targetId: null,
   authKind: AuthKind.None,
@@ -410,12 +245,15 @@ const emptyAccountForm = (): AccountForm => ({
   tagIds: []
 })
 
-const createForm = reactive<AccountForm>(emptyAccountForm())
-const editForm = reactive<AccountForm & { id: string | null }>({ id: null, ...emptyAccountForm() })
+let createForm = reactive<AccountFormModel>(emptyAccountForm())
+let editForm = reactive<AccountFormModel & { id: string | null }>({ id: null, ...emptyAccountForm() })
 
 const isGrantDialogOpen = ref(false)
 const editingGrant = ref<Grant | null>(null)
 const grantForm = reactive<GrantForm>({ database: '', schema: '', privileges: [] })
+
+const createTargetOptions = computed<TargetOption[]>(() => targetOptions(createForm.targetKind))
+const editTargetOptions = computed<TargetOption[]>(() => targetOptions(editForm.targetKind))
 
 function openCreateDialog() {
   Object.assign(createForm, emptyAccountForm())
@@ -497,14 +335,6 @@ function ensureTarget(form: { targetKind: TargetKind; targetId: string | null },
   if (!form.targetId || !options.some((option) => option.value === form.targetId)) {
     form.targetId = options[0]?.value ?? null
   }
-}
-
-function addParameter(list: KeyValuePair[]) {
-  list.push({ key: '', value: '' })
-}
-
-function removeParameter(list: KeyValuePair[], index: number) {
-  list.splice(index, 1)
 }
 
 function convertParametersToPairs(parameters?: { [key: string]: string }) {
@@ -727,10 +557,6 @@ function resolveTargetName(account: Account) {
   color: #6c757d;
 }
 
-.content-card {
-  flex: 1;
-}
-
 .form-dialog {
   min-width: 540px;
 }
@@ -743,37 +569,6 @@ function resolveTargetName(account: Account) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.parameters-section {
-  margin-top: 1.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.parameter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.parameter-row {
-  display: contents;
-}
-
-.parameter-row > *:nth-child(3) {
-  align-self: center;
 }
 
 .tag-list {

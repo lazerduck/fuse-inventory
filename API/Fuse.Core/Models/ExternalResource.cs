@@ -5,7 +5,7 @@ public record ExternalResource
     Guid Id,
     string Name,
     string? Description,
-    Uri ResourceUri,
+    Uri? ResourceUri,
     HashSet<Guid> TagIds,
     DateTime CreatedAt,
     DateTime UpdatedAt

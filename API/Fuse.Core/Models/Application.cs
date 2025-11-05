@@ -21,7 +21,7 @@ public record ApplicationPipeline
 (
     Guid Id,
     string Name,
-    Uri PipelineUri
+    Uri? PipelineUri
 );
 
 public record ApplicationInstance
@@ -29,7 +29,7 @@ public record ApplicationInstance
     Guid Id,
     Guid EnvironmentId,
     Guid? ServerId,
-    Uri BaseUri,
+    Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
