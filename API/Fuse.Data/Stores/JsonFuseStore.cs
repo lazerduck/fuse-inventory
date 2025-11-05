@@ -1,0 +1,110 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Fuse.Core.Configs;
+using Fuse.Core.Helpers;
+using Fuse.Core.Interfaces;
+using Fuse.Core.Models;
+
+namespace Fuse.Data.Stores;
+
+public sealed class JsonFuseStore : IFuseStore
+{
+    private readonly JsonFuseStoreOptions _options;
+    private readonly SemaphoreSlim _mutex = new(1, 1);
+    private Snapshot? _cache;
+
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    public JsonFuseStore(JsonFuseStoreOptions options)
+    {
+        _options = options;
+        Directory.CreateDirectory(_options.DataDirectory);
+    }
+
+    public Snapshot? Current => _cache;
+
+    public event Action<Snapshot>? Changed;
+
+    public async Task<Snapshot> GetAsync(CancellationToken ct = default)
+        => _cache is not null ? _cache : await LoadAsync(ct);
+
+    public async Task<Snapshot> LoadAsync(CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            _cache = new Snapshot(
+                Applications: await ReadAsync<Application>("applications.json", ct),
+                DataStores: await ReadAsync<DataStore>("datastores.json", ct),
+                Servers: await ReadAsync<Server>("servers.json", ct),
+                ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
+                Accounts: await ReadAsync<Account>("accounts.json", ct),
+                Tags: await ReadAsync<Tag>("tags.json", ct),
+                Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct)
+            );
+
+            var errors = SnapshotValidator.Validate(_cache);
+            if (errors.Count > 0)
+                throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
+
+            return _cache;
+        }
+        finally { _mutex.Release(); }
+    }
+
+public async Task SaveAsync(Snapshot snapshot, CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            var errors = SnapshotValidator.Validate(snapshot);
+            if (errors.Count > 0)
+                throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
+
+            await WriteAsync("applications.json", snapshot.Applications, ct);
+            await WriteAsync("datastores.json", snapshot.DataStores, ct);
+            await WriteAsync("servers.json", snapshot.Servers, ct);
+            await WriteAsync("externalresources.json", snapshot.ExternalResources, ct);
+            await WriteAsync("accounts.json", snapshot.Accounts, ct);
+            await WriteAsync("tags.json", snapshot.Tags, ct);
+            await WriteAsync("environments.json", snapshot.Environments, ct);
+
+            _cache = snapshot; // swap the in-memory snapshot
+            Changed?.Invoke(snapshot);
+        }
+        finally { _mutex.Release(); }
+    }
+
+    public async Task UpdateAsync(Func<Snapshot, Snapshot> mutate, CancellationToken ct = default)
+    {
+        var current = _cache ?? await LoadAsync(ct);
+        var next = mutate(current);
+        await SaveAsync(next, ct);
+    }
+    
+    private async Task<IReadOnlyList<T>> ReadAsync<T>(string file, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return Array.Empty<T>();
+        await using var fs = File.OpenRead(path);
+        return (await JsonSerializer.DeserializeAsync<IReadOnlyList<T>>(fs, Json, ct)) ?? Array.Empty<T>();
+    }
+
+    private async Task WriteAsync<T>(string file, IReadOnlyList<T> value, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        var tmp = path + ".tmp";
+        await using (var fs = File.Create(tmp))
+        {
+            await JsonSerializer.SerializeAsync(fs, value, Json, ct);
+        }
+        File.Move(tmp, path, overwrite: true);
+    }
+}

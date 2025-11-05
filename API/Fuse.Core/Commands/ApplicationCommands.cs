@@ -1,0 +1,105 @@
+using Fuse.Core.Models;
+
+namespace Fuse.Core.Commands;
+
+// Applications
+public record CreateApplication(
+    string Name,
+    string? Version,
+    string? Description,
+    string? Owner,
+    string? Notes,
+    string? Framework,
+    Uri? RepositoryUri,
+    HashSet<Guid> TagIds
+);
+
+public record UpdateApplication(
+    Guid Id,
+    string Name,
+    string? Version,
+    string? Description,
+    string? Owner,
+    string? Notes,
+    string? Framework,
+    Uri? RepositoryUri,
+    HashSet<Guid> TagIds
+);
+
+public record DeleteApplication(
+    Guid Id
+);
+
+// Instances
+public record CreateApplicationInstance(
+    Guid ApplicationId,
+    Guid EnvironmentId,
+    Guid? ServerId,
+    Uri BaseUri,
+    Uri? HealthUri,
+    Uri? OpenApiUri,
+    string? Version,
+    HashSet<Guid> TagIds
+);
+
+public record UpdateApplicationInstance(
+    Guid ApplicationId,
+    Guid InstanceId,
+    Guid EnvironmentId,
+    Guid? ServerId,
+    Uri BaseUri,
+    Uri? HealthUri,
+    Uri? OpenApiUri,
+    string? Version,
+    HashSet<Guid> TagIds
+);
+
+public record DeleteApplicationInstance(
+    Guid ApplicationId,
+    Guid InstanceId
+);
+
+// Pipelines
+public record CreateApplicationPipeline(
+    Guid ApplicationId,
+    string Name,
+    Uri PipelineUri
+);
+
+public record UpdateApplicationPipeline(
+    Guid ApplicationId,
+    Guid PipelineId,
+    string Name,
+    Uri PipelineUri
+);
+
+public record DeleteApplicationPipeline(
+    Guid ApplicationId,
+    Guid PipelineId
+);
+
+// Dependencies
+public record CreateApplicationDependency(
+    Guid ApplicationId,
+    Guid InstanceId,
+    Guid TargetId,
+    TargetKind TargetKind,
+    int? Port,
+    Guid? AccountId
+);
+
+public record UpdateApplicationDependency(
+    Guid ApplicationId,
+    Guid InstanceId,
+    Guid DependencyId,
+    Guid TargetId,
+    TargetKind TargetKind,
+    int? Port,
+    Guid? AccountId
+);
+
+public record DeleteApplicationDependency(
+    Guid ApplicationId,
+    Guid InstanceId,
+    Guid DependencyId
+);
