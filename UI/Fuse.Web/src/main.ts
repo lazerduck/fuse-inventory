@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { Quasar, Notify } from 'quasar'
+import { Quasar, Notify, Dialog } from 'quasar'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import router from './router'
 
@@ -17,9 +17,10 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(VueQueryPlugin)
-app.use(Quasar, { 
-  plugins: { 
-    Notify 
+app.use(Quasar, {
+  plugins: {
+    Notify,
+    Dialog
   }
 })
 

@@ -2,37 +2,34 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Environments</h1>
-        <p class="subtitle">Model environments and attach resources to them.</p>
+        <h1>Tags</h1>
+        <p class="subtitle">Organise your inventory with reusable labels and colours.</p>
       </div>
-      <q-btn color="primary" label="Create Environment" icon="add" @click="openCreateDialog" />
+      <q-btn color="primary" label="Create Tag" icon="add" @click="openCreateDialog" />
     </div>
 
-    <q-banner v-if="environmentError" dense class="bg-red-1 text-negative q-mb-md">
-      {{ environmentError }}
+    <q-banner v-if="tagError" dense class="bg-red-1 text-negative q-mb-md">
+      {{ tagError }}
     </q-banner>
 
     <q-card class="content-card">
       <q-table
         flat
         bordered
-        :rows="environments"
+        :rows="tags"
         :columns="columns"
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
       >
-        <template #body-cell-tags="props">
+        <template #body-cell-color="props">
           <q-td :props="props">
-            <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
-                v-for="tagId in props.row.tagIds"
-                :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
-              />
-            </div>
+            <q-badge
+              v-if="props.row.color"
+              :label="props.row.color"
+              :color="badgeColor(props.row.color)"
+              class="uppercase"
+            />
             <span v-else class="text-grey">—</span>
           </q-td>
         </template>
@@ -51,7 +48,7 @@
           </q-td>
         </template>
         <template #no-data>
-          <div class="q-pa-md text-grey-7">No environments yet.</div>
+          <div class="q-pa-md text-grey-7">No tags defined yet.</div>
         </template>
       </q-table>
     </q-card>
@@ -59,7 +56,7 @@
     <q-dialog v-model="isCreateDialogOpen" persistent>
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
-          <div class="text-h6">Create Environment</div>
+          <div class="text-h6">Create Tag</div>
           <q-btn flat round dense icon="close" @click="isCreateDialogOpen = false" />
         </q-card-section>
         <q-separator />
@@ -68,15 +65,13 @@
             <div class="form-grid">
               <q-input v-model="createForm.name" label="Name" dense outlined />
               <q-select
-                v-model="createForm.tagIds"
-                label="Tags"
+                v-model="createForm.color"
+                label="Color"
                 dense
                 outlined
-                use-chips
-                multiple
                 emit-value
                 map-options
-                :options="tagOptions"
+                :options="colorOptions"
               />
               <q-input
                 v-model="createForm.description"
@@ -101,7 +96,7 @@
     <q-dialog v-model="isEditDialogOpen" persistent>
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
-          <div class="text-h6">Edit Environment</div>
+          <div class="text-h6">Edit Tag</div>
           <q-btn flat round dense icon="close" @click="closeEditDialog" />
         </q-card-section>
         <q-separator />
@@ -110,15 +105,13 @@
             <div class="form-grid">
               <q-input v-model="editForm.name" label="Name" dense outlined />
               <q-select
-                v-model="editForm.tagIds"
-                label="Tags"
+                v-model="editForm.color"
+                label="Color"
                 dense
                 outlined
-                use-chips
-                multiple
                 emit-value
                 map-options
-                :options="tagOptions"
+                :options="colorOptions"
               />
               <q-input
                 v-model="editForm.description"
@@ -144,18 +137,18 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { EnvironmentInfo, CreateEnvironment, UpdateEnvironment } from '../api/client'
-import { useFuseClient } from '../composables/useFuseClient'
+import { Tag, TagColor, CreateTag, UpdateTag } from '../api/client'
 import { useTags } from '../composables/useTags'
+import { useFuseClient } from '../composables/useFuseClient'
 import { getErrorMessage } from '../utils/error'
 
-interface EnvironmentForm {
+interface TagForm {
   name: string
   description: string
-  tagIds: string[]
+  color: TagColor | null
 }
 
 const client = useFuseClient()
@@ -164,119 +157,131 @@ const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
 
-const { data, isLoading, error } = useQuery({
-  queryKey: ['environments'],
-  queryFn: () => client.environmentAll()
-})
+const tags = computed(() => tagsStore.data.value ?? [])
+const isLoading = computed(() => tagsStore.isLoading.value)
+const tagError = computed(() => (tagsStore.error.value ? getErrorMessage(tagsStore.error.value) : null))
 
-const environments = computed(() => data.value ?? [])
-const environmentError = computed(() => (error.value ? getErrorMessage(error.value) : null))
-const tagOptions = tagsStore.options
-const tagLookup = tagsStore.lookup
+const colorOptions = Object.values(TagColor).map((value) => ({ label: value, value }))
 
-const columns: QTableColumn<EnvironmentInfo>[] = [
+const columns: QTableColumn<Tag>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
   { name: 'description', label: 'Description', field: 'description', align: 'left' },
-  { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
+  { name: 'color', label: 'Color', field: 'color', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
-const selectedEnvironment = ref<EnvironmentInfo | null>(null)
+const selectedTag = ref<Tag | null>(null)
 
-const createForm = reactive<EnvironmentForm>({ name: '', description: '', tagIds: [] })
-const editForm = reactive<EnvironmentForm & { id: string | null }>({
-  id: null,
-  name: '',
-  description: '',
-  tagIds: []
-})
+const createForm = reactive<TagForm>({ name: '', description: '', color: null })
+const editForm = reactive<TagForm & { id: string | null }>({ id: null, name: '', description: '', color: null })
 
 function openCreateDialog() {
-  Object.assign(createForm, { name: '', description: '', tagIds: [] })
+  Object.assign(createForm, { name: '', description: '', color: null })
   isCreateDialogOpen.value = true
 }
 
-function openEditDialog(env: EnvironmentInfo) {
-  if (!env.id) return
-  selectedEnvironment.value = env
+function openEditDialog(tag: Tag) {
+  if (!tag.id) return
+  selectedTag.value = tag
   Object.assign(editForm, {
-    id: env.id ?? null,
-    name: env.name ?? '',
-    description: env.description ?? '',
-    tagIds: [...(env.tagIds ?? [])]
+    id: tag.id ?? null,
+    name: tag.name ?? '',
+    description: tag.description ?? '',
+    color: tag.color ?? null
   })
   isEditDialogOpen.value = true
 }
 
 function closeEditDialog() {
-  selectedEnvironment.value = null
+  selectedTag.value = null
   isEditDialogOpen.value = false
 }
 
 const createMutation = useMutation({
-  mutationFn: (payload: CreateEnvironment) => client.environmentPOST(payload),
+  mutationFn: (payload: CreateTag) => client.tagPOST(payload),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['environments'] })
-    Notify.create({ type: 'positive', message: 'Environment created' })
+    queryClient.invalidateQueries({ queryKey: ['tags'] })
+    Notify.create({ type: 'positive', message: 'Tag created' })
     isCreateDialogOpen.value = false
   },
   onError: (err) => {
-    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create environment') })
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create tag') })
   }
 })
 
 const updateMutation = useMutation({
-  mutationFn: ({ id, payload }: { id: string; payload: UpdateEnvironment }) => client.environmentPUT(id, payload),
+  mutationFn: ({ id, payload }: { id: string; payload: UpdateTag }) => client.tagPUT(id, payload),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['environments'] })
-    Notify.create({ type: 'positive', message: 'Environment updated' })
+    queryClient.invalidateQueries({ queryKey: ['tags'] })
+    Notify.create({ type: 'positive', message: 'Tag updated' })
     closeEditDialog()
   },
   onError: (err) => {
-    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update environment') })
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update tag') })
   }
 })
 
 const deleteMutation = useMutation({
-  mutationFn: (id: string) => client.environmentDELETE(id),
+  mutationFn: (id: string) => client.tagDELETE(id),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['environments'] })
-    Notify.create({ type: 'positive', message: 'Environment deleted' })
+    queryClient.invalidateQueries({ queryKey: ['tags'] })
+    Notify.create({ type: 'positive', message: 'Tag deleted' })
   },
   onError: (err) => {
-    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to delete environment') })
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to delete tag') })
   }
 })
 
 function submitCreate() {
-  const payload = Object.assign(new CreateEnvironment(), {
+  const payload = Object.assign(new CreateTag(), {
     name: createForm.name || undefined,
     description: createForm.description || undefined,
-    tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
+    color: createForm.color || undefined
   })
   createMutation.mutate(payload)
 }
 
 function submitEdit() {
   if (!editForm.id) return
-  const payload = Object.assign(new UpdateEnvironment(), {
+  const payload = Object.assign(new UpdateTag(), {
     name: editForm.name || undefined,
     description: editForm.description || undefined,
-    tagIds: editForm.tagIds.length ? [...editForm.tagIds] : undefined
+    color: editForm.color || undefined
   })
   updateMutation.mutate({ id: editForm.id, payload })
 }
 
-function confirmDelete(env: EnvironmentInfo) {
-  if (!env.id) return
+function confirmDelete(tag: Tag) {
+  if (!tag.id) return
   Dialog.create({
-    title: 'Delete environment',
-    message: `Delete "${env.name ?? 'this environment'}"?`,
+    title: 'Delete tag',
+    message: `Delete "${tag.name ?? 'this tag'}"?`,
     cancel: true,
     persistent: true
-  }).onOk(() => deleteMutation.mutate(env.id!))
+  }).onOk(() => deleteMutation.mutate(tag.id!))
+}
+
+function badgeColor(color: TagColor) {
+  switch (color) {
+    case TagColor.Red:
+      return 'red-6'
+    case TagColor.Green:
+      return 'green-6'
+    case TagColor.Blue:
+      return 'blue-6'
+    case TagColor.Yellow:
+      return 'yellow-7'
+    case TagColor.Purple:
+      return 'purple-5'
+    case TagColor.Orange:
+      return 'orange-6'
+    case TagColor.Teal:
+      return 'teal-5'
+    default:
+      return 'grey-7'
+  }
 }
 </script>
 
@@ -304,7 +309,7 @@ function confirmDelete(env: EnvironmentInfo) {
 }
 
 .form-dialog {
-  min-width: 480px;
+  min-width: 440px;
 }
 
 .dialog-header {
@@ -323,9 +328,7 @@ function confirmDelete(env: EnvironmentInfo) {
   grid-column: 1 / -1;
 }
 
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+.uppercase {
+  text-transform: uppercase;
 }
 </style>
