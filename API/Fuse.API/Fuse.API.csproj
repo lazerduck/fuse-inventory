@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\..\UI\Fuse.Web\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
+    <BuildSpa Condition="'$(BuildSpa)' == ''">true</BuildSpa>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +18,7 @@
     <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
   </ItemGroup>
 
-  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish" Condition="'$(BuildSpa)' == 'true'">
     <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
