@@ -4,14 +4,23 @@ import { Quasar, Notify } from 'quasar'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import router from './router'
 
+// Import icon libraries
+import '@quasar/extras/material-icons/material-icons.css'
+
+// Import Quasar css
+import 'quasar/dist/quasar.sass'
+
 import App from './App.vue'
 
-createApp(App)
-  .use(createPinia())
-  .use(router)
-  .use(VueQueryPlugin)
-  .use(Quasar, { plugins: { Notify}})
-  .mount('#app')
+const app = createApp(App)
 
+app.use(createPinia())
+app.use(router)
+app.use(VueQueryPlugin)
+app.use(Quasar, { 
+  plugins: { 
+    Notify 
+  }
+})
 
-  // npm i vue-router pinia @tanstack/vue-query axios zod @vueuse/core
+app.mount('#app')

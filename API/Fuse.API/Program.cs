@@ -17,6 +17,17 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configure CORS for development
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowViteDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 
@@ -28,16 +39,29 @@ using (var scope = app.Services.CreateScope())
     await store.LoadAsync();
 }
 
-app.MapControllers();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors("AllowViteDev");
+}
+else
+{
+    // Serve static files from the Vue build output
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
 }
 
 app.UseHttpsRedirection();
+
+app.MapControllers();
+
+// Fallback to index.html for SPA routing (only in production)
+if (!app.Environment.IsDevelopment())
+{
+    app.MapFallbackToFile("index.html");
+}
 
 app.Run();
 

@@ -1,0 +1,34 @@
+<template>
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Servers</h1>
+      <q-btn color="primary" label="Add Server" icon="add" />
+    </div>
+    
+    <q-card class="content-card">
+      <q-card-section>
+        <p>Server management will go here.</p>
+      </q-card-section>
+    </q-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+</script>
+
+<style scoped>
+.page-container {
+  padding: 2rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.content-card {
+  margin-top: 1rem;
+}
+</style>

@@ -1,30 +1,110 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <q-layout view="hHh lpR fFf">
+    <q-header elevated class="bg-primary text-white">
+      <q-toolbar>
+        <q-btn
+          dense
+          flat
+          round
+          icon="menu"
+          @click="leftDrawerOpen = !leftDrawerOpen"
+        />
+        <q-toolbar-title>
+          Fuse Inventory
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      :width="250"
+      :breakpoint="500"
+      bordered
+      class="bg-grey-2"
+    >
+      <q-scroll-area class="fit">
+        <q-list padding>
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'home' }"
+            exact-active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="home" />
+            </q-item-section>
+            <q-item-section>
+              Home
+            </q-item-section>
+          </q-item>
+
+          <q-separator class="q-my-md" />
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'applications' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="apps" />
+            </q-item-section>
+            <q-item-section>
+              Applications
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'servers' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="dns" />
+            </q-item-section>
+            <q-item-section>
+              Servers
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'environments' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="cloud" />
+            </q-item-section>
+            <q-item-section>
+              Environments
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+    </q-drawer>
+
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+  </q-layout>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const leftDrawerOpen = ref(true)
+</script>
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+* {
+  box-sizing: border-box;
 }
 </style>
