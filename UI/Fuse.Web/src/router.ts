@@ -14,6 +14,16 @@ const router = createRouter({
       component: () => import('./pages/ApplicationsPage.vue')
     },
     {
+      path: '/accounts',
+      name: 'accounts',
+      component: () => import('./pages/AccountsPage.vue')
+    },
+    {
+      path: '/data-stores',
+      name: 'dataStores',
+      component: () => import('./pages/DataStoresPage.vue')
+    },
+    {
       path: '/servers',
       name: 'servers',
       component: () => import('./pages/ServersPage.vue')
@@ -22,6 +32,16 @@ const router = createRouter({
       path: '/environments',
       name: 'environments',
       component: () => import('./pages/EnvironmentsPage.vue')
+    },
+    {
+      path: '/external-resources',
+      name: 'externalResources',
+      component: () => import('./pages/ExternalResourcesPage.vue')
+    },
+    {
+      path: '/tags',
+      name: 'tags',
+      component: () => import('./pages/TagsPage.vue')
     }
   ]
 })

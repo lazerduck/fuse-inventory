@@ -58,6 +58,34 @@
           <q-item
             clickable
             v-ripple
+            :to="{ name: 'accounts' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="vpn_key" />
+            </q-item-section>
+            <q-item-section>
+              Accounts
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'dataStores' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="storage" />
+            </q-item-section>
+            <q-item-section>
+              Data Stores
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
             :to="{ name: 'servers' }"
             active-class="bg-primary text-white"
           >
@@ -80,6 +108,34 @@
             </q-item-section>
             <q-item-section>
               Environments
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'externalResources' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="link" />
+            </q-item-section>
+            <q-item-section>
+              External Resources
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            :to="{ name: 'tags' }"
+            active-class="bg-primary text-white"
+          >
+            <q-item-section avatar>
+              <q-icon name="label" />
+            </q-item-section>
+            <q-item-section>
+              Tags
             </q-item-section>
           </q-item>
         </q-list>
