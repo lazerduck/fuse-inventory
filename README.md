@@ -1,8 +1,12 @@
 # 🧩 Fuse-Inventory
+
+[![CI Pipeline](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml)
+[![Docker Image](https://ghcr-badge.egpl.dev/lazerduck/fuse-inventory/latest_tag?trim=major&label=latest)](https://github.com/lazerduck/fuse-inventory/pkgs/container/fuse-inventory)
+
 <img width="512" height="512" alt="Fuse-inventory" src="https://github.com/user-attachments/assets/2b4cd430-ed63-4f62-af85-3e89470bd0aa" />
 
 **Fuse-Inventory** is a lightweight, self-hosted service inventory and permissions tracker.
-It’s designed to be self-contained, fast, and frictionless — letting you get set up in seconds.
+It's designed to be self-contained, fast, and frictionless — letting you get set up in seconds.
 
 ---
 
@@ -21,14 +25,45 @@ Fuse-Inventory lets small to medium sized development or DevOps teams:
 
 It treats applications as first class objects with servers, dependencies and environments expected to facilitate applications.
 
+---
+
+## 🚀 Quick Start
+
+### Using Docker (Recommended)
+
+Pull and run the latest image from GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/lazerduck/fuse-inventory:latest
+
+# Run the container
+docker run -d \
+  --name fuse-inventory \
+  -p 8080:8080 \
+  -v $(pwd)/data:/app/data \
+  ghcr.io/lazerduck/fuse-inventory:latest
+```
+
+The application will be available at `http://localhost:8080`
+
+### Using Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+See [DOCKER.md](DOCKER.md) for more detailed Docker instructions.
+
+---
+
 ## 🧩 Current Status
 Fuse-Inventory is in early development.
-The core data model and API are established, providing a foundation for the upcoming interface and automation features.
+The core data model and API are established, and a simple UI is present
 
-🛣️ Roadmap
-- UI
-  - Interactive forms
-  - Config and relationship visualisation
+---
+
+## 🛣️ Roadmap
 - Security
   - Authentication & roles
   - Encrypted secret storage
