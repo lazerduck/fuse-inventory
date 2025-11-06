@@ -38,6 +38,12 @@
               :auth-kind-options="authKindOptions"
               :tag-options="tagOptions"
             />
+            <AccountGrantsSection
+              :grants="createForm.grants"
+              @add="openCreateGrantDialog()"
+              @edit="openCreateGrantDialog"
+              @delete="({ index }) => confirmCreateGrantDelete(index)"
+            />
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
@@ -65,58 +71,13 @@
               :tag-options="tagOptions"
             />
 
-            <q-expansion-item dense expand-icon="expand_more" icon="security" label="Grants" class="q-mt-lg">
-              <template #default>
-                <div class="section-header">
-                  <div>
-                    <div class="text-subtitle1">Account Grants</div>
-                    <div class="text-caption text-grey-7">Document permissions granted to this account.</div>
-                  </div>
-                  <q-btn color="primary" label="Add Grant" dense icon="add" @click="openGrantDialog()" />
-                </div>
-                <q-table
-                  flat
-                  bordered
-                  dense
-                  :rows="selectedAccount?.grants ?? []"
-                  :columns="grantColumns"
-                  row-key="id"
-                  class="q-mt-md"
-                >
-                  <template #body-cell-privileges="props">
-                    <q-td :props="props">
-                      <div v-if="props.row.privileges?.length" class="tag-list">
-                        <q-badge
-                          v-for="privilege in props.row.privileges"
-                          :key="privilege"
-                          outline
-                          color="secondary"
-                          :label="privilege"
-                        />
-                      </div>
-                      <span v-else class="text-grey">—</span>
-                    </q-td>
-                  </template>
-                  <template #body-cell-actions="props">
-                    <q-td :props="props" class="text-right">
-                      <q-btn dense flat round icon="edit" color="primary" @click="openGrantDialog(props.row)" />
-                      <q-btn
-                        dense
-                        flat
-                        round
-                        icon="delete"
-                        color="negative"
-                        class="q-ml-xs"
-                        @click="confirmGrantDelete(props.row)"
-                      />
-                    </q-td>
-                  </template>
-                  <template #no-data>
-                    <div class="q-pa-sm text-grey-7">No grants for this account.</div>
-                  </template>
-                </q-table>
-              </template>
-            </q-expansion-item>
+            <AccountGrantsSection
+              :grants="selectedAccount?.grants ?? []"
+              :disable-actions="grantMutationPending"
+              @add="openGrantDialog()"
+              @edit="({ grant }) => openGrantDialog(grant)"
+              @delete="({ grant }) => confirmGrantDelete(grant)"
+            />
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
@@ -130,7 +91,7 @@
     <q-dialog v-model="isGrantDialogOpen" persistent>
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
-          <div class="text-h6">{{ editingGrant ? 'Edit Grant' : 'Add Grant' }}</div>
+          <div class="text-h6">{{ grantDialogTitle }}</div>
           <q-btn flat round dense icon="close" @click="closeGrantDialog" />
         </q-card-section>
         <q-separator />
@@ -158,8 +119,8 @@
             <q-btn
               color="primary"
               type="submit"
-              :label="editingGrant ? 'Save' : 'Create'"
-              :loading="grantMutationPending"
+              :label="grantDialogSubmitLabel"
+              :loading="grantDialogLoading"
             />
           </q-card-actions>
         </q-form>
@@ -172,7 +133,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
-import type { QTableColumn } from 'quasar'
 import {
   Account,
   AuthKind,
@@ -185,6 +145,7 @@ import {
   UpdateAccountGrant
 } from '../api/client'
 import AccountForm from '../components/accounts/AccountForm.vue'
+import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
 import AccountsTable from '../components/accounts/AccountsTable.vue'
 import type { AccountFormModel, KeyValuePair, TargetOption, SelectOption } from '../components/accounts/types'
 import { useFuseClient } from '../composables/useFuseClient'
@@ -224,13 +185,6 @@ const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).
 const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
 const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))
 
-const grantColumns: QTableColumn<Grant>[] = [
-  { name: 'database', label: 'Database', field: 'database', align: 'left' },
-  { name: 'schema', label: 'Schema', field: 'schema', align: 'left' },
-  { name: 'privileges', label: 'Privileges', field: 'privileges', align: 'left' },
-  { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
-]
-
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const selectedAccount = ref<Account | null>(null)
@@ -242,15 +196,33 @@ const emptyAccountForm = (): AccountFormModel => ({
   userName: '',
   secretRef: '',
   parameters: [],
-  tagIds: []
+  tagIds: [],
+  grants: []
 })
 
 let createForm = reactive<AccountFormModel>(emptyAccountForm())
 let editForm = reactive<AccountFormModel & { id: string | null }>({ id: null, ...emptyAccountForm() })
 
+type GrantDialogMode = 'create' | 'edit'
+
 const isGrantDialogOpen = ref(false)
+const grantDialogMode = ref<GrantDialogMode>('edit')
+const createGrantIndex = ref<number | null>(null)
 const editingGrant = ref<Grant | null>(null)
 const grantForm = reactive<GrantForm>({ database: '', schema: '', privileges: [] })
+
+const grantDialogTitle = computed(() => {
+  if (grantDialogMode.value === 'create') {
+    return createGrantIndex.value !== null ? 'Edit Grant' : 'Add Grant'
+  }
+  return editingGrant.value ? 'Edit Grant' : 'Add Grant'
+})
+
+const grantDialogSubmitLabel = computed(() => {
+  const isEditing =
+    grantDialogMode.value === 'create' ? createGrantIndex.value !== null : editingGrant.value !== null
+  return isEditing ? 'Save' : 'Create'
+})
 
 const createTargetOptions = computed<TargetOption[]>(() => targetOptions(createForm.targetKind))
 const editTargetOptions = computed<TargetOption[]>(() => targetOptions(editForm.targetKind))
@@ -272,7 +244,8 @@ function openEditDialog(account: Account) {
     userName: account.userName ?? '',
     secretRef: account.secretRef ?? '',
     parameters: convertParametersToPairs(account.parameters),
-    tagIds: [...(account.tagIds ?? [])]
+    tagIds: [...(account.tagIds ?? [])],
+    grants: (account.grants ?? []).map(cloneGrant)
   })
   ensureTarget(editForm)
   isEditDialogOpen.value = true
@@ -329,6 +302,17 @@ watch(
   }
 )
 
+watch(data, (accounts) => {
+  if (!accounts || !selectedAccount.value?.id) {
+    return
+  }
+  const latest = accounts.find((account) => account.id === selectedAccount.value?.id)
+  if (latest) {
+    selectedAccount.value = latest
+    editForm.grants = (latest.grants ?? []).map(cloneGrant)
+  }
+})
+
 function ensureTarget(form: { targetKind: TargetKind; targetId: string | null }, newKind?: TargetKind) {
   const kind = newKind ?? form.targetKind
   const options = targetOptions(kind)
@@ -350,6 +334,24 @@ function buildParameters(list: KeyValuePair[]) {
     }
   }
   return Object.keys(result).length ? result : undefined
+}
+
+function cloneGrant(grant: Grant): Grant {
+  return Object.assign(new Grant(), {
+    id: grant.id ?? undefined,
+    database: grant.database ?? undefined,
+    schema: grant.schema ?? undefined,
+    privileges: grant.privileges ? [...grant.privileges] : undefined
+  })
+}
+
+function buildGrantPayload(grant: Grant) {
+  return Object.assign(new Grant(), {
+    id: grant.id ?? undefined,
+    database: grant.database || undefined,
+    schema: grant.schema || undefined,
+    privileges: grant.privileges && grant.privileges.length ? [...grant.privileges] : undefined
+  })
 }
 
 const createMutation = useMutation({
@@ -395,6 +397,7 @@ function submitCreate() {
     userName: createForm.userName || undefined,
     secretRef: createForm.secretRef || undefined,
     parameters: buildParameters(createForm.parameters),
+    grants: createForm.grants.map(buildGrantPayload),
     tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
   })
   createMutation.mutate(payload)
@@ -409,6 +412,7 @@ function submitEdit() {
     userName: editForm.userName || undefined,
     secretRef: editForm.secretRef || undefined,
     parameters: buildParameters(editForm.parameters),
+    grants: (selectedAccount.value?.grants ?? []).map(buildGrantPayload),
     tagIds: editForm.tagIds.length ? [...editForm.tagIds] : undefined
   })
   updateMutation.mutate({ id: editForm.id, payload })
@@ -465,11 +469,32 @@ const grantMutationPending = computed(
   () => createGrantMutation.isPending.value || updateGrantMutation.isPending.value
 )
 
+const grantDialogLoading = computed(() => grantDialogMode.value === 'edit' && grantMutationPending.value)
+
+function openCreateGrantDialog(payload?: { grant: Grant; index: number }) {
+  grantDialogMode.value = 'create'
+  createGrantIndex.value = payload?.index ?? null
+  editingGrant.value = null
+  if (payload?.grant) {
+    const grant = payload.grant
+    Object.assign(grantForm, {
+      database: grant.database ?? '',
+      schema: grant.schema ?? '',
+      privileges: [...(grant.privileges ?? [])]
+    })
+  } else {
+    Object.assign(grantForm, { database: '', schema: '', privileges: [] })
+  }
+  isGrantDialogOpen.value = true
+}
+
 function openGrantDialog(grant?: Grant) {
   if (!selectedAccount.value?.id) {
     Notify.create({ type: 'warning', message: 'Select an account first' })
     return
   }
+  grantDialogMode.value = 'edit'
+  createGrantIndex.value = null
   if (grant) {
     editingGrant.value = grant
     Object.assign(grantForm, {
@@ -486,10 +511,30 @@ function openGrantDialog(grant?: Grant) {
 
 function closeGrantDialog() {
   isGrantDialogOpen.value = false
+  grantDialogMode.value = 'edit'
+  createGrantIndex.value = null
   editingGrant.value = null
 }
 
 function submitGrant() {
+  if (grantDialogMode.value === 'create') {
+    const existingId =
+      createGrantIndex.value !== null ? createForm.grants[createGrantIndex.value]?.id : undefined
+    const draft = Object.assign(new Grant(), {
+      id: existingId ?? undefined,
+      database: grantForm.database || undefined,
+      schema: grantForm.schema || undefined,
+      privileges: grantForm.privileges.length ? [...grantForm.privileges] : undefined
+    })
+    if (createGrantIndex.value !== null) {
+      createForm.grants.splice(createGrantIndex.value, 1, draft)
+    } else {
+      createForm.grants.push(draft)
+    }
+    closeGrantDialog()
+    return
+  }
+
   if (!selectedAccount.value?.id) return
   if (editingGrant.value?.id) {
     const payload = Object.assign(new UpdateAccountGrant(), {
@@ -510,6 +555,18 @@ function submitGrant() {
     })
     createGrantMutation.mutate({ accountId: selectedAccount.value.id!, payload })
   }
+}
+
+function confirmCreateGrantDelete(index: number) {
+  if (index < 0 || index >= createForm.grants.length) return
+  Dialog.create({
+    title: 'Remove grant',
+    message: 'Are you sure you want to remove this grant?',
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    createForm.grants.splice(index, 1)
+  })
 }
 
 function confirmGrantDelete(grant: Grant) {

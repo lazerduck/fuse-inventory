@@ -1,4 +1,4 @@
-import type { AuthKind, TargetKind } from '../../api/client'
+import type { AuthKind, Grant, TargetKind } from '../../api/client'
 
 export interface KeyValuePair {
   key: string
@@ -13,6 +13,7 @@ export interface AccountFormModel {
   secretRef: string
   parameters: KeyValuePair[]
   tagIds: string[]
+  grants: Grant[]
 }
 
 export interface SelectOption<T = string> {

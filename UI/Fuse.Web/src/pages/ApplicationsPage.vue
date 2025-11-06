@@ -344,6 +344,17 @@
                 :options="tagOptions"
               />
             </div>
+
+            <InstanceDependenciesSection
+              v-if="editingInstance"
+              :dependencies="editingInstance.dependencies ?? []"
+              :disable-actions="dependencyActionsDisabled"
+              :resolve-target-name="resolveDependencyTargetName"
+              :resolve-account-name="resolveDependencyAccountName"
+              @add="openDependencyDialog()"
+              @edit="({ dependency }) => openDependencyDialog(dependency)"
+              @delete="({ dependency }) => confirmDependencyDelete(dependency)"
+            />
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
@@ -353,6 +364,72 @@
               type="submit"
               :label="editingInstance ? 'Save' : 'Create'"
               :loading="instanceMutationPending"
+            />
+          </q-card-actions>
+        </q-form>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="isDependencyDialogOpen" persistent>
+      <q-card class="form-dialog">
+        <q-card-section class="dialog-header">
+          <div class="text-h6">{{ editingDependency ? 'Edit Dependency' : 'Add Dependency' }}</div>
+          <q-btn flat round dense icon="close" @click="closeDependencyDialog" />
+        </q-card-section>
+        <q-separator />
+        <q-form @submit.prevent="submitDependency">
+          <q-card-section>
+            <div class="form-grid">
+              <q-select
+                v-model="dependencyForm.targetKind"
+                label="Target Kind"
+                dense
+                outlined
+                emit-value
+                map-options
+                :options="dependencyTargetKindOptions"
+              />
+              <q-select
+                v-model="dependencyForm.targetId"
+                label="Target"
+                dense
+                outlined
+                emit-value
+                map-options
+                :options="dependencyTargetOptions"
+                :disable="dependencyTargetOptions.length === 0"
+                no-option-label="No targets available"
+              />
+              <q-input
+                v-model.number="dependencyForm.port"
+                label="Port"
+                type="number"
+                dense
+                outlined
+                :min="0"
+                :step="1"
+              />
+              <q-select
+                v-model="dependencyForm.accountId"
+                label="Account"
+                dense
+                outlined
+                emit-value
+                map-options
+                clearable
+                :options="accountOptions"
+              />
+            </div>
+          </q-card-section>
+          <q-separator />
+          <q-card-actions align="right">
+            <q-btn flat label="Cancel" @click="closeDependencyDialog" />
+            <q-btn
+              color="primary"
+              type="submit"
+              :label="editingDependency ? 'Save' : 'Add'"
+              :loading="dependencyDialogLoading"
+              :disable="!dependencyForm.targetId"
             />
           </q-card-actions>
         </q-form>
@@ -395,13 +472,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import {
+  Account,
   Application,
   ApplicationInstance,
+  ApplicationInstanceDependency,
   ApplicationPipeline,
   CreateApplication,
+  CreateApplicationDependency,
   CreateApplicationInstance,
   CreateApplicationPipeline,
+  TargetKind,
   UpdateApplication,
+  UpdateApplicationDependency,
   UpdateApplicationInstance,
   UpdateApplicationPipeline
 } from '../api/client'
@@ -409,7 +491,15 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useServers } from '../composables/useServers'
+import { useDataStores } from '../composables/useDataStores'
+import { useExternalResources } from '../composables/useExternalResources'
 import { getErrorMessage } from '../utils/error'
+import InstanceDependenciesSection from '../components/applications/InstanceDependenciesSection.vue'
+
+interface SelectOption<T = string> {
+  label: string
+  value: T
+}
 
 interface ApplicationForm {
   name: string
@@ -437,6 +527,13 @@ interface ApplicationPipelineForm {
   pipelineUri: string
 }
 
+interface DependencyForm {
+  targetKind: TargetKind
+  targetId: string | null
+  port: number | null
+  accountId: string | null
+}
+
 const client = useFuseClient()
 const queryClient = useQueryClient()
 
@@ -445,6 +542,11 @@ const pagination = { rowsPerPage: 10 }
 const { data: applicationsData, isLoading, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],
   queryFn: () => client.applicationAll()
+})
+
+const accountsQuery = useQuery({
+  queryKey: ['accounts'],
+  queryFn: () => client.accountAll()
 })
 
 const applications = computed(() => applicationsData.value ?? [])
@@ -456,6 +558,8 @@ const applicationsError = computed(() =>
 const tagsStore = useTags()
 const environmentsStore = useEnvironments()
 const serversStore = useServers()
+const dataStoresQuery = useDataStores()
+const externalResourcesQuery = useExternalResources()
 
 const tagOptions = tagsStore.options
 const tagLookup = tagsStore.lookup
@@ -463,6 +567,25 @@ const environmentOptions = environmentsStore.options
 const environmentLookup = environmentsStore.lookup
 const serverOptions = serversStore.options
 const serverLookup = serversStore.lookup
+
+const dependencyTargetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({
+  label: value,
+  value
+}))
+
+const accountLookup = computed<Record<string, string>>(() => {
+  const map: Record<string, string> = {}
+  for (const account of accountsQuery.data.value ?? []) {
+    if (account.id) {
+      map[account.id] = formatAccountLabel(account)
+    }
+  }
+  return map
+})
+
+const accountOptions = computed<SelectOption<string>[]>(() =>
+  Object.entries(accountLookup.value).map(([value, label]) => ({ label, value }))
+)
 
 const columns: QTableColumn<Application>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
@@ -553,7 +676,29 @@ watch(applicationsData, (apps) => {
   if (latest) {
     selectedApplication.value = latest
     setEditForm(latest)
+    if (editingInstance.value?.id) {
+      const latestInstance = latest.instances?.find((instance) => instance.id === editingInstance.value?.id)
+      if (latestInstance) {
+        editingInstance.value = latestInstance
+      }
+    }
   }
+})
+
+watch(
+  () => [
+    dependencyForm.targetKind,
+    applicationsData.value,
+    dataStoresQuery.data.value,
+    externalResourcesQuery.data.value
+  ],
+  () => {
+    ensureDependencyTarget()
+  }
+)
+
+watch(accountsQuery.data, () => {
+  ensureDependencyAccount()
 })
 
 const createApplicationMutation = useMutation({
@@ -643,6 +788,12 @@ function confirmApplicationDelete(app: Application) {
 const isInstanceDialogOpen = ref(false)
 const editingInstance = ref<ApplicationInstance | null>(null)
 const instanceForm = reactive<ApplicationInstanceForm>(getEmptyInstanceForm())
+const isDependencyDialogOpen = ref(false)
+const editingDependency = ref<ApplicationInstanceDependency | null>(null)
+const dependencyForm = reactive<DependencyForm>(getEmptyDependencyForm())
+const dependencyTargetOptions = computed<SelectOption<string>[]>(() =>
+  getDependencyTargetOptions(dependencyForm.targetKind)
+)
 
 function getEmptyInstanceForm(): ApplicationInstanceForm {
   return {
@@ -656,8 +807,21 @@ function getEmptyInstanceForm(): ApplicationInstanceForm {
   }
 }
 
+function getEmptyDependencyForm(): DependencyForm {
+  return {
+    targetKind: TargetKind.DataStore,
+    targetId: null,
+    port: null,
+    accountId: null
+  }
+}
+
 function resetInstanceForm() {
   Object.assign(instanceForm, getEmptyInstanceForm())
+}
+
+function resetDependencyForm() {
+  Object.assign(dependencyForm, getEmptyDependencyForm())
 }
 
 function openInstanceDialog(instance?: ApplicationInstance) {
@@ -729,6 +893,77 @@ const instanceMutationPending = computed(
   () => createInstanceMutation.isPending.value || updateInstanceMutation.isPending.value
 )
 
+const createDependencyMutation = useMutation({
+  mutationFn: ({
+    appId,
+    instanceId,
+    payload
+  }: {
+    appId: string
+    instanceId: string
+    payload: CreateApplicationDependency
+  }) => client.dependenciesPOST(appId, instanceId, payload),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    Notify.create({ type: 'positive', message: 'Dependency added' })
+    closeDependencyDialog()
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to add dependency') })
+  }
+})
+
+const updateDependencyMutation = useMutation({
+  mutationFn: ({
+    appId,
+    instanceId,
+    dependencyId,
+    payload
+  }: {
+    appId: string
+    instanceId: string
+    dependencyId: string
+    payload: UpdateApplicationDependency
+  }) => client.dependenciesPUT(appId, instanceId, dependencyId, payload),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    Notify.create({ type: 'positive', message: 'Dependency updated' })
+    closeDependencyDialog()
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to update dependency') })
+  }
+})
+
+const deleteDependencyMutation = useMutation({
+  mutationFn: ({
+    appId,
+    instanceId,
+    dependencyId
+  }: {
+    appId: string
+    instanceId: string
+    dependencyId: string
+  }) => client.dependenciesDELETE(appId, instanceId, dependencyId),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    Notify.create({ type: 'positive', message: 'Dependency removed' })
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to delete dependency') })
+  }
+})
+
+const dependencyMutationPending = computed(
+  () => createDependencyMutation.isPending.value || updateDependencyMutation.isPending.value
+)
+
+const dependencyDialogLoading = computed(() => dependencyMutationPending.value)
+
+const dependencyActionsDisabled = computed(
+  () => dependencyMutationPending.value || !editingInstance.value?.id
+)
+
 function submitInstance() {
   if (!selectedApplication.value?.id) {
     return
@@ -767,6 +1002,149 @@ function confirmInstanceDelete(instance: ApplicationInstance) {
   }).onOk(() => {
     deleteInstanceMutation.mutate({ appId: selectedApplication.value!.id!, instanceId: instance.id! })
   })
+}
+
+function openDependencyDialog(dependency?: ApplicationInstanceDependency) {
+  if (!selectedApplication.value?.id || !editingInstance.value?.id) {
+    Notify.create({ type: 'warning', message: 'Select an instance to manage dependencies' })
+    return
+  }
+  if (dependency) {
+    editingDependency.value = dependency
+    Object.assign(dependencyForm, {
+      targetKind: dependency.targetKind ?? TargetKind.DataStore,
+      targetId: dependency.targetId ?? null,
+      port: dependency.port ?? null,
+      accountId: dependency.accountId ?? null
+    })
+  } else {
+    editingDependency.value = null
+    resetDependencyForm()
+  }
+  ensureDependencyTarget()
+  ensureDependencyAccount()
+  isDependencyDialogOpen.value = true
+}
+
+function closeDependencyDialog() {
+  isDependencyDialogOpen.value = false
+  editingDependency.value = null
+  resetDependencyForm()
+}
+
+function submitDependency() {
+  if (!selectedApplication.value?.id || !editingInstance.value?.id) {
+    return
+  }
+  if (!dependencyForm.targetId) {
+    Notify.create({ type: 'negative', message: 'Select a dependency target' })
+    return
+  }
+
+  const base = {
+    applicationId: selectedApplication.value.id!,
+    instanceId: editingInstance.value.id!,
+    targetKind: dependencyForm.targetKind,
+    targetId: dependencyForm.targetId,
+    port: dependencyForm.port ?? undefined,
+    accountId: dependencyForm.accountId ?? undefined
+  }
+
+  if (editingDependency.value?.id) {
+    const payload = Object.assign(new UpdateApplicationDependency(), {
+      ...base,
+      dependencyId: editingDependency.value.id!
+    })
+    updateDependencyMutation.mutate({
+      appId: base.applicationId,
+      instanceId: base.instanceId,
+      dependencyId: editingDependency.value.id!,
+      payload
+    })
+  } else {
+    const payload = Object.assign(new CreateApplicationDependency(), base)
+    createDependencyMutation.mutate({ appId: base.applicationId, instanceId: base.instanceId, payload })
+  }
+}
+
+function confirmDependencyDelete(dependency: ApplicationInstanceDependency) {
+  if (!selectedApplication.value?.id || !editingInstance.value?.id || !dependency.id) return
+  Dialog.create({
+    title: 'Remove dependency',
+    message: 'Are you sure you want to remove this dependency?',
+    cancel: true,
+    persistent: true
+  }).onOk(() =>
+    deleteDependencyMutation.mutate({
+      appId: selectedApplication.value!.id!,
+      instanceId: editingInstance.value!.id!,
+      dependencyId: dependency.id!
+    })
+  )
+}
+
+function ensureDependencyTarget() {
+  const options = dependencyTargetOptions.value
+  if (!dependencyForm.targetId || !options.some((option) => option.value === dependencyForm.targetId)) {
+    dependencyForm.targetId = options[0]?.value ?? null
+  }
+}
+
+function ensureDependencyAccount() {
+  if (!dependencyForm.accountId) {
+    return
+  }
+  if (!accountLookup.value[dependencyForm.accountId]) {
+    dependencyForm.accountId = null
+  }
+}
+
+function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
+  switch (kind) {
+    case TargetKind.Application:
+      return (applicationsData.value ?? [])
+        .filter((app) => !!app.id)
+        .map((app) => ({ label: app.name ?? app.id!, value: app.id! }))
+    case TargetKind.DataStore:
+      return (dataStoresQuery.data.value ?? [])
+        .filter((store) => !!store.id)
+        .map((store) => ({ label: store.name ?? store.id!, value: store.id! }))
+    case TargetKind.External:
+      return (externalResourcesQuery.data.value ?? [])
+        .filter((resource) => !!resource.id)
+        .map((resource) => ({ label: resource.name ?? resource.id!, value: resource.id! }))
+    default:
+      return []
+  }
+}
+
+function targetLabel(kind: TargetKind | undefined, id: string | null) {
+  if (!id) return '—'
+  switch (kind) {
+    case TargetKind.Application:
+      return applicationsData.value?.find((app) => app.id === id)?.name ?? id
+    case TargetKind.DataStore:
+      return dataStoresQuery.data.value?.find((store) => store.id === id)?.name ?? id
+    case TargetKind.External:
+      return externalResourcesQuery.data.value?.find((resource) => resource.id === id)?.name ?? id
+    default:
+      return id
+  }
+}
+
+function formatAccountLabel(account: Account) {
+  const identity = account.userName || account.id || 'Account'
+  const targetName = targetLabel(account.targetKind, account.targetId ?? null)
+  return `${identity} → ${targetName}`
+}
+
+function resolveDependencyTargetName(dependency: ApplicationInstanceDependency) {
+  return targetLabel(dependency.targetKind, dependency.targetId ?? null)
+}
+
+function resolveDependencyAccountName(accountId?: string | null) {
+  if (!accountId) return '—'
+  return accountLookup.value[accountId] ?? accountId
 }
 
 // Pipeline management
