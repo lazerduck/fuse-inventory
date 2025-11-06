@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
@@ -32,6 +28,9 @@ public sealed class SecurityService : ISecurityService
 
         var snapshot = await _store.GetAsync(ct);
         var state = snapshot.Security;
+
+        if (state.RequiresSetup)
+            return Result<SecuritySettings>.Failure("An administrator account must be created before security settings can be modified.", ErrorType.Validation);
 
         if (command.RequestedBy is not Guid requesterId)
             return Result<SecuritySettings>.Failure("Only administrators can update security settings.", ErrorType.Unauthorized);
