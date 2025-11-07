@@ -14,64 +14,13 @@
       {{ applicationError }}
     </q-banner>
 
-    <q-card class="content-card q-mb-md">
-      <q-card-section class="dialog-header">
-        <div class="text-h6">Application Details</div>
-      </q-card-section>
-      <q-separator />
-      <q-form @submit.prevent="submitEdit">
-        <q-card-section>
-          <div class="form-grid">
-            <q-input v-model="editForm.name" label="Name" dense outlined />
-            <q-input v-model="editForm.version" label="Version" dense outlined />
-            <q-input v-model="editForm.owner" label="Owner" dense outlined />
-            <q-input v-model="editForm.framework" label="Framework" dense outlined />
-            <q-input v-model="editForm.repositoryUri" label="Repository URI" dense outlined />
-            <q-select
-              v-model="editForm.tagIds"
-              label="Tags"
-              dense
-              outlined
-              use-chips
-              multiple
-              emit-value
-              map-options
-              :options="tagOptions"
-            />
-            <q-input
-              v-model="editForm.description"
-              type="textarea"
-              label="Description"
-              dense
-              outlined
-              autogrow
-              class="full-span"
-            />
-            <q-input
-              v-model="editForm.notes"
-              type="textarea"
-              label="Notes"
-              dense
-              outlined
-              autogrow
-              class="full-span"
-            />
-          </div>
-        </q-card-section>
-        <q-separator />
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" @click="navigateBack" />
-          <q-btn
-            flat
-            label="Delete Application"
-            color="negative"
-            @click="confirmApplicationDelete"
-            class="q-mr-auto"
-          />
-          <q-btn color="primary" type="submit" label="Save" :loading="updateApplicationMutation.isPending.value" />
-        </q-card-actions>
-      </q-form>
-    </q-card>
+    <ApplicationDetailsForm
+      :initial-value="application"
+      :loading="updateApplicationMutation.isPending.value"
+      @cancel="navigateBack"
+      @delete="confirmApplicationDelete"
+      @submit="handleSubmitApplication"
+    />
 
     <q-card class="content-card q-mb-md">
       <q-card-section class="dialog-header">
@@ -190,76 +139,24 @@
     </q-card>
 
     <q-dialog v-model="isInstanceDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">{{ editingInstance ? 'Edit Instance' : 'Add Instance' }}</div>
-          <q-btn flat round dense icon="close" @click="closeInstanceDialog" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitInstance">
-          <q-card-section>
-            <div class="form-grid">
-              <q-select
-                v-model="instanceForm.environmentId"
-                label="Environment"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="environmentOptions"
-                :disable="environmentOptions.length === 0"
-              />
-              <q-select
-                v-model="instanceForm.serverId"
-                label="Server"
-                dense
-                outlined
-                emit-value
-                map-options
-                clearable
-                :options="serverOptions"
-                :disable="serverOptions.length === 0"
-              />
-              <q-input v-model="instanceForm.version" label="Version" dense outlined />
-              <q-input v-model="instanceForm.baseUri" label="Base URI" dense outlined />
-              <q-input v-model="instanceForm.healthUri" label="Health URI" dense outlined />
-              <q-input v-model="instanceForm.openApiUri" label="OpenAPI URI" dense outlined />
-              <q-select
-                v-model="instanceForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-            </div>
-
-            <InstanceDependenciesSection
-              v-if="editingInstance"
-              :dependencies="editingInstance.dependencies ?? []"
-              :disable-actions="dependencyActionsDisabled"
-              :resolve-target-name="resolveDependencyTargetName"
-              :resolve-account-name="resolveDependencyAccountName"
-              @add="openDependencyDialog()"
-              @edit="({ dependency }) => openDependencyDialog(dependency)"
-              @delete="({ dependency }) => confirmDependencyDelete(dependency)"
-            />
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeInstanceDialog" />
-            <q-btn
-              color="primary"
-              type="submit"
-              :label="editingInstance ? 'Save' : 'Create'"
-              :loading="instanceMutationPending"
-            />
-          </q-card-actions>
-        </q-form>
-      </q-card>
+      <ApplicationInstanceForm
+        :mode="editingInstance ? 'edit' : 'create'"
+        :initial-value="editingInstance"
+        :loading="instanceMutationPending"
+        @submit="handleSubmitInstance"
+        @cancel="closeInstanceDialog"
+      >
+        <InstanceDependenciesSection
+          v-if="editingInstance"
+          :dependencies="editingInstance.dependencies ?? []"
+          :disable-actions="dependencyActionsDisabled"
+          :resolve-target-name="resolveDependencyTargetName"
+          :resolve-account-name="resolveDependencyAccountName"
+          @add="openDependencyDialog()"
+          @edit="({ dependency }) => openDependencyDialog(dependency)"
+          @delete="({ dependency }) => confirmDependencyDelete(dependency)"
+        />
+      </ApplicationInstanceForm>
     </q-dialog>
 
     <q-dialog v-model="isDependencyDialogOpen" persistent>
@@ -329,31 +226,13 @@
     </q-dialog>
 
     <q-dialog v-model="isPipelineDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">{{ editingPipeline ? 'Edit Pipeline' : 'Add Pipeline' }}</div>
-          <q-btn flat round dense icon="close" @click="closePipelineDialog" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitPipeline">
-          <q-card-section>
-            <div class="form-grid">
-              <q-input v-model="pipelineForm.name" label="Name" dense outlined />
-              <q-input v-model="pipelineForm.pipelineUri" label="Pipeline URI" dense outlined />
-            </div>
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closePipelineDialog" />
-            <q-btn
-              color="primary"
-              type="submit"
-              :label="editingPipeline ? 'Save' : 'Create'"
-              :loading="pipelineMutationPending"
-            />
-          </q-card-actions>
-        </q-form>
-      </q-card>
+      <ApplicationPipelineForm
+        :mode="editingPipeline ? 'edit' : 'create'"
+        :initial-value="editingPipeline"
+        :loading="pipelineMutationPending"
+        @submit="handleSubmitPipeline"
+        @cancel="closePipelineDialog"
+      />
     </q-dialog>
   </div>
 </template>
@@ -366,7 +245,7 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import {
   Account,
-  Application,
+  
   ApplicationInstance,
   ApplicationInstanceDependency,
   ApplicationPipeline,
@@ -387,24 +266,16 @@ import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import { getErrorMessage } from '../utils/error'
 import InstanceDependenciesSection from '../components/applications/InstanceDependenciesSection.vue'
+import ApplicationDetailsForm from '../components/applications/ApplicationDetailsForm.vue'
+import ApplicationInstanceForm from '../components/applications/ApplicationInstanceForm.vue'
+import ApplicationPipelineForm from '../components/applications/ApplicationPipelineForm.vue'
 
 interface SelectOption<T = string> {
   label: string
   value: T
 }
 
-interface ApplicationForm {
-  name: string
-  version: string
-  description: string
-  owner: string
-  notes: string
-  framework: string
-  repositoryUri: string
-  tagIds: string[]
-}
-
-interface ApplicationInstanceForm {
+interface ApplicationInstanceFormModel {
   environmentId: string | null
   serverId: string | null
   baseUri: string
@@ -414,10 +285,7 @@ interface ApplicationInstanceForm {
   tagIds: string[]
 }
 
-interface ApplicationPipelineForm {
-  name: string
-  pipelineUri: string
-}
+// (pipeline form model is handled in child component)
 
 interface DependencyForm {
   targetKind: TargetKind
@@ -466,11 +334,8 @@ const serversStore = useServers()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
 
-const tagOptions = tagsStore.options
 const tagLookup = tagsStore.lookup
-const environmentOptions = environmentsStore.options
 const environmentLookup = environmentsStore.lookup
-const serverOptions = serversStore.options
 const serverLookup = serversStore.lookup
 
 const dependencyTargetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({
@@ -508,50 +373,9 @@ const pipelineColumns: QTableColumn<ApplicationPipeline>[] = [
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 
-const editForm = reactive<ApplicationForm & { id: string | null }>({ id: null, ...getEmptyApplicationForm() })
-
-function getEmptyApplicationForm(): ApplicationForm {
-  return {
-    name: '',
-    version: '',
-    description: '',
-    owner: '',
-    notes: '',
-    framework: '',
-    repositoryUri: '',
-    tagIds: []
-  }
-}
-
-function setEditForm(app: Application) {
-  Object.assign(editForm, {
-    id: app.id ?? null,
-    name: app.name ?? '',
-    version: app.version ?? '',
-    description: app.description ?? '',
-    owner: app.owner ?? '',
-    notes: app.notes ?? '',
-    framework: app.framework ?? '',
-    repositoryUri: app.repositoryUri ?? '',
-    tagIds: [...(app.tagIds ?? [])]
-  })
-}
-
 function navigateBack() {
   router.push({ name: 'applications' })
 }
-
-watch(application, (app) => {
-  if (app) {
-    setEditForm(app)
-    if (editingInstance.value?.id) {
-      const latestInstance = app.instances?.find((instance) => instance.id === editingInstance.value?.id)
-      if (latestInstance) {
-        editingInstance.value = latestInstance
-      }
-    }
-  }
-}, { immediate: true })
 
 const updateApplicationMutation = useMutation({
   mutationFn: ({ id, payload }: { id: string; payload: UpdateApplication }) => client.applicationPUT(id, payload),
@@ -576,21 +400,28 @@ const deleteApplicationMutation = useMutation({
   }
 })
 
-function submitEdit() {
-  if (!editForm.id) {
-    return
-  }
+function handleSubmitApplication(model: {
+  name: string
+  version: string
+  description: string
+  owner: string
+  notes: string
+  framework: string
+  repositoryUri: string
+  tagIds: string[]
+}) {
+  if (!application.value?.id) return
   const payload = Object.assign(new UpdateApplication(), {
-    name: editForm.name || undefined,
-    version: editForm.version || undefined,
-    description: editForm.description || undefined,
-    owner: editForm.owner || undefined,
-    notes: editForm.notes || undefined,
-    framework: editForm.framework || undefined,
-    repositoryUri: editForm.repositoryUri || undefined,
-    tagIds: editForm.tagIds.length ? [...editForm.tagIds] : undefined
+    name: model.name || undefined,
+    version: model.version || undefined,
+    description: model.description || undefined,
+    owner: model.owner || undefined,
+    notes: model.notes || undefined,
+    framework: model.framework || undefined,
+    repositoryUri: model.repositoryUri || undefined,
+    tagIds: model.tagIds.length ? [...model.tagIds] : undefined
   })
-  updateApplicationMutation.mutate({ id: editForm.id, payload })
+  updateApplicationMutation.mutate({ id: application.value.id, payload })
 }
 
 function confirmApplicationDelete() {
@@ -608,13 +439,21 @@ function confirmApplicationDelete() {
 // Instance management
 const isInstanceDialogOpen = ref(false)
 const editingInstance = ref<ApplicationInstance | null>(null)
-const instanceForm = reactive<ApplicationInstanceForm>(getEmptyInstanceForm())
 const isDependencyDialogOpen = ref(false)
 const editingDependency = ref<ApplicationInstanceDependency | null>(null)
 const dependencyForm = reactive<DependencyForm>(getEmptyDependencyForm())
 const dependencyTargetOptions = computed<SelectOption<string>[]>(() =>
   getDependencyTargetOptions(dependencyForm.targetKind)
 )
+
+watch(application, (app) => {
+  if (app && editingInstance.value?.id) {
+    const latestInstance = app.instances?.find((instance) => instance.id === editingInstance.value?.id)
+    if (latestInstance) {
+      editingInstance.value = latestInstance
+    }
+  }
+}, { immediate: true })
 
 // Watch for changes that require re-validating dependency form
 watch(
@@ -633,18 +472,6 @@ watch(accountsQuery.data, () => {
   ensureDependencyAccount()
 })
 
-function getEmptyInstanceForm(): ApplicationInstanceForm {
-  return {
-    environmentId: null,
-    serverId: null,
-    baseUri: '',
-    healthUri: '',
-    openApiUri: '',
-    version: '',
-    tagIds: []
-  }
-}
-
 function getEmptyDependencyForm(): DependencyForm {
   return {
     targetKind: TargetKind.DataStore,
@@ -652,10 +479,6 @@ function getEmptyDependencyForm(): DependencyForm {
     port: null,
     accountId: null
   }
-}
-
-function resetInstanceForm() {
-  Object.assign(instanceForm, getEmptyInstanceForm())
 }
 
 function resetDependencyForm() {
@@ -669,18 +492,8 @@ function openInstanceDialog(instance?: ApplicationInstance) {
   }
   if (instance) {
     editingInstance.value = instance
-    Object.assign(instanceForm, {
-      environmentId: instance.environmentId ?? null,
-      serverId: instance.serverId ?? null,
-      baseUri: instance.baseUri ?? '',
-      healthUri: instance.healthUri ?? '',
-      openApiUri: instance.openApiUri ?? '',
-      version: instance.version ?? '',
-      tagIds: [...(instance.tagIds ?? [])]
-    })
   } else {
     editingInstance.value = null
-    resetInstanceForm()
   }
   isInstanceDialogOpen.value = true
 }
@@ -802,31 +615,22 @@ const dependencyActionsDisabled = computed(
   () => dependencyMutationPending.value || !editingInstance.value?.id
 )
 
-function submitInstance() {
-  if (!application.value?.id) {
-    return
-  }
+function handleSubmitInstance(model: ApplicationInstanceFormModel) {
+  if (!application.value?.id) return
   const payload = Object.assign(new UpdateApplicationInstance(), {
-    environmentId: instanceForm.environmentId ?? undefined,
-    serverId: instanceForm.serverId ?? undefined,
-    baseUri: instanceForm.baseUri || undefined,
-    healthUri: instanceForm.healthUri || undefined,
-    openApiUri: instanceForm.openApiUri || undefined,
-    version: instanceForm.version || undefined,
-    tagIds: instanceForm.tagIds.length ? [...instanceForm.tagIds] : undefined
+    environmentId: model.environmentId ?? undefined,
+    serverId: model.serverId ?? undefined,
+    baseUri: model.baseUri || undefined,
+    healthUri: model.healthUri || undefined,
+    openApiUri: model.openApiUri || undefined,
+    version: model.version || undefined,
+    tagIds: model.tagIds.length ? [...model.tagIds] : undefined
   })
   if (editingInstance.value?.id) {
-    updateInstanceMutation.mutate({
-      appId: application.value.id!,
-      instanceId: editingInstance.value.id!,
-      payload
-    })
+    updateInstanceMutation.mutate({ appId: application.value.id!, instanceId: editingInstance.value.id!, payload })
   } else {
     const createPayload = Object.assign(new CreateApplicationInstance(), payload)
-    createInstanceMutation.mutate({
-      appId: application.value.id!,
-      payload: createPayload
-    })
+    createInstanceMutation.mutate({ appId: application.value.id!, payload: createPayload })
   }
 }
 
@@ -902,6 +706,20 @@ function submitDependency() {
   } else {
     const payload = Object.assign(new CreateApplicationDependency(), base)
     createDependencyMutation.mutate({ appId: base.applicationId, instanceId: base.instanceId, payload })
+  }
+}
+
+function handleSubmitPipeline(model: { name: string; pipelineUri: string }) {
+  if (!application.value?.id) return
+  const payload = Object.assign(new UpdateApplicationPipeline(), {
+    name: model.name || undefined,
+    pipelineUri: model.pipelineUri || undefined
+  })
+  if (editingPipeline.value?.id) {
+    updatePipelineMutation.mutate({ appId: application.value.id!, pipelineId: editingPipeline.value.id!, payload })
+  } else {
+    const createPayload = Object.assign(new CreateApplicationPipeline(), payload)
+    createPipelineMutation.mutate({ appId: application.value.id!, payload: createPayload })
   }
 }
 
@@ -988,18 +806,6 @@ function resolveDependencyAccountName(accountId?: string | null) {
 // Pipeline management
 const isPipelineDialogOpen = ref(false)
 const editingPipeline = ref<ApplicationPipeline | null>(null)
-const pipelineForm = reactive<ApplicationPipelineForm>(getEmptyPipelineForm())
-
-function getEmptyPipelineForm(): ApplicationPipelineForm {
-  return {
-    name: '',
-    pipelineUri: ''
-  }
-}
-
-function resetPipelineForm() {
-  Object.assign(pipelineForm, getEmptyPipelineForm())
-}
 
 function openPipelineDialog(pipeline?: ApplicationPipeline) {
   if (!application.value?.id) {
@@ -1008,13 +814,8 @@ function openPipelineDialog(pipeline?: ApplicationPipeline) {
   }
   if (pipeline) {
     editingPipeline.value = pipeline
-    Object.assign(pipelineForm, {
-      name: pipeline.name ?? '',
-      pipelineUri: pipeline.pipelineUri ?? ''
-    })
   } else {
     editingPipeline.value = null
-    resetPipelineForm()
   }
   isPipelineDialogOpen.value = true
 }
@@ -1061,32 +862,7 @@ const deletePipelineMutation = useMutation({
   }
 })
 
-const pipelineMutationPending = computed(
-  () => createPipelineMutation.isPending.value || updatePipelineMutation.isPending.value
-)
-
-function submitPipeline() {
-  if (!application.value?.id) {
-    return
-  }
-  const payload = Object.assign(new UpdateApplicationPipeline(), {
-    name: pipelineForm.name || undefined,
-    pipelineUri: pipelineForm.pipelineUri || undefined
-  })
-  if (editingPipeline.value?.id) {
-    updatePipelineMutation.mutate({
-      appId: application.value.id!,
-      pipelineId: editingPipeline.value.id!,
-      payload
-    })
-  } else {
-    const createPayload = Object.assign(new CreateApplicationPipeline(), payload)
-    createPipelineMutation.mutate({
-      appId: application.value.id!,
-      payload: createPayload
-    })
-  }
-}
+const pipelineMutationPending = computed(() => createPipelineMutation.isPending.value || updatePipelineMutation.isPending.value)
 
 function confirmPipelineDelete(pipeline: ApplicationPipeline) {
   if (!application.value?.id || !pipeline.id) return
