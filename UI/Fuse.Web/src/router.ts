@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('./pages/ApplicationsPage.vue')
     },
     {
+      path: '/applications/:id',
+      name: 'applicationEdit',
+      component: () => import('./pages/ApplicationEditPage.vue')
+    },
+    {
       path: '/accounts',
       name: 'accounts',
       component: () => import('./pages/AccountsPage.vue')
