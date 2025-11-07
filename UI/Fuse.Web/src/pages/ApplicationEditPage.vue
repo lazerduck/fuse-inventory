@@ -444,9 +444,16 @@ const application = computed(() =>
 
 const applicationName = computed(() => application.value?.name ?? 'Edit Application')
 
-const applicationError = computed(() =>
-  applicationsErrorRef.value ? getErrorMessage(applicationsErrorRef.value) : null
-)
+const applicationError = computed(() => {
+  if (applicationsErrorRef.value) {
+    return getErrorMessage(applicationsErrorRef.value)
+  }
+  // Check if data is loaded but application not found
+  if (applicationsData.value && !application.value) {
+    return 'Application not found'
+  }
+  return null
+})
 
 const accountsQuery = useQuery({
   queryKey: ['accounts'],
@@ -657,7 +664,7 @@ function resetDependencyForm() {
 
 function openInstanceDialog(instance?: ApplicationInstance) {
   if (!application.value?.id) {
-    Notify.create({ type: 'warning', message: 'Select an application to manage instances' })
+    Notify.create({ type: 'warning', message: 'Application not loaded. Please try again.' })
     return
   }
   if (instance) {
@@ -837,7 +844,7 @@ function confirmInstanceDelete(instance: ApplicationInstance) {
 
 function openDependencyDialog(dependency?: ApplicationInstanceDependency) {
   if (!application.value?.id || !editingInstance.value?.id) {
-    Notify.create({ type: 'warning', message: 'Select an instance to manage dependencies' })
+    Notify.create({ type: 'warning', message: 'Instance not loaded. Please try again.' })
     return
   }
   if (dependency) {
@@ -996,7 +1003,7 @@ function resetPipelineForm() {
 
 function openPipelineDialog(pipeline?: ApplicationPipeline) {
   if (!application.value?.id) {
-    Notify.create({ type: 'warning', message: 'Select an application to manage pipelines' })
+    Notify.create({ type: 'warning', message: 'Application not loaded. Please try again.' })
     return
   }
   if (pipeline) {
