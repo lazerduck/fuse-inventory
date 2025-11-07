@@ -66,114 +66,20 @@
       </q-table>
     </q-card>
 
-    <q-dialog v-model="isCreateDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">Create Server</div>
-          <q-btn flat round dense icon="close" @click="isCreateDialogOpen = false" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitCreate">
-          <q-card-section>
-            <div class="form-grid">
-              <q-input v-model="createForm.name" label="Name" dense outlined />
-              <q-input v-model="createForm.hostname" label="Hostname" dense outlined />
-              <q-select
-                v-model="createForm.operatingSystem"
-                label="Operating System"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="operatingSystemOptions"
-              />
-              <q-select
-                v-model="createForm.environmentId"
-                label="Environment"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="environmentOptions"
-              />
-              <q-select
-                v-model="createForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-            </div>
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="isCreateDialogOpen = false" />
-            <q-btn color="primary" type="submit" label="Create" :loading="createMutation.isPending.value" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
-    </q-dialog>
-
-    <q-dialog v-model="isEditDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">Edit Server</div>
-          <q-btn flat round dense icon="close" @click="closeEditDialog" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitEdit">
-          <q-card-section>
-            <div class="form-grid">
-              <q-input v-model="editForm.name" label="Name" dense outlined />
-              <q-input v-model="editForm.hostname" label="Hostname" dense outlined />
-              <q-select
-                v-model="editForm.operatingSystem"
-                label="Operating System"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="operatingSystemOptions"
-              />
-              <q-select
-                v-model="editForm.environmentId"
-                label="Environment"
-                dense
-                outlined
-                emit-value
-                map-options
-                :options="environmentOptions"
-              />
-              <q-select
-                v-model="editForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-            </div>
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeEditDialog" />
-            <q-btn color="primary" type="submit" label="Save" :loading="updateMutation.isPending.value" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
+    <q-dialog v-model="isDialogOpen" persistent>
+      <ServerForm
+        :mode="dialogMode"
+        :initial-value="selectedServer"
+        :loading="isAnyPending"
+        @submit="handleSubmit"
+        @cancel="closeDialog"
+      />
     </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -182,8 +88,9 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
+import ServerForm from '../components/servers/ServerForm.vue'
 
-interface ServerForm {
+interface ServerFormModel {
   name: string
   hostname: string
   operatingSystem: ServerOperatingSystem | null
@@ -206,15 +113,8 @@ const { data, isLoading, error } = useQuery({
 const servers = computed(() => data.value ?? [])
 const serverError = computed(() => (error.value ? getErrorMessage(error.value) : null))
 
-const environmentOptions = environmentsStore.options
 const environmentLookup = environmentsStore.lookup
-const tagOptions = tagsStore.options
 const tagLookup = tagsStore.lookup
-
-const operatingSystemOptions = Object.values(ServerOperatingSystem).map((value) => ({
-  label: value,
-  value
-}))
 
 const columns: QTableColumn<Server>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
@@ -225,43 +125,26 @@ const columns: QTableColumn<Server>[] = [
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 
-const isCreateDialogOpen = ref(false)
-const isEditDialogOpen = ref(false)
+const isDialogOpen = ref(false)
+const dialogMode = ref<'create' | 'edit'>('create')
 const selectedServer = ref<Server | null>(null)
 
-const emptyForm = (): ServerForm => ({
-  name: '',
-  hostname: '',
-  operatingSystem: null,
-  environmentId: null,
-  tagIds: []
-})
-
-const createForm = reactive<ServerForm>(emptyForm())
-const editForm = reactive<ServerForm & { id: string | null }>({ id: null, ...emptyForm() })
-
 function openCreateDialog() {
-  Object.assign(createForm, emptyForm())
-  isCreateDialogOpen.value = true
+  selectedServer.value = null
+  dialogMode.value = 'create'
+  isDialogOpen.value = true
 }
 
 function openEditDialog(server: Server) {
   if (!server.id) return
   selectedServer.value = server
-  Object.assign(editForm, {
-    id: server.id ?? null,
-    name: server.name ?? '',
-    hostname: server.hostname ?? '',
-    operatingSystem: server.operatingSystem ?? null,
-    environmentId: server.environmentId ?? null,
-    tagIds: [...(server.tagIds ?? [])]
-  })
-  isEditDialogOpen.value = true
+  dialogMode.value = 'edit'
+  isDialogOpen.value = true
 }
 
-function closeEditDialog() {
+function closeDialog() {
   selectedServer.value = null
-  isEditDialogOpen.value = false
+  isDialogOpen.value = false
 }
 
 const createMutation = useMutation({
@@ -269,7 +152,7 @@ const createMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['servers'] })
     Notify.create({ type: 'positive', message: 'Server created' })
-    isCreateDialogOpen.value = false
+    closeDialog()
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create server') })
@@ -281,7 +164,7 @@ const updateMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['servers'] })
     Notify.create({ type: 'positive', message: 'Server updated' })
-    closeEditDialog()
+    closeDialog()
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update server') })
@@ -299,27 +182,28 @@ const deleteMutation = useMutation({
   }
 })
 
-function submitCreate() {
-  const payload = Object.assign(new CreateServer(), {
-    name: createForm.name || undefined,
-    hostname: createForm.hostname || undefined,
-    operatingSystem: createForm.operatingSystem || undefined,
-    environmentId: createForm.environmentId || undefined,
-    tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
-  })
-  createMutation.mutate(payload)
-}
+const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
-function submitEdit() {
-  if (!editForm.id) return
-  const payload = Object.assign(new UpdateServer(), {
-    name: editForm.name || undefined,
-    hostname: editForm.hostname || undefined,
-    operatingSystem: editForm.operatingSystem || undefined,
-    environmentId: editForm.environmentId || undefined,
-    tagIds: editForm.tagIds.length ? [...editForm.tagIds] : undefined
-  })
-  updateMutation.mutate({ id: editForm.id, payload })
+function handleSubmit(model: ServerFormModel) {
+  if (dialogMode.value === 'create') {
+    const payload = Object.assign(new CreateServer(), {
+      name: model.name || undefined,
+      hostname: model.hostname || undefined,
+      operatingSystem: model.operatingSystem || undefined,
+      environmentId: model.environmentId || undefined,
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+    })
+    createMutation.mutate(payload)
+  } else if (dialogMode.value === 'edit' && selectedServer.value?.id) {
+    const payload = Object.assign(new UpdateServer(), {
+      name: model.name || undefined,
+      hostname: model.hostname || undefined,
+      operatingSystem: model.operatingSystem || undefined,
+      environmentId: model.environmentId || undefined,
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+    })
+    updateMutation.mutate({ id: selectedServer.value.id, payload })
+  }
 }
 
 function confirmDelete(server: Server) {
@@ -335,8 +219,4 @@ function confirmDelete(server: Server) {
 
 <style scoped>
 @import '../styles/pages.css';
-
-.form-dialog {
-  min-width: 520px;
-}
 </style>

@@ -56,94 +56,20 @@
       </q-table>
     </q-card>
 
-    <q-dialog v-model="isCreateDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">Create Environment</div>
-          <q-btn flat round dense icon="close" @click="isCreateDialogOpen = false" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitCreate">
-          <q-card-section>
-            <div class="form-grid">
-              <q-input v-model="createForm.name" label="Name" dense outlined />
-              <q-select
-                v-model="createForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-              <q-input
-                v-model="createForm.description"
-                type="textarea"
-                label="Description"
-                dense
-                outlined
-                autogrow
-                class="full-span"
-              />
-            </div>
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="isCreateDialogOpen = false" />
-            <q-btn color="primary" type="submit" label="Create" :loading="createMutation.isPending.value" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
-    </q-dialog>
-
-    <q-dialog v-model="isEditDialogOpen" persistent>
-      <q-card class="form-dialog">
-        <q-card-section class="dialog-header">
-          <div class="text-h6">Edit Environment</div>
-          <q-btn flat round dense icon="close" @click="closeEditDialog" />
-        </q-card-section>
-        <q-separator />
-        <q-form @submit.prevent="submitEdit">
-          <q-card-section>
-            <div class="form-grid">
-              <q-input v-model="editForm.name" label="Name" dense outlined />
-              <q-select
-                v-model="editForm.tagIds"
-                label="Tags"
-                dense
-                outlined
-                use-chips
-                multiple
-                emit-value
-                map-options
-                :options="tagOptions"
-              />
-              <q-input
-                v-model="editForm.description"
-                type="textarea"
-                label="Description"
-                dense
-                outlined
-                autogrow
-                class="full-span"
-              />
-            </div>
-          </q-card-section>
-          <q-separator />
-          <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeEditDialog" />
-            <q-btn color="primary" type="submit" label="Save" :loading="updateMutation.isPending.value" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
+    <q-dialog v-model="isDialogOpen" persistent>
+      <EnvironmentForm
+        :mode="dialogMode"
+        :initial-value="selectedEnvironment"
+        :loading="isAnyPending"
+        @submit="handleSubmit"
+        @cancel="closeDialog"
+      />
     </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -151,8 +77,9 @@ import { EnvironmentInfo, CreateEnvironment, UpdateEnvironment } from '../api/cl
 import { useFuseClient } from '../composables/useFuseClient'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
+import EnvironmentForm from '../components/environments/EnvironmentForm.vue'
 
-interface EnvironmentForm {
+interface EnvironmentFormModel {
   name: string
   description: string
   tagIds: string[]
@@ -171,7 +98,6 @@ const { data, isLoading, error } = useQuery({
 
 const environments = computed(() => data.value ?? [])
 const environmentError = computed(() => (error.value ? getErrorMessage(error.value) : null))
-const tagOptions = tagsStore.options
 const tagLookup = tagsStore.lookup
 
 const columns: QTableColumn<EnvironmentInfo>[] = [
@@ -181,38 +107,26 @@ const columns: QTableColumn<EnvironmentInfo>[] = [
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 
-const isCreateDialogOpen = ref(false)
-const isEditDialogOpen = ref(false)
+const isDialogOpen = ref(false)
+const dialogMode = ref<'create' | 'edit'>('create')
 const selectedEnvironment = ref<EnvironmentInfo | null>(null)
 
-const createForm = reactive<EnvironmentForm>({ name: '', description: '', tagIds: [] })
-const editForm = reactive<EnvironmentForm & { id: string | null }>({
-  id: null,
-  name: '',
-  description: '',
-  tagIds: []
-})
-
 function openCreateDialog() {
-  Object.assign(createForm, { name: '', description: '', tagIds: [] })
-  isCreateDialogOpen.value = true
+  selectedEnvironment.value = null
+  dialogMode.value = 'create'
+  isDialogOpen.value = true
 }
 
 function openEditDialog(env: EnvironmentInfo) {
   if (!env.id) return
   selectedEnvironment.value = env
-  Object.assign(editForm, {
-    id: env.id ?? null,
-    name: env.name ?? '',
-    description: env.description ?? '',
-    tagIds: [...(env.tagIds ?? [])]
-  })
-  isEditDialogOpen.value = true
+  dialogMode.value = 'edit'
+  isDialogOpen.value = true
 }
 
-function closeEditDialog() {
+function closeDialog() {
   selectedEnvironment.value = null
-  isEditDialogOpen.value = false
+  isDialogOpen.value = false
 }
 
 const createMutation = useMutation({
@@ -220,7 +134,7 @@ const createMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['environments'] })
     Notify.create({ type: 'positive', message: 'Environment created' })
-    isCreateDialogOpen.value = false
+    closeDialog()
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create environment') })
@@ -232,7 +146,7 @@ const updateMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['environments'] })
     Notify.create({ type: 'positive', message: 'Environment updated' })
-    closeEditDialog()
+    closeDialog()
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update environment') })
@@ -250,23 +164,24 @@ const deleteMutation = useMutation({
   }
 })
 
-function submitCreate() {
-  const payload = Object.assign(new CreateEnvironment(), {
-    name: createForm.name || undefined,
-    description: createForm.description || undefined,
-    tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
-  })
-  createMutation.mutate(payload)
-}
+const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
-function submitEdit() {
-  if (!editForm.id) return
-  const payload = Object.assign(new UpdateEnvironment(), {
-    name: editForm.name || undefined,
-    description: editForm.description || undefined,
-    tagIds: editForm.tagIds.length ? [...editForm.tagIds] : undefined
-  })
-  updateMutation.mutate({ id: editForm.id, payload })
+function handleSubmit(model: EnvironmentFormModel) {
+  if (dialogMode.value === 'create') {
+    const payload = Object.assign(new CreateEnvironment(), {
+      name: model.name || undefined,
+      description: model.description || undefined,
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+    })
+    createMutation.mutate(payload)
+  } else if (dialogMode.value === 'edit' && selectedEnvironment.value?.id) {
+    const payload = Object.assign(new UpdateEnvironment(), {
+      name: model.name || undefined,
+      description: model.description || undefined,
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+    })
+    updateMutation.mutate({ id: selectedEnvironment.value.id, payload })
+  }
 }
 
 function confirmDelete(env: EnvironmentInfo) {
