@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useFuseStore } from './stores/FuseStore'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -49,6 +50,21 @@ const router = createRouter({
       component: () => import('./pages/Security.vue')
     }
   ]
+})
+
+router.beforeEach(async (to, from, next) => {
+  const fuseStore = useFuseStore()
+  
+  // Check if setup is required
+  if (fuseStore.requireSetup && to.name !== 'security') {
+    // Redirect to security page if setup is required
+    next({ name: 'security' })
+  } else if (!fuseStore.requireSetup && to.name === 'security' && from.name !== null) {
+    // Allow navigation away from security page only if setup is complete
+    next()
+  } else {
+    next()
+  }
 })
 
 export default router

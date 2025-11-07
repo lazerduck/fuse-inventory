@@ -596,23 +596,7 @@ function resolveTargetName(account: Account) {
 </script>
 
 <style scoped>
-.page-container {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.subtitle {
-  margin: 0;
-  color: #6c757d;
-}
+@import '../styles/pages.css';
 
 .form-dialog {
   min-width: 540px;
@@ -620,17 +604,5 @@ function resolveTargetName(account: Account) {
 
 .form-dialog.large {
   min-width: 760px;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
 }
 </style>

@@ -281,51 +281,5 @@ function confirmDelete(env: EnvironmentInfo) {
 </script>
 
 <style scoped>
-.page-container {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.subtitle {
-  margin: 0;
-  color: #6c757d;
-}
-
-.content-card {
-  flex: 1;
-}
-
-.form-dialog {
-  min-width: 480px;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.full-span {
-  grid-column: 1 / -1;
-}
-
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
+@import '../styles/pages.css';
 </style>
