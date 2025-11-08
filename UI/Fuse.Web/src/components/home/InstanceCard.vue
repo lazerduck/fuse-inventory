@@ -116,8 +116,8 @@ defineProps<{
 <style scoped>
 .instance-card {
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--fuse-panel-border);
+  background: var(--fuse-panel-bg);
 }
 
 .instance-content {
@@ -149,7 +149,7 @@ defineProps<{
 
 .instance-server {
   font-size: 0.8125rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--fuse-text-muted);
   margin: 0;
 }
 
@@ -176,7 +176,7 @@ defineProps<{
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--fuse-text-subtle);
   margin: 0;
   font-weight: 500;
 }

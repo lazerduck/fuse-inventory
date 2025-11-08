@@ -1,0 +1,31 @@
+/*
+  Global theme tokens for Fuse Inventory
+  - Provides light/dark adaptive CSS variables.
+  - Quasar toggles dark mode by adding .body--dark on <body>.
+*/
+
+:root {
+  /* Typography */
+  --fuse-text-muted: rgba(0, 0, 0, 0.6);
+  --fuse-text-subtle: rgba(0, 0, 0, 0.5);
+
+  /* Surfaces */
+  --fuse-panel-bg: rgba(0, 0, 0, 0.02);
+  --fuse-panel-border: rgba(0, 0, 0, 0.08);
+
+  /* Elevation */
+  --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --fuse-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+body.body--dark {
+  --fuse-text-muted: rgba(255, 255, 255, 0.72);
+  --fuse-text-subtle: rgba(255, 255, 255, 0.64);
+
+  --fuse-panel-bg: rgba(255, 255, 255, 0.06);
+  --fuse-panel-border: rgba(255, 255, 255, 0.12);
+
+  /* Slightly stronger shadows on dark for elevation perception */
+  --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --fuse-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.45);
+}

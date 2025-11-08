@@ -28,13 +28,13 @@ defineProps<{
   gap: 0.875rem;
   padding: 1rem 1.125rem;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  box-shadow: var(--fuse-shadow-1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--fuse-shadow-2);
   transform: translateY(-2px);
 }
 
@@ -62,12 +62,12 @@ defineProps<{
 .stat-label {
   margin: 0;
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--fuse-text-muted);
   line-height: 1;
 }
 
 .stat-arrow {
   flex-shrink: 0;
-  color: rgba(0, 0, 0, 0.3);
+  color: var(--fuse-text-subtle);
 }
 </style>

@@ -19,7 +19,7 @@
 
 .subtitle {
   margin: 0;
-  color: #6c757d;
+  color: var(--fuse-text-muted);
 }
 
 .content-card {

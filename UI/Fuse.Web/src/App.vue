@@ -12,6 +12,14 @@
         <q-toolbar-title>
           Fuse Inventory
         </q-toolbar-title>
+
+        <q-btn
+          dense
+          flat
+          round
+          :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+          @click="$q.dark.toggle()"
+          />
         
         <q-btn
           dense
@@ -31,7 +39,6 @@
       :width="250"
       :breakpoint="500"
       bordered
-      class="bg-grey-2"
     >
       <q-scroll-area class="fit">
         <q-list padding>
@@ -187,6 +194,7 @@ import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
 import { LoginSecurityUser } from './api/client'
 import { getErrorMessage } from './utils/error'
+import { Dark } from 'quasar'
 
 const leftDrawerOpen = ref(true)
 const fuseStore = useFuseStore()
@@ -201,6 +209,14 @@ onMounted(async () => {
 
   if(fuseStore.requireSetup) {
     router.push({ name: 'security' })
+  }
+
+  // get the desktop light/dark mode preference
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (prefersDark) {
+    Dark.set(true)
+  } else {
+    Dark.set(false)
   }
 })
 

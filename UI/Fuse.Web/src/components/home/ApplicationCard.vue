@@ -134,12 +134,12 @@ const expanded = ref(false)
 <style scoped>
 .application-card {
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--fuse-shadow-1);
   transition: box-shadow 0.2s ease;
 }
 
 .application-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--fuse-shadow-2);
 }
 
 .application-header {
@@ -183,7 +183,7 @@ const expanded = ref(false)
   gap: 0.5rem;
   align-items: center;
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--fuse-text-muted);
 }
 
 .app-version {
@@ -221,7 +221,7 @@ const expanded = ref(false)
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--fuse-text-subtle);
   margin: 0 0 0.375rem;
   font-weight: 500;
 }
@@ -266,8 +266,8 @@ const expanded = ref(false)
 
 .instance-count {
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.5);
-  background: rgba(0, 0, 0, 0.05);
+  color: var(--fuse-text-subtle);
+  background: var(--fuse-panel-bg);
   padding: 0.25rem 0.625rem;
   border-radius: 999px;
 }
@@ -283,9 +283,10 @@ const expanded = ref(false)
   align-items: center;
   gap: 0.5rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--fuse-panel-bg);
+  border: 1px solid var(--fuse-panel-border);
   border-radius: 8px;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--fuse-text-subtle);
   font-size: 0.875rem;
 }
 </style>

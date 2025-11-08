@@ -251,8 +251,9 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
 .subtitle {
   margin: 0;
   font-size: 0.9375rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--fuse-text-muted);
   max-width: 60ch;
+  transition: color 0.25s ease;
 }
 
 .summary-grid {
@@ -301,13 +302,15 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
 .empty-results {
   padding: 3rem 1.5rem;
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--fuse-text-subtle);
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
   align-items: center;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--fuse-panel-bg);
+  border: 1px solid var(--fuse-panel-border);
   border-radius: 12px;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 .loading-state {
@@ -316,7 +319,8 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
   align-items: center;
   gap: 0.75rem;
   padding: 3rem 0;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--fuse-text-subtle);
+  transition: color 0.25s ease;
 }
 
 @media (max-width: 640px) {
