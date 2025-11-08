@@ -1,5 +1,21 @@
 <template>
   <div class="dashboard-page">
+    <q-banner
+      v-if="showOnboardingBanner"
+      class="q-mb-lg bg-primary text-white"
+      inline-actions
+      rounded
+    >
+      <template #avatar>
+        <q-icon name="school" color="white" />
+      </template>
+      Ready for a guided tour to set up Fuse Inventory?
+      <template #action>
+        <q-btn flat color="white" label="Start tutorial" @click="startOnboardingTour" />
+        <q-btn flat color="white" label="Skip for now" @click="skipOnboarding" />
+      </template>
+    </q-banner>
+
     <section class="page-header">
       <div>
         <h1>Explore your estate</h1>
@@ -105,6 +121,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Notify } from 'quasar'
 import { TargetKind } from '../api/client'
 import { useApplications } from '../composables/useApplications'
 import { useServers } from '../composables/useServers'
@@ -114,9 +131,19 @@ import { useDataStores } from '../composables/useDataStores'
 import { useTags } from '../composables/useTags'
 import StatCard from '../components/home/StatCard.vue'
 import ApplicationCard from '../components/home/ApplicationCard.vue'
+import { useOnboardingStore } from '../stores/OnboardingStore'
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+import { getErrorMessage } from '../utils/error'
 
 const search = ref('')
 const selectedEnvironment = ref<string | null>(null)
+
+const onboardingStore = useOnboardingStore()
+const { startTour } = useOnboardingTour()
+
+const showOnboardingBanner = computed(
+  () => !onboardingStore.hasCompletedTour && !onboardingStore.dismissedBanner
+)
 
 const applicationsQuery = useApplications()
 const serversQuery = useServers()
@@ -229,6 +256,24 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
   }
 
   return 'Dependency'
+}
+
+async function startOnboardingTour() {
+  try {
+    const started = await startTour()
+
+    if (!started) {
+      Notify.create({ type: 'info', message: 'All onboarding steps are already complete.' })
+    }
+  } catch (error) {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to start tour') })
+  }
+}
+
+function skipOnboarding() {
+  if (!onboardingStore.dismissedBanner) {
+    onboardingStore.dismissBanner()
+  }
 }
 </script>
 

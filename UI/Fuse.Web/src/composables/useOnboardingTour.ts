@@ -6,7 +6,7 @@ import { waitForElement } from '../utils/dom'
 import { useEnvironments } from './useEnvironments'
 import { useDataStores } from './useDataStores'
 import { useApplications } from './useApplications'
-import { useOnboardingStore } from '../stores/onboarding'
+import { useOnboardingStore } from '../stores/OnboardingStore'
 
 interface OnboardingStep {
   id: string
@@ -21,6 +21,7 @@ let currentStepIndex = -1
 let isNavigating = false
 let routerRef: Router | null = null
 let onboardingStoreRef: ReturnType<typeof useOnboardingStore> | null = null
+let unsubscribeActionHook: (() => void) | null = null
 
 function resetTourState() {
   activeSteps = []
@@ -38,7 +39,7 @@ async function navigateToStep(index: number, initial = false): Promise<void> {
   }
 
   if (index >= activeSteps.length) {
-    driverInstance.destroy()
+    onboardingStoreRef?.markCompleted()
     return
   }
 
@@ -90,7 +91,7 @@ function ensureDriver(): Driver {
         void navigateToStep(currentStepIndex - 1)
       },
       onDestroyed: () => {
-        onboardingStoreRef?.endTour()
+        onboardingStoreRef?.setTourActive(false)
         resetTourState()
       }
     })
@@ -107,7 +108,7 @@ function ensureDriver(): Driver {
         void navigateToStep(currentStepIndex - 1)
       },
       onDestroyed: () => {
-        onboardingStoreRef?.endTour()
+        onboardingStoreRef?.setTourActive(false)
         resetTourState()
       }
     })
@@ -125,7 +126,23 @@ export function useOnboardingTour() {
 
   routerRef = router
 
-  async function startTour(): Promise<void> {
+  onboardingStoreRef = onboardingStore
+
+  if (!unsubscribeActionHook) {
+    unsubscribeActionHook = onboardingStore.$onAction(({ name, after }) => {
+      if (name === 'markCompleted' || name === 'reset') {
+        after(() => {
+          if (driverInstance?.isActive()) {
+            driverInstance.destroy()
+          }
+          onboardingStore.setTourActive(false)
+          resetTourState()
+        })
+      }
+    })
+  }
+
+  async function startTour(): Promise<boolean> {
     onboardingStoreRef = onboardingStore
     const driver = ensureDriver()
 
@@ -134,6 +151,9 @@ export function useOnboardingTour() {
     }
 
     resetTourState()
+
+    onboardingStore.startRequested()
+    onboardingStore.setCheatSheetVisible(false)
 
     await Promise.allSettled([
       environmentsQuery.refetch(),
@@ -206,29 +226,30 @@ export function useOnboardingTour() {
 
     if (!hasSteps) {
       driver.setSteps([])
-      onboardingStore.endTour()
-      resetTourState()
-      return
+      onboardingStore.markCompleted()
+      return false
     }
 
     activeSteps = stepsToRun
     driver.setSteps(driverSteps)
-    onboardingStore.startTour()
+    onboardingStore.setTourActive(true)
 
     await navigateToStep(0, true)
+    return true
   }
 
   function cancelTour() {
     if (driverInstance?.isActive()) {
       driverInstance.destroy()
     } else {
-      onboardingStore.endTour()
-      resetTourState()
+      onboardingStore.setTourActive(false)
     }
+    onboardingStore.setTourActive(false)
+    resetTourState()
   }
 
   function markCompleted() {
-    onboardingStore.markTourCompleted()
+    onboardingStore.markCompleted()
   }
 
   return {
