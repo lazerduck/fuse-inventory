@@ -97,6 +97,7 @@ import { useServers } from '../composables/useServers'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import DataStoreForm from '../components/dataStore/DataStoreForm.vue'
+import { useDataStores } from '../composables/useDataStores'
 
 interface DataStoreFormModel {
   name: string
@@ -115,10 +116,7 @@ const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
 
-const { data, isLoading, error } = useQuery({
-  queryKey: ['dataStores'],
-  queryFn: () => client.dataStoreAll()
-})
+const { data, isLoading, error } = useDataStores()
 
 const dataStores = computed(() => data.value ?? [])
 const dataStoreError = computed(() => (error.value ? getErrorMessage(error.value) : null))
