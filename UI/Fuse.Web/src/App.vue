@@ -82,6 +82,7 @@
             v-ripple
             :to="{ name: 'home' }"
             exact-active-class="bg-primary text-white"
+            data-tour-id="nav-home"
           >
             <q-item-section avatar>
               <q-icon name="home" />
@@ -98,6 +99,7 @@
             v-ripple
             :to="{ name: 'applications' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-applications"
           >
             <q-item-section avatar>
               <q-icon name="apps" />
@@ -112,6 +114,7 @@
             v-ripple
             :to="{ name: 'accounts' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-accounts"
           >
             <q-item-section avatar>
               <q-icon name="vpn_key" />
@@ -126,6 +129,7 @@
             v-ripple
             :to="{ name: 'dataStores' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-data-stores"
           >
             <q-item-section avatar>
               <q-icon name="storage" />
@@ -140,6 +144,7 @@
             v-ripple
             :to="{ name: 'servers' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-servers"
           >
             <q-item-section avatar>
               <q-icon name="dns" />
@@ -154,6 +159,7 @@
             v-ripple
             :to="{ name: 'environments' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-environments"
           >
             <q-item-section avatar>
               <q-icon name="cloud" />
@@ -168,6 +174,7 @@
             v-ripple
             :to="{ name: 'externalResources' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-external-resources"
           >
             <q-item-section avatar>
               <q-icon name="link" />
@@ -182,6 +189,7 @@
             v-ripple
             :to="{ name: 'tags' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-tags"
           >
             <q-item-section avatar>
               <q-icon name="label" />
@@ -196,6 +204,7 @@
             v-ripple
             :to="{ name: 'security' }"
             active-class="bg-primary text-white"
+            data-tour-id="nav-security"
           >
             <q-item-section avatar>
               <q-icon name="security" />
@@ -239,29 +248,7 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="cheatSheetDialog">
-      <q-card style="min-width: 360px; max-width: 520px">
-        <q-card-section class="row items-center">
-          <q-icon name="menu_book" color="primary" size="36px" class="q-mr-md" />
-          <div>
-            <div class="text-h6">Onboarding cheat sheet</div>
-            <div class="text-subtitle2 text-grey-7">Quick reference for getting started</div>
-          </div>
-        </q-card-section>
-        <q-separator inset />
-        <q-card-section>
-          <ol class="q-pl-md">
-            <li class="q-mb-sm">Add your first environment to describe where applications deploy.</li>
-            <li class="q-mb-sm">Connect a data store so services can reference shared infrastructure.</li>
-            <li class="q-mb-sm">Create an application and link it to environments and data stores.</li>
-            <li>Review application details to track deployments and external dependencies.</li>
-          </ol>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Close" color="primary" @click="cheatSheetDialog = false" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <CheatSheetDialog v-model="cheatSheetDialog" />
   </q-layout>
 </template>
 
@@ -279,6 +266,7 @@ import { useOnboardingTour } from './composables/useOnboardingTour'
 import { useEnvironments } from './composables/useEnvironments'
 import { useDataStores } from './composables/useDataStores'
 import { useApplications } from './composables/useApplications'
+import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
 
 const leftDrawerOpen = ref(true)
 const fuseStore = useFuseStore()

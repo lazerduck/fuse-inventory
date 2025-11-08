@@ -40,6 +40,7 @@ async function navigateToStep(index: number, initial = false): Promise<void> {
 
   if (index >= activeSteps.length) {
     onboardingStoreRef?.markCompleted()
+    onboardingStoreRef?.openCheatSheet()
     return
   }
 
@@ -173,7 +174,7 @@ export function useOnboardingTour() {
       stepsToRun.push({
         id: 'environments',
         route: '/environments',
-        selector: '[data-tour-id="environments"]',
+        selector: '[data-tour-id="create-environment"]',
         popover: {
           title: 'Add your first environment',
           description: 'Environments describe the deployment targets for your applications.'
@@ -185,7 +186,7 @@ export function useOnboardingTour() {
       stepsToRun.push({
         id: 'data-stores',
         route: '/data-stores',
-        selector: '[data-tour-id="data-stores"]',
+        selector: '[data-tour-id="create-data-store"]',
         popover: {
           title: 'Connect a data store',
           description: 'Data stores link applications to the infrastructure and services they depend on.'
@@ -197,7 +198,7 @@ export function useOnboardingTour() {
       stepsToRun.push({
         id: 'applications',
         route: '/applications',
-        selector: '[data-tour-id="applications"]',
+        selector: '[data-tour-id="create-application"]',
         popover: {
           title: 'Create your first application',
           description: 'Applications track deployments, pipelines, and the environments they target.'
@@ -227,6 +228,7 @@ export function useOnboardingTour() {
     if (!hasSteps) {
       driver.setSteps([])
       onboardingStore.markCompleted()
+      onboardingStore.openCheatSheet()
       return false
     }
 

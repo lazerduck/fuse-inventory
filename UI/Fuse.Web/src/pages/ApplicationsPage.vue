@@ -5,7 +5,13 @@
         <h1>Applications</h1>
         <p class="subtitle">Manage applications, deployments, and delivery pipelines.</p>
       </div>
-      <q-btn color="primary" label="Create Application" icon="add" @click="openCreateDialog" />
+      <q-btn
+        color="primary"
+        label="Create Application"
+        icon="add"
+        @click="openCreateDialog"
+        data-tour-id="create-application"
+      />
     </div>
 
     <q-banner v-if="applicationsError" dense class="bg-red-1 text-negative q-mb-md">
@@ -21,6 +27,7 @@
         row-key="id"
         :loading="applicationsLoading"
         :pagination="pagination"
+        data-tour-id="applications-table"
       >
         <template #body-cell-tags="props">
           <q-td :props="props">

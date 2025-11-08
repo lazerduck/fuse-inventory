@@ -5,7 +5,13 @@
         <h1>Environments</h1>
         <p class="subtitle">Model environments and attach resources to them.</p>
       </div>
-      <q-btn color="primary" label="Create Environment" icon="add" @click="openCreateDialog" />
+      <q-btn
+        color="primary"
+        label="Create Environment"
+        icon="add"
+        @click="openCreateDialog"
+        data-tour-id="create-environment"
+      />
     </div>
 
     <q-banner v-if="environmentError" dense class="bg-red-1 text-negative q-mb-md">
@@ -21,6 +27,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        data-tour-id="environments-table"
       >
         <template #body-cell-tags="props">
           <q-td :props="props">

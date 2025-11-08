@@ -92,6 +92,10 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.showCheatSheet = visible
       persistState(this.$state)
     },
+    openCheatSheet() {
+      this.showCheatSheet = true
+      persistState(this.$state)
+    },
     setTourActive(active: boolean) {
       this.isTourActive = active
       persistState(this.$state)

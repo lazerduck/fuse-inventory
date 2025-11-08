@@ -22,7 +22,7 @@
       @submit="handleSubmitApplication"
     />
 
-    <q-card class="content-card q-mb-md">
+    <q-card class="content-card q-mb-md" data-tour-id="application-detail">
       <q-card-section class="dialog-header">
         <div>
           <div class="text-h6">Application Instances</div>
@@ -30,7 +30,14 @@
             Track deployments across environments and hosts.
           </div>
         </div>
-        <q-btn color="primary" label="Add Instance" dense icon="add" @click="openInstanceDialog()" />
+        <q-btn
+          color="primary"
+          label="Add Instance"
+          dense
+          icon="add"
+          @click="openInstanceDialog()"
+          data-tour-id="add-instance"
+        />
       </q-card-section>
       <q-separator />
       <q-table
@@ -40,6 +47,7 @@
         :rows="application?.instances ?? []"
         :columns="instanceColumns"
         row-key="id"
+        data-tour-id="application-instances-table"
       >
         <template #body-cell-environment="props">
           <q-td :props="props">

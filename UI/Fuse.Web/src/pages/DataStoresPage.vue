@@ -5,7 +5,13 @@
         <h1>Data Stores</h1>
         <p class="subtitle">Capture connection details for databases and messaging backends.</p>
       </div>
-      <q-btn color="primary" label="Create Data Store" icon="add" @click="openCreateDialog" />
+      <q-btn
+        color="primary"
+        label="Create Data Store"
+        icon="add"
+        @click="openCreateDialog"
+        data-tour-id="create-data-store"
+      />
     </div>
 
     <q-banner v-if="dataStoreError" dense class="bg-red-1 text-negative q-mb-md">
@@ -21,6 +27,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        data-tour-id="data-stores-table"
       >
         <template #body-cell-environment="props">
           <q-td :props="props">
