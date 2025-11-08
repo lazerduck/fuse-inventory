@@ -10,6 +10,7 @@ import '@quasar/extras/material-icons/material-icons.css'
 // Import Quasar css
 import 'quasar/dist/quasar.sass'
 import './styles/theme.scss'
+import 'driver.js/dist/driver.css'
 
 import App from './App.vue'
 
