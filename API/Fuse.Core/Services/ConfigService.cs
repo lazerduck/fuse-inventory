@@ -41,6 +41,7 @@ public class ConfigService : IConfigService
     private static readonly IDeserializer YamlDeserializer = new DeserializerBuilder()
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .IgnoreUnmatchedProperties()
+        .WithObjectFactory(new RecordFriendlyObjectFactory())
         .Build();
 
     public ConfigService(IFuseStore store)
@@ -196,60 +197,39 @@ public class ConfigService : IConfigService
             var existingEnvironments = current.Environments.ToDictionary(e => e.Id);
 
             // Merge imported data - update existing or add new
-            if (imported.Applications != null)
+            foreach (var app in imported.Applications)
             {
-                foreach (var app in imported.Applications)
-                {
-                    existingApps[app.Id] = app;
-                }
+                existingApps[app.Id] = app;
             }
 
-            if (imported.DataStores != null)
+            foreach (var ds in imported.DataStores)
             {
-                foreach (var ds in imported.DataStores)
-                {
-                    existingDataStores[ds.Id] = ds;
-                }
+                existingDataStores[ds.Id] = ds;
             }
 
-            if (imported.Servers != null)
+            foreach (var server in imported.Servers)
             {
-                foreach (var server in imported.Servers)
-                {
-                    existingServers[server.Id] = server;
-                }
+                existingServers[server.Id] = server;
             }
 
-            if (imported.ExternalResources != null)
+            foreach (var resource in imported.ExternalResources)
             {
-                foreach (var resource in imported.ExternalResources)
-                {
-                    existingExternalResources[resource.Id] = resource;
-                }
+                existingExternalResources[resource.Id] = resource;
             }
 
-            if (imported.Accounts != null)
+            foreach (var account in imported.Accounts)
             {
-                foreach (var account in imported.Accounts)
-                {
-                    existingAccounts[account.Id] = account;
-                }
+                existingAccounts[account.Id] = account;
             }
 
-            if (imported.Tags != null)
+            foreach (var tag in imported.Tags)
             {
-                foreach (var tag in imported.Tags)
-                {
-                    existingTags[tag.Id] = tag;
-                }
+                existingTags[tag.Id] = tag;
             }
 
-            if (imported.Environments != null)
+            foreach (var env in imported.Environments)
             {
-                foreach (var env in imported.Environments)
-                {
-                    existingEnvironments[env.Id] = env;
-                }
+                existingEnvironments[env.Id] = env;
             }
 
             return new Snapshot(
@@ -268,11 +248,64 @@ public class ConfigService : IConfigService
 
 public class ConfigSnapshot
 {
-    public List<Application>? Applications { get; set; }
-    public List<DataStore>? DataStores { get; set; }
-    public List<Server>? Servers { get; set; }
-    public List<ExternalResource>? ExternalResources { get; set; }
-    public List<Account>? Accounts { get; set; }
-    public List<Tag>? Tags { get; set; }
-    public List<EnvironmentInfo>? Environments { get; set; }
+    public List<Application> Applications { get; set; } = new();
+    public List<DataStore> DataStores { get; set; } = new();
+    public List<Server> Servers { get; set; } = new();
+    public List<ExternalResource> ExternalResources { get; set; } = new();
+    public List<Account> Accounts { get; set; } = new();
+    public List<Tag> Tags { get; set; } = new();
+    public List<EnvironmentInfo> Environments { get; set; } = new();
+}
+
+internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory
+{
+    public override object Create(Type type)
+    {
+        // For records, find a constructor and create with default values
+        if (type.IsClass || type.IsValueType)
+        {
+            var constructors = type.GetConstructors();
+            if (constructors.Length > 0)
+            {
+                var ctor = constructors.OrderBy(c => c.GetParameters().Length).First();
+                var parameters = ctor.GetParameters();
+                var args = parameters.Select(p => GetDefaultValue(p.ParameterType)).ToArray();
+                
+                try
+                {
+                    return ctor.Invoke(args);
+                }
+                catch
+                {
+                    // Fall back to default behavior
+                }
+            }
+        }
+        
+        return base.Create(type);
+    }
+
+    private static object? GetDefaultValue(Type type)
+    {
+        if (type == typeof(string))
+            return string.Empty;
+        if (type == typeof(Guid))
+            return Guid.Empty;
+        if (type == typeof(DateTime))
+            return DateTime.MinValue;
+        if (type == typeof(Uri))
+            return null;
+        if (type.IsValueType)
+            return Activator.CreateInstance(type);
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+        {
+            return Activator.CreateInstance(type);
+        }
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
+        {
+            var listType = typeof(List<>).MakeGenericType(type.GetGenericArguments());
+            return Activator.CreateInstance(listType);
+        }
+        return null;
+    }
 }
