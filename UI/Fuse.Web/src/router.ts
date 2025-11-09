@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('./pages/ApplicationEditPage.vue')
     },
     {
+      path: '/applications/:applicationId/instances/:instanceId',
+      name: 'instanceEdit',
+      component: () => import('./pages/InstanceEditPage.vue')
+    },
+    {
       path: '/accounts',
       name: 'accounts',
       component: () => import('./pages/AccountsPage.vue')
