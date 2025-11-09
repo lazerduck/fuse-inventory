@@ -216,6 +216,11 @@
                 clearable
                 :options="accountOptions"
               />
+              <q-checkbox
+                v-model="environmentLocked"
+                label="Lock target to instance environment"
+                dense
+              />
             </div>
           </q-card-section>
           <q-separator />
@@ -345,6 +350,8 @@ const externalResourcesQuery = useExternalResources()
 const tagLookup = tagsStore.lookup
 const environmentLookup = environmentsStore.lookup
 const serverLookup = serversStore.lookup
+
+var environmentLocked = ref(true);
 
 const dependencyTargetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({
   label: value,
@@ -773,6 +780,10 @@ function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
         const appName = app.name ?? app.id ?? 'Application'
         for (const inst of app.instances ?? []) {
           if (!inst?.id) continue
+          // Filter by environment if locked
+          if (environmentLocked.value && inst.environmentId !== editingInstance.value?.environmentId) {
+            continue
+          }
           const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
           options.push({ label: `${appName} — ${envName}` , value: inst.id })
         }
@@ -781,8 +792,23 @@ function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
     }
     case TargetKind.DataStore:
       return (dataStoresQuery.data.value ?? [])
-        .filter((store) => !!store.id)
-        .map((store) => ({ label: store.name ?? store.id!, value: store.id! }))
+        .filter((store) => {
+          if (!store.id) return false
+          // Filter by environment if locked
+          if (environmentLocked.value && store.environmentId !== editingInstance.value?.environmentId) {
+            return false
+          }
+          return true
+        })
+        .map((store) => {
+          const storeName = store.name ?? store.id!
+          // Include environment in label if not locked
+          if (!environmentLocked.value) {
+            const envName = environmentLookup.value[store.environmentId ?? ''] ?? '—'
+            return { label: `${storeName} — ${envName}`, value: store.id! }
+          }
+          return { label: storeName, value: store.id! }
+        })
     case TargetKind.External:
       return (externalResourcesQuery.data.value ?? [])
         .filter((resource) => !!resource.id)
