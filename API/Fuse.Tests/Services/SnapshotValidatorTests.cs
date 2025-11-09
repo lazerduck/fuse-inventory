@@ -70,7 +70,7 @@ public class SnapshotValidatorTests
 
         var accounts = new List<Account>
         {
-            new Account(Guid.NewGuid(), appId, TargetKind.Application, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
+            new Account(Guid.NewGuid(), instId, TargetKind.Application, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
             new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
             new Account(Guid.NewGuid(), extId, TargetKind.External, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
