@@ -58,6 +58,11 @@ const router = createRouter({
       path: '/graph',
       name: 'graph',
       component: () => import('./pages/Graph.vue')
+    },
+    {
+      path: '/config',
+      name: 'config',
+      component: () => import('./pages/ConfigPage.vue')
     }
   ]
 })
