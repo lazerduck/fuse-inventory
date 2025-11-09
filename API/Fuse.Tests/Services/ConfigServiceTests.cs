@@ -12,7 +12,7 @@ public class ConfigServiceTests
     private static InMemoryFuseStore NewStoreWith(
         Application[]? applications = null,
         DataStore[]? dataStores = null,
-        Server[]? servers = null,
+        Platform[]? platforms = null,
         ExternalResource[]? externalResources = null,
         Account[]? accounts = null,
         Tag[]? tags = null,
@@ -21,7 +21,7 @@ public class ConfigServiceTests
         var snapshot = new Snapshot(
             Applications: applications ?? Array.Empty<Application>(),
             DataStores: dataStores ?? Array.Empty<DataStore>(),
-            Servers: servers ?? Array.Empty<Server>(),
+            Platforms: platforms ?? Array.Empty<Platform>(),
             ExternalResources: externalResources ?? Array.Empty<ExternalResource>(),
             Accounts: accounts ?? Array.Empty<Account>(),
             Tags: tags ?? Array.Empty<Tag>(),

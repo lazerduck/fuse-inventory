@@ -56,7 +56,7 @@ public class ConfigService : IConfigService
         {
             Applications = snapshot.Applications.ToList(),
             DataStores = snapshot.DataStores.ToList(),
-            Servers = snapshot.Servers.ToList(),
+            Platforms = snapshot.Platforms.ToList(),
             ExternalResources = snapshot.ExternalResources.ToList(),
             Accounts = snapshot.Accounts.ToList(),
             Tags = snapshot.Tags.ToList(),
@@ -101,22 +101,23 @@ public class ConfigService : IConfigService
                     Description: "An example database",
                     Kind: "PostgreSQL",
                     EnvironmentId: Guid.Empty,
-                    ServerId: null,
+                    PlatformId: null,
                     ConnectionUri: new Uri("postgres://localhost:5432/db"),
                     TagIds: new HashSet<Guid>(),
                     CreatedAt: DateTime.UtcNow,
                     UpdatedAt: DateTime.UtcNow
                 )
             },
-            Servers = new List<Server>
+            Platforms = new List<Platform>
             {
-                new Server(
+                new Platform(
                     Id: Guid.NewGuid(),
-                    Name: "Example Server",
-                    Description: "An example server",
-                    Hostname: "server.example.com",
-                    OperatingSystem: ServerOperatingSystem.Linux,
-                    EnvironmentId: Guid.Empty,
+                    DisplayName: "Example Platform",
+                    DnsName: "platform.example.com",
+                    Os: "linux",
+                    Kind: PlatformKind.Server,
+                    IpAddress: "10.0.0.1",
+                    Notes: "An example platform",
                     TagIds: new HashSet<Guid>(),
                     CreatedAt: DateTime.UtcNow,
                     UpdatedAt: DateTime.UtcNow
@@ -190,7 +191,7 @@ public class ConfigService : IConfigService
             // Create lookup dictionaries for existing data
             var existingApps = current.Applications.ToDictionary(a => a.Id);
             var existingDataStores = current.DataStores.ToDictionary(d => d.Id);
-            var existingServers = current.Servers.ToDictionary(s => s.Id);
+            var existingPlatforms = current.Platforms.ToDictionary(s => s.Id);
             var existingExternalResources = current.ExternalResources.ToDictionary(e => e.Id);
             var existingAccounts = current.Accounts.ToDictionary(a => a.Id);
             var existingTags = current.Tags.ToDictionary(t => t.Id);
@@ -207,9 +208,9 @@ public class ConfigService : IConfigService
                 existingDataStores[ds.Id] = ds;
             }
 
-            foreach (var server in imported.Servers)
+            foreach (var platform in imported.Platforms)
             {
-                existingServers[server.Id] = server;
+                existingPlatforms[platform.Id] = platform;
             }
 
             foreach (var resource in imported.ExternalResources)
@@ -235,7 +236,7 @@ public class ConfigService : IConfigService
             return new Snapshot(
                 Applications: existingApps.Values.ToList(),
                 DataStores: existingDataStores.Values.ToList(),
-                Servers: existingServers.Values.ToList(),
+                Platforms: existingPlatforms.Values.ToList(),
                 ExternalResources: existingExternalResources.Values.ToList(),
                 Accounts: existingAccounts.Values.ToList(),
                 Tags: existingTags.Values.ToList(),
@@ -250,7 +251,7 @@ public class ConfigSnapshot
 {
     public List<Application> Applications { get; set; } = new();
     public List<DataStore> DataStores { get; set; } = new();
-    public List<Server> Servers { get; set; } = new();
+    public List<Platform> Platforms { get; set; } = new();
     public List<ExternalResource> ExternalResources { get; set; } = new();
     public List<Account> Accounts { get; set; } = new();
     public List<Tag> Tags { get; set; } = new();

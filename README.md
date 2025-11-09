@@ -23,7 +23,7 @@ Fuse-Inventory lets small to medium sized development or DevOps teams:
 - Compare **environments** and see drift at a glance
 - Run entirely from a **single Docker container**
 
-It treats applications as first class objects with servers, dependencies and environments expected to facilitate applications.
+It treats applications as first class objects with platforms, dependencies and environments expected to facilitate applications.
 
 ---
 

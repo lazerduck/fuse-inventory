@@ -28,7 +28,7 @@ public record ApplicationInstance
 (
     Guid Id,
     Guid EnvironmentId,
-    Guid? ServerId,
+    Guid? PlatformId,
     Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,

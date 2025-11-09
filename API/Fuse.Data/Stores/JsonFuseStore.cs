@@ -43,7 +43,7 @@ public sealed class JsonFuseStore : IFuseStore
             _cache = new Snapshot(
                 Applications: await ReadAsync<Application>("applications.json", ct),
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
-                Servers: await ReadAsync<Server>("servers.json", ct),
+                Platforms: await ReadAsync<Platform>("platforms.json", ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
                 Accounts: await ReadAsync<Account>("accounts.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
@@ -125,7 +125,7 @@ public sealed class JsonFuseStore : IFuseStore
 
             await WriteAsync("applications.json", snapshot.Applications, ct);
             await WriteAsync("datastores.json", snapshot.DataStores, ct);
-            await WriteAsync("servers.json", snapshot.Servers, ct);
+            await WriteAsync("platforms.json", snapshot.Platforms, ct);
             await WriteAsync("externalresources.json", snapshot.ExternalResources, ct);
             await WriteAsync("accounts.json", snapshot.Accounts, ct);
             await WriteAsync("tags.json", snapshot.Tags, ct);

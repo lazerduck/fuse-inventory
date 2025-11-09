@@ -34,7 +34,7 @@ public record DeleteApplication(
 public record CreateApplicationInstance(
     Guid ApplicationId,
     Guid EnvironmentId,
-    Guid? ServerId,
+    Guid? PlatformId,
     Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,
@@ -46,7 +46,7 @@ public record UpdateApplicationInstance(
     Guid ApplicationId,
     Guid InstanceId,
     Guid EnvironmentId,
-    Guid? ServerId,
+    Guid? PlatformId,
     Uri? BaseUri,
     Uri? HealthUri,
     Uri? OpenApiUri,

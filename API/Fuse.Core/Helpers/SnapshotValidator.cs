@@ -23,7 +23,7 @@ public static class SnapshotValidator
             ? tagIdGroups.Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.First())
             : s.Tags.ToDictionary(x => x.Id);
         var envs = s.Environments.ToDictionary(x => x.Id);
-        var servers = s.Servers.ToDictionary(x => x.Id);
+        var platforms = s.Platforms.ToDictionary(x => x.Id);
         var apps = s.Applications.ToDictionary(x => x.Id);
         var dataStores = s.DataStores.ToDictionary(x => x.Id);
         var externals = s.ExternalResources.ToDictionary(x => x.Id);
@@ -42,12 +42,10 @@ public static class SnapshotValidator
                 if (!tags.ContainsKey(tagId)) errs.Add($"{path}: tag {tagId} not found");
         }
 
-        // Servers
-        foreach (var sv in s.Servers)
+        // Platforms
+        foreach (var platform in s.Platforms)
         {
-            if (!envs.ContainsKey(sv.EnvironmentId))
-                errs.Add($"Server {sv.Id}: environment {sv.EnvironmentId} not found");
-            TagsMustExist(sv.TagIds, $"Server {sv.Id}");
+            TagsMustExist(platform.TagIds, $"Platform {platform.Id}");
         }
 
         // DataStores
@@ -55,8 +53,8 @@ public static class SnapshotValidator
         {
             if (!envs.ContainsKey(ds.EnvironmentId))
                 errs.Add($"DataStore {ds.Id}: environment {ds.EnvironmentId} not found");
-            if (ds.ServerId is Guid sid && !servers.ContainsKey(sid))
-                errs.Add($"DataStore {ds.Id}: server {ds.ServerId} not found");
+            if (ds.PlatformId is Guid pid && !platforms.ContainsKey(pid))
+                errs.Add($"DataStore {ds.Id}: platform {ds.PlatformId} not found");
             TagsMustExist(ds.TagIds, $"DataStore {ds.Id}");
         }
 
@@ -69,8 +67,8 @@ public static class SnapshotValidator
             {
                 if (!envs.ContainsKey(inst.EnvironmentId))
                     errs.Add($"ApplicationInstance {inst.Id}: environment {inst.EnvironmentId} not found");
-                if (inst.ServerId is Guid isid && !servers.ContainsKey(isid))
-                    errs.Add($"ApplicationInstance {inst.Id}: server {inst.ServerId} not found");
+                if (inst.PlatformId is Guid ipid && !platforms.ContainsKey(ipid))
+                    errs.Add($"ApplicationInstance {inst.Id}: platform {inst.PlatformId} not found");
                 TagsMustExist(inst.TagIds, $"ApplicationInstance {inst.Id}");
 
                 foreach (var dep in inst.Dependencies)

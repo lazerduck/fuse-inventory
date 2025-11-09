@@ -32,7 +32,7 @@ public class AccountServiceTests
         var snapshot = new Snapshot(
             Applications: (apps ?? Array.Empty<Application>()).ToArray(),
             DataStores: (ds ?? Array.Empty<DataStore>()).ToArray(),
-            Servers: Array.Empty<Server>(),
+            Platforms: Array.Empty<Platform>(),
             ExternalResources: (res ?? Array.Empty<ExternalResource>()).ToArray(),
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),

@@ -7,7 +7,7 @@ public record DataStore
     string? Description,
     string Kind,
     Guid EnvironmentId,
-    Guid? ServerId,
+    Guid? PlatformId,
     Uri? ConnectionUri,
     HashSet<Guid> TagIds,
     DateTime CreatedAt,

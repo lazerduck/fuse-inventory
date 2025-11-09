@@ -14,7 +14,7 @@ public sealed class InMemoryFuseStore : IFuseStore
         _snapshot = initial ?? new Snapshot(
             Applications: Array.Empty<Application>(),
             DataStores: Array.Empty<DataStore>(),
-            Servers: Array.Empty<Server>(),
+            Platforms: Array.Empty<Platform>(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: Array.Empty<Account>(),
             Tags: Array.Empty<Tag>(),

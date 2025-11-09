@@ -20,15 +20,15 @@
             :disable="environmentOptions.length === 0"
           />
           <q-select
-            v-model="form.serverId"
-            label="Server"
+            v-model="form.platformId"
+            label="Platform"
             dense
             outlined
             emit-value
             map-options
             clearable
-            :options="serverOptions"
-            :disable="serverOptions.length === 0"
+            :options="platformOptions"
+            :disable="platformOptions.length === 0"
           />
           <q-input v-model="form.version" label="Version" dense outlined />
           <q-input v-model="form.baseUri" label="Base URI" dense outlined />
@@ -62,14 +62,14 @@
 import { computed, onMounted, reactive, watch } from 'vue'
 import type { ApplicationInstance } from '../../api/client'
 import { useEnvironments } from '../../composables/useEnvironments'
-import { useServers } from '../../composables/useServers'
+import { usePlatforms } from '../../composables/usePlatforms'
 import { useTags } from '../../composables/useTags'
 
 type Mode = 'create' | 'edit'
 
 interface ApplicationInstanceFormModel {
   environmentId: string | null
-  serverId: string | null
+  platformId: string | null
   baseUri: string
   healthUri: string
   openApiUri: string
@@ -96,16 +96,16 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
-const serversStore = useServers()
+const platformsStore = usePlatforms()
 const tagsStore = useTags()
 
 const environmentOptions = environmentsStore.options
-const serverOptions = serversStore.options
+const platformOptions = platformsStore.options
 const tagOptions = tagsStore.options
 
 const form = reactive<ApplicationInstanceFormModel>({
   environmentId: null,
-  serverId: null,
+  platformId: null,
   baseUri: '',
   healthUri: '',
   openApiUri: '',
@@ -121,7 +121,7 @@ const loading = computed(() => props.loading)
 function applyInitial(value?: Partial<ApplicationInstance> | null) {
   if (!value) {
     form.environmentId = null
-    form.serverId = null
+    form.platformId = null
     form.baseUri = ''
     form.healthUri = ''
     form.openApiUri = ''
@@ -130,7 +130,7 @@ function applyInitial(value?: Partial<ApplicationInstance> | null) {
     return
   }
   form.environmentId = value.environmentId ?? null
-  form.serverId = value.serverId ?? null
+  form.platformId = value.platformId ?? null
   form.baseUri = value.baseUri ?? ''
   form.healthUri = value.healthUri ?? ''
   form.openApiUri = value.openApiUri ?? ''

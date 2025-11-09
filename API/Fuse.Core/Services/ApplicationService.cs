@@ -146,13 +146,11 @@ public class ApplicationService : IApplicationService
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<ApplicationInstance>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
-        if (command.ServerId is Guid sid)
+        if (command.PlatformId is Guid pid)
         {
-            var server = store.Servers.FirstOrDefault(s => s.Id == sid);
-            if (server is null)
-                return Result<ApplicationInstance>.Failure($"Server with ID '{sid}' not found.", ErrorType.Validation);
-            if (server.EnvironmentId != command.EnvironmentId)
-                return Result<ApplicationInstance>.Failure("Server and instance environment must match.", ErrorType.Validation);
+            var platform = store.Platforms.FirstOrDefault(s => s.Id == pid);
+            if (platform is null)
+                return Result<ApplicationInstance>.Failure($"Platform with ID '{pid}' not found.", ErrorType.Validation);
         }
 
         var tagIds = command.TagIds ?? new HashSet<Guid>();
@@ -166,7 +164,7 @@ public class ApplicationService : IApplicationService
         var inst = new ApplicationInstance(
             Id: Guid.NewGuid(),
             EnvironmentId: command.EnvironmentId,
-            ServerId: command.ServerId,
+            PlatformId: command.PlatformId,
             BaseUri: command.BaseUri,
             HealthUri: command.HealthUri,
             OpenApiUri: command.OpenApiUri,
@@ -195,13 +193,11 @@ public class ApplicationService : IApplicationService
 
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<ApplicationInstance>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
-        if (command.ServerId is Guid sid)
+        if (command.PlatformId is Guid pid)
         {
-            var server = store.Servers.FirstOrDefault(s => s.Id == sid);
-            if (server is null)
-                return Result<ApplicationInstance>.Failure($"Server with ID '{sid}' not found.", ErrorType.Validation);
-            if (server.EnvironmentId != command.EnvironmentId)
-                return Result<ApplicationInstance>.Failure("Server and instance environment must match.", ErrorType.Validation);
+            var platform = store.Platforms.FirstOrDefault(s => s.Id == pid);
+            if (platform is null)
+                return Result<ApplicationInstance>.Failure($"Platform with ID '{pid}' not found.", ErrorType.Validation);
         }
 
         var tagIds = command.TagIds ?? new HashSet<Guid>();
@@ -214,7 +210,7 @@ public class ApplicationService : IApplicationService
         var updatedInst = inst with
         {
             EnvironmentId = command.EnvironmentId,
-            ServerId = command.ServerId,
+            PlatformId = command.PlatformId,
             BaseUri = command.BaseUri,
             HealthUri = command.HealthUri,
             OpenApiUri = command.OpenApiUri,

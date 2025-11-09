@@ -100,7 +100,7 @@
               :key="instance.id"
               :instance="instance"
               :environment-lookup="environmentLookup"
-              :server-lookup="serverLookup"
+              :platform-lookup="platformLookup"
               :tag-lookup="tagLookup"
               :dependency-formatter="formatDependencyLabel"
             />
@@ -123,7 +123,7 @@ import InstanceCard from './InstanceCard.vue'
 defineProps<{
   application: Application
   environmentLookup: Record<string, string>
-  serverLookup: Record<string, string>
+  platformLookup: Record<string, string>
   tagLookup: Record<string, string>
   formatDependencyLabel: (dependency: any) => string
 }>()

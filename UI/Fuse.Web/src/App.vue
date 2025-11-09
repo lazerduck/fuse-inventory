@@ -142,15 +142,15 @@
           <q-item
             clickable
             v-ripple
-            :to="{ name: 'servers' }"
+            :to="{ name: 'platforms' }"
             active-class="bg-primary text-white"
-            data-tour-id="nav-servers"
+            data-tour-id="nav-platforms"
           >
             <q-item-section avatar>
               <q-icon name="dns" />
             </q-item-section>
             <q-item-section>
-              Servers
+              Platforms
             </q-item-section>
           </q-item>
 

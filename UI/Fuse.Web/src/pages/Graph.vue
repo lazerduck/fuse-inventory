@@ -34,7 +34,7 @@ import fcose from 'cytoscape-fcose'
 import { computed, onMounted, ref, watch } from 'vue';
 import { useApplications } from '../composables/useApplications';
 import { useEnvironments } from '../composables/useEnvironments';
-import { useServers } from '../composables/useServers';
+import { usePlatforms } from '../composables/usePlatforms';
 import { useDataStores } from '../composables/useDataStores';
 import { useExternalResources } from '../composables/useExternalResources';
 
@@ -43,14 +43,14 @@ let cy: Core | null = null
 
 const applicationStore = useApplications();
 const environmentStore = useEnvironments();
-const serversStore = useServers()
+const platformsStore = usePlatforms()
 const dataStore = useDataStores();
 const externalServicesStore = useExternalResources();
 
 const isLoading = computed(() => 
   applicationStore.isLoading.value ||
   environmentStore.isLoading.value ||
-  serversStore.isLoading.value ||
+  platformsStore.isLoading.value ||
   dataStore.isLoading.value ||
   externalServicesStore.isLoading.value
 );

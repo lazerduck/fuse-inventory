@@ -34,11 +34,11 @@
         to="/applications"
       />
       <StatCard
-        :value="serverCount"
-        label="Servers"
+        :value="platformCount"
+        label="Platforms"
         icon="dns"
         icon-class="bg-secondary text-white"
-        to="/servers"
+        to="/platforms"
       />
       <StatCard
         :value="environmentCount"
@@ -100,7 +100,7 @@
           :key="application.id"
           :application="application"
           :environment-lookup="environmentLookup"
-          :server-lookup="serverLookup"
+          :platformLookup="platformLookup"
           :tag-lookup="tagLookup"
           :format-dependency-label="formatDependencyLabel"
         />
@@ -124,7 +124,7 @@ import { computed, ref } from 'vue'
 import { Notify } from 'quasar'
 import { TargetKind } from '../api/client'
 import { useApplications } from '../composables/useApplications'
-import { useServers } from '../composables/useServers'
+import { usePlatforms } from '../composables/usePlatforms'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useDataStores } from '../composables/useDataStores'
@@ -146,7 +146,7 @@ const showOnboardingBanner = computed(
 )
 
 const applicationsQuery = useApplications()
-const serversQuery = useServers()
+const platformsQuery = usePlatforms()
 const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()
@@ -155,7 +155,7 @@ const tagsQuery = useTags()
 const applicationsLoading = computed(() => applicationsQuery.isLoading.value || applicationsQuery.isFetching.value)
 
 const applicationCount = computed(() => applicationsQuery.data.value?.length ?? 0)
-const serverCount = computed(() => serversQuery.data.value?.length ?? 0)
+const platformCount = computed(() => platformsQuery.data.value?.length ?? 0)
 const environmentCount = computed(() => environmentsQuery.data.value?.length ?? 0)
 const externalResourceCount = computed(() => externalResourcesQuery.data.value?.length ?? 0)
 
@@ -166,9 +166,9 @@ const environmentLookup = computed<Record<string, string>>(() => {
   }, {} as Record<string, string>)
 })
 
-const serverLookup = computed<Record<string, string>>(() => {
-  return (serversQuery.data.value ?? []).reduce((map, server) => {
-    map[server.id ?? ''] = server.name ?? 'Server'
+const platformLookup = computed<Record<string, string>>(() => {
+  return (platformsQuery.data.value ?? []).reduce((map, platform) => {
+    map[platform.id ?? ''] = platform.displayName ?? 'Platform'
     return map
   }, {} as Record<string, string>)
 })

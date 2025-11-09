@@ -2,28 +2,28 @@ import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
 
-export function useServers() {
+export function usePlatforms() {
   const client = useFuseClient()
 
   const query = useQuery({
-    queryKey: ['servers'],
-    queryFn: () => client.serverAll()
+    queryKey: ['platforms'],
+    queryFn: () => client.platformAll()
   })
 
   const options = computed(() =>
     (query.data.value ?? [])
-      .filter((server) => !!server.id)
-      .map((server) => ({
-        label: server.name ?? server.hostname ?? server.id!,
-        value: server.id!
+      .filter((platform) => !!platform.id)
+      .map((platform) => ({
+        label: platform.displayName ?? platform.dnsName ?? platform.id!,
+        value: platform.id!
       }))
   )
 
   const lookup = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {}
-    for (const server of query.data.value ?? []) {
-      if (server.id) {
-        map[server.id] = server.name ?? server.hostname ?? server.id
+    for (const platform of query.data.value ?? []) {
+      if (platform.id) {
+        map[platform.id] = platform.displayName ?? platform.dnsName ?? platform.id
       }
     }
     return map

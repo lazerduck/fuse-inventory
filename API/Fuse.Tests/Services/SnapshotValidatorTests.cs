@@ -15,18 +15,18 @@ public class SnapshotValidatorTests
     {
         var tagId = Guid.NewGuid();
         var envId = Guid.NewGuid();
-        var serverId = Guid.NewGuid();
+        var platformId = Guid.NewGuid();
 
         var tags = new List<Tag> { new Tag(tagId, "tag1", null, null) };
         var envs = new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env1", null, new HashSet<Guid>()) };
-        var servers = new List<Server> {
-            new Server(serverId, "server1", null, "host", ServerOperatingSystem.Linux, envId, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
+        var platforms = new List<Platform> {
+            new Platform(platformId, "platform1", "host.example.com", "linux", PlatformKind.Server, null, null, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
 
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            servers,
+            platforms,
             new List<ExternalResource>(),
             new List<Account>(),
             tags,
@@ -44,7 +44,7 @@ public class SnapshotValidatorTests
         // IDs
         var tagId = Guid.NewGuid();
         var envId = Guid.NewGuid();
-        var serverId = Guid.NewGuid();
+        var platformId = Guid.NewGuid();
         var dsId = Guid.NewGuid();
         var appId = Guid.NewGuid();
         var instId = Guid.NewGuid();
@@ -53,8 +53,8 @@ public class SnapshotValidatorTests
         // Entities
         var tags = new List<Tag> { new Tag(tagId, "t1", null, null) };
         var envs = new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) };
-        var servers = new List<Server> { new Server(serverId, "srv", null, "host", ServerOperatingSystem.Linux, envId, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow) };
-        var dataStores = new List<DataStore> { new DataStore(dsId, "db", null, "postgres", envId, serverId, new Uri("postgres://host"), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow) };
+        var platforms = new List<Platform> { new Platform(platformId, "srv", "host.example.com", "linux", PlatformKind.Server, null, null, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow) };
+        var dataStores = new List<DataStore> { new DataStore(dsId, "db", null, "postgres", envId, platformId, new Uri("postgres://host"), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow) };
         var externals = new List<ExternalResource> { new ExternalResource(extId, "ext", null, new Uri("https://ext"), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow) };
 
         var instDeps = new List<ApplicationInstanceDependency>
@@ -64,7 +64,7 @@ public class SnapshotValidatorTests
         };
         var instances = new List<ApplicationInstance>
         {
-            new ApplicationInstance(instId, envId, serverId, new Uri("https://app"), null, null, "1.0", instDeps, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
+            new ApplicationInstance(instId, envId, platformId, new Uri("https://app"), null, null, "1.0", instDeps, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
         var apps = new List<Application> { new Application(appId, "app", "1.0", null, null, null, null, null, new HashSet<Guid>{ tagId }, instances, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) };
 
@@ -77,7 +77,7 @@ public class SnapshotValidatorTests
 
         var security = new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>());
 
-        var snapshot = new Snapshot(apps, dataStores, servers, externals, accounts, tags, envs, security);
+        var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, security);
 
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Empty(errors);
@@ -91,7 +91,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource> { new ExternalResource(erId, "ext", null, new Uri("https://ext"), new HashSet<Guid> { missingTag }, DateTime.UtcNow, DateTime.UtcNow) },
             new List<Account>(),
             new List<Tag>(),
@@ -109,7 +109,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
             new List<Tag>(),
@@ -127,7 +127,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
             new List<Tag>(),
@@ -145,7 +145,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
             new List<Tag>(),
@@ -171,7 +171,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application> { new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -198,7 +198,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application> { new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -225,7 +225,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>{ new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance>{ inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -248,7 +248,7 @@ public class SnapshotValidatorTests
                 new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>{ Guid.NewGuid() }, new List<ApplicationInstance>(), new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -273,7 +273,7 @@ public class SnapshotValidatorTests
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -286,21 +286,21 @@ public class SnapshotValidatorTests
     }
 
     [Fact]
-    public void Validate_ApplicationInstance_Reports_MissingServer_WhenReferenced()
+    public void Validate_ApplicationInstance_Reports_MissingPlatform_WhenReferenced()
     {
         var envId = Guid.NewGuid();
         var appId = Guid.NewGuid();
         var instId = Guid.NewGuid();
-        var missingServerId = Guid.NewGuid();
+        var missingPlatformId = Guid.NewGuid();
         var snapshot = new Snapshot(
             new List<Application>
             {
                 new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(),
-                    new List<ApplicationInstance>{ new ApplicationInstance(instId, envId, missingServerId, new Uri("https://example.com"), null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
+                    new List<ApplicationInstance>{ new ApplicationInstance(instId, envId, missingPlatformId, new Uri("https://example.com"), null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -309,7 +309,7 @@ public class SnapshotValidatorTests
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
-        Assert.Contains(errors, e => e.Contains("ApplicationInstance") && e.Contains("server") && e.Contains("not found"));
+        Assert.Contains(errors, e => e.Contains("ApplicationInstance") && e.Contains("platform") && e.Contains("not found"));
     }
 
     [Fact]
@@ -327,7 +327,7 @@ public class SnapshotValidatorTests
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -350,7 +350,7 @@ public class SnapshotValidatorTests
             {
                 new DataStore(dsId, "db", null, "postgres", envId, null, new Uri("postgres://host"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow)
             },
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -363,18 +363,18 @@ public class SnapshotValidatorTests
     }
 
     [Fact]
-    public void Validate_DataStore_Reports_MissingServer_WhenReferenced()
+    public void Validate_DataStore_Reports_MissingPlatform_WhenReferenced()
     {
         var envId = Guid.NewGuid();
-        var missingServerId = Guid.NewGuid();
+        var missingPlatformId = Guid.NewGuid();
         var dsId = Guid.NewGuid();
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>
             {
-                new DataStore(dsId, "db", null, "postgres", envId, missingServerId, new Uri("postgres://host"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow)
+                new DataStore(dsId, "db", null, "postgres", envId, missingPlatformId, new Uri("postgres://host"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow)
             },
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             new List<Tag>(),
@@ -383,7 +383,7 @@ public class SnapshotValidatorTests
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
-        Assert.Contains(errors, e => e.Contains("DataStore") && e.Contains("server") && e.Contains("not found"));
+        Assert.Contains(errors, e => e.Contains("DataStore") && e.Contains("platform") && e.Contains("not found"));
     }
 
     [Fact]
@@ -391,18 +391,18 @@ public class SnapshotValidatorTests
     {
         var envId = Guid.NewGuid();
         var missingTagId = Guid.NewGuid();
-        var serverId = Guid.NewGuid();
+        var platformId = Guid.NewGuid();
 
         var tags = new List<Tag>();
         var envs = new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env1", null, new HashSet<Guid>()) };
-        var servers = new List<Server> {
-            new Server(serverId, "server1", null, "host", ServerOperatingSystem.Linux, envId, new HashSet<Guid>{ missingTagId }, DateTime.UtcNow, DateTime.UtcNow)
+        var platforms = new List<Platform> {
+            new Platform(platformId, "platform1", "host.example.com", "linux", PlatformKind.Server, null, null, new HashSet<Guid>{ missingTagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
 
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            servers,
+            platforms,
             new List<ExternalResource>(),
             new List<Account>(),
             tags,
@@ -411,38 +411,11 @@ public class SnapshotValidatorTests
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
-        Assert.Contains("Server", errors[0]);
+        Assert.Contains("Platform", errors[0]);
         Assert.Contains("not found", errors[0]);
     }
 
-    [Fact]
-    public void Validate_ReturnsError_WhenEnvironmentMissing()
-    {
-        var tagId = Guid.NewGuid();
-        var envId = Guid.NewGuid();
-        var serverId = Guid.NewGuid();
 
-        var tags = new List<Tag> { new Tag(tagId, "tag1", null, null) };
-        var envs = new List<EnvironmentInfo>();
-        var servers = new List<Server> {
-            new Server(serverId, "server1", null, "host", ServerOperatingSystem.Linux, envId, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
-        };
-
-        var snapshot = new Snapshot(
-            new List<Application>(),
-            new List<DataStore>(),
-            servers,
-            new List<ExternalResource>(),
-            new List<Account>(),
-            tags,
-            envs,
-            new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
-        );
-
-        var errors = SnapshotValidator.Validate(snapshot);
-        Assert.Contains("environment", errors[0]);
-        Assert.Contains("not found", errors[0]);
-    }
 
     [Fact]
     public void Validate_ReturnsError_WhenDuplicateTagIds()
@@ -452,7 +425,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
-            new List<Server>(),
+            new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
             tags,

@@ -26,12 +26,12 @@ public class DataStoreServiceTests
         IEnumerable<Tag>? tags = null,
         IEnumerable<EnvironmentInfo>? envs = null,
         IEnumerable<DataStore>? ds = null,
-        IEnumerable<Server>? servers = null)
+        IEnumerable<Platform>? platforms = null)
     {
         var snapshot = new Snapshot(
             Applications: Array.Empty<Application>(),
             DataStores: (ds ?? Array.Empty<DataStore>()).ToArray(),
-            Servers: (servers ?? Array.Empty<Server>()).ToArray(),
+            Platforms: (platforms ?? Array.Empty<Platform>()).ToArray(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: Array.Empty<Account>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
@@ -73,18 +73,7 @@ public class DataStoreServiceTests
         result.ErrorType.Should().Be(ErrorType.Validation);
     }
 
-    [Fact]
-    public async Task CreateDataStore_ServerMustMatchEnvironment()
-    {
-        var env1 = new EnvironmentInfo(Guid.NewGuid(), "E1", null, new HashSet<Guid>());
-        var env2 = new EnvironmentInfo(Guid.NewGuid(), "E2", null, new HashSet<Guid>());
-        var server = new Server(Guid.NewGuid(), "S", null, "h", ServerOperatingSystem.Linux, env2.Id, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var store = NewStore(envs: new[] { env1, env2 }, servers: new[] { server });
-        var service = new DataStoreService(store, new TagLookupService(store));
-        var result = await service.CreateDataStoreAsync(new CreateDataStore("D1", "sql", env1.Id, server.Id, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-    }
+
 
     [Fact]
     public async Task CreateDataStore_DuplicatePerEnvironment()
@@ -144,19 +133,7 @@ public class DataStoreServiceTests
         result.ErrorType.Should().Be(ErrorType.Conflict);
     }
 
-    [Fact]
-    public async Task UpdateDataStore_ServerMustMatchEnvironment()
-    {
-        var e1 = new EnvironmentInfo(Guid.NewGuid(), "E1", null, new HashSet<Guid>());
-        var e2 = new EnvironmentInfo(Guid.NewGuid(), "E2", null, new HashSet<Guid>());
-        var server = new Server(Guid.NewGuid(), "S", null, "h", ServerOperatingSystem.Linux, e2.Id, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var ds = new DataStore(Guid.NewGuid(), "D", null, "sql", e1.Id, null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var store = NewStore(envs: new[] { e1, e2 }, ds: new[] { ds }, servers: new[] { server });
-        var service = new DataStoreService(store, new TagLookupService(store));
-        var result = await service.UpdateDataStoreAsync(new UpdateDataStore(ds.Id, "D", "sql", e1.Id, server.Id, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-    }
+
 
     [Fact]
     public async Task UpdateDataStore_Success()

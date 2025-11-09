@@ -10,7 +10,7 @@ public static class FuseCodeModule
     {
         services.AddScoped<IEnvironmentService, EnvironmentService>();
         services.AddScoped<ITagService, TagService>();
-        services.AddScoped<IServerService, ServerService>();
+        services.AddScoped<IPlatformService, PlatformService>();
         services.AddScoped<IDataStoreService, DataStoreService>();
         services.AddScoped<IExternalResourceService, ExternalResourceService>();
         services.AddScoped<IApplicationService, ApplicationService>();

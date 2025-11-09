@@ -33,13 +33,11 @@ public class DataStoreService : IDataStoreService
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<DataStore>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
-        if (command.ServerId is Guid sid)
+        if (command.PlatformId is Guid pid)
         {
-            var server = store.Servers.FirstOrDefault(s => s.Id == sid);
-            if (server is null)
-                return Result<DataStore>.Failure($"Server with ID '{sid}' not found.", ErrorType.Validation);
-            if (server.EnvironmentId != command.EnvironmentId)
-                return Result<DataStore>.Failure("Server and DataStore must belong to the same environment.", ErrorType.Validation);
+            var platform = store.Platforms.FirstOrDefault(s => s.Id == pid);
+            if (platform is null)
+                return Result<DataStore>.Failure($"Platform with ID '{pid}' not found.", ErrorType.Validation);
         }
 
         var tagIds = command.TagIds ?? new HashSet<Guid>();
@@ -59,7 +57,7 @@ public class DataStoreService : IDataStoreService
             Description: null,
             Kind: command.Kind,
             EnvironmentId: command.EnvironmentId,
-            ServerId: command.ServerId,
+            PlatformId: command.PlatformId,
             ConnectionUri: command.ConnectionUri,
             TagIds: tagIds,
             CreatedAt: now,
@@ -85,13 +83,11 @@ public class DataStoreService : IDataStoreService
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<DataStore>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
-        if (command.ServerId is Guid sid)
+        if (command.PlatformId is Guid pid)
         {
-            var server = store.Servers.FirstOrDefault(s => s.Id == sid);
-            if (server is null)
-                return Result<DataStore>.Failure($"Server with ID '{sid}' not found.", ErrorType.Validation);
-            if (server.EnvironmentId != command.EnvironmentId)
-                return Result<DataStore>.Failure("Server and DataStore must belong to the same environment.", ErrorType.Validation);
+            var platform = store.Platforms.FirstOrDefault(s => s.Id == pid);
+            if (platform is null)
+                return Result<DataStore>.Failure($"Platform with ID '{pid}' not found.", ErrorType.Validation);
         }
 
         var tagIds = command.TagIds ?? new HashSet<Guid>();
@@ -109,7 +105,7 @@ public class DataStoreService : IDataStoreService
             Name = command.Name,
             Kind = command.Kind,
             EnvironmentId = command.EnvironmentId,
-            ServerId = command.ServerId,
+            PlatformId = command.PlatformId,
             ConnectionUri = command.ConnectionUri,
             TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow

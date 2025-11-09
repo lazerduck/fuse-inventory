@@ -22,8 +22,8 @@
         <p class="instance-url">
           {{ instance.baseUri ?? 'No base URI' }}
         </p>
-        <p class="instance-server">
-          {{ serverLookup[instance.serverId ?? ''] ?? 'No server' }}
+        <p class="instance-platform">
+          {{ platformLookup[instance.platformId ?? ''] ?? 'No platform' }}
         </p>
       </div>
 
@@ -107,7 +107,7 @@ import type { ApplicationInstance } from '../../api/client'
 defineProps<{
   instance: ApplicationInstance
   environmentLookup: Record<string, string>
-  serverLookup: Record<string, string>
+  platformLookup: Record<string, string>
   tagLookup: Record<string, string>
   dependencyFormatter: (dependency: any) => string
 }>()
@@ -147,7 +147,7 @@ defineProps<{
   word-break: break-all;
 }
 
-.instance-server {
+.instance-platform {
   font-size: 0.8125rem;
   color: var(--fuse-text-muted);
   margin: 0;

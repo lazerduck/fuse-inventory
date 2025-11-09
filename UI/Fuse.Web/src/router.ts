@@ -35,9 +35,9 @@ const router = createRouter({
       component: () => import('./pages/DataStoresPage.vue')
     },
     {
-      path: '/servers',
-      name: 'servers',
-      component: () => import('./pages/ServersPage.vue')
+      path: '/platforms',
+      name: 'platforms',
+      component: () => import('./pages/PlatformsPage.vue')
     },
     {
       path: '/environments',

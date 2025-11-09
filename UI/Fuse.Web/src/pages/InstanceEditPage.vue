@@ -34,15 +34,15 @@
               :disable="environmentOptions.length === 0"
             />
             <q-select
-              v-model="form.serverId"
-              label="Server"
+              v-model="form.platformId"
+              label="Platform"
               dense
               outlined
               emit-value
               map-options
               clearable
-              :options="serverOptions"
-              :disable="serverOptions.length === 0"
+              :options="platformOptions"
+              :disable="platformOptions.length === 0"
             />
             <q-input v-model="form.version" label="Version" dense outlined />
             <q-input v-model="form.baseUri" label="Base URI" dense outlined />
@@ -235,7 +235,7 @@ import {
 import { useFuseClient } from '../composables/useFuseClient'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
-import { useServers } from '../composables/useServers'
+import { usePlatforms } from '../composables/usePlatforms'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import { getErrorMessage } from '../utils/error'
@@ -299,19 +299,19 @@ const accountsQuery = useQuery({
 
 const tagsStore = useTags()
 const environmentsStore = useEnvironments()
-const serversStore = useServers()
+const platformsStore = usePlatforms()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
 
 const environmentLookup = environmentsStore.lookup
 
 const environmentOptions = environmentsStore.options
-const serverOptions = serversStore.options
+const platformOptions = platformsStore.options
 const tagOptions = tagsStore.options
 
 const form = reactive({
   environmentId: null as string | null,
-  serverId: null as string | null,
+  platformId: null as string | null,
   baseUri: '',
   healthUri: '',
   openApiUri: '',
@@ -322,7 +322,7 @@ const form = reactive({
 watch(instance, (inst) => {
   if (inst) {
     form.environmentId = inst.environmentId ?? null
-    form.serverId = inst.serverId ?? null
+    form.platformId = inst.platformId ?? null
     form.baseUri = inst.baseUri ?? ''
     form.healthUri = inst.healthUri ?? ''
     form.openApiUri = inst.openApiUri ?? ''
@@ -363,7 +363,7 @@ function handleSubmitInstance() {
   if (!applicationId.value || !instanceId.value) return
   const payload = Object.assign(new UpdateApplicationInstance(), {
     environmentId: form.environmentId ?? undefined,
-    serverId: form.serverId ?? undefined,
+    platformId: form.platformId ?? undefined,
     baseUri: form.baseUri || undefined,
     healthUri: form.healthUri || undefined,
     openApiUri: form.openApiUri || undefined,

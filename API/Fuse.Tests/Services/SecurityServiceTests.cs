@@ -22,7 +22,7 @@ public class SecurityServiceTests
         var snapshot = new Snapshot(
             Applications: Array.Empty<Application>(),
             DataStores: Array.Empty<DataStore>(),
-            Servers: Array.Empty<Server>(),
+            Platforms: Array.Empty<Platform>(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: Array.Empty<Account>(),
             Tags: Array.Empty<Tag>(),

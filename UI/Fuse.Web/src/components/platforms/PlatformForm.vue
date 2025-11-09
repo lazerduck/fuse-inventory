@@ -8,28 +8,21 @@
     <q-form @submit.prevent="handleSubmit">
       <q-card-section>
         <div class="form-grid">
-          <q-input v-model="form.name" label="Name*" dense outlined :rules="[v => !!v || 'Name is required']" />
-          <q-input v-model="form.hostname" label="Hostname*" dense outlined :rules="[v => !!v || 'Hostname is required']" />
+          <q-input v-model="form.displayName" label="Name*" dense outlined :rules="[v => !!v || 'Display Name is required']" />
+          <q-input v-model="form.dnsName" label="DNS Name" dense outlined />
+          <q-input v-model="form.os" label="Operating System" dense outlined />
           <q-select
-            v-model="form.operatingSystem"
-            label="Operating System"
+            v-model="form.kind"
+            label="Kind"
             dense
             outlined
             emit-value
             map-options
             clearable
-            :options="operatingSystemOptions"
+            :options="kindOptions"
           />
-          <q-select
-            v-model="form.environmentId"
-            label="Environment*"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="environmentOptions"
-            :rules="[v => !!v || 'Environment is required']"
-          />
+          <q-input v-model="form.ipAddress" label="IP Address" dense outlined />
+          <q-input v-model="form.notes" label="Notes" type="textarea" dense outlined />
           <q-select
             v-model="form.tagIds"
             label="Tags"
@@ -54,28 +47,29 @@
 
 <script setup lang="ts">
 import { computed, reactive, onMounted, watch } from 'vue'
-import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
-import { ServerOperatingSystem, type Server } from '../../api/client'
+import { PlatformKind, type Platform } from '../../api/client'
 
 type Mode = 'create' | 'edit'
 
-interface ServerFormModel {
-  name: string
-  hostname: string
-  operatingSystem: ServerOperatingSystem | null
-  environmentId: string | null
+export interface PlatformFormModel {
+  displayName: string
+  dnsName: string
+  os: string | null
+  kind: PlatformKind | null
+  ipAddress: string | null
+  notes: string | null
   tagIds: string[]
 }
 
 interface Props {
   mode?: Mode
-  initialValue?: Partial<Server> | null
+  initialValue?: Partial<Platform> | null
   loading?: boolean
 }
 
 interface Emits {
-  (e: 'submit', payload: ServerFormModel): void
+  (e: 'submit', payload: PlatformFormModel): void
   (e: 'cancel'): void
 }
 
@@ -86,41 +80,45 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
-const environmentsStore = useEnvironments()
 const tagsStore = useTags()
 
-const environmentOptions = environmentsStore.options
 const tagOptions = tagsStore.options
 
-const operatingSystemOptions = Object.values(ServerOperatingSystem)
-  .map(value => ({ label: value, value: value as ServerOperatingSystem }))
+const kindOptions = Object.values(PlatformKind)
+  .map(value => ({ label: value, value: value as PlatformKind }))
 
-const form = reactive<ServerFormModel>({
-  name: '',
-  hostname: '',
-  operatingSystem: null,
-  environmentId: null,
+const form = reactive<PlatformFormModel>({
+  displayName: '',
+  dnsName: '',
+  os: null,
+  kind: null,
+  ipAddress: null,
+  notes: null,
   tagIds: []
 })
 
 const isCreate = computed(() => props.mode === 'create')
-const title = computed(() => (isCreate.value ? 'Create Server' : 'Edit Server'))
+const title = computed(() => (isCreate.value ? 'Create Platform' : 'Edit Platform'))
 const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
 const loading = computed(() => props.loading)
 
-function applyInitialValue(value?: Partial<Server> | null) {
+function applyInitialValue(value?: Partial<Platform> | null) {
   if (!value) {
-    form.name = ''
-    form.hostname = ''
-    form.operatingSystem = null
-    form.environmentId = null
+    form.displayName = ''
+    form.dnsName = ''
+    form.os = null
     form.tagIds = []
+    form.kind = null
+    form.ipAddress = null
+    form.notes = null
     return
   }
-  form.name = value.name ?? ''
-  form.hostname = value.hostname ?? ''
-  form.operatingSystem = (value.operatingSystem as any) ?? null
-  form.environmentId = value.environmentId ?? null
+  form.displayName = value.displayName ?? ''
+  form.dnsName = value.dnsName ?? ''
+  form.os = value.os ?? null
+  form.kind = value.kind ?? null
+  form.ipAddress = value.ipAddress ?? null
+  form.notes = value.notes ?? null
   form.tagIds = [...(value.tagIds ?? [])]
 }
 
