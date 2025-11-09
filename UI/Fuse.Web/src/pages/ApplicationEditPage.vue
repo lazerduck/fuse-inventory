@@ -56,7 +56,7 @@
         </template>
         <template #body-cell-server="props">
           <q-td :props="props">
-            {{ serverLookup[props.row.serverId ?? ''] ?? '—' }}
+            {{ serverLookup[props.row.platformId ?? ''] ?? '—' }}
           </q-td>
         </template>
         <template #body-cell-tags="props">
@@ -184,7 +184,7 @@ import {
 import { useFuseClient } from '../composables/useFuseClient'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
-import { useServers } from '../composables/useServers'
+import { usePlatforms } from '../composables/usePlatforms'
 import { getErrorMessage } from '../utils/error'
 import ApplicationDetailsForm from '../components/applications/ApplicationDetailsForm.vue'
 import ApplicationInstanceForm from '../components/applications/ApplicationInstanceForm.vue'
@@ -192,7 +192,7 @@ import ApplicationPipelineForm from '../components/applications/ApplicationPipel
 
 interface ApplicationInstanceFormModel {
   environmentId: string | null
-  serverId: string | null
+  platformId: string | null
   baseUri: string
   healthUri: string
   openApiUri: string
@@ -231,7 +231,7 @@ const applicationError = computed(() => {
 
 const tagsStore = useTags()
 const environmentsStore = useEnvironments()
-const serversStore = useServers()
+const serversStore = usePlatforms()
 
 const tagLookup = tagsStore.lookup
 const environmentLookup = environmentsStore.lookup
@@ -239,7 +239,7 @@ const serverLookup = serversStore.lookup
 
 const instanceColumns: QTableColumn<ApplicationInstance>[] = [
   { name: 'environment', label: 'Environment', field: 'environmentId', align: 'left' },
-  { name: 'server', label: 'Server', field: 'serverId', align: 'left' },
+  { name: 'server', label: 'Server', field: 'platformId', align: 'left' },
   { name: 'version', label: 'Version', field: 'version', align: 'left' },
   { name: 'baseUri', label: 'Base URI', field: 'baseUri', align: 'left' },
   { name: 'healthUri', label: 'Health URI', field: 'healthUri', align: 'left' },
@@ -370,7 +370,7 @@ function handleSubmitInstance(model: ApplicationInstanceFormModel) {
   if (!application.value?.id) return
   const payload = Object.assign(new CreateApplicationInstance(), {
     environmentId: model.environmentId ?? undefined,
-    serverId: model.serverId ?? undefined,
+    platformId: model.platformId ?? undefined,
     baseUri: model.baseUri || undefined,
     healthUri: model.healthUri || undefined,
     openApiUri: model.openApiUri || undefined,

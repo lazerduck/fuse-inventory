@@ -229,6 +229,33 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    platformAll(signal?: AbortSignal): Promise<Platform[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @return OK
+     */
+    platformGET(id: string, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @return No Content
+     */
+    platformDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     state(signal?: AbortSignal): Promise<SecurityStateResponse>;
 
     /**
@@ -254,33 +281,6 @@ export interface IFuseApiClient {
      * @return No Content
      */
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    serverAll(signal?: AbortSignal): Promise<Server[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    serverPOST(body: CreateServer | undefined, signal?: AbortSignal): Promise<Server>;
-
-    /**
-     * @return OK
-     */
-    serverGET(id: string, signal?: AbortSignal): Promise<Server>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    serverPUT(id: string, body: UpdateServer | undefined, signal?: AbortSignal): Promise<Server>;
-
-    /**
-     * @return No Content
-     */
-    serverDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -2417,6 +2417,267 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    platformAll(signal?: AbortSignal): Promise<Platform[]> {
+        let url_ = this.baseUrl + "/api/Platform";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPlatformAll(_response);
+        });
+    }
+
+    protected processPlatformAll(response: Response): Promise<Platform[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Platform.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Platform[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
+        let url_ = this.baseUrl + "/api/Platform";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPlatformPOST(_response);
+        });
+    }
+
+    protected processPlatformPOST(response: Response): Promise<Platform> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = Platform.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Platform>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    platformGET(id: string, signal?: AbortSignal): Promise<Platform> {
+        let url_ = this.baseUrl + "/api/Platform/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPlatformGET(_response);
+        });
+    }
+
+    protected processPlatformGET(response: Response): Promise<Platform> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Platform.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Platform>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
+        let url_ = this.baseUrl + "/api/Platform/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPlatformPUT(_response);
+        });
+    }
+
+    protected processPlatformPUT(response: Response): Promise<Platform> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Platform.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Platform>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    platformDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Platform/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPlatformDELETE(_response);
+        });
+    }
+
+    protected processPlatformDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     state(signal?: AbortSignal): Promise<SecurityStateResponse> {
         let url_ = this.baseUrl + "/api/Security/state";
         url_ = url_.replace(/[?&]$/, "");
@@ -2674,267 +2935,6 @@ export class FuseApiClient implements IFuseApiClient {
             let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    serverAll(signal?: AbortSignal): Promise<Server[]> {
-        let url_ = this.baseUrl + "/api/Server";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processServerAll(_response);
-        });
-    }
-
-    protected processServerAll(response: Response): Promise<Server[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(Server.fromJS(item));
-            }
-            else {
-                result200 = null as any;
-            }
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Server[]>(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    serverPOST(body: CreateServer | undefined, signal?: AbortSignal): Promise<Server> {
-        let url_ = this.baseUrl + "/api/Server";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processServerPOST(_response);
-        });
-    }
-
-    protected processServerPOST(response: Response): Promise<Server> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result201 = Server.fromJS(resultData201);
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            let result409: any = null;
-            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result409 = ProblemDetails.fromJS(resultData409);
-            return throwException("Conflict", status, _responseText, _headers, result409);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Server>(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    serverGET(id: string, signal?: AbortSignal): Promise<Server> {
-        let url_ = this.baseUrl + "/api/Server/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processServerGET(_response);
-        });
-    }
-
-    protected processServerGET(response: Response): Promise<Server> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = Server.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Server>(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    serverPUT(id: string, body: UpdateServer | undefined, signal?: AbortSignal): Promise<Server> {
-        let url_ = this.baseUrl + "/api/Server/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processServerPUT(_response);
-        });
-    }
-
-    protected processServerPUT(response: Response): Promise<Server> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = Server.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            let result409: any = null;
-            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result409 = ProblemDetails.fromJS(resultData409);
-            return throwException("Conflict", status, _responseText, _headers, result409);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Server>(null as any);
-    }
-
-    /**
-     * @return No Content
-     */
-    serverDELETE(id: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/Server/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processServerDELETE(_response);
-        });
-    }
-
-    protected processServerDELETE(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -3421,7 +3421,7 @@ export interface IApplication {
 export class ApplicationInstance implements IApplicationInstance {
     id?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -3444,7 +3444,7 @@ export class ApplicationInstance implements IApplicationInstance {
         if (_data) {
             this.id = _data["Id"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.baseUri = _data["BaseUri"];
             this.healthUri = _data["HealthUri"];
             this.openApiUri = _data["OpenApiUri"];
@@ -3475,7 +3475,7 @@ export class ApplicationInstance implements IApplicationInstance {
         data = typeof data === 'object' ? data : {};
         data["Id"] = this.id;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["BaseUri"] = this.baseUri;
         data["HealthUri"] = this.healthUri;
         data["OpenApiUri"] = this.openApiUri;
@@ -3499,7 +3499,7 @@ export class ApplicationInstance implements IApplicationInstance {
 export interface IApplicationInstance {
     id?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -3896,7 +3896,7 @@ export interface ICreateApplicationDependency {
 export class CreateApplicationInstance implements ICreateApplicationInstance {
     applicationId?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -3916,7 +3916,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
         if (_data) {
             this.applicationId = _data["ApplicationId"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.baseUri = _data["BaseUri"];
             this.healthUri = _data["HealthUri"];
             this.openApiUri = _data["OpenApiUri"];
@@ -3940,7 +3940,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
         data = typeof data === 'object' ? data : {};
         data["ApplicationId"] = this.applicationId;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["BaseUri"] = this.baseUri;
         data["HealthUri"] = this.healthUri;
         data["OpenApiUri"] = this.openApiUri;
@@ -3957,7 +3957,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
 export interface ICreateApplicationInstance {
     applicationId?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -4013,7 +4013,7 @@ export class CreateDataStore implements ICreateDataStore {
     name?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
 
@@ -4031,7 +4031,7 @@ export class CreateDataStore implements ICreateDataStore {
             this.name = _data["Name"];
             this.kind = _data["Kind"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.connectionUri = _data["ConnectionUri"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
@@ -4053,7 +4053,7 @@ export class CreateDataStore implements ICreateDataStore {
         data["Name"] = this.name;
         data["Kind"] = this.kind;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["ConnectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
@@ -4068,7 +4068,7 @@ export interface ICreateDataStore {
     name?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
 }
@@ -4181,6 +4181,74 @@ export interface ICreateExternalResource {
     tagIds?: string[] | undefined;
 }
 
+export class CreatePlatform implements ICreatePlatform {
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: ICreatePlatform) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.displayName = _data["DisplayName"];
+            this.dnsName = _data["DnsName"];
+            this.os = _data["Os"];
+            this.kind = _data["Kind"];
+            this.ipAddress = _data["IpAddress"];
+            this.notes = _data["Notes"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CreatePlatform {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreatePlatform();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["DisplayName"] = this.displayName;
+        data["DnsName"] = this.dnsName;
+        data["Os"] = this.os;
+        data["Kind"] = this.kind;
+        data["IpAddress"] = this.ipAddress;
+        data["Notes"] = this.notes;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICreatePlatform {
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
 export class CreateSecurityUser implements ICreateSecurityUser {
     userName?: string | undefined;
     password?: string | undefined;
@@ -4227,66 +4295,6 @@ export interface ICreateSecurityUser {
     password?: string | undefined;
     role?: SecurityRole;
     requestedBy?: string | undefined;
-}
-
-export class CreateServer implements ICreateServer {
-    name?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: ICreateServer) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["Name"];
-            this.hostname = _data["Hostname"];
-            this.operatingSystem = _data["OperatingSystem"];
-            this.environmentId = _data["EnvironmentId"];
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): CreateServer {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateServer();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Hostname"] = this.hostname;
-        data["OperatingSystem"] = this.operatingSystem;
-        data["EnvironmentId"] = this.environmentId;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface ICreateServer {
-    name?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
 }
 
 export class CreateTag implements ICreateTag {
@@ -4339,7 +4347,7 @@ export class DataStore implements IDataStore {
     description?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
@@ -4361,7 +4369,7 @@ export class DataStore implements IDataStore {
             this.description = _data["Description"];
             this.kind = _data["Kind"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.connectionUri = _data["ConnectionUri"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
@@ -4387,7 +4395,7 @@ export class DataStore implements IDataStore {
         data["Description"] = this.description;
         data["Kind"] = this.kind;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["ConnectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
@@ -4406,7 +4414,7 @@ export interface IDataStore {
     description?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
@@ -4713,6 +4721,93 @@ export interface ILogoutSecurityUser {
     token?: string | undefined;
 }
 
+export class Platform implements IPlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IPlatform) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.displayName = _data["DisplayName"];
+            this.dnsName = _data["DnsName"];
+            this.os = _data["Os"];
+            this.kind = _data["Kind"];
+            this.ipAddress = _data["IpAddress"];
+            this.notes = _data["Notes"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): Platform {
+        data = typeof data === 'object' ? data : {};
+        let result = new Platform();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["DisplayName"] = this.displayName;
+        data["DnsName"] = this.dnsName;
+        data["Os"] = this.os;
+        data["Kind"] = this.kind;
+        data["IpAddress"] = this.ipAddress;
+        data["Notes"] = this.notes;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IPlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export enum PlatformKind {
+    Server = "Server",
+    Cluster = "Cluster",
+    Serverless = "Serverless",
+    ContainerHost = "ContainerHost",
+}
+
 export enum Privilege {
     Select = "Select",
     Insert = "Insert",
@@ -4941,89 +5036,6 @@ export interface ISecurityUserInfo {
     role?: SecurityRole;
     createdAt?: Date;
     updatedAt?: Date;
-}
-
-export class Server implements IServer {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-
-    constructor(data?: IServer) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.hostname = _data["Hostname"];
-            this.operatingSystem = _data["OperatingSystem"];
-            this.environmentId = _data["EnvironmentId"];
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): Server {
-        data = typeof data === 'object' ? data : {};
-        let result = new Server();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["Hostname"] = this.hostname;
-        data["OperatingSystem"] = this.operatingSystem;
-        data["EnvironmentId"] = this.environmentId;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface IServer {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-
-export enum ServerOperatingSystem {
-    Linux = "Linux",
-    Windows = "Windows",
-    MacOS = "MacOS",
-    Other = "Other",
 }
 
 export class Tag implements ITag {
@@ -5387,7 +5399,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
     applicationId?: string;
     instanceId?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -5408,7 +5420,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
             this.applicationId = _data["ApplicationId"];
             this.instanceId = _data["InstanceId"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.baseUri = _data["BaseUri"];
             this.healthUri = _data["HealthUri"];
             this.openApiUri = _data["OpenApiUri"];
@@ -5433,7 +5445,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
         data["ApplicationId"] = this.applicationId;
         data["InstanceId"] = this.instanceId;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["BaseUri"] = this.baseUri;
         data["HealthUri"] = this.healthUri;
         data["OpenApiUri"] = this.openApiUri;
@@ -5451,7 +5463,7 @@ export interface IUpdateApplicationInstance {
     applicationId?: string;
     instanceId?: string;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     baseUri?: string | undefined;
     healthUri?: string | undefined;
     openApiUri?: string | undefined;
@@ -5512,7 +5524,7 @@ export class UpdateDataStore implements IUpdateDataStore {
     name?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
 
@@ -5531,7 +5543,7 @@ export class UpdateDataStore implements IUpdateDataStore {
             this.name = _data["Name"];
             this.kind = _data["Kind"];
             this.environmentId = _data["EnvironmentId"];
-            this.serverId = _data["ServerId"];
+            this.platformId = _data["PlatformId"];
             this.connectionUri = _data["ConnectionUri"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
@@ -5554,7 +5566,7 @@ export class UpdateDataStore implements IUpdateDataStore {
         data["Name"] = this.name;
         data["Kind"] = this.kind;
         data["EnvironmentId"] = this.environmentId;
-        data["ServerId"] = this.serverId;
+        data["PlatformId"] = this.platformId;
         data["ConnectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
@@ -5570,7 +5582,7 @@ export interface IUpdateDataStore {
     name?: string | undefined;
     kind?: string | undefined;
     environmentId?: string;
-    serverId?: string | undefined;
+    platformId?: string | undefined;
     connectionUri?: string | undefined;
     tagIds?: string[] | undefined;
 }
@@ -5691,6 +5703,78 @@ export interface IUpdateExternalResource {
     tagIds?: string[] | undefined;
 }
 
+export class UpdatePlatform implements IUpdatePlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdatePlatform) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.displayName = _data["DisplayName"];
+            this.dnsName = _data["DnsName"];
+            this.os = _data["Os"];
+            this.kind = _data["Kind"];
+            this.ipAddress = _data["IpAddress"];
+            this.notes = _data["Notes"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdatePlatform {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePlatform();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["DisplayName"] = this.displayName;
+        data["DnsName"] = this.dnsName;
+        data["Os"] = this.os;
+        data["Kind"] = this.kind;
+        data["IpAddress"] = this.ipAddress;
+        data["Notes"] = this.notes;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdatePlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
 export class UpdateSecuritySettings implements IUpdateSecuritySettings {
     level?: SecurityLevel;
     requestedBy?: string | undefined;
@@ -5729,70 +5813,6 @@ export class UpdateSecuritySettings implements IUpdateSecuritySettings {
 export interface IUpdateSecuritySettings {
     level?: SecurityLevel;
     requestedBy?: string | undefined;
-}
-
-export class UpdateServer implements IUpdateServer {
-    id?: string;
-    name?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: IUpdateServer) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.hostname = _data["Hostname"];
-            this.operatingSystem = _data["OperatingSystem"];
-            this.environmentId = _data["EnvironmentId"];
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): UpdateServer {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateServer();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Hostname"] = this.hostname;
-        data["OperatingSystem"] = this.operatingSystem;
-        data["EnvironmentId"] = this.environmentId;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IUpdateServer {
-    id?: string;
-    name?: string | undefined;
-    hostname?: string | undefined;
-    operatingSystem?: ServerOperatingSystem;
-    environmentId?: string;
-    tagIds?: string[] | undefined;
 }
 
 export class UpdateTag implements IUpdateTag {

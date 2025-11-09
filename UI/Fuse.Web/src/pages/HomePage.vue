@@ -124,7 +124,7 @@ import { computed, ref } from 'vue'
 import { Notify } from 'quasar'
 import { TargetKind } from '../api/client'
 import { useApplications } from '../composables/useApplications'
-import { useServers } from '../composables/useServers'
+import { usePlatforms } from '../composables/usePlatforms'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useDataStores } from '../composables/useDataStores'
@@ -146,7 +146,7 @@ const showOnboardingBanner = computed(
 )
 
 const applicationsQuery = useApplications()
-const serversQuery = useServers()
+const serversQuery = usePlatforms()
 const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()

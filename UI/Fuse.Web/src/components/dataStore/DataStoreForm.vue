@@ -36,7 +36,7 @@
             :rules="[val => !!val || 'Data store environment is required']"
           />
           <q-select
-            v-model="form.serverId"
+            v-model="form.platformId"
             label="Server"
             dense
             outlined
@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
-import { useServers } from '../../composables/useServers'
+import { usePlatforms } from '../../composables/usePlatforms'
 import { useTags } from '../../composables/useTags'
 import type { DataStore } from '../../api/client'
 
@@ -81,7 +81,7 @@ interface DataStoreFormModel {
   name: string
   kind: string
   environmentId: string | null
-  serverId: string | null
+  platformId: string | null
   connectionUri: string
   tagIds: string[]
 }
@@ -105,7 +105,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
-const serversStore = useServers()
+const serversStore = usePlatforms()
 const tagsStore = useTags()
 
 const environmentOptions = environmentsStore.options
@@ -116,7 +116,7 @@ const form = reactive<DataStoreFormModel>({
   name: '',
   kind: '',
   environmentId: null,
-  serverId: null,
+  platformId: null,
   connectionUri: '',
   tagIds: []
 })
@@ -131,7 +131,7 @@ function applyInitialValue(value?: Partial<DataStore> | null) {
     form.name = ''
     form.kind = ''
     form.environmentId = null
-    form.serverId = null
+    form.platformId = null
     form.connectionUri = ''
     form.tagIds = []
     return
@@ -139,7 +139,7 @@ function applyInitialValue(value?: Partial<DataStore> | null) {
   form.name = value.name ?? ''
   form.kind = value.kind ?? ''
   form.environmentId = value.environmentId ?? null
-  form.serverId = value.serverId ?? null
+  form.platformId = value.platformId ?? null
   form.connectionUri = value.connectionUri ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
 }

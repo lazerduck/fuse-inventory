@@ -36,7 +36,7 @@
         </template>
         <template #body-cell-server="props">
           <q-td :props="props">
-            {{ serverLookup[props.row.serverId ?? ''] ?? '—' }}
+            {{ serverLookup[props.row.platformId ?? ''] ?? '—' }}
           </q-td>
         </template>
         <template #body-cell-tags="props">
@@ -93,7 +93,7 @@ import type { QTableColumn } from 'quasar'
 import { DataStore, CreateDataStore, UpdateDataStore } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useEnvironments } from '../composables/useEnvironments'
-import { useServers } from '../composables/useServers'
+import { usePlatforms } from '../composables/usePlatforms'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import DataStoreForm from '../components/dataStore/DataStoreForm.vue'
@@ -103,7 +103,7 @@ interface DataStoreFormModel {
   name: string
   kind: string
   environmentId: string | null
-  serverId: string | null
+  platformId: string | null
   connectionUri: string
   tagIds: string[]
 }
@@ -111,7 +111,7 @@ interface DataStoreFormModel {
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const environmentsStore = useEnvironments()
-const serversStore = useServers()
+const serversStore = usePlatforms()
 const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
@@ -130,7 +130,7 @@ const columns: QTableColumn<DataStore>[] = [
   { name: 'kind', label: 'Kind', field: 'kind', align: 'left' },
   { name: 'connectionUri', label: 'Connection URI', field: 'connectionUri', align: 'left' },
   { name: 'environment', label: 'Environment', field: 'environmentId', align: 'left' },
-  { name: 'server', label: 'Server', field: 'serverId', align: 'left' },
+  { name: 'server', label: 'Server', field: 'platformId', align: 'left' },
   { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
@@ -199,7 +199,7 @@ function handleFormSubmit(values: DataStoreFormModel) {
       name: values.name || undefined,
       kind: values.kind || undefined,
       environmentId: values.environmentId || undefined,
-      serverId: values.serverId || undefined,
+      platformId: values.platformId || undefined,
       connectionUri: values.connectionUri || undefined,
       tagIds: values.tagIds.length ? [...values.tagIds] : undefined
     })
@@ -209,7 +209,7 @@ function handleFormSubmit(values: DataStoreFormModel) {
       name: values.name || undefined,
       kind: values.kind || undefined,
       environmentId: values.environmentId || undefined,
-      serverId: values.serverId || undefined,
+      platformId: values.platformId || undefined,
       connectionUri: values.connectionUri || undefined,
       tagIds: values.tagIds.length ? [...values.tagIds] : undefined
     })

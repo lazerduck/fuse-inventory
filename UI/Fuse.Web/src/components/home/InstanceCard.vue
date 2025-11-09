@@ -23,7 +23,7 @@
           {{ instance.baseUri ?? 'No base URI' }}
         </p>
         <p class="instance-server">
-          {{ serverLookup[instance.serverId ?? ''] ?? 'No server' }}
+          {{ serverLookup[instance.platformId ?? ''] ?? 'No server' }}
         </p>
       </div>
 
