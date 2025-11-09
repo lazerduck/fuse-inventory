@@ -23,6 +23,9 @@ app.use(Quasar, {
   plugins: {
     Notify,
     Dialog
+  },
+  config: {
+    dark: 'auto'
   }
 })
 

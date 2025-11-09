@@ -294,7 +294,6 @@ import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
 import { LoginSecurityUser } from './api/client'
 import { getErrorMessage } from './utils/error'
-import { Dark } from 'quasar'
 import { useOnboardingStore } from './stores/OnboardingStore'
 import { useOnboardingTour } from './composables/useOnboardingTour'
 import { useEnvironments } from './composables/useEnvironments'
@@ -357,14 +356,6 @@ onMounted(async () => {
 
   if(fuseStore.requireSetup) {
     router.push({ name: 'security' })
-  }
-
-  // get the desktop light/dark mode preference
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  if (prefersDark) {
-    Dark.set(true)
-  } else {
-    Dark.set(false)
   }
 
   await evaluateOnboardingPrompt()
