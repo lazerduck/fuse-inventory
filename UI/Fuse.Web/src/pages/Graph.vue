@@ -133,6 +133,9 @@ function refreshGraph() {
         case 'External':
           targetPrefix = 'ext'
           break
+        case 'Application':
+          targetPrefix = 'appi'
+          break;
         default:
           // Skip kinds we don't visualize yet (e.g., Application)
           continue

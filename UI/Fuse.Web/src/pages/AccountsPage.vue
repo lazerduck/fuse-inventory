@@ -259,9 +259,17 @@ function closeEditDialog() {
 function targetOptions(kind: TargetKind | null): TargetOption[] {
   const k = kind ?? TargetKind.Application
   if (k === TargetKind.Application) {
-    return (applicationsQuery.data.value ?? [])
-      .filter((item) => !!item.id)
-      .map((item) => ({ label: item.name ?? item.id!, value: item.id! }))
+    // Use application instances as selectable targets
+    const apps = applicationsQuery.data.value ?? []
+    const options: TargetOption[] = []
+    for (const app of apps) {
+      const appName = app.name ?? app.id ?? 'Application'
+      for (const inst of app.instances ?? []) {
+        if (!inst?.id) continue
+        options.push({ label: `${appName} — ${inst.environmentId ? inst.environmentId : '—'}` , value: inst.id })
+      }
+    }
+    return options
   }
   if (k === TargetKind.DataStore) {
     return (dataStoresQuery.data.value ?? [])
@@ -583,8 +591,18 @@ function resolveTargetName(account: Account) {
   const targetId = account.targetId
   if (!targetId) return '—'
   switch (account.targetKind) {
-    case TargetKind.Application:
-      return applicationsQuery.data.value?.find((item) => item.id === targetId)?.name ?? targetId
+    case TargetKind.Application: {
+      // Treat targetId as instance id; fallback to legacy application id
+      const apps = applicationsQuery.data.value ?? []
+      for (const app of apps) {
+        const inst = (app.instances ?? []).find((i) => i.id === targetId)
+        if (inst) {
+          const appName = app.name ?? app.id ?? 'Application'
+          return `${appName} — ${inst.environmentId ?? '—'}`
+        }
+      }
+      return apps.find((a) => a.id === targetId)?.name ?? targetId
+    }
     case TargetKind.DataStore:
       return dataStoresQuery.data.value?.find((item) => item.id === targetId)?.name ?? targetId
     case TargetKind.External:

@@ -765,10 +765,20 @@ function ensureDependencyAccount() {
 
 function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
   switch (kind) {
-    case TargetKind.Application:
-      return (applicationsData.value ?? [])
-        .filter((app) => !!app.id)
-        .map((app) => ({ label: app.name ?? app.id!, value: app.id! }))
+    case TargetKind.Application: {
+      // Use application instances as targets, label with App Name — Environment
+      const apps = applicationsData.value ?? []
+      const options: SelectOption<string>[] = []
+      for (const app of apps) {
+        const appName = app.name ?? app.id ?? 'Application'
+        for (const inst of app.instances ?? []) {
+          if (!inst?.id) continue
+          const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
+          options.push({ label: `${appName} — ${envName}` , value: inst.id })
+        }
+      }
+      return options
+    }
     case TargetKind.DataStore:
       return (dataStoresQuery.data.value ?? [])
         .filter((store) => !!store.id)
@@ -785,8 +795,20 @@ function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
 function targetLabel(kind: TargetKind | undefined, id: string | null) {
   if (!id) return '—'
   switch (kind) {
-    case TargetKind.Application:
-      return applicationsData.value?.find((app) => app.id === id)?.name ?? id
+    case TargetKind.Application: {
+      // Resolve by instance ID first; fallback to legacy application ID
+      const apps = applicationsData.value ?? []
+      for (const app of apps) {
+        const match = (app.instances ?? []).find((i) => i.id === id)
+        if (match) {
+          const envName = environmentLookup.value[match.environmentId ?? ''] ?? '—'
+          const appName = app.name ?? app.id ?? id
+          return `${appName} — ${envName}`
+        }
+      }
+      // Fallback: treat id as application id
+      return apps.find((a) => a.id === id)?.name ?? id
+    }
     case TargetKind.DataStore:
       return dataStoresQuery.data.value?.find((store) => store.id === id)?.name ?? id
     case TargetKind.External:

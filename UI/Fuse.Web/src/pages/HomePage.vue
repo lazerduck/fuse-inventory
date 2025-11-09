@@ -244,6 +244,17 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
   }
 
   if (dependency.targetKind === TargetKind.Application) {
+    // Treat targetId as an application instance ID; fallback to legacy application ID
+    const apps = applicationsQuery.data.value ?? []
+    for (const app of apps) {
+      const inst = (app.instances ?? []).find((i) => i.id === dependency.targetId)
+      if (inst) {
+        const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
+        const appName = app.name ?? app.id ?? 'Application'
+        return `${appName} — ${envName}`
+      }
+    }
+    // Fallback to application id mapping if present
     return applicationLookup.value[dependency.targetId] ?? 'Application'
   }
 

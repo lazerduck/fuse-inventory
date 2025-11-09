@@ -97,10 +97,42 @@ public class ApplicationService : IApplicationService
     public async Task<Result> DeleteApplicationAsync(DeleteApplication command)
     {
         var store = await _fuseStore.GetAsync();
-        if (!store.Applications.Any(a => a.Id == command.Id))
+        var appToDelete = store.Applications.FirstOrDefault(a => a.Id == command.Id);
+        if (appToDelete is null)
             return Result.Failure($"Application with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Where(x => x.Id != command.Id).ToList() });
+        // Collect instance IDs for dependency scrubbing
+        var deletedInstanceIds = appToDelete.Instances.Select(i => i.Id).ToHashSet();
+
+        await _fuseStore.UpdateAsync(s =>
+        {
+            var apps = new List<Application>();
+            foreach (var a in s.Applications)
+            {
+                if (a.Id == command.Id) continue; // remove the application entirely
+
+                var instances = new List<ApplicationInstance>();
+                var anyInstanceChanged = false;
+                foreach (var inst in a.Instances)
+                {
+                    var filteredDeps = inst.Dependencies
+                        .Where(d => !(d.TargetKind == TargetKind.Application && d.TargetId != Guid.Empty && deletedInstanceIds.Contains(d.TargetId)))
+                        .ToList();
+                    if (filteredDeps.Count != inst.Dependencies.Count)
+                    {
+                        anyInstanceChanged = true;
+                        instances.Add(inst with { Dependencies = filteredDeps, UpdatedAt = DateTime.UtcNow });
+                    }
+                    else
+                    {
+                        instances.Add(inst);
+                    }
+                }
+                var updatedA = a with { Instances = instances, UpdatedAt = anyInstanceChanged ? DateTime.UtcNow : a.UpdatedAt };
+                apps.Add(updatedA);
+            }
+            return s with { Applications = apps };
+        });
         return Result.Success();
     }
 
@@ -202,11 +234,42 @@ public class ApplicationService : IApplicationService
         var app = store.Applications.FirstOrDefault(a => a.Id == command.ApplicationId);
         if (app is null)
             return Result.Failure($"Application with ID '{command.ApplicationId}' not found.", ErrorType.NotFound);
-        if (!app.Instances.Any(i => i.Id == command.InstanceId))
+        var instance = app.Instances.FirstOrDefault(i => i.Id == command.InstanceId);
+        if (instance is null)
             return Result.Failure($"Instance with ID '{command.InstanceId}' not found.", ErrorType.NotFound);
 
-        var updatedApp = app with { Instances = app.Instances.Where(i => i.Id != command.InstanceId).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s =>
+        {
+            var apps = new List<Application>();
+            foreach (var a in s.Applications)
+            {
+                var instances = new List<ApplicationInstance>();
+                var anyInstanceChanged = false;
+                foreach (var inst in a.Instances)
+                {
+                    if (a.Id == app.Id && inst.Id == command.InstanceId)
+                    {
+                        // skip (delete) this instance
+                        continue;
+                    }
+                    var filteredDeps = inst.Dependencies
+                        .Where(d => !(d.TargetKind == TargetKind.Application && d.TargetId == command.InstanceId))
+                        .ToList();
+                    if (filteredDeps.Count != inst.Dependencies.Count)
+                    {
+                        anyInstanceChanged = true;
+                        instances.Add(inst with { Dependencies = filteredDeps, UpdatedAt = DateTime.UtcNow });
+                    }
+                    else
+                    {
+                        instances.Add(inst);
+                    }
+                }
+                var updatedA = a with { Instances = instances, UpdatedAt = anyInstanceChanged || a.Id == app.Id ? DateTime.UtcNow : a.UpdatedAt };
+                apps.Add(updatedA);
+            }
+            return s with { Applications = apps };
+        });
         return Result.Success();
     }
 
@@ -337,7 +400,9 @@ public class ApplicationService : IApplicationService
 
     private static bool TargetExists(Snapshot s, TargetKind kind, Guid id) => kind switch
     {
-        TargetKind.Application => s.Applications.Any(a => a.Id == id),
+        // Treat Application targets as Application Instance IDs; allow fallback to legacy app IDs for backward compatibility
+        TargetKind.Application => s.Applications.SelectMany(a => a.Instances).Any(i => i.Id == id)
+            || s.Applications.Any(a => a.Id == id),
         TargetKind.DataStore => s.DataStores.Any(d => d.Id == id),
         TargetKind.External => s.ExternalResources.Any(r => r.Id == id),
         _ => false

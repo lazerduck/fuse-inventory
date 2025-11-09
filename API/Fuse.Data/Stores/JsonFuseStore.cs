@@ -51,6 +51,60 @@ public sealed class JsonFuseStore : IFuseStore
                 Security: await ReadSecurityAsync("security.json", ct)
             );
 
+            // Temporary migration: convert application-target dependencies to instance-target dependencies.
+            bool hasChange = false;
+            var migratedApps = _cache.Applications
+                .Select(app =>
+                {
+                    bool appChanged = false;
+                    var migratedInstances = app.Instances
+                        .Select(inst =>
+                        {
+                            bool instChanged = false;
+                            var migratedDeps = new List<ApplicationInstanceDependency>(inst.Dependencies.Count);
+                            foreach (var dep in inst.Dependencies)
+                            {
+                                if (dep.TargetKind == TargetKind.Application)
+                                {
+                                    // dep.TargetId may be an Application ID – switch to an instance ID
+                                    var referencedApp = _cache.Applications.FirstOrDefault(a => a.Id == dep.TargetId);
+                                    var targetInstanceId = referencedApp?.Instances
+                                        .FirstOrDefault(ii => ii.EnvironmentId == inst.EnvironmentId)?.Id
+                                        ?? referencedApp?.Instances.FirstOrDefault()?.Id;
+
+                                    if (targetInstanceId is Guid iid && iid != dep.TargetId)
+                                    {
+                                        migratedDeps.Add(dep with { TargetId = iid });
+                                        instChanged = true;
+                                        continue;
+                                    }
+                                }
+                                migratedDeps.Add(dep);
+                            }
+
+                            if (instChanged)
+                            {
+                                appChanged = true;
+                                hasChange = true;
+                                return inst with { Dependencies = migratedDeps, UpdatedAt = DateTime.UtcNow };
+                            }
+                            return inst;
+                        })
+                        .ToList();
+
+                    if (appChanged)
+                    {
+                        return app with { Instances = migratedInstances, UpdatedAt = DateTime.UtcNow };
+                    }
+                    return app;
+                })
+                .ToList();
+
+            if (hasChange)
+            {
+                _cache = _cache with { Applications = migratedApps };
+            }
+
             var errors = SnapshotValidator.Validate(_cache);
             if (errors.Count > 0)
                 throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
@@ -60,7 +114,7 @@ public sealed class JsonFuseStore : IFuseStore
         finally { _mutex.Release(); }
     }
 
-public async Task SaveAsync(Snapshot snapshot, CancellationToken ct = default)
+    public async Task SaveAsync(Snapshot snapshot, CancellationToken ct = default)
     {
         await _mutex.WaitAsync(ct);
         try
@@ -90,7 +144,7 @@ public async Task SaveAsync(Snapshot snapshot, CancellationToken ct = default)
         var next = mutate(current);
         await SaveAsync(next, ct);
     }
-    
+
     private async Task<IReadOnlyList<T>> ReadAsync<T>(string file, CancellationToken ct)
     {
         var path = Path.Combine(_options.DataDirectory, file);

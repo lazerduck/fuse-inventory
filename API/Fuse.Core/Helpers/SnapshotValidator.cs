@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Fuse.Core.Models;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
 namespace Fuse.Core.Helpers;
 
@@ -29,7 +30,7 @@ public static class SnapshotValidator
 
         bool TargetExists(TargetKind kind, Guid id) => kind switch
         {
-            TargetKind.Application => apps.ContainsKey(id),
+            TargetKind.Application => apps.SelectMany(app => app.Value.Instances).Any(inst => inst.Id == id),
             TargetKind.DataStore => dataStores.ContainsKey(id),
             TargetKind.External => externals.ContainsKey(id),
             _ => false
