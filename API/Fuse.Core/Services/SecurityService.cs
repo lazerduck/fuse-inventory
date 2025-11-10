@@ -187,7 +187,7 @@ public sealed class SecurityService : ISecurityService
 
         if (user is null)
         {
-            return Result.Failure("Use not found", ErrorType.NotFound);
+            return Result.Failure("User not found", ErrorType.NotFound);
         }
 
         await _store.UpdateAsync(s => s with
