@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import vueDevTools from 'vite-plugin-vue-devtools'
 import vue from '@vitejs/plugin-vue'
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 
@@ -10,7 +11,8 @@ export default defineConfig({
     }),
     quasar({
       sassVariables: true
-    })
+    }),
+    vueDevTools()
   ],
   server: {
     port: 5173,

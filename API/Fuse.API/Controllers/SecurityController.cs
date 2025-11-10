@@ -132,13 +132,57 @@ namespace Fuse.API.Controllers
             return NoContent();
         }
 
-        [HttpGet("users")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUser>))]
-        public async Task<IActionResult> GetUsers ()
+        [HttpGet("accounts")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserResponse>))]
+        public async Task<IActionResult> GetAccounts()
         {
             var securityState = await _securityService.GetSecurityStateAsync();
             var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.CreatedAt, m.UpdatedAt));
             return Ok(response);
+        }
+
+        [HttpPatch("accounts/{Id}")]
+        [ProducesResponseType(200, Type = typeof(SecurityUserResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateUser([FromRoute] Guid Id, [FromBody] UpdateUser command)
+        {
+            var merged = command with { Id = Id };
+            var result = await _securityService.UpdateUser(merged, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            var user = result.Value!;
+            var response = new SecurityUserResponse(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
+            return Ok(response);
+        }
+
+        [HttpDelete("accounts/{Id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteUser([FromRoute] Guid Id)
+        {
+            var command = new DeleteUser(Id);
+            var result = await _securityService.DeleteUser(command, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            return NoContent();
         }
 
         private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)
