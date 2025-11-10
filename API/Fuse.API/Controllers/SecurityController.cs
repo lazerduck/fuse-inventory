@@ -8,7 +8,8 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Helpers;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
-    using Microsoft.AspNetCore.Mvc;
+  using Fuse.Core.Responses;
+  using Microsoft.AspNetCore.Mvc;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -127,6 +128,81 @@ namespace Fuse.API.Controllers
             var result = await _securityService.LogoutAsync(command);
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
+
+            return NoContent();
+        }
+
+        [HttpGet("accounts")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserResponse>))]
+        public async Task<IActionResult> GetAccounts()
+        {
+            var securityState = await _securityService.GetSecurityStateAsync();
+            var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.CreatedAt, m.UpdatedAt));
+            return Ok(response);
+        }
+
+        [HttpPatch("accounts/{Id}")]
+        [ProducesResponseType(200, Type = typeof(SecurityUserResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateUser([FromRoute] Guid Id, [FromBody] UpdateUser command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                return BadRequest(new { error = "Invalid user context." });
+            }
+
+            if (Id == userGuid)
+            {
+                return BadRequest(new { error = "You cannot edit your own account." });
+            }
+
+            var merged = command with { Id = Id };
+            var result = await _securityService.UpdateUser(merged, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            var user = result.Value!;
+            var response = new SecurityUserResponse(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
+            return Ok(response);
+        }
+
+        [HttpDelete("accounts/{Id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteUser([FromRoute] Guid Id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                return BadRequest(new { error = "Invalid user context." });
+            }
+
+            if (Id == userGuid)
+            {
+                return BadRequest(new { error = "You cannot delete your own account." });
+            }
+            
+            var command = new DeleteUser(Id);
+            var result = await _securityService.DeleteUser(command, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
 
             return NoContent();
         }

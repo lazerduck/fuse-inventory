@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import { useFuseClient } from "../composables/useFuseClient";
 import { useAuthToken } from "../composables/useAuthToken";
-import { LogoutSecurityUser } from "../api/client";
-import type { SecurityUserInfo, SecurityLevel, LoginSecurityUser } from "../api/client";
+import { LogoutSecurityUser, SecurityRole } from "../api/client";
+import { type SecurityUserInfo, SecurityLevel, type LoginSecurityUser } from "../api/client";
 
 const fuseClient = useFuseClient
 const { getToken, setToken, clearToken } = useAuthToken()
@@ -17,7 +17,29 @@ export const useFuseStore = defineStore("fuse", {
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
     userRole: (state) => state.currentUser?.role ?? null,
-    userName: (state) => state.currentUser?.userName ?? null
+    userName: (state) => state.currentUser?.userName ?? null,
+    canModify: (state) => {
+      switch (state.securityLevel) {
+        case SecurityLevel.None:
+          return true;
+        case SecurityLevel.RestrictedEditing:
+          case SecurityLevel.FullyRestricted:
+          return state.currentUser !== null && state.currentUser.role === SecurityRole.Admin;
+        default:
+          return false;
+      }
+    },
+    canRead: (state) => {
+      switch (state.securityLevel) {
+        case SecurityLevel.None:
+        case SecurityLevel.RestrictedEditing:
+          return true;
+        case SecurityLevel.FullyRestricted:
+          return state.currentUser !== null;
+        default:
+          return false;
+      }
+    }
   },
   actions: {
     async fetchStatus() {

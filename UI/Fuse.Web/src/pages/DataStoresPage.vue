@@ -9,6 +9,7 @@
         color="primary"
         label="Create Data Store"
         icon="add"
+        :disable="!fuseStore.canModify"
         @click="openCreateDialog"
         data-tour-id="create-data-store"
       />
@@ -18,7 +19,11 @@
       {{ dataStoreError }}
     </q-banner>
 
-    <q-card class="content-card">
+    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to view data stores. Please log in with appropriate credentials.
+    </q-banner>
+
+    <q-card v-if="fuseStore.canRead" class="content-card">
       <q-table
         flat
         bordered
@@ -55,7 +60,15 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" @click="openEditDialog(props.row)" />
+            <q-btn 
+              flat 
+              dense 
+              round 
+              icon="edit" 
+              color="primary" 
+              :disable="!fuseStore.canModify"
+              @click="openEditDialog(props.row)" 
+            />
             <q-btn
               flat
               dense
@@ -63,6 +76,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -92,6 +106,7 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import { DataStore, CreateDataStore, UpdateDataStore } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
 import { useTags } from '../composables/useTags'
@@ -110,6 +125,7 @@ interface DataStoreFormModel {
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
 const tagsStore = useTags()

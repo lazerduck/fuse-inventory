@@ -5,19 +5,31 @@
         <h1>Accounts</h1>
         <p class="subtitle">Manage credentials, authorisations, and grants for your targets.</p>
       </div>
-      <q-btn color="primary" label="Create Account" icon="add" @click="openCreateDialog" />
+      <q-btn 
+        color="primary" 
+        label="Create Account" 
+        icon="add" 
+        :disable="!fuseStore.canModify"
+        @click="openCreateDialog" 
+      />
     </div>
 
     <q-banner v-if="accountError" dense class="bg-red-1 text-negative q-mb-md">
       {{ accountError }}
     </q-banner>
 
+    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to view accounts. Please log in with appropriate credentials.
+    </q-banner>
+
     <AccountsTable
+      v-if="fuseStore.canRead"
       :accounts="accounts"
       :loading="isLoading"
       :pagination="pagination"
       :tag-lookup="tagLookup"
       :target-resolver="resolveTargetName"
+      :can-modify="fuseStore.canModify"
       @edit="openEditDialog"
       @delete="confirmDelete"
     />
@@ -149,6 +161,7 @@ import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vu
 import AccountsTable from '../components/accounts/AccountsTable.vue'
 import type { AccountFormModel, KeyValuePair, TargetOption, SelectOption } from '../components/accounts/types'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useApplications } from '../composables/useApplications'
 import { useDataStores } from '../composables/useDataStores'
@@ -163,6 +176,7 @@ interface GrantForm {
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 const tagsStore = useTags()
 const applicationsQuery = useApplications()
 const dataStoresQuery = useDataStores()

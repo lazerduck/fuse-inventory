@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
@@ -14,4 +12,6 @@ public interface ISecurityService
     Task<Result<LoginSession>> LoginAsync(LoginSecurityUser command, CancellationToken ct = default);
     Task<Result> LogoutAsync(LogoutSecurityUser command);
     Task<SecurityUser?> ValidateSessionAsync(string token, bool refresh, CancellationToken ct = default);
+    Task<Result<SecurityUser>> UpdateUser(UpdateUser command, CancellationToken ct = default);
+    Task<Result> DeleteUser(DeleteUser command, CancellationToken ct = default);
 }

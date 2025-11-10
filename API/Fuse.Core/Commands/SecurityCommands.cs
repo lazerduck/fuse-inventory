@@ -16,3 +16,7 @@ public record CreateSecurityUser(string UserName, string Password, SecurityRole 
 public record LoginSecurityUser(string UserName, string Password);
 
 public record LogoutSecurityUser(string Token);
+
+public record DeleteUser(Guid Id);
+
+public record UpdateUser(Guid Id, SecurityRole Role);

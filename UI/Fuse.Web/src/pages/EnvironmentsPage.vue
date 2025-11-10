@@ -9,6 +9,7 @@
         color="primary"
         label="Create Environment"
         icon="add"
+        :disable="!fuseStore.canModify"
         @click="openCreateDialog"
         data-tour-id="create-environment"
       />
@@ -18,7 +19,11 @@
       {{ environmentError }}
     </q-banner>
 
-    <q-card class="content-card">
+    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to view environments. Please log in with appropriate credentials.
+    </q-banner>
+
+    <q-card v-if="fuseStore.canRead" class="content-card">
       <q-table
         flat
         bordered
@@ -45,7 +50,15 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" @click="openEditDialog(props.row)" />
+            <q-btn 
+              flat 
+              dense 
+              round 
+              icon="edit" 
+              color="primary" 
+              :disable="!fuseStore.canModify"
+              @click="openEditDialog(props.row)" 
+            />
             <q-btn
               flat
               dense
@@ -53,6 +66,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -82,6 +96,7 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import { EnvironmentInfo, CreateEnvironment, UpdateEnvironment } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import EnvironmentForm from '../components/environments/EnvironmentForm.vue'
@@ -94,6 +109,7 @@ interface EnvironmentFormModel {
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }

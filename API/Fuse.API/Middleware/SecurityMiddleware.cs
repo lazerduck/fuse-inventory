@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Fuse.API.Middleware;
 
@@ -48,7 +42,21 @@ public sealed class SecurityMiddleware
             return;
         }
 
-        if (!isSecurityEndpoint)
+        if (isSecurityEndpoint)
+        {
+            // Security endpoints require admin access, except for login/logout/state and initial setup
+            if (!IsSecurityEndpointAllowed(path, context.Request.Method, user, requiresSetup))
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+                await WriteForbiddenAsync(context, cancellationToken);
+                return;
+            }
+        }
+        else
         {
             var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
             if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
@@ -143,6 +151,26 @@ public sealed class SecurityMiddleware
         if (path.StartsWithSegments("/api/security/login", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(method))
             return true;
         return false;
+    }
+
+    private static bool IsSecurityEndpointAllowed(PathString path, string method, SecurityUser? user, bool requiresSetup)
+    {
+        // During setup, allow specific endpoints without authentication
+        if (requiresSetup && IsSetupAllowed(path, method))
+            return true;
+
+        // Allow state endpoint for authenticated users (needed by UI to check security state)
+        if (path.StartsWithSegments("/api/security/state", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsGet(method))
+            return true;
+
+        // Allow login and logout for all
+        if (path.StartsWithSegments("/api/security/login", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(method))
+            return true;
+        if (path.StartsWithSegments("/api/security/logout", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(method))
+            return true;
+
+        // All other security endpoints require admin role
+        return user?.Role == SecurityRole.Admin;
     }
 
     private static AccessRequirement GetRequirement(SecurityLevel level, string method)

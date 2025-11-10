@@ -152,6 +152,52 @@ public sealed class SecurityService : ISecurityService
         return snapshot.Security.Users.FirstOrDefault(u => u.Id == session.UserId);
     }
 
+    public async Task<Result<SecurityUser>> UpdateUser(UpdateUser command, CancellationToken ct)
+    {
+        if (command is null || command.Id == default)
+        {
+            return Result<SecurityUser>.Failure("User Id must be provided", ErrorType.Validation);
+        }
+
+        var snapshot = await _store.GetAsync();
+        var user = snapshot.Security.Users.FirstOrDefault(m => m.Id == command.Id);
+
+        if (user is null)
+        {
+            return Result<SecurityUser>.Failure("User not found", ErrorType.NotFound);
+        }
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Users = s.Security.Users.Select(m => m.Id == command.Id ? m with { Role = command.Role } : m).ToList() }
+        }, ct);
+
+        return Result<SecurityUser>.Success(user with { Role = command.Role });
+    }
+
+    public async Task<Result> DeleteUser(DeleteUser command, CancellationToken ct)
+    {
+        if (command is null || command.Id == default)
+        {
+            return Result.Failure("User Id must be provided", ErrorType.Validation);
+        }
+
+        var snapshot = await _store.GetAsync();
+        var user = snapshot.Security.Users.FirstOrDefault(m => m.Id == command.Id);
+
+        if (user is null)
+        {
+            return Result.Failure("User not found", ErrorType.NotFound);
+        }
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Users = s.Security.Users.Where(m => m.Id != command.Id).ToList() }
+        }, ct);
+
+        return Result.Success();
+    }
+
     private static string GenerateSalt()
     {
         Span<byte> salt = stackalloc byte[16];
