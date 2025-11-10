@@ -201,7 +201,13 @@ onMounted(() => {
       { selector: '[type="external"]', style: { 'background-color': '#10b981' }},
       // Improve compound environment appearance & spacing
       { selector: ':parent', style: { 'padding': '20px', 'border-width': '2px', 'background-opacity': 0.12 } },
-      { selector: 'edge', style: { 'width': 2, 'line-color': '#ccc' }}
+      { selector: 'edge', style: { 
+        'width': 2, 
+        'line-color': '#ccc', 
+        'target-arrow-shape': 'triangle', 
+        'target-arrow-color': '#ccc',
+        'curve-style': 'bezier'
+      }}
     ]
   })
 
