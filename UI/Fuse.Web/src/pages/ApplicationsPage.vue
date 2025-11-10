@@ -9,6 +9,7 @@
         color="primary"
         label="Create Application"
         icon="add"
+        :disable="!fuseStore.canModify"
         @click="openCreateDialog"
         data-tour-id="create-application"
       />
@@ -18,7 +19,11 @@
       {{ applicationsError }}
     </q-banner>
 
-    <q-card class="content-card">
+    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to view applications. Please log in with appropriate credentials.
+    </q-banner>
+
+    <q-card v-if="fuseStore.canRead" class="content-card">
       <q-table
         flat
         bordered
@@ -52,6 +57,7 @@
               round
               icon="edit"
               color="primary"
+              :disable="!fuseStore.canModify"
               @click="navigateToEdit(props.row)"
             />
             <q-btn
@@ -61,6 +67,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmApplicationDelete(props.row)"
             />
           </q-td>
@@ -142,6 +149,7 @@ import {
   CreateApplication
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 
@@ -159,6 +167,7 @@ interface ApplicationForm {
 const router = useRouter()
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 
 const pagination = { rowsPerPage: 10 }
 

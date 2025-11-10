@@ -35,6 +35,7 @@
           label="Add Instance"
           dense
           icon="add"
+          :disable="!fuseStore.canModify"
           @click="openInstanceDialog()"
           data-tour-id="add-instance"
         />
@@ -81,6 +82,7 @@
               round
               icon="edit"
               color="primary"
+              :disable="!fuseStore.canModify"
               @click="navigateToInstance(props.row)"
             />
             <q-btn
@@ -90,6 +92,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmInstanceDelete(props.row)"
             />
           </q-td>
@@ -108,7 +111,14 @@
             Document CI/CD workflows powering this application.
           </div>
         </div>
-        <q-btn color="primary" label="Add Pipeline" dense icon="add" @click="openPipelineDialog()" />
+        <q-btn 
+          color="primary" 
+          label="Add Pipeline" 
+          dense 
+          icon="add" 
+          :disable="!fuseStore.canModify"
+          @click="openPipelineDialog()" 
+        />
       </q-card-section>
       <q-separator />
       <q-table
@@ -127,6 +137,7 @@
               round
               icon="edit"
               color="primary"
+              :disable="!fuseStore.canModify"
               @click="openPipelineDialog(props.row)"
             />
             <q-btn
@@ -136,6 +147,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmPipelineDelete(props.row)"
             />
           </q-td>
@@ -182,6 +194,7 @@ import {
   UpdateApplicationPipeline
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
@@ -204,6 +217,7 @@ const route = useRoute()
 const router = useRouter()
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 
 const applicationId = computed(() => route.params.id as string)
 

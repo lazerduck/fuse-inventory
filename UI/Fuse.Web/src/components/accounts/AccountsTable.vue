@@ -33,9 +33,17 @@
           <q-badge color="secondary" :label="`${props.row.grants?.length ?? 0} grants`" />
         </q-td>
       </template>
-      <template #body-cell-actions="props">
-        <q-td :props="props" class="text-right">
-          <q-btn flat dense round icon="edit" color="primary" @click="emit('edit', props.row)" />
+      <template #body-cell-actions="cellProps">
+        <q-td :props="cellProps" class="text-right">
+          <q-btn 
+            flat 
+            dense 
+            round 
+            icon="edit" 
+            color="primary" 
+            :disable="!props.canModify"
+            @click="emit('edit', cellProps.row)" 
+          />
           <q-btn
             flat
             dense
@@ -43,7 +51,8 @@
             icon="delete"
             color="negative"
             class="q-ml-xs"
-            @click="emit('delete', props.row)"
+            :disable="!props.canModify"
+            @click="emit('delete', cellProps.row)"
           />
         </q-td>
       </template>
@@ -65,6 +74,7 @@ interface Props {
   pagination: { rowsPerPage: number }
   tagLookup: Record<string, string | undefined>
   targetResolver: (account: Account) => string
+  canModify: boolean
 }
 
 const props = defineProps<Props>()

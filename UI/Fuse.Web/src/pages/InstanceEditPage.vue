@@ -68,12 +68,14 @@
             flat
             label="Delete"
             color="negative"
+            :disable="!fuseStore.canModify"
             @click="confirmInstanceDelete"
           />
           <q-btn
             color="primary"
             type="submit"
             label="Save"
+            :disable="!fuseStore.canModify"
             :loading="updateInstanceMutation.isPending.value"
           />
         </q-card-actions>
@@ -93,7 +95,7 @@
           label="Add Dependency"
           dense
           icon="add"
-          :disable="dependencyActionsDisabled"
+          :disable="dependencyActionsDisabled || !fuseStore.canModify"
           @click="openDependencyDialog()"
         />
       </q-card-section>
@@ -124,7 +126,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="dependencyActionsDisabled"
+              :disable="dependencyActionsDisabled || !fuseStore.canModify"
               @click="openDependencyDialog(props.row)"
             />
             <q-btn
@@ -134,7 +136,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="dependencyActionsDisabled"
+              :disable="dependencyActionsDisabled || !fuseStore.canModify"
               @click="confirmDependencyDelete(props.row)"
             />
           </q-td>
@@ -233,6 +235,7 @@ import {
   UpdateApplicationInstance
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
@@ -256,6 +259,7 @@ const route = useRoute()
 const router = useRouter()
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 
 const applicationId = computed(() => route.params.applicationId as string)
 const instanceId = computed(() => route.params.instanceId as string)

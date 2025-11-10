@@ -5,14 +5,24 @@
         <h1>Platforms</h1>
         <p class="subtitle">Catalogue infrastructure and link it to applications.</p>
       </div>
-      <q-btn color="primary" label="Create Platform" icon="add" @click="openCreateDialog" />
+      <q-btn 
+        color="primary" 
+        label="Create Platform" 
+        icon="add" 
+        :disable="!fuseStore.canModify"
+        @click="openCreateDialog" 
+      />
     </div>
 
     <q-banner v-if="platformError" dense class="bg-red-1 text-negative q-mb-md">
       {{ platformError }}
     </q-banner>
 
-    <q-card class="content-card">
+    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to view platforms. Please log in with appropriate credentials.
+    </q-banner>
+
+    <q-card v-if="fuseStore.canRead" class="content-card">
       <q-table
         flat
         bordered
@@ -48,7 +58,15 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" @click="openEditDialog(props.row)" />
+            <q-btn 
+              flat 
+              dense 
+              round 
+              icon="edit" 
+              color="primary" 
+              :disable="!fuseStore.canModify"
+              @click="openEditDialog(props.row)" 
+            />
             <q-btn
               flat
               dense
@@ -56,6 +74,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
+              :disable="!fuseStore.canModify"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -85,6 +104,7 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import { Platform, CreatePlatform, UpdatePlatform } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
@@ -92,6 +112,7 @@ import PlatformForm, { type PlatformFormModel } from '../components/platforms/Pl
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
+const fuseStore = useFuseStore()
 const environmentsStore = useEnvironments()
 const tagsStore = useTags()
 

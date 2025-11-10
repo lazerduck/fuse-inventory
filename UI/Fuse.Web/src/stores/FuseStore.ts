@@ -32,8 +32,8 @@ export const useFuseStore = defineStore("fuse", {
     canRead: (state) => {
       switch (state.securityLevel) {
         case SecurityLevel.None:
-          return true;
         case SecurityLevel.RestrictedEditing:
+          return true;
         case SecurityLevel.FullyRestricted:
           return state.currentUser !== null;
         default:
