@@ -8,7 +8,8 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Helpers;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
-    using Microsoft.AspNetCore.Mvc;
+  using Fuse.Core.Responses;
+  using Microsoft.AspNetCore.Mvc;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -129,6 +130,15 @@ namespace Fuse.API.Controllers
                 return BadRequest(new { error = result.Error });
 
             return NoContent();
+        }
+
+        [HttpGet("users")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUser>))]
+        public async Task<IActionResult> GetUsers ()
+        {
+            var securityState = await _securityService.GetSecurityStateAsync();
+            var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.CreatedAt, m.UpdatedAt));
+            return Ok(response);
         }
 
         private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)

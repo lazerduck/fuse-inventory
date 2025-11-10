@@ -285,6 +285,11 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    users(signal?: AbortSignal): Promise<SecurityUser[]>;
+
+    /**
+     * @return OK
+     */
     tagAll(signal?: AbortSignal): Promise<Tag[]>;
 
     /**
@@ -2947,6 +2952,51 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    users(signal?: AbortSignal): Promise<SecurityUser[]> {
+        let url_ = this.baseUrl + "/api/Security/users";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUsers(_response);
+        });
+    }
+
+    protected processUsers(response: Response): Promise<SecurityUser[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(SecurityUser.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecurityUser[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     tagAll(signal?: AbortSignal): Promise<Tag[]> {
         let url_ = this.baseUrl + "/api/Tag";
         url_ = url_.replace(/[?&]$/, "");
@@ -4984,6 +5034,66 @@ export interface ISecurityStateResponse {
     requiresSetup?: boolean;
     hasUsers?: boolean;
     currentUser?: SecurityUserInfo;
+}
+
+export class SecurityUser implements ISecurityUser {
+    id?: string;
+    userName?: string | undefined;
+    passwordHash?: string | undefined;
+    passwordSalt?: string | undefined;
+    role?: SecurityRole;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: ISecurityUser) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.userName = _data["UserName"];
+            this.passwordHash = _data["PasswordHash"];
+            this.passwordSalt = _data["PasswordSalt"];
+            this.role = _data["Role"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): SecurityUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecurityUser();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["UserName"] = this.userName;
+        data["PasswordHash"] = this.passwordHash;
+        data["PasswordSalt"] = this.passwordSalt;
+        data["Role"] = this.role;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ISecurityUser {
+    id?: string;
+    userName?: string | undefined;
+    passwordHash?: string | undefined;
+    passwordSalt?: string | undefined;
+    role?: SecurityRole;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export class SecurityUserInfo implements ISecurityUserInfo {

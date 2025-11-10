@@ -13,11 +13,8 @@
 
     <!-- Setup Required - Show Create Account Form -->
     <div v-if="fuseStore.requireSetup" class="setup-container">
-      <CreateSecurityAccount
-        require-setup
-        :loading="createAccountMutation.isPending.value"
-        @submit="handleCreateAccount"
-      />
+      <CreateSecurityAccount require-setup :loading="createAccountMutation.isPending.value"
+        @submit="handleCreateAccount" />
     </div>
 
     <!-- Normal Security Management -->
@@ -39,39 +36,77 @@
             <q-btn color="primary" label="Create Account" icon="add" @click="openCreateDialog" />
           </div>
           <q-separator />
-          <div class="q-pa-md text-grey-7">
-            User management features coming soon.
-          </div>
+
+          <q-table
+            flat
+            bordered
+            :rows="users"
+            :columns="columns"
+            row-key="id"
+            :loading="isLoading"
+            :pagination="pagination"
+            data-tour-id="data-stores-table"
+          >
+          <template #body-cell-actions="props">
+          <q-td :props="props" class="text-right">
+            <q-btn flat dense round icon="edit" color="primary" @click="" />
+            <q-btn
+              flat
+              dense
+              round
+              icon="delete"
+              color="negative"
+              class="q-ml-xs"
+              @click=""
+            />
+          </q-td>
+        </template>
+        <template #no-data>
+          <div class="q-pa-md text-grey-7">No data stores documented.</div>
+        </template>
+          </q-table>
         </q-card-section>
       </q-card>
 
       <!-- Create Account Dialog -->
       <q-dialog v-model="isCreateDialogOpen" persistent>
-        <CreateSecurityAccount
-          :loading="createAccountMutation.isPending.value"
-          @submit="handleCreateAccount"
-          @cancel="isCreateDialogOpen = false"
-        />
+        <CreateSecurityAccount :loading="createAccountMutation.isPending.value" @submit="handleCreateAccount"
+          @cancel="isCreateDialogOpen = false" />
       </q-dialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
-import { Notify } from 'quasar'
+import { Notify, QTable, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateSecurityUser, SecurityRole } from '../api/client'
+import { CreateSecurityUser, SecurityRole, SecurityUser } from '../api/client'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import { getErrorMessage } from '../utils/error'
+import { useSecurities } from '../composables/useSecurity'
 
 const fuseStore = useFuseStore()
 const client = useFuseClient()
 
+const pagination = { rowsPerPage: 10 }
+
 const isCreateDialogOpen = ref(false)
 const securityError = ref<string | null>(null)
+
+const {data, isLoading } = useSecurities()
+
+const users = computed(() => data.value ?? [])
+
+const columns: QTableColumn<SecurityUser>[] = [
+  { name: 'userName', label: 'Username', field: 'userName', sortable: true },
+  { name: 'role', label: 'Role', field: 'role', sortable: true },
+  { name: 'createdAt', label: 'Created', field: 'createdAt', sortable: true},
+  { name: 'updatedAt', label: 'Updated', field: 'updatedAt', sortable: true},
+  { name: 'actions', label: 'Actions', field: (row) => row.id, align: 'right' }
+]
 
 function openCreateDialog() {
   isCreateDialogOpen.value = true
