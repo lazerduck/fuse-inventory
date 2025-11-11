@@ -5,25 +5,25 @@
 
 <img width="512" height="512" alt="Fuse-inventory" src="https://github.com/user-attachments/assets/2b4cd430-ed63-4f62-af85-3e89470bd0aa" />
 
-**Fuse-Inventory** is a lightweight, self-hosted service inventory and permissions tracker.
-It's designed to be self-contained, fast, and frictionless — letting you get set up in seconds.
+**Fuse-Inventory** is a self-hosted application inventory and environment tracker designed for teams that want visibility without overhead.
+It helps you describe your applications, infrastructure, and permissions in one place — without needing a full CMDB or enterprise stack.
 
 ---
 
 ## ✨ Overview
 
-Fuse-Inventory lets small to medium sized development or DevOps teams:
+Fuse-Inventory lets development and DevOps teams:
+- Map applications, environments, and platforms (servers, clusters, ACA, etc.)
+- Record dependencies, databases, and accounts with linked grants and roles
+- Capture how systems actually work — not just where they run
+- Import/export everything as simple YAML or JSON
+- Validate and reverse-import SQL permissions (Coming soon)
+- Generate GRANT / REVOKE scripts for restores or audits (Coming soon)
+- Compare environments and highlight drift at a glance (Coming soon)
+- Optionally integrate with Uptime-Kuma for live health info (Coming soon)
 
-- Track **applications**, their **hosts**, and **dependencies**
-- Record **databases, accounts, and permissions**
-- Present clear, living documentation of your application setup
-- Import and export data as **YAML or JSON**
-- Validate and **reverse-import** live SQL permissions
-- Generate **SQL GRANT / REVOKE** scripts for restores
-- Compare **environments** and see drift at a glance
-- Run entirely from a **single Docker container**
-
-It treats applications as first class objects with platforms, dependencies and environments expected to facilitate applications.
+Fuse-Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
+It aims to bridge the gap between documentation, DevOps, and runtime state — helping you keep human knowledge in sync with live systems.
 
 ---
 
@@ -58,18 +58,12 @@ See [DOCKER.md](DOCKER.md) for more detailed Docker instructions.
 ---
 
 ## 🧩 Current Status
-Fuse-Inventory is in early development.
-The core data model and API are established, and a simple UI is present
+Fuse-Inventory is in early development but probably ready for use with the core data models unlikely to change and migration supports.
 
 ---
 
 ## 🛣️ Roadmap
-- Security
-  - Authentication & roles
-  - Encrypted secret storage
-- Deployments
-  - Container image and version tracking
-  - Environment promotion flows
-- Support
-  - Schema documentation
-  - Data import/export tools
+
+- Uptime Kuma integration
+- Azure KV integration
+- QOL improvements
