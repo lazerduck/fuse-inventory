@@ -4,7 +4,7 @@ namespace Fuse.Core.Commands;
 
 public record CreateKumaIntegration(
     string? Name,
-    IReadOnlyList<Guid> EnvironmentIds,
+    List<Guid>? EnvironmentIds,
     Guid? PlatformId,
     Guid? AccountId,
     Uri Uri,
@@ -14,7 +14,7 @@ public record CreateKumaIntegration(
 public record UpdateKumaIntegration(
     Guid Id,
     string? Name,
-    IReadOnlyList<Guid> EnvironmentIds,
+    List<Guid>? EnvironmentIds,
     Guid? PlatformId,
     Guid? AccountId,
     Uri Uri,

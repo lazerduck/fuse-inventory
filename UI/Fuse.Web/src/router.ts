@@ -68,6 +68,11 @@ const router = createRouter({
       path: '/config',
       name: 'config',
       component: () => import('./pages/ConfigPage.vue')
+    },
+    {
+      path: '/kuma-integrations',
+      name: 'kumaIntegrations',
+      component: () => import('./pages/KumaIntegrationsPage.vue')
     }
   ]
 })

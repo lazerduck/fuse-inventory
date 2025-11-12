@@ -49,7 +49,7 @@ public class KumaIntegrationService : IKumaIntegrationService
         var integration = new KumaIntegration(
             Id: Guid.NewGuid(),
             Name: command.Name ?? command.Uri.Host,
-            EnvironmentIds: command.EnvironmentIds,
+            EnvironmentIds: command.EnvironmentIds.AsReadOnly(),
             PlatformId: command.PlatformId,
             AccountId: command.AccountId,
             Uri: command.Uri,
@@ -93,7 +93,7 @@ public class KumaIntegrationService : IKumaIntegrationService
         var updated = existing with
         {
             Name = command.Name ?? existing.Name,
-            EnvironmentIds = command.EnvironmentIds,
+            EnvironmentIds = command.EnvironmentIds.AsReadOnly(),
             PlatformId = command.PlatformId,
             AccountId = command.AccountId,
             Uri = command.Uri,
