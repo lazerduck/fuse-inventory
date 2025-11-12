@@ -14,7 +14,7 @@ COPY UI/Fuse.Web/ ./
 RUN npm run build
 
 # Stage 2: Build .NET API
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ WORKDIR /app/API/Fuse.API
 RUN dotnet publish -c Release -o /app/publish --no-restore /p:BuildSpa=false
 
 # Stage 3: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 WORKDIR /app
 

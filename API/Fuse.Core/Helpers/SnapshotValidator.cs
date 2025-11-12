@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Fuse.Core.Models;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
 namespace Fuse.Core.Helpers;
 
