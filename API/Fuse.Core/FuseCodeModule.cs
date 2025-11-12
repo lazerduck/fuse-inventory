@@ -17,5 +17,8 @@ public static class FuseCodeModule
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
+        services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
+        services.AddHttpClient("kuma-validator");
+        services.AddScoped<IKumaIntegrationValidator, HttpKumaIntegrationValidator>();
     }
 }

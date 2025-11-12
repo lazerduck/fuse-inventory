@@ -27,6 +27,7 @@ public class SecurityServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: securityState
         );
 

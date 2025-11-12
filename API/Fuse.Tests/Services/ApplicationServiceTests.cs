@@ -39,6 +39,7 @@ public class ApplicationServiceTests
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);

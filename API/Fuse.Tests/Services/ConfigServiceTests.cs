@@ -26,6 +26,7 @@ public class ConfigServiceTests
             Accounts: accounts ?? Array.Empty<Account>(),
             Tags: tags ?? Array.Empty<Tag>(),
             Environments: environments ?? Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
