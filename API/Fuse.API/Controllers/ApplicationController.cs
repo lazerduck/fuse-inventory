@@ -5,16 +5,19 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
+    using Fuse.Core.Responses;
 
     [ApiController]
     [Route("api/[controller]")]
     public class ApplicationController : ControllerBase
     {
         private readonly IApplicationService _appService;
+        private readonly IKumaHealthService _healthService;
 
-        public ApplicationController(IApplicationService appService)
+        public ApplicationController(IApplicationService appService, IKumaHealthService healthService)
         {
             _appService = appService;
+            _healthService = healthService;
         }
 
         // Applications
@@ -143,6 +146,29 @@ namespace Fuse.API.Controllers
                 };
             }
             return NoContent();
+        }
+
+        [HttpGet("{appId}/instances/{instanceId}/health")]
+        [ProducesResponseType(200, Type = typeof(HealthStatusResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<HealthStatusResponse>> GetInstanceHealth([FromRoute] Guid appId, [FromRoute] Guid instanceId)
+        {
+            var app = await _appService.GetApplicationByIdAsync(appId);
+            if (app is null)
+                return NotFound(new { error = $"Application with ID '{appId}' not found." });
+
+            var instance = app.Instances.FirstOrDefault(i => i.Id == instanceId);
+            if (instance is null)
+                return NotFound(new { error = $"Instance with ID '{instanceId}' not found." });
+
+            if (instance.HealthUri is null)
+                return NotFound(new { error = "Instance does not have a health check URL configured." });
+
+            var healthStatus = _healthService.GetHealthStatus(instance.HealthUri.ToString());
+            if (healthStatus is null)
+                return NotFound(new { error = "No health check data available for this instance." });
+
+            return Ok(healthStatus);
         }
 
         // Pipelines
