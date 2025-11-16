@@ -200,6 +200,12 @@ export interface IFuseApiClient {
     environmentDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    environmentApplyAutomationPOST(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
+
+    /**
      * @return OK
      */
     externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]>;
@@ -2194,6 +2200,56 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    environmentApplyAutomationPOST(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/api/Environment/apply-automation";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processEnvironmentApplyAutomationPOST(_response);
+        });
+    }
+
+    protected processEnvironmentApplyAutomationPOST(response: Response): Promise<number> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 !== undefined ? resultData200.instancesCreated : null as any;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<number>(null as any);
     }
 
     /**
@@ -4523,6 +4579,10 @@ export class CreateEnvironment implements ICreateEnvironment {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
 
     constructor(data?: ICreateEnvironment) {
         if (data) {
@@ -4542,6 +4602,10 @@ export class CreateEnvironment implements ICreateEnvironment {
                 for (let item of _data["TagIds"])
                     this.tagIds!.push(item);
             }
+            this.autoCreateInstances = _data["AutoCreateInstances"];
+            this.baseUriTemplate = _data["BaseUriTemplate"];
+            this.healthUriTemplate = _data["HealthUriTemplate"];
+            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
         }
     }
 
@@ -4561,6 +4625,10 @@ export class CreateEnvironment implements ICreateEnvironment {
             for (let item of this.tagIds)
                 data["TagIds"].push(item);
         }
+        data["AutoCreateInstances"] = this.autoCreateInstances;
+        data["BaseUriTemplate"] = this.baseUriTemplate;
+        data["HealthUriTemplate"] = this.healthUriTemplate;
+        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -4569,6 +4637,10 @@ export interface ICreateEnvironment {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
 }
 
 export class CreateExternalResource implements ICreateExternalResource {
@@ -4936,6 +5008,10 @@ export class EnvironmentInfo implements IEnvironmentInfo {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
 
     constructor(data?: IEnvironmentInfo) {
         if (data) {
@@ -4956,6 +5032,10 @@ export class EnvironmentInfo implements IEnvironmentInfo {
                 for (let item of _data["TagIds"])
                     this.tagIds!.push(item);
             }
+            this.autoCreateInstances = _data["AutoCreateInstances"];
+            this.baseUriTemplate = _data["BaseUriTemplate"];
+            this.healthUriTemplate = _data["HealthUriTemplate"];
+            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
         }
     }
 
@@ -4976,6 +5056,10 @@ export class EnvironmentInfo implements IEnvironmentInfo {
             for (let item of this.tagIds)
                 data["TagIds"].push(item);
         }
+        data["AutoCreateInstances"] = this.autoCreateInstances;
+        data["BaseUriTemplate"] = this.baseUriTemplate;
+        data["HealthUriTemplate"] = this.healthUriTemplate;
+        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -4985,6 +5069,10 @@ export interface IEnvironmentInfo {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
 }
 
 export class ExternalResource implements IExternalResource {
@@ -6226,6 +6314,10 @@ export class UpdateEnvironment implements IUpdateEnvironment {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
 
     constructor(data?: IUpdateEnvironment) {
         if (data) {
@@ -6246,6 +6338,10 @@ export class UpdateEnvironment implements IUpdateEnvironment {
                 for (let item of _data["TagIds"])
                     this.tagIds!.push(item);
             }
+            this.autoCreateInstances = _data["AutoCreateInstances"];
+            this.baseUriTemplate = _data["BaseUriTemplate"];
+            this.healthUriTemplate = _data["HealthUriTemplate"];
+            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
         }
     }
 
@@ -6266,6 +6362,10 @@ export class UpdateEnvironment implements IUpdateEnvironment {
             for (let item of this.tagIds)
                 data["TagIds"].push(item);
         }
+        data["AutoCreateInstances"] = this.autoCreateInstances;
+        data["BaseUriTemplate"] = this.baseUriTemplate;
+        data["HealthUriTemplate"] = this.healthUriTemplate;
+        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -6275,6 +6375,50 @@ export interface IUpdateEnvironment {
     name?: string | undefined;
     description?: string | undefined;
     tagIds?: string[] | undefined;
+    autoCreateInstances?: boolean;
+    baseUriTemplate?: string | undefined;
+    healthUriTemplate?: string | undefined;
+    openApiUriTemplate?: string | undefined;
+}
+
+export class ApplyEnvironmentAutomation implements IApplyEnvironmentAutomation {
+    environmentId?: string | undefined;
+    applicationId?: string | undefined;
+
+    constructor(data?: IApplyEnvironmentAutomation) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.environmentId = _data["EnvironmentId"];
+            this.applicationId = _data["ApplicationId"];
+        }
+    }
+
+    static fromJS(data: any): ApplyEnvironmentAutomation {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApplyEnvironmentAutomation();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["EnvironmentId"] = this.environmentId;
+        data["ApplicationId"] = this.applicationId;
+        return data;
+    }
+}
+
+export interface IApplyEnvironmentAutomation {
+    environmentId?: string | undefined;
+    applicationId?: string | undefined;
 }
 
 export class UpdateExternalResource implements IUpdateExternalResource {

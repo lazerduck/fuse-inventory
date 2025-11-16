@@ -29,6 +29,35 @@
             autogrow
             class="full-span"
           />
+          <q-checkbox
+            v-model="form.autoCreateInstances"
+            label="Auto-create instances for new applications"
+            class="full-span"
+          />
+          <q-input
+            v-model="form.baseUriTemplate"
+            label="Base URI Template"
+            dense
+            outlined
+            hint="e.g., https://{appname}.{env}.company.com"
+            class="full-span"
+          />
+          <q-input
+            v-model="form.healthUriTemplate"
+            label="Health URI Template"
+            dense
+            outlined
+            hint="e.g., https://{appname}.{env}.company.com/health"
+            class="full-span"
+          />
+          <q-input
+            v-model="form.openApiUriTemplate"
+            label="OpenAPI URI Template"
+            dense
+            outlined
+            hint="e.g., https://{appname}.{env}.company.com/swagger"
+            class="full-span"
+          />
         </div>
       </q-card-section>
       <q-separator />
@@ -51,6 +80,10 @@ interface EnvironmentFormModel {
   name: string
   description: string
   tagIds: string[]
+  autoCreateInstances: boolean
+  baseUriTemplate: string
+  healthUriTemplate: string
+  openApiUriTemplate: string
 }
 
 interface Props {
@@ -77,7 +110,11 @@ const tagOptions = tagsStore.options
 const form = reactive<EnvironmentFormModel>({
   name: '',
   description: '',
-  tagIds: []
+  tagIds: [],
+  autoCreateInstances: false,
+  baseUriTemplate: '',
+  healthUriTemplate: '',
+  openApiUriTemplate: ''
 })
 
 const isCreate = computed(() => props.mode === 'create')
@@ -90,11 +127,19 @@ function applyInitialValue(value?: Partial<EnvironmentInfo> | null) {
     form.name = ''
     form.description = ''
     form.tagIds = []
+    form.autoCreateInstances = false
+    form.baseUriTemplate = ''
+    form.healthUriTemplate = ''
+    form.openApiUriTemplate = ''
     return
   }
   form.name = value.name ?? ''
   form.description = value.description ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
+  form.autoCreateInstances = value.autoCreateInstances ?? false
+  form.baseUriTemplate = value.baseUriTemplate ?? ''
+  form.healthUriTemplate = value.healthUriTemplate ?? ''
+  form.openApiUriTemplate = value.openApiUriTemplate ?? ''
 }
 
 onMounted(() => applyInitialValue(props.initialValue))

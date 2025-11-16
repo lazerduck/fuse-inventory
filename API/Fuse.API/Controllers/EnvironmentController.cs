@@ -83,5 +83,19 @@ namespace Fuse.API.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("apply-automation")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<ActionResult<int>> ApplyAutomation([FromBody] ApplyEnvironmentAutomation command)
+        {
+            var result = await _environmentService.ApplyEnvironmentAutomationAsync(command);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { error = result.Error });
+            }
+
+            return Ok(new { instancesCreated = result.Value });
+        }
     }
 }

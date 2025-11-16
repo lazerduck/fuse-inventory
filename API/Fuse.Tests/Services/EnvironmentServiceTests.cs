@@ -173,4 +173,476 @@ public class EnvironmentServiceTests
     Assert.True(result.IsSuccess);
     Assert.Empty(await service.GetEnvironments());
     }
+
+    [Fact]
+    public async Task ApplyAutomation_NoEnvironmentsWithAutomation_ReturnsZero()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "Dev", null, new HashSet<Guid>(), false);
+        var store = NewStore(envs: new[] { env });
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value);
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_NoApplications_ReturnsZero()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "Dev", null, new HashSet<Guid>(), true);
+        var store = NewStore(envs: new[] { env });
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value);
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_CreatesInstancesWithTemplates()
+    {
+        var env = new EnvironmentInfo(
+            Guid.NewGuid(),
+            "dev",
+            null,
+            new HashSet<Guid>(),
+            AutoCreateInstances: true,
+            BaseUriTemplate: "https://{appname}.{env}.company.com",
+            HealthUriTemplate: "https://{appname}.{env}.company.com/health",
+            OpenApiUriTemplate: "https://{appname}.{env}.company.com/swagger"
+        );
+
+        var app = new Application(
+            Guid.NewGuid(),
+            "myapp",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(),
+            Array.Empty<ApplicationPipeline>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value);
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        var instance = updatedApp.Instances.First();
+        Assert.Equal(env.Id, instance.EnvironmentId);
+        Assert.Equal("https://myapp.dev.company.com/", instance.BaseUri?.ToString());
+        Assert.Equal("https://myapp.dev.company.com/health", instance.HealthUri?.ToString());
+        Assert.Equal("https://myapp.dev.company.com/swagger", instance.OpenApiUri?.ToString());
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_SkipsExistingInstances()
+    {
+        var env = new EnvironmentInfo(
+            Guid.NewGuid(),
+            "dev",
+            null,
+            new HashSet<Guid>(),
+            AutoCreateInstances: true,
+            BaseUriTemplate: "https://{appname}.{env}.company.com"
+        );
+
+        var existingInstance = new ApplicationInstance(
+            Guid.NewGuid(),
+            env.Id,
+            null,
+            new Uri("https://existing.com"),
+            null,
+            null,
+            null,
+            Array.Empty<ApplicationInstanceDependency>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var app = new Application(
+            Guid.NewGuid(),
+            "myapp",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new HashSet<Guid>(),
+            new[] { existingInstance },
+            Array.Empty<ApplicationPipeline>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value);
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        Assert.Equal("https://existing.com/", updatedApp.Instances.First().BaseUri?.ToString());
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_EmptyTemplates_CreatesInstancesWithNullUris()
+    {
+        var env = new EnvironmentInfo(
+            Guid.NewGuid(),
+            "dev",
+            null,
+            new HashSet<Guid>(),
+            AutoCreateInstances: true,
+            BaseUriTemplate: null,
+            HealthUriTemplate: null,
+            OpenApiUriTemplate: null
+        );
+
+        var app = new Application(
+            Guid.NewGuid(),
+            "myapp",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(),
+            Array.Empty<ApplicationPipeline>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value);
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        var instance = updatedApp.Instances.First();
+        Assert.Null(instance.BaseUri);
+        Assert.Null(instance.HealthUri);
+        Assert.Null(instance.OpenApiUri);
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_MultipleEnvironmentsAndApps_CreatesAllCombinations()
+    {
+        var env1 = new EnvironmentInfo(Guid.NewGuid(), "dev", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
+        var env2 = new EnvironmentInfo(Guid.NewGuid(), "prod", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
+        var env3 = new EnvironmentInfo(Guid.NewGuid(), "test", null, new HashSet<Guid>(), false); // Not auto-create
+
+        var app1 = new Application(
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
+        );
+        var app2 = new Application(
+            Guid.NewGuid(), "app2", null, null, null, null, null, null, new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app1, app2 },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env1, env2, env3 },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(4, result.Value); // 2 apps * 2 envs (excluding test env)
+
+        var updated = await store.GetAsync();
+        foreach (var app in updated.Applications)
+        {
+            Assert.Equal(2, app.Instances.Count);
+            Assert.Contains(app.Instances, i => i.EnvironmentId == env1.Id);
+            Assert.Contains(app.Instances, i => i.EnvironmentId == env2.Id);
+            Assert.DoesNotContain(app.Instances, i => i.EnvironmentId == env3.Id);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_SpecificEnvironmentId_OnlyProcessesThatEnvironment()
+    {
+        var env1 = new EnvironmentInfo(Guid.NewGuid(), "dev", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
+        var env2 = new EnvironmentInfo(Guid.NewGuid(), "prod", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
+
+        var app = new Application(
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env1, env2 },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation(EnvironmentId: env1.Id));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value);
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        Assert.Equal(env1.Id, updatedApp.Instances.First().EnvironmentId);
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_SpecificApplicationId_OnlyProcessesThatApplication()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "dev", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
+
+        var app1 = new Application(
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
+        );
+        var app2 = new Application(
+            Guid.NewGuid(), "app2", null, null, null, null, null, null, new HashSet<Guid>(),
+            Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app1, app2 },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation(ApplicationId: app1.Id));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value);
+
+        var updated = await store.GetAsync();
+        var updatedApp1 = updated.Applications.First(a => a.Id == app1.Id);
+        var updatedApp2 = updated.Applications.First(a => a.Id == app2.Id);
+        
+        Assert.Single(updatedApp1.Instances);
+        Assert.Empty(updatedApp2.Instances);
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_UpdatesExistingInstancesWithEmptyUris()
+    {
+        var env = new EnvironmentInfo(
+            Guid.NewGuid(),
+            "prod",
+            null,
+            new HashSet<Guid>(),
+            AutoCreateInstances: true,
+            BaseUriTemplate: "https://{appname}.{env}.company.com",
+            HealthUriTemplate: "https://{appname}.{env}.company.com/health",
+            OpenApiUriTemplate: "https://{appname}.{env}.company.com/swagger"
+        );
+
+        var existingInstance = new ApplicationInstance(
+            Guid.NewGuid(),
+            env.Id,
+            null,
+            null, // BaseUri is null
+            null, // HealthUri is null
+            null, // OpenApiUri is null
+            null,
+            Array.Empty<ApplicationInstanceDependency>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var app = new Application(
+            Guid.NewGuid(),
+            "myapp",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new HashSet<Guid>(),
+            new[] { existingInstance },
+            Array.Empty<ApplicationPipeline>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value);
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        var instance = updatedApp.Instances.First();
+        Assert.Equal("https://myapp.prod.company.com/", instance.BaseUri?.ToString());
+        Assert.Equal("https://myapp.prod.company.com/health", instance.HealthUri?.ToString());
+        Assert.Equal("https://myapp.prod.company.com/swagger", instance.OpenApiUri?.ToString());
+    }
+
+    [Fact]
+    public async Task ApplyAutomation_DoesNotOverrideExistingNonEmptyUris()
+    {
+        var env = new EnvironmentInfo(
+            Guid.NewGuid(),
+            "prod",
+            null,
+            new HashSet<Guid>(),
+            AutoCreateInstances: true,
+            BaseUriTemplate: "https://{appname}.{env}.company.com",
+            HealthUriTemplate: "https://{appname}.{env}.company.com/health",
+            OpenApiUriTemplate: "https://{appname}.{env}.company.com/swagger"
+        );
+
+        var existingInstance = new ApplicationInstance(
+            Guid.NewGuid(),
+            env.Id,
+            null,
+            new Uri("https://custom.existing.com"), // Existing BaseUri
+            new Uri("https://custom.existing.com/status"), // Existing HealthUri
+            null, // OpenApiUri is null, should be updated
+            null,
+            Array.Empty<ApplicationInstanceDependency>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var app = new Application(
+            Guid.NewGuid(),
+            "myapp",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new HashSet<Guid>(),
+            new[] { existingInstance },
+            Array.Empty<ApplicationPipeline>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = new EnvironmentService(store, new TagLookupService(store));
+
+        var result = await service.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value); // Only OpenApiUri was updated
+
+        var updatedApp = (await store.GetAsync()).Applications.First();
+        Assert.Single(updatedApp.Instances);
+        var instance = updatedApp.Instances.First();
+        // Existing URIs should be preserved
+        Assert.Equal("https://custom.existing.com/", instance.BaseUri?.ToString());
+        Assert.Equal("https://custom.existing.com/status", instance.HealthUri?.ToString());
+        // Only null URI should be updated
+        Assert.Equal("https://myapp.prod.company.com/swagger", instance.OpenApiUri?.ToString());
+    }
 }

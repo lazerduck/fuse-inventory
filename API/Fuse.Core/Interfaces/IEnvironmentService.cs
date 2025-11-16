@@ -10,4 +10,5 @@ public interface IEnvironmentService
     Task<Result<EnvironmentInfo>> CreateEnvironment(CreateEnvironment command);
     Task<Result<EnvironmentInfo>> UpdateEnvironment(UpdateEnvironment command);
     Task<Result> DeleteEnvironmentAsync(DeleteEnvironment command);
+    Task<Result<int>> ApplyEnvironmentAutomationAsync(ApplyEnvironmentAutomation command);
 }

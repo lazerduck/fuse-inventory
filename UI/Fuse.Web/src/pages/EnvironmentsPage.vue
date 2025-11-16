@@ -5,14 +5,25 @@
         <h1>Environments</h1>
         <p class="subtitle">Model environments and attach resources to them.</p>
       </div>
-      <q-btn
-        color="primary"
-        label="Create Environment"
-        icon="add"
-        :disable="!fuseStore.canModify"
-        @click="openCreateDialog"
-        data-tour-id="create-environment"
-      />
+      <div class="q-gutter-sm">
+        <q-btn
+          flat
+          color="primary"
+          label="Run Automation"
+          icon="autorenew"
+          :disable="!fuseStore.canModify"
+          @click="runAutomation"
+          data-tour-id="run-automation"
+        />
+        <q-btn
+          color="primary"
+          label="Create Environment"
+          icon="add"
+          :disable="!fuseStore.canModify"
+          @click="openCreateDialog"
+          data-tour-id="create-environment"
+        />
+      </div>
     </div>
 
     <q-banner v-if="environmentError" dense class="bg-red-1 text-negative q-mb-md">
@@ -94,7 +105,7 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { EnvironmentInfo, CreateEnvironment, UpdateEnvironment } from '../api/client'
+import { EnvironmentInfo, CreateEnvironment, UpdateEnvironment, ApplyEnvironmentAutomation } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
@@ -105,6 +116,10 @@ interface EnvironmentFormModel {
   name: string
   description: string
   tagIds: string[]
+  autoCreateInstances: boolean
+  baseUriTemplate: string
+  healthUriTemplate: string
+  openApiUriTemplate: string
 }
 
 const client = useFuseClient()
@@ -187,21 +202,43 @@ const deleteMutation = useMutation({
   }
 })
 
-const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+const automationMutation = useMutation({
+  mutationFn: (payload: ApplyEnvironmentAutomation) => client.environmentApplyAutomationPOST(payload),
+  onSuccess: (instancesCreated) => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    const message = instancesCreated === 0 
+      ? 'No new instances created (all environments already have instances or automation is not enabled)'
+      : `Successfully created ${instancesCreated} instance${instancesCreated === 1 ? '' : 's'}`
+    Notify.create({ type: 'positive', message })
+  },
+  onError: (err) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to run automation') })
+  }
+})
+
+const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value || automationMutation.isPending.value)
 
 function handleSubmit(model: EnvironmentFormModel) {
   if (dialogMode.value === 'create') {
     const payload = Object.assign(new CreateEnvironment(), {
       name: model.name || undefined,
       description: model.description || undefined,
-      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined,
+      autoCreateInstances: model.autoCreateInstances,
+      baseUriTemplate: model.baseUriTemplate || undefined,
+      healthUriTemplate: model.healthUriTemplate || undefined,
+      openApiUriTemplate: model.openApiUriTemplate || undefined
     })
     createMutation.mutate(payload)
   } else if (dialogMode.value === 'edit' && selectedEnvironment.value?.id) {
     const payload = Object.assign(new UpdateEnvironment(), {
       name: model.name || undefined,
       description: model.description || undefined,
-      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined,
+      autoCreateInstances: model.autoCreateInstances,
+      baseUriTemplate: model.baseUriTemplate || undefined,
+      healthUriTemplate: model.healthUriTemplate || undefined,
+      openApiUriTemplate: model.openApiUriTemplate || undefined
     })
     updateMutation.mutate({ id: selectedEnvironment.value.id, payload })
   }
@@ -215,6 +252,18 @@ function confirmDelete(env: EnvironmentInfo) {
     cancel: true,
     persistent: true
   }).onOk(() => deleteMutation.mutate(env.id!))
+}
+
+function runAutomation() {
+  Dialog.create({
+    title: 'Run automation',
+    message: 'This will create instances for all applications in environments that have auto-create enabled. Existing instances will not be modified. Continue?',
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    const payload = new ApplyEnvironmentAutomation()
+    automationMutation.mutate(payload)
+  })
 }
 </script>
 
