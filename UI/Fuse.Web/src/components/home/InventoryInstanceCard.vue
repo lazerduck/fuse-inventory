@@ -1,46 +1,62 @@
 <template>
-  <q-card class="inventory-instance-card" flat bordered>
-    <q-card-section class="card-content">
-      <div class="card-header">
-        <div class="header-left">
-          <div class="app-icon">
-            <q-icon name="precision_manufacturing" size="20px" />
-          </div>
-          <div class="header-info">
-            <h4 class="item-title">{{ applicationName }}</h4>
-            <p class="item-subtitle">{{ environmentName }}</p>
-          </div>
+  <q-card flat bordered class="inventory-instance-card column">
+    <q-card-section>
+      <div class="row items-start q-gutter-sm">
+        <q-avatar size="36px" rounded color="primary" text-color="white" class="q-pa-xs">
+          <q-icon name="precision_manufacturing" size="20px" />
+        </q-avatar>
+        <div class="col" style="min-width: 0">
+          <div class="text-subtitle2 text-weight-medium ellipsis">{{ applicationName }}</div>
+          <div class="text-caption text-grey-7 ellipsis">{{ environmentName }}</div>
         </div>
-        <div class="header-right">
-          <q-chip
-            v-if="healthStatus"
-            dense
-            :color="healthStatusColor"
-            :text-color="healthStatusTextColor"
-            size="xs"
-            :icon="healthStatusIcon"
-          >
-            {{ healthStatusLabel }}
-          </q-chip>
-        </div>
+        <q-chip
+          v-if="healthStatus"
+          dense
+          :color="healthStatusColor"
+          :text-color="healthStatusTextColor"
+          size="xs"
+          :icon="healthStatusIcon"
+        >
+          {{ healthStatusLabel }}
+        </q-chip>
       </div>
+    </q-card-section>
 
-      <div class="card-details">
-        <div class="detail-item" v-if="instance.baseUri">
-          <span class="detail-label">Base URI:</span>
-          <span class="detail-value">{{ instance.baseUri }}</span>
-        </div>
-        <div class="detail-item" v-if="platformName">
-          <span class="detail-label">Platform:</span>
-          <span class="detail-value">{{ platformName }}</span>
-        </div>
-        <div class="detail-item" v-if="instance.version">
-          <span class="detail-label">Version:</span>
-          <span class="detail-value">v{{ instance.version }}</span>
-        </div>
-      </div>
+    <q-separator />
 
-      <div class="card-actions">
+    <q-card-section class="q-py-sm">
+      <q-list dense class="text-caption">
+        <q-item v-if="instance.baseUri" class="q-px-none q-py-xs">
+          <q-item-section side class="text-grey-7 text-weight-medium" style="min-width: 70px">
+            Base URI:
+          </q-item-section>
+          <q-item-section class="text-grey-9" style="word-break: break-word">
+            {{ instance.baseUri }}
+          </q-item-section>
+        </q-item>
+        <q-item v-if="platformName" class="q-px-none q-py-xs">
+          <q-item-section side class="text-grey-7 text-weight-medium" style="min-width: 70px">
+            Platform:
+          </q-item-section>
+          <q-item-section class="text-grey-9">
+            {{ platformName }}
+          </q-item-section>
+        </q-item>
+        <q-item v-if="instance.version" class="q-px-none q-py-xs">
+          <q-item-section side class="text-grey-7 text-weight-medium" style="min-width: 70px">
+            Version:
+          </q-item-section>
+          <q-item-section class="text-grey-9">
+            v{{ instance.version }}
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-card-section>
+
+    <q-separator />
+
+    <q-card-section class="q-py-sm">
+      <div class="row q-gutter-xs">
         <q-btn
           v-if="instance.baseUri"
           flat
@@ -81,45 +97,51 @@
           rel="noopener"
         />
       </div>
+    </q-card-section>
 
-      <div v-if="visibleDependencies.length" class="card-dependencies">
-        <p class="dependencies-label">Dependencies:</p>
-        <div class="dependency-chips">
-          <q-chip
-            v-for="dependency in visibleDependencies"
-            :key="dependency.id"
-            dense
-            outline
-            color="secondary"
-            size="xs"
-          >
-            {{ dependencyFormatter(dependency) }}
-          </q-chip>
-          <q-chip
-            v-if="hasHiddenDependencies"
-            dense
-            outline
-            color="grey-7"
-            size="xs"
-          >
-            +{{ hiddenDependenciesCount }} more
-          </q-chip>
-        </div>
+    <q-card-section v-if="visibleDependencies.length" class="q-pt-none">
+      <div class="text-caption text-grey-7 text-weight-medium text-uppercase q-mb-sm">
+        Dependencies:
       </div>
-
-      <div class="card-footer">
-        <q-btn
-          flat
+      <div class="row q-gutter-xs">
+        <q-chip
+          v-for="dependency in visibleDependencies"
+          :key="dependency.id"
           dense
-          no-caps
-          icon="edit"
-          label="Edit"
-          color="primary"
-          size="sm"
-          :to="`/applications/${applicationId}/instances/${instance.id}`"
-        />
+          outline
+          color="secondary"
+          size="xs"
+        >
+          {{ dependencyFormatter(dependency) }}
+        </q-chip>
+        <q-chip
+          v-if="hasHiddenDependencies"
+          dense
+          outline
+          color="grey-7"
+          size="xs"
+        >
+          +{{ hiddenDependenciesCount }} more
+        </q-chip>
       </div>
     </q-card-section>
+
+    <q-space />
+
+    <q-separator />
+
+    <q-card-actions align="right">
+      <q-btn
+        flat
+        dense
+        no-caps
+        icon="edit"
+        label="Edit"
+        color="primary"
+        size="sm"
+        :to="`/applications/${applicationId}/instances/${instance.id}`"
+      />
+    </q-card-actions>
   </q-card>
 </template>
 
@@ -221,135 +243,12 @@ const healthStatusLabel = computed(() => {
 
 <style scoped>
 .inventory-instance-card {
-  border-radius: 12px;
-  border: 1px solid var(--fuse-panel-border);
-  background: var(--fuse-panel-bg);
+  height: 100%;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .inventory-instance-card:hover {
   box-shadow: var(--fuse-shadow-2);
   transform: translateY(-2px);
-}
-
-.card-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.app-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  background: rgba(64, 120, 255, 0.1);
-  flex-shrink: 0;
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.item-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.125rem;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.item-subtitle {
-  font-size: 0.8125rem;
-  color: var(--fuse-text-muted);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.header-right {
-  flex-shrink: 0;
-}
-
-.card-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--fuse-panel-border);
-  border-bottom: 1px solid var(--fuse-panel-border);
-}
-
-.detail-item {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-}
-
-.detail-label {
-  color: var(--fuse-text-subtle);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.detail-value {
-  color: var(--fuse-text-primary);
-  word-break: break-word;
-}
-
-.card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.card-dependencies {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dependencies-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--fuse-text-subtle);
-  margin: 0;
-  font-weight: 500;
-}
-
-.dependency-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--fuse-panel-border);
 }
 </style>
