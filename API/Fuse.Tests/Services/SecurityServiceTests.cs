@@ -822,12 +822,12 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var bad = await service.UpdateUser(null!, default);
-        bad.IsSuccess.Should().BeFalse();
-        bad.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(bad.IsSuccess);
+    Assert.Equal(ErrorType.Validation, bad.ErrorType);
 
         var nf = await service.UpdateUser(new UpdateUser(Guid.NewGuid(), SecurityRole.Reader), default);
-        nf.IsSuccess.Should().BeFalse();
-        nf.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(nf.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, nf.ErrorType);
     }
 
     [Fact]
@@ -838,8 +838,8 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var res = await service.UpdateUser(new UpdateUser(user.Id, SecurityRole.Admin), default);
-        res.IsSuccess.Should().BeTrue();
-        res.Value!.Role.Should().Be(SecurityRole.Admin);
+    Assert.True(res.IsSuccess);
+    Assert.Equal(SecurityRole.Admin, res.Value!.Role);
     }
 
     [Fact]
@@ -850,18 +850,18 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var bad = await service.DeleteUser(null!, default);
-        bad.IsSuccess.Should().BeFalse();
-        bad.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(bad.IsSuccess);
+    Assert.Equal(ErrorType.Validation, bad.ErrorType);
 
         var nf = await service.DeleteUser(new DeleteUser(Guid.NewGuid()), default);
-        nf.IsSuccess.Should().BeFalse();
-        nf.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(nf.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, nf.ErrorType);
 
         var ok = await service.DeleteUser(new DeleteUser(user.Id), default);
-        ok.IsSuccess.Should().BeTrue();
+    Assert.True(ok.IsSuccess);
 
         var state = await service.GetSecurityStateAsync();
-        state.Users.Should().BeEmpty();
+    Assert.Empty(state.Users);
     }
 
     #endregion

@@ -29,9 +29,9 @@ public class ApplicationServiceTests
             TagIds: new HashSet<Guid> { missingTag }
         ));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-        result.Error.Should().Contain(missingTag.ToString());
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
+    Assert.Contains(missingTag.ToString(), result.Error);
     }
 
     [Fact]
@@ -43,8 +43,8 @@ public class ApplicationServiceTests
 
         var result = await service.UpdateApplicationAsync(new UpdateApplication(app.Id, " ", null, null, null, null, null, null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -57,8 +57,8 @@ public class ApplicationServiceTests
 
         var result = await service.UpdateApplicationAsync(new UpdateApplication(app2.Id, "App1", null, null, null, null, null, null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -81,10 +81,10 @@ public class ApplicationServiceTests
             TagIds: new HashSet<Guid> { tag.Id }
         ));
 
-        updated.IsSuccess.Should().BeTrue();
-        updated.Value!.Name.Should().Be("NewName");
-        updated.Value!.Version.Should().Be("2.0");
-    updated.Value!.TagIds.Should().Contain(tag.Id);
+        Assert.True(updated.IsSuccess);
+        Assert.Equal("NewName", updated.Value!.Name);
+        Assert.Equal("2.0", updated.Value!.Version);
+        Assert.Contains(tag.Id, updated.Value!.TagIds);
     }
 
     [Fact]
@@ -111,12 +111,12 @@ public class ApplicationServiceTests
     var service = new ApplicationService(store, new FakeTagService(store));
 
         var res = await service.DeleteApplicationAsync(new DeleteApplication(appToDelete.Id));
-        res.IsSuccess.Should().BeTrue();
+    Assert.True(res.IsSuccess);
 
         var apps = await service.GetApplicationsAsync();
-        apps.Should().ContainSingle(a => a.Id == other.Id);
+    Assert.Single(apps, a => a.Id == other.Id);
         var remaining = apps.Single(a => a.Id == other.Id);
-        remaining.Instances.Single().Dependencies.Should().BeEmpty();
+    Assert.Empty(remaining.Instances.Single().Dependencies);
     }
 
     [Fact]
@@ -125,8 +125,8 @@ public class ApplicationServiceTests
         var store = NewStore();
     var service = new ApplicationService(store, new FakeTagService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(Guid.NewGuid(), Guid.NewGuid(), null, null, null, null, null, new HashSet<Guid>()));
-        res.IsSuccess.Should().BeFalse();
-        res.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(res.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, res.ErrorType);
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class ApplicationServiceTests
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, Guid.NewGuid(), null, null, null, null, null, new HashSet<Guid>()));
-        res.IsSuccess.Should().BeFalse();
-        res.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(res.IsSuccess);
+    Assert.Equal(ErrorType.Validation, res.ErrorType);
     }
 
     [Fact]
@@ -148,8 +148,8 @@ public class ApplicationServiceTests
         var store = NewStore(apps: new[] { app }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, Guid.NewGuid(), null, null, null, null, new HashSet<Guid>()));
-        res.IsSuccess.Should().BeFalse();
-        res.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(res.IsSuccess);
+    Assert.Equal(ErrorType.Validation, res.ErrorType);
     }
 
     [Fact]
@@ -160,8 +160,8 @@ public class ApplicationServiceTests
         var store = NewStore(apps: new[] { app }, envs: new[] { env }, tags: Array.Empty<Tag>());
     var service = new ApplicationService(store, new FakeTagService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, null, null, null, null, new HashSet<Guid> { Guid.NewGuid() }));
-        res.IsSuccess.Should().BeFalse();
-        res.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(res.IsSuccess);
+    Assert.Equal(ErrorType.Validation, res.ErrorType);
     }
 
     [Fact]
@@ -180,20 +180,20 @@ public class ApplicationServiceTests
 
         // Env not found
         var badEnv = await service.UpdateInstanceAsync(new UpdateApplicationInstance(app.Id, inst.Id, Guid.NewGuid(), null, null, null, null, null, new HashSet<Guid>()));
-        badEnv.IsSuccess.Should().BeFalse();
-        badEnv.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(badEnv.IsSuccess);
+    Assert.Equal(ErrorType.Validation, badEnv.ErrorType);
 
         // Platform invalid
         var badPlatform = await service.UpdateInstanceAsync(new UpdateApplicationInstance(app.Id, inst.Id, env.Id, Guid.NewGuid(), null, null, null, null, new HashSet<Guid>()));
-        badPlatform.IsSuccess.Should().BeFalse();
-        badPlatform.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(badPlatform.IsSuccess);
+    Assert.Equal(ErrorType.Validation, badPlatform.ErrorType);
 
         // Success
         var ok = await service.UpdateInstanceAsync(new UpdateApplicationInstance(app.Id, inst.Id, env2.Id, platform.Id, new Uri("http://base"), new Uri("http://health"), new Uri("http://openapi"), "2.0", new HashSet<Guid>()));
-        ok.IsSuccess.Should().BeTrue();
-        ok.Value!.EnvironmentId.Should().Be(env2.Id);
-        ok.Value!.PlatformId.Should().Be(platform.Id);
-        ok.Value!.BaseUri.Should().NotBeNull();
+    Assert.True(ok.IsSuccess);
+    Assert.Equal(env2.Id, ok.Value!.EnvironmentId);
+    Assert.Equal(platform.Id, ok.Value!.PlatformId);
+    Assert.NotNull(ok.Value!.BaseUri);
     }
 
     [Fact]
@@ -211,11 +211,11 @@ public class ApplicationServiceTests
     var service = new ApplicationService(store, new FakeTagService(store));
 
         var res = await service.DeleteInstanceAsync(new DeleteApplicationInstance(app1.Id, app1Inst.Id));
-        res.IsSuccess.Should().BeTrue();
+    Assert.True(res.IsSuccess);
 
         var apps = await service.GetApplicationsAsync();
         var updatedApp2 = apps.Single(a => a.Id == app2.Id);
-        updatedApp2.Instances.Single().Dependencies.Should().BeEmpty();
+    Assert.Empty(updatedApp2.Instances.Single().Dependencies);
     }
 
     [Fact]
@@ -226,18 +226,18 @@ public class ApplicationServiceTests
     var service = new ApplicationService(store, new FakeTagService(store));
 
         var emptyName = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, " ", new Uri("http://x")));
-        emptyName.IsSuccess.Should().BeFalse();
-        emptyName.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(emptyName.IsSuccess);
+    Assert.Equal(ErrorType.Validation, emptyName.ErrorType);
 
         var ok = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, "Build", null));
-        ok.IsSuccess.Should().BeTrue();
+    Assert.True(ok.IsSuccess);
         var dup = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, "build", null));
-        dup.IsSuccess.Should().BeFalse();
-        dup.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(dup.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, dup.ErrorType);
 
         var updEmpty = await service.UpdatePipelineAsync(new UpdateApplicationPipeline(app.Id, ok.Value!.Id, " ", null));
-        updEmpty.IsSuccess.Should().BeFalse();
-        updEmpty.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(updEmpty.IsSuccess);
+    Assert.Equal(ErrorType.Validation, updEmpty.ErrorType);
     }
 
     [Fact]
@@ -248,16 +248,16 @@ public class ApplicationServiceTests
     var service = new ApplicationService(store, new FakeTagService(store));
 
         var noAppCreate = await service.CreatePipelineAsync(new CreateApplicationPipeline(Guid.NewGuid(), "P", null));
-        noAppCreate.IsSuccess.Should().BeFalse();
-        noAppCreate.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(noAppCreate.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, noAppCreate.ErrorType);
 
         var noPipeUpdate = await service.UpdatePipelineAsync(new UpdateApplicationPipeline(app.Id, Guid.NewGuid(), "P2", null));
-        noPipeUpdate.IsSuccess.Should().BeFalse();
-        noPipeUpdate.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(noPipeUpdate.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, noPipeUpdate.ErrorType);
 
         var noPipeDelete = await service.DeletePipelineAsync(new DeleteApplicationPipeline(app.Id, Guid.NewGuid()));
-        noPipeDelete.IsSuccess.Should().BeFalse();
-        noPipeDelete.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(noPipeDelete.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, noPipeDelete.ErrorType);
     }
 
     [Fact]
@@ -290,34 +290,34 @@ public class ApplicationServiceTests
 
         // Non-existent target
         var badTarget = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, Guid.NewGuid(), TargetKind.DataStore, 1000, null));
-        badTarget.IsSuccess.Should().BeFalse();
-        badTarget.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(badTarget.IsSuccess);
+    Assert.Equal(ErrorType.Validation, badTarget.ErrorType);
 
         // Port out of range
         var badPort = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 0, null));
-        badPort.IsSuccess.Should().BeFalse();
-        badPort.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(badPort.IsSuccess);
+    Assert.Equal(ErrorType.Validation, badPort.ErrorType);
 
         // Account missing
         var badAcct = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, Guid.NewGuid()));
-        badAcct.IsSuccess.Should().BeFalse();
-        badAcct.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(badAcct.IsSuccess);
+    Assert.Equal(ErrorType.Validation, badAcct.ErrorType);
 
         // Valid for DataStore and External
         var okDs = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, acct.Id));
-        okDs.IsSuccess.Should().BeTrue();
+    Assert.True(okDs.IsSuccess);
         var okExt = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ext.Id, TargetKind.External, null, null));
-        okExt.IsSuccess.Should().BeTrue();
+    Assert.True(okExt.IsSuccess);
 
         // Update validations
         var depToUpdate = okDs.Value!;
         var updBadPort = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 70000, acct.Id));
-        updBadPort.IsSuccess.Should().BeFalse();
-        updBadPort.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(updBadPort.IsSuccess);
+    Assert.Equal(ErrorType.Validation, updBadPort.ErrorType);
 
         var updOk = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 2345, acct.Id));
-        updOk.IsSuccess.Should().BeTrue();
-        updOk.Value!.Port.Should().Be(2345);
+    Assert.True(updOk.IsSuccess);
+    Assert.Equal(2345, updOk.Value!.Port);
     }
     
 
