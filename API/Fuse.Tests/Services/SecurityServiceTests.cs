@@ -811,4 +811,58 @@ public class SecurityServiceTests
     }
 
     #endregion
+
+    #region UpdateUser_DeleteUser Tests
+
+    [Fact]
+    public async Task UpdateUser_ValidationAndNotFound()
+    {
+        var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(users: new[] { admin });
+        var service = new SecurityService(store);
+
+        var bad = await service.UpdateUser(null!, default);
+    Assert.False(bad.IsSuccess);
+    Assert.Equal(ErrorType.Validation, bad.ErrorType);
+
+        var nf = await service.UpdateUser(new UpdateUser(Guid.NewGuid(), SecurityRole.Reader), default);
+    Assert.False(nf.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, nf.ErrorType);
+    }
+
+    [Fact]
+    public async Task UpdateUser_Success_ChangesRole()
+    {
+        var user = new SecurityUser(Guid.NewGuid(), "user", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(users: new[] { user });
+        var service = new SecurityService(store);
+
+        var res = await service.UpdateUser(new UpdateUser(user.Id, SecurityRole.Admin), default);
+    Assert.True(res.IsSuccess);
+    Assert.Equal(SecurityRole.Admin, res.Value!.Role);
+    }
+
+    [Fact]
+    public async Task DeleteUser_Validation_NotFound_AndSuccess()
+    {
+        var user = new SecurityUser(Guid.NewGuid(), "user", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(users: new[] { user });
+        var service = new SecurityService(store);
+
+        var bad = await service.DeleteUser(null!, default);
+    Assert.False(bad.IsSuccess);
+    Assert.Equal(ErrorType.Validation, bad.ErrorType);
+
+        var nf = await service.DeleteUser(new DeleteUser(Guid.NewGuid()), default);
+    Assert.False(nf.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, nf.ErrorType);
+
+        var ok = await service.DeleteUser(new DeleteUser(user.Id), default);
+    Assert.True(ok.IsSuccess);
+
+        var state = await service.GetSecurityStateAsync();
+    Assert.Empty(state.Users);
+    }
+
+    #endregion
 }
