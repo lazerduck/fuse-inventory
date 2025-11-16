@@ -60,7 +60,8 @@ public class ConfigService : IConfigService
             ExternalResources = snapshot.ExternalResources.ToList(),
             Accounts = snapshot.Accounts.ToList(),
             Tags = snapshot.Tags.ToList(),
-            Environments = snapshot.Environments.ToList()
+            Environments = snapshot.Environments.ToList(),
+            KumaIntegrations = snapshot.KumaIntegrations.ToList()
         };
 
         return format switch
@@ -196,6 +197,7 @@ public class ConfigService : IConfigService
             var existingAccounts = current.Accounts.ToDictionary(a => a.Id);
             var existingTags = current.Tags.ToDictionary(t => t.Id);
             var existingEnvironments = current.Environments.ToDictionary(e => e.Id);
+            var existingKumaIntegrations = current.KumaIntegrations.ToDictionary(k => k.Id);
 
             // Merge imported data - update existing or add new
             foreach (var app in imported.Applications)
@@ -241,6 +243,7 @@ public class ConfigService : IConfigService
                 Accounts: existingAccounts.Values.ToList(),
                 Tags: existingTags.Values.ToList(),
                 Environments: existingEnvironments.Values.ToList(),
+                KumaIntegrations: existingKumaIntegrations.Values.ToList(),
                 Security: current.Security
             );
         }, ct);
@@ -256,6 +259,7 @@ public class ConfigSnapshot
     public List<Account> Accounts { get; set; } = new();
     public List<Tag> Tags { get; set; } = new();
     public List<EnvironmentInfo> Environments { get; set; } = new();
+    public List<KumaIntegration> KumaIntegrations { get; set; } = new();
 }
 
 internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory

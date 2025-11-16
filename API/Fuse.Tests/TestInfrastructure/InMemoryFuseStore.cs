@@ -19,7 +19,8 @@ public sealed class InMemoryFuseStore : IFuseStore
             Accounts: Array.Empty<Account>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            KumaIntegrations: Array.Empty<KumaIntegration>()
         );
     }
 

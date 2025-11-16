@@ -1,7 +1,7 @@
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 using System.Text.Json;
 
@@ -26,6 +26,7 @@ public class ConfigServiceTests
             Accounts: accounts ?? Array.Empty<Account>(),
             Tags: tags ?? Array.Empty<Tag>(),
             Environments: environments ?? Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -55,14 +56,14 @@ public class ConfigServiceTests
 
         var result = await service.ExportAsync(ConfigFormat.Json);
 
-        result.Should().NotBeEmpty();
+    Assert.False(string.IsNullOrEmpty(result));
         
         // Verify it's valid JSON
-        var parsed = JsonDocument.Parse(result);
-        parsed.Should().NotBeNull();
+    var parsed = JsonDocument.Parse(result);
+    Assert.NotNull(parsed);
         
         // Verify it contains our application
-        result.Should().Contain("TestApp");
+    Assert.Contains("TestApp", result);
     }
 
     [Fact]
@@ -75,9 +76,9 @@ public class ConfigServiceTests
 
         var result = await service.ExportAsync(ConfigFormat.Yaml);
 
-        result.Should().NotBeEmpty();
-        result.Should().Contain("Production");
-        result.Should().Contain("tags:");
+    Assert.False(string.IsNullOrEmpty(result));
+    Assert.Contains("Production", result);
+    Assert.Contains("tags:", result);
     }
 
     [Fact]
@@ -88,12 +89,12 @@ public class ConfigServiceTests
 
         var result = await service.GetTemplateAsync(ConfigFormat.Json);
 
-        result.Should().NotBeEmpty();
-        result.Should().Contain("Example");
+    Assert.False(string.IsNullOrEmpty(result));
+    Assert.Contains("Example", result);
         
         // Verify it's valid JSON
-        var parsed = JsonDocument.Parse(result);
-        parsed.Should().NotBeNull();
+    var parsed2 = JsonDocument.Parse(result);
+    Assert.NotNull(parsed2);
     }
 
     [Fact]
@@ -104,8 +105,8 @@ public class ConfigServiceTests
 
         var result = await service.GetTemplateAsync(ConfigFormat.Yaml);
 
-        result.Should().NotBeEmpty();
-        result.Should().Contain("Example");
+    Assert.False(string.IsNullOrEmpty(result));
+    Assert.Contains("Example", result);
     }
 
     [Fact]
@@ -135,9 +136,9 @@ public class ConfigServiceTests
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-        snapshot.Applications.Should().ContainSingle();
-        snapshot.Applications[0].Name.Should().Be("ImportedApp");
-        snapshot.Applications[0].Id.Should().Be(newAppId);
+    Assert.Single(snapshot.Applications);
+    Assert.Equal("ImportedApp", snapshot.Applications[0].Name);
+    Assert.Equal(newAppId, snapshot.Applications[0].Id);
     }
 
     [Fact]
@@ -183,10 +184,10 @@ public class ConfigServiceTests
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-        snapshot.Applications.Should().ContainSingle();
-        snapshot.Applications[0].Name.Should().Be("UpdatedName");
-        snapshot.Applications[0].Version.Should().Be("2.0");
-        snapshot.Applications[0].Id.Should().Be(appId);
+    Assert.Single(snapshot.Applications);
+    Assert.Equal("UpdatedName", snapshot.Applications[0].Name);
+    Assert.Equal("2.0", snapshot.Applications[0].Version);
+    Assert.Equal(appId, snapshot.Applications[0].Id);
     }
 
     [Fact]
@@ -249,9 +250,9 @@ public class ConfigServiceTests
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-        snapshot.Applications.Should().HaveCount(2);
-        snapshot.Applications.Should().Contain(a => a.Id == app1Id && a.Name == "UpdatedApp1");
-        snapshot.Applications.Should().Contain(a => a.Id == app2Id && a.Name == "App2");
+    Assert.Equal(2, snapshot.Applications.Count);
+    Assert.Contains(snapshot.Applications, a => a.Id == app1Id && a.Name == "UpdatedApp1");
+    Assert.Contains(snapshot.Applications, a => a.Id == app2Id && a.Name == "App2");
     }
 
     [Fact]
@@ -272,9 +273,9 @@ tags:
         await service.ImportAsync(importYaml, ConfigFormat.Yaml);
 
         var snapshot = await store.GetAsync();
-        snapshot.Tags.Should().ContainSingle();
-        snapshot.Tags[0].Name.Should().Be("ImportedTag");
-        snapshot.Tags[0].Color.Should().Be(TagColor.Blue);
+    Assert.Single(snapshot.Tags);
+    Assert.Equal("ImportedTag", snapshot.Tags[0].Name);
+    Assert.Equal(TagColor.Blue, snapshot.Tags[0].Color);
     }
 
     [Fact]
@@ -285,10 +286,8 @@ tags:
 
         var invalidJson = "{ invalid json }";
 
-        var act = async () => await service.ImportAsync(invalidJson, ConfigFormat.Json);
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Failed to parse*");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await service.ImportAsync(invalidJson, ConfigFormat.Json));
+        Assert.Contains("Failed to parse", ex.Message);
     }
 
     [Fact]
@@ -315,8 +314,8 @@ tags:
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-        snapshot.Environments.Should().ContainSingle();
-        snapshot.Environments[0].Name.Should().Be("Production");
-        snapshot.Applications.Should().BeEmpty();
+    Assert.Single(snapshot.Environments);
+    Assert.Equal("Production", snapshot.Environments[0].Name);
+    Assert.Empty(snapshot.Applications);
     }
 }

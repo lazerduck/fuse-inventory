@@ -48,7 +48,8 @@ public sealed class JsonFuseStore : IFuseStore
                 Accounts: await ReadAsync<Account>("accounts.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
-                Security: await ReadSecurityAsync("security.json", ct)
+                Security: await ReadSecurityAsync("security.json", ct),
+                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct)
             );
 
             // Temporary migration: convert application-target dependencies to instance-target dependencies.
@@ -130,7 +131,8 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("accounts.json", snapshot.Accounts, ct);
             await WriteAsync("tags.json", snapshot.Tags, ct);
             await WriteAsync("environments.json", snapshot.Environments, ct);
-            await WriteSecurityAsync("security.json", snapshot.Security, ct);
+            await WriteAsync("security.json", snapshot.Security, ct);
+            await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
 
             _cache = snapshot; // swap the in-memory snapshot
             Changed?.Invoke(snapshot);
@@ -177,7 +179,7 @@ public sealed class JsonFuseStore : IFuseStore
             ?? new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
     }
 
-    private async Task WriteSecurityAsync(string file, SecurityState value, CancellationToken ct)
+    private async Task WriteAsync<T>(string file, T value, CancellationToken ct)
     {
         var path = Path.Combine(_options.DataDirectory, file);
         var tmp = path + ".tmp";

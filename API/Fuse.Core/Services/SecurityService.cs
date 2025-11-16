@@ -208,8 +208,13 @@ public sealed class SecurityService : ISecurityService
     private static string HashPassword(string password, string salt)
     {
         var saltBytes = Convert.FromBase64String(salt);
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 100_000, HashAlgorithmName.SHA256);
-        return Convert.ToBase64String(pbkdf2.GetBytes(32));
+        var derived = Rfc2898DeriveBytes.Pbkdf2(
+            password,
+            saltBytes,
+            100_000,
+            HashAlgorithmName.SHA256,
+            32);
+        return Convert.ToBase64String(derived);
     }
 
     private record SessionRecord(string Token, Guid UserId, DateTime ExpiresAt);

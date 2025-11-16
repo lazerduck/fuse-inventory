@@ -7,15 +7,27 @@
           color="primary"
           :label="environmentLookup[instance.environmentId ?? ''] ?? 'No environment'"
         />
-        <q-chip
-          v-if="instance.version"
-          dense
-          color="primary"
-          text-color="white"
-          size="xs"
-        >
-          v{{ instance.version }}
-        </q-chip>
+        <div class="header-right">
+          <q-chip
+            v-if="healthStatus"
+            dense
+            :color="healthStatusColor"
+            :text-color="healthStatusTextColor"
+            size="xs"
+            :icon="healthStatusIcon"
+          >
+            {{ healthStatusLabel }}
+          </q-chip>
+          <q-chip
+            v-if="instance.version"
+            dense
+            color="primary"
+            text-color="white"
+            size="xs"
+          >
+            v{{ instance.version }}
+          </q-chip>
+        </div>
       </div>
 
       <div class="instance-info">
@@ -102,15 +114,83 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ApplicationInstance } from '../../api/client'
+import { useHealthCheck } from '../../composables/useHealthCheck'
+import { MonitorStatus } from '../../types/health'
 
-defineProps<{
+const props = defineProps<{
   instance: ApplicationInstance
+  applicationId: string
   environmentLookup: Record<string, string>
   platformLookup: Record<string, string>
   tagLookup: Record<string, string>
   dependencyFormatter: (dependency: any) => string
 }>()
+
+// Only fetch health if instance has a health URI configured
+const hasHealthCheck = computed(() => !!props.instance.healthUri)
+
+const { data: healthStatus } = useHealthCheck(
+  props.applicationId,
+  props.instance.id ?? '',
+  hasHealthCheck.value
+)
+
+const healthStatusColor = computed(() => {
+  if (!healthStatus.value) return 'grey'
+  
+  switch (healthStatus.value.Status) {
+    case MonitorStatus.Up:
+      return 'positive'
+    case MonitorStatus.Down:
+      return 'negative'
+    case MonitorStatus.Pending:
+      return 'warning'
+    case MonitorStatus.Maintenance:
+      return 'info'
+    default:
+      return 'grey'
+  }
+})
+
+const healthStatusTextColor = computed(() => {
+  return healthStatus.value?.Status === MonitorStatus.Up ? 'white' : 'white'
+})
+
+const healthStatusIcon = computed(() => {
+  if (!healthStatus.value) return 'help'
+  
+  switch (healthStatus.value.Status) {
+    case MonitorStatus.Up:
+      return 'check_circle'
+    case MonitorStatus.Down:
+      return 'cancel'
+    case MonitorStatus.Pending:
+      return 'schedule'
+    case MonitorStatus.Maintenance:
+      return 'construction'
+    default:
+      return 'help'
+  }
+})
+
+const healthStatusLabel = computed(() => {
+  if (!healthStatus.value) return 'Unknown'
+  
+  switch (healthStatus.value.Status) {
+    case MonitorStatus.Up:
+      return 'Healthy'
+    case MonitorStatus.Down:
+      return 'Down'
+    case MonitorStatus.Pending:
+      return 'Pending'
+    case MonitorStatus.Maintenance:
+      return 'Maintenance'
+    default:
+      return 'Unknown'
+  }
+})
 </script>
 
 <style scoped>
@@ -132,6 +212,12 @@ defineProps<{
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
 }
 
 .instance-info {

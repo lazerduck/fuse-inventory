@@ -8,5 +8,6 @@ public record Snapshot(
     IReadOnlyList<Account> Accounts,
     IReadOnlyList<Tag> Tags,
     IReadOnlyList<EnvironmentInfo> Environments,
+    IReadOnlyList<KumaIntegration> KumaIntegrations,
     SecurityState Security
 );

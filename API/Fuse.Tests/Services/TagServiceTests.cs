@@ -3,7 +3,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -20,7 +20,8 @@ public class TagServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: tags,
             Environments: Array.Empty<EnvironmentInfo>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            KumaIntegrations: Array.Empty<KumaIntegration>()
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -33,8 +34,8 @@ public class TagServiceTests
 
         var result = await service.CreateTagAsync(new CreateTag("", null, null));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -46,8 +47,8 @@ public class TagServiceTests
 
         var result = await service.CreateTagAsync(new CreateTag("web", null, null));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -58,12 +59,12 @@ public class TagServiceTests
 
         var result = await service.CreateTagAsync(new CreateTag("API", "desc", TagColor.Blue));
 
-        result.IsSuccess.Should().BeTrue();
-        var created = result.Value!;
-        created.Name.Should().Be("API");
+    Assert.True(result.IsSuccess);
+    var created = result.Value!;
+    Assert.Equal("API", created.Name);
 
-        var tags = await service.GetTagsAsync();
-        tags.Should().ContainSingle(t => t.Id == created.Id && t.Name == "API");
+    var tags = await service.GetTagsAsync();
+    Assert.Single(tags, t => t.Id == created.Id && t.Name == "API");
     }
 
     [Fact]
@@ -74,8 +75,8 @@ public class TagServiceTests
 
         var result = await service.UpdateTagAsync(new UpdateTag(Guid.NewGuid(), "n", null, null));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -88,8 +89,8 @@ public class TagServiceTests
 
         var result = await service.UpdateTagAsync(new UpdateTag(t2.Id, "a", null, null));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -101,11 +102,11 @@ public class TagServiceTests
 
         var result = await service.UpdateTagAsync(new UpdateTag(t.Id, "New", "nd", TagColor.Red));
 
-        result.IsSuccess.Should().BeTrue();
-        var updated = (await service.GetTagByIdAsync(t.Id))!;
-        updated.Name.Should().Be("New");
-        updated.Description.Should().Be("nd");
-        updated.Color.Should().Be(TagColor.Red);
+    Assert.True(result.IsSuccess);
+    var updated = (await service.GetTagByIdAsync(t.Id))!;
+    Assert.Equal("New", updated.Name);
+    Assert.Equal("nd", updated.Description);
+    Assert.Equal(TagColor.Red, updated.Color);
     }
 
     [Fact]
@@ -116,8 +117,8 @@ public class TagServiceTests
 
         var result = await service.DeleteTagAsync(new DeleteTag(Guid.NewGuid()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -129,7 +130,7 @@ public class TagServiceTests
 
         var result = await service.DeleteTagAsync(new DeleteTag(t.Id));
 
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetTagByIdAsync(t.Id)).Should().BeNull();
+    Assert.True(result.IsSuccess);
+    Assert.Null(await service.GetTagByIdAsync(t.Id));
     }
 }

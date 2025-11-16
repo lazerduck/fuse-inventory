@@ -4,7 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -37,6 +37,7 @@ public class AccountServiceTests
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -48,8 +49,8 @@ public class AccountServiceTests
         var store = NewStore();
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.CreateAccountAsync(new CreateAccount(Guid.NewGuid(), TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -59,8 +60,8 @@ public class AccountServiceTests
         var store = NewStore(apps: new[] { app });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.CreateAccountAsync(new CreateAccount(app.Id, TargetKind.Application, AuthKind.UserPassword, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -70,8 +71,8 @@ public class AccountServiceTests
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetAccountsAsync()).Should().ContainSingle();
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetAccountsAsync());
     }
 
     [Fact]
@@ -81,8 +82,8 @@ public class AccountServiceTests
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -92,8 +93,8 @@ public class AccountServiceTests
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid> { Guid.NewGuid() }));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -103,8 +104,8 @@ public class AccountServiceTests
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.UpdateAccountAsync(new UpdateAccount(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -115,9 +116,9 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var updated = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec2", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
-        updated.IsSuccess.Should().BeTrue();
-        var got = await service.GetAccountByIdAsync(acc.Id);
-        got!.SecretRef.Should().Be("sec2");
+    Assert.True(updated.IsSuccess);
+    var got = await service.GetAccountByIdAsync(acc.Id);
+    Assert.Equal("sec2", got!.SecretRef);
     }
 
     [Fact]
@@ -126,8 +127,8 @@ public class AccountServiceTests
         var store = NewStore();
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.DeleteAccountAsync(new DeleteAccount(Guid.NewGuid()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -138,8 +139,8 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.DeleteAccountAsync(new DeleteAccount(acc.Id));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetAccountsAsync()).Should().BeEmpty();
+    Assert.True(result.IsSuccess);
+    Assert.Empty(await service.GetAccountsAsync());
     }
 
     [Fact]
@@ -155,8 +156,8 @@ public class AccountServiceTests
         };
 
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, grants, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -172,16 +173,16 @@ public class AccountServiceTests
         };
 
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, grants, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
+    Assert.True(result.IsSuccess);
 
-        var created = result.Value!;
-        var createdGrant = created.Grants.Should().ContainSingle().Subject;
-        createdGrant.Id.Should().NotBe(Guid.Empty);
-        createdGrant.Privileges.Should().ContainSingle(p => p == Privilege.Select);
+    var created = result.Value!;
+    var createdGrant = Assert.Single(created.Grants);
+    Assert.NotEqual(Guid.Empty, createdGrant.Id);
+    Assert.Single(createdGrant.Privileges, p => p == Privilege.Select);
 
-        var stored = await service.GetAccountByIdAsync(created.Id);
-        stored.Should().NotBeNull();
-        stored!.Grants.Should().ContainSingle(g => g.Id == createdGrant.Id);
+    var stored = await service.GetAccountByIdAsync(created.Id);
+    Assert.NotNull(stored);
+    Assert.Single(stored!.Grants, g => g.Id == createdGrant.Id);
     }
 
     [Fact]
@@ -199,8 +200,8 @@ public class AccountServiceTests
         };
 
         var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, updatedGrants, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -217,12 +218,12 @@ public class AccountServiceTests
         };
 
         var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, updatedGrants, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
+    Assert.True(result.IsSuccess);
 
-        var updated = result.Value!;
-        var updatedGrant = updated.Grants.Should().ContainSingle().Subject;
-        updatedGrant.Id.Should().NotBe(Guid.Empty);
-        updatedGrant.Privileges.Should().ContainSingle(p => p == Privilege.Select);
+    var updated = result.Value!;
+    var updatedGrant = Assert.Single(updated.Grants);
+    Assert.NotEqual(Guid.Empty, updatedGrant.Id);
+    Assert.Single(updatedGrant.Privileges, p => p == Privilege.Select);
     }
 
     [Fact]
@@ -234,12 +235,12 @@ public class AccountServiceTests
         var service = new AccountService(store, new TagLookupService(store));
 
         var result = await service.CreateGrant(new CreateAccountGrant(acc.Id, "db1", "schema1", new HashSet<Privilege> { Privilege.Select, Privilege.Update }));
-        result.IsSuccess.Should().BeTrue();
-        var created = result.Value!;
-        created.Database.Should().Be("db1");
+    Assert.True(result.IsSuccess);
+    var created = result.Value!;
+    Assert.Equal("db1", created.Database);
 
-        var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
-        updatedAcc!.Grants.Should().ContainSingle(g => g.Id == created.Id);
+    var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
+    Assert.Single(updatedAcc!.Grants, g => g.Id == created.Id);
     }
 
     [Fact]
@@ -249,8 +250,8 @@ public class AccountServiceTests
         var service = new AccountService(store, new TagLookupService(store));
 
         var result = await service.CreateGrant(new CreateAccountGrant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select, Privilege.Update }));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -263,12 +264,12 @@ public class AccountServiceTests
         var service = new AccountService(store, new TagLookupService(store));
 
         var result = await service.UpdateGrant(new UpdateAccountGrant(acc.Id, grant.Id, "db2", "schema2", new HashSet<Privilege> { Privilege.Insert }));
-        result.IsSuccess.Should().BeTrue();
-        var updatedGrant = result.Value!;
-        updatedGrant.Database.Should().Be("db2");
+    Assert.True(result.IsSuccess);
+    var updatedGrant = result.Value!;
+    Assert.Equal("db2", updatedGrant.Database);
 
-        var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
-        updatedAcc!.Grants.Should().ContainSingle(g => g.Id == updatedGrant.Id && g.Database == "db2");
+    var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
+    Assert.Single(updatedAcc!.Grants, g => g.Id == updatedGrant.Id && g.Database == "db2");
     }
 
     [Fact]
@@ -279,8 +280,8 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.UpdateGrant(new UpdateAccountGrant(acc.Id, Guid.NewGuid(), "db2", "schema2", new HashSet<Privilege> { Privilege.Insert }));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -293,10 +294,10 @@ public class AccountServiceTests
         var service = new AccountService(store, new TagLookupService(store));
 
         var result = await service.DeleteGrant(new DeleteAccountGrant(acc.Id, grant.Id));
-        result.IsSuccess.Should().BeTrue();
+    Assert.True(result.IsSuccess);
 
-        var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
-        updatedAcc!.Grants.Should().BeEmpty();
+    var updatedAcc = await service.GetAccountByIdAsync(acc.Id);
+    Assert.Empty(updatedAcc!.Grants);
     }
 
     [Fact]
@@ -308,7 +309,7 @@ public class AccountServiceTests
         var service = new AccountService(store, new TagLookupService(store));
 
         var result = await service.DeleteGrant(new DeleteAccountGrant(acc.Id, Guid.NewGuid()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 }

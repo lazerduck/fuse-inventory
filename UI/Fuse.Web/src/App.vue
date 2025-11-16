@@ -2,24 +2,12 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn
-          dense
-          flat
-          round
-          icon="menu"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        />
+        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           Fuse Inventory
         </q-toolbar-title>
 
-        <q-btn
-          dense
-          flat
-          round
-          :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
-          @click="$q.dark.toggle()"
-          />
+        <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
 
         <q-btn dense flat round icon="help_outline">
           <q-menu anchor="bottom right" self="top right" auto-close>
@@ -56,34 +44,17 @@
           </q-menu>
         </q-btn>
 
-        <q-btn
-          dense
-          flat
-          round
-          :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'"
-          @click="handleAuthClick"
-        >
+        <q-btn dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
           <q-tooltip>{{ fuseStore.isLoggedIn ? `Logged in as ${fuseStore.userName}` : 'Login' }}</q-tooltip>
         </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      :width="250"
-      :breakpoint="500"
-      bordered
-    >
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="500" bordered>
       <q-scroll-area class="fit">
         <q-list padding>
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'home' }"
-            exact-active-class="bg-primary text-white"
-            data-tour-id="nav-home"
-          >
+          <q-item clickable v-ripple :to="{ name: 'home' }" exact-active-class="bg-primary text-white"
+            data-tour-id="nav-home">
             <q-item-section avatar>
               <q-icon name="home" />
             </q-item-section>
@@ -94,13 +65,8 @@
 
           <q-separator class="q-my-md" />
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'applications' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-applications"
-          >
+          <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
+            data-tour-id="nav-applications">
             <q-item-section avatar>
               <q-icon name="apps" />
             </q-item-section>
@@ -109,13 +75,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'accounts' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-accounts"
-          >
+          <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
+            data-tour-id="nav-accounts">
             <q-item-section avatar>
               <q-icon name="vpn_key" />
             </q-item-section>
@@ -124,13 +85,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'dataStores' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-data-stores"
-          >
+          <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
+            data-tour-id="nav-data-stores">
             <q-item-section avatar>
               <q-icon name="storage" />
             </q-item-section>
@@ -139,13 +95,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'platforms' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-platforms"
-          >
+          <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
+            data-tour-id="nav-platforms">
             <q-item-section avatar>
               <q-icon name="dns" />
             </q-item-section>
@@ -154,13 +105,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'environments' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-environments"
-          >
+          <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
+            data-tour-id="nav-environments">
             <q-item-section avatar>
               <q-icon name="cloud" />
             </q-item-section>
@@ -169,13 +115,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'externalResources' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-external-resources"
-          >
+          <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
+            data-tour-id="nav-external-resources">
             <q-item-section avatar>
               <q-icon name="link" />
             </q-item-section>
@@ -184,13 +125,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'tags' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-tags"
-          >
+          <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
+            data-tour-id="nav-tags">
             <q-item-section avatar>
               <q-icon name="label" />
             </q-item-section>
@@ -201,13 +137,8 @@
 
           <q-separator class="q-my-md" />
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'graph' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-tags"
-          >
+          <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
+            data-tour-id="nav-tags">
             <q-item-section avatar>
               <q-icon name="insights" />
             </q-item-section>
@@ -216,13 +147,8 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'config' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-config"
-          >
+          <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
+            data-tour-id="nav-config">
             <q-item-section avatar>
               <q-icon name="settings" />
             </q-item-section>
@@ -233,13 +159,18 @@
 
           <q-separator class="q-my-md" />
 
-          <q-item
-            clickable
-            v-ripple
-            :to="{ name: 'security' }"
-            active-class="bg-primary text-white"
-            data-tour-id="nav-security"
-          >
+          <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
+            data-tour-id="nav-kuma-integrations">
+            <q-item-section avatar>
+              <q-icon name="cloud_sync" />
+            </q-item-section>
+            <q-item-section>
+              Kuma Integrations
+            </q-item-section>
+          </q-item>
+
+          <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
+            data-tour-id="nav-security">
             <q-item-section avatar>
               <q-icon name="security" />
             </q-item-section>
@@ -255,12 +186,7 @@
       <router-view />
     </q-page-container>
 
-    <LoginDialog
-      v-model="showLoginDialog"
-      :loading="loginLoading"
-      :error="loginError"
-      @submit="handleLogin"
-    />
+    <LoginDialog v-model="showLoginDialog" :loading="loginLoading" :error="loginError" @submit="handleLogin" />
 
     <q-dialog v-model="showOnboardingPrompt">
       <q-card style="min-width: 320px; max-width: 480px">
@@ -354,7 +280,7 @@ watch(
 onMounted(async () => {
   await fuseStore.initializeAuth()
 
-  if(fuseStore.requireSetup) {
+  if (fuseStore.requireSetup) {
     router.push({ name: 'security' })
   }
 

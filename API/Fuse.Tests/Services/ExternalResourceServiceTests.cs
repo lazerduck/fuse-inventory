@@ -4,7 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -34,6 +34,7 @@ public class ExternalResourceServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -46,8 +47,8 @@ public class ExternalResourceServiceTests
         var store = NewStore(res: new[] { existing });
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.CreateExternalResourceAsync(new CreateExternalResource("res", null, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -56,8 +57,8 @@ public class ExternalResourceServiceTests
         var store = NewStore();
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.CreateExternalResourceAsync(new CreateExternalResource("Res", "d", new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetExternalResourcesAsync()).Should().ContainSingle(r => r.Name == "Res");
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetExternalResourcesAsync(), r => r.Name == "Res");
     }
 
     [Fact]
@@ -66,8 +67,8 @@ public class ExternalResourceServiceTests
         var store = NewStore();
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.CreateExternalResourceAsync(new CreateExternalResource("Res", null, null, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.ResourceUri.Should().BeNull();
+    Assert.True(result.IsSuccess);
+    Assert.Null(result.Value!.ResourceUri);
     }
 
     [Fact]
@@ -76,8 +77,8 @@ public class ExternalResourceServiceTests
         var store = NewStore();
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.CreateExternalResourceAsync(new CreateExternalResource("", null, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -86,8 +87,8 @@ public class ExternalResourceServiceTests
         var store = NewStore();
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.CreateExternalResourceAsync(new CreateExternalResource("Res", null, new Uri("http://x"), new HashSet<Guid> { Guid.NewGuid() }));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -96,8 +97,8 @@ public class ExternalResourceServiceTests
         var store = NewStore();
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.UpdateExternalResourceAsync(new UpdateExternalResource(Guid.NewGuid(), "R", null, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -108,8 +109,8 @@ public class ExternalResourceServiceTests
         var store = NewStore(res: new[] { r1, r2 });
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.UpdateExternalResourceAsync(new UpdateExternalResource(r2.Id, "a", null, new Uri("http://x"), new HashSet<Guid>()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -119,11 +120,11 @@ public class ExternalResourceServiceTests
         var store = NewStore(res: new[] { r });
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var res = await service.UpdateExternalResourceAsync(new UpdateExternalResource(r.Id, "New", "d", new Uri("http://new"), new HashSet<Guid>()));
-        res.IsSuccess.Should().BeTrue();
-        var got = await service.GetExternalResourceByIdAsync(r.Id);
-        got!.Name.Should().Be("New");
-        got.Description.Should().Be("d");
-        got.ResourceUri.Should().Be(new Uri("http://new"));
+    Assert.True(res.IsSuccess);
+    var got = await service.GetExternalResourceByIdAsync(r.Id);
+    Assert.Equal("New", got!.Name);
+    Assert.Equal("d", got.Description);
+    Assert.Equal(new Uri("http://new"), got.ResourceUri);
     }
 
     [Fact]
@@ -133,8 +134,8 @@ public class ExternalResourceServiceTests
         var store = NewStore(res: new[] { existing });
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.UpdateExternalResourceAsync(new UpdateExternalResource(existing.Id, "Res", null, null, new HashSet<Guid>()));
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.ResourceUri.Should().BeNull();
+    Assert.True(result.IsSuccess);
+    Assert.Null(result.Value!.ResourceUri);
     }
 
     [Fact]
@@ -144,7 +145,7 @@ public class ExternalResourceServiceTests
         var store = NewStore(res: new[] { r });
         var service = new ExternalResourceService(store, new TagLookupService(store));
         var result = await service.DeleteExternalResourceAsync(new DeleteExternalResource(r.Id));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetExternalResourcesAsync()).Should().BeEmpty();
+    Assert.True(result.IsSuccess);
+    Assert.Empty(await service.GetExternalResourcesAsync());
     }
 }

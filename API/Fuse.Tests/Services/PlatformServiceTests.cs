@@ -4,7 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -35,6 +35,7 @@ public class PlatformServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -48,8 +49,8 @@ public class PlatformServiceTests
 
         var result = await service.CreatePlatformAsync(new CreatePlatform("P1", TagIds: new HashSet<Guid> { Guid.NewGuid() }));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -58,7 +59,7 @@ public class PlatformServiceTests
         var store = NewStore();
         var service = new PlatformService(store, new TagLookupService(store));
 
-        (await service.CreatePlatformAsync(new CreatePlatform(""))).IsSuccess.Should().BeFalse();
+    Assert.False((await service.CreatePlatformAsync(new CreatePlatform(""))).IsSuccess);
     }
 
     [Fact]
@@ -68,8 +69,8 @@ public class PlatformServiceTests
         var store = NewStore(platforms: new[] { existing });
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.CreatePlatformAsync(new CreatePlatform("p1"));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -78,8 +79,8 @@ public class PlatformServiceTests
         var store = NewStore();
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.CreatePlatformAsync(new CreatePlatform("P1", DnsName: "host.example.com"));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetPlatformsAsync()).Should().ContainSingle(s => s.DisplayName == "P1");
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetPlatformsAsync(), s => s.DisplayName == "P1");
     }
 
     [Fact]
@@ -88,8 +89,8 @@ public class PlatformServiceTests
         var store = NewStore();
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.UpdatePlatformAsync(new UpdatePlatform(Guid.NewGuid(), "P1"));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -100,8 +101,8 @@ public class PlatformServiceTests
         var store = NewStore(platforms: new[] { p1, p2 });
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.UpdatePlatformAsync(new UpdatePlatform(p2.Id, "a"));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -111,12 +112,12 @@ public class PlatformServiceTests
         var store = NewStore(platforms: new[] { p });
         var service = new PlatformService(store, new TagLookupService(store));
         var res = await service.UpdatePlatformAsync(new UpdatePlatform(p.Id, "New", DnsName: "new.example.com", Os: "windows", Kind: PlatformKind.Cluster));
-        res.IsSuccess.Should().BeTrue();
-        var got = await service.GetPlatformByIdAsync(p.Id);
-        got!.DisplayName.Should().Be("New");
-        got.DnsName.Should().Be("new.example.com");
-        got.Os.Should().Be("windows");
-        got.Kind.Should().Be(PlatformKind.Cluster);
+    Assert.True(res.IsSuccess);
+    var got = await service.GetPlatformByIdAsync(p.Id);
+    Assert.Equal("New", got!.DisplayName);
+    Assert.Equal("new.example.com", got.DnsName);
+    Assert.Equal("windows", got.Os);
+    Assert.Equal(PlatformKind.Cluster, got.Kind);
     }
 
     [Fact]
@@ -125,8 +126,8 @@ public class PlatformServiceTests
         var store = NewStore();
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.DeletePlatformAsync(new DeletePlatform(Guid.NewGuid()));
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public class PlatformServiceTests
         var store = NewStore(platforms: new[] { p });
         var service = new PlatformService(store, new TagLookupService(store));
         var result = await service.DeletePlatformAsync(new DeletePlatform(p.Id));
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetPlatformsAsync()).Should().BeEmpty();
+    Assert.True(result.IsSuccess);
+    Assert.Empty(await service.GetPlatformsAsync());
     }
 }

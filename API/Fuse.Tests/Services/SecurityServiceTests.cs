@@ -3,7 +3,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -27,6 +27,7 @@ public class SecurityServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: securityState
         );
 
@@ -44,9 +45,9 @@ public class SecurityServiceTests
 
         var state = await service.GetSecurityStateAsync();
 
-        state.Should().NotBeNull();
-        state.Settings.Level.Should().Be(SecurityLevel.RestrictedEditing);
-        state.Users.Should().BeEmpty();
+    Assert.NotNull(state);
+    Assert.Equal(SecurityLevel.RestrictedEditing, state.Settings.Level);
+    Assert.Empty(state.Users);
     }
 
     #endregion
@@ -61,8 +62,8 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(null!);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Invalid security user command.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Invalid security user command.", result.Error);
     }
 
     [Fact]
@@ -73,8 +74,8 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("", "password123", SecurityRole.Admin));
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("User name cannot be empty.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("User name cannot be empty.", result.Error);
     }
 
     [Fact]
@@ -85,8 +86,8 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "", SecurityRole.Admin));
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Password cannot be empty.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Password cannot be empty.", result.Error);
     }
 
     [Fact]
@@ -98,9 +99,9 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "password", SecurityRole.Reader));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
-        result.Error.Should().Contain("already exists");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
+    Assert.Contains("already exists", result.Error);
     }
 
     [Fact]
@@ -112,8 +113,8 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("ADMIN", "password", SecurityRole.Reader));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -124,9 +125,9 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("user", "password", SecurityRole.Reader));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-        result.Error.Should().Contain("initial user must be an administrator");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
+    Assert.Contains("initial user must be an administrator", result.Error);
     }
 
     [Fact]
@@ -137,18 +138,18 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
 
-        result.IsSuccess.Should().BeTrue();
-        var user = result.Value!;
-        user.Id.Should().NotBe(Guid.Empty);
-        user.UserName.Should().Be("admin");
-        user.Role.Should().Be(SecurityRole.Admin);
-        user.PasswordHash.Should().NotBeNullOrEmpty();
-        user.PasswordSalt.Should().NotBeNullOrEmpty();
-        user.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    Assert.True(result.IsSuccess);
+    var user = result.Value!;
+    Assert.NotEqual(Guid.Empty, user.Id);
+    Assert.Equal("admin", user.UserName);
+    Assert.Equal(SecurityRole.Admin, user.Role);
+    Assert.False(string.IsNullOrEmpty(user.PasswordHash));
+    Assert.False(string.IsNullOrEmpty(user.PasswordSalt));
+    Assert.InRange(user.CreatedAt, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
+    Assert.InRange(user.UpdatedAt, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
 
-        var state = await service.GetSecurityStateAsync();
-        state.Users.Should().ContainSingle(u => u.Id == user.Id);
+    var state = await service.GetSecurityStateAsync();
+    Assert.Single(state.Users, u => u.Id == user.Id);
     }
 
     [Fact]
@@ -159,8 +160,8 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("  admin  ", "password123", SecurityRole.Admin));
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.UserName.Should().Be("admin");
+    Assert.True(result.IsSuccess);
+    Assert.Equal("admin", result.Value!.UserName);
     }
 
     [Fact]
@@ -172,9 +173,9 @@ public class SecurityServiceTests
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("user", "password", SecurityRole.Reader));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
-        result.Error.Should().Contain("Only administrators can create users");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.Contains("Only administrators can create users", result.Error);
     }
 
     [Fact]
@@ -188,8 +189,8 @@ public class SecurityServiceTests
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = reader.Id };
         var result = await service.CreateUserAsync(command);
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
     }
 
     [Fact]
@@ -202,12 +203,12 @@ public class SecurityServiceTests
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = admin.Id };
         var result = await service.CreateUserAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.UserName.Should().Be("newuser");
-        result.Value!.Role.Should().Be(SecurityRole.Reader);
+    Assert.True(result.IsSuccess);
+    Assert.Equal("newuser", result.Value!.UserName);
+    Assert.Equal(SecurityRole.Reader, result.Value!.Role);
 
-        var state = await service.GetSecurityStateAsync();
-        state.Users.Should().HaveCount(2);
+    var state = await service.GetSecurityStateAsync();
+    Assert.Equal(2, state.Users.Count);
     }
 
     [Fact]
@@ -217,12 +218,11 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var user1 = await service.CreateUserAsync(new CreateSecurityUser("admin1", "password", SecurityRole.Admin));
-        user1.IsSuccess.Should().BeTrue();
+    Assert.True(user1.IsSuccess);
         
         var user2 = await service.CreateUserAsync(new CreateSecurityUser("admin2", "password", SecurityRole.Admin) { RequestedBy = user1.Value!.Id });
-        user2.IsSuccess.Should().BeTrue();
-
-        user1.Value!.PasswordSalt.Should().NotBe(user2.Value!.PasswordSalt);
+    Assert.True(user2.IsSuccess);
+    Assert.NotEqual(user2.Value!.PasswordSalt, user1.Value!.PasswordSalt);
     }
 
     [Fact]
@@ -232,12 +232,11 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var user1 = await service.CreateUserAsync(new CreateSecurityUser("admin1", "password1", SecurityRole.Admin));
-        user1.IsSuccess.Should().BeTrue();
+    Assert.True(user1.IsSuccess);
         
         var user2 = await service.CreateUserAsync(new CreateSecurityUser("admin2", "password2", SecurityRole.Admin) { RequestedBy = user1.Value!.Id });
-        user2.IsSuccess.Should().BeTrue();
-
-        user1.Value!.PasswordHash.Should().NotBe(user2.Value!.PasswordHash);
+    Assert.True(user2.IsSuccess);
+    Assert.NotEqual(user2.Value!.PasswordHash, user1.Value!.PasswordHash);
     }
 
     #endregion
@@ -252,8 +251,8 @@ public class SecurityServiceTests
 
         var result = await service.LoginAsync(null!);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Invalid login request.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Invalid login request.", result.Error);
     }
 
     [Fact]
@@ -264,8 +263,8 @@ public class SecurityServiceTests
 
         var result = await service.LoginAsync(new LoginSecurityUser("", "password"));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -276,8 +275,8 @@ public class SecurityServiceTests
 
         var result = await service.LoginAsync(new LoginSecurityUser("admin", ""));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -288,9 +287,9 @@ public class SecurityServiceTests
 
         var result = await service.LoginAsync(new LoginSecurityUser("nonexistent", "password"));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
-        result.Error.Should().Be("Invalid credentials.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.Equal("Invalid credentials.", result.Error);
     }
 
     [Fact]
@@ -305,9 +304,9 @@ public class SecurityServiceTests
         // Try to login with wrong password
         var result = await service.LoginAsync(new LoginSecurityUser("admin", "wrongpassword"));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
-        result.Error.Should().Be("Invalid credentials.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.Equal("Invalid credentials.", result.Error);
     }
 
     [Fact]
@@ -321,14 +320,14 @@ public class SecurityServiceTests
 
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
 
-        loginResult.IsSuccess.Should().BeTrue();
-        var session = loginResult.Value!;
-        session.Token.Should().NotBeNullOrEmpty();
-        session.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
-        session.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(30), TimeSpan.FromSeconds(5));
-        session.User.Id.Should().Be(userId);
-        session.User.UserName.Should().Be("admin");
-        session.User.Role.Should().Be(SecurityRole.Admin);
+    Assert.True(loginResult.IsSuccess);
+    var session = loginResult.Value!;
+    Assert.False(string.IsNullOrEmpty(session.Token));
+    Assert.True(session.ExpiresAt > DateTime.UtcNow);
+    Assert.InRange(session.ExpiresAt, DateTime.UtcNow.AddDays(30).AddSeconds(-5), DateTime.UtcNow.AddDays(30).AddSeconds(5));
+    Assert.Equal(userId, session.User.Id);
+    Assert.Equal("admin", session.User.UserName);
+    Assert.Equal(SecurityRole.Admin, session.User.Role);
     }
 
     [Fact]
@@ -340,7 +339,7 @@ public class SecurityServiceTests
         await service.CreateUserAsync(new CreateSecurityUser("Admin", "password123", SecurityRole.Admin));
         var result = await service.LoginAsync(new LoginSecurityUser("ADMIN", "password123"));
 
-        result.IsSuccess.Should().BeTrue();
+    Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -354,7 +353,7 @@ public class SecurityServiceTests
         var session1 = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
         var session2 = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
 
-        session1.Value!.Token.Should().NotBe(session2.Value!.Token);
+    Assert.NotEqual(session2.Value!.Token, session1.Value!.Token);
     }
 
     #endregion
@@ -369,8 +368,8 @@ public class SecurityServiceTests
 
         var result = await service.LogoutAsync(null!);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Invalid logout request.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Invalid logout request.", result.Error);
     }
 
     [Fact]
@@ -381,8 +380,8 @@ public class SecurityServiceTests
 
         var result = await service.LogoutAsync(new LogoutSecurityUser(""));
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Invalid logout request.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Invalid logout request.", result.Error);
     }
 
     [Fact]
@@ -397,11 +396,11 @@ public class SecurityServiceTests
 
         var logoutResult = await service.LogoutAsync(new LogoutSecurityUser(token));
 
-        logoutResult.IsSuccess.Should().BeTrue();
+    Assert.True(logoutResult.IsSuccess);
 
         // Session should no longer be valid
         var user = await service.ValidateSessionAsync(token, false);
-        user.Should().BeNull();
+    Assert.Null(user);
     }
 
     [Fact]
@@ -412,7 +411,7 @@ public class SecurityServiceTests
 
         var result = await service.LogoutAsync(new LogoutSecurityUser("nonexistent-token"));
 
-        result.IsSuccess.Should().BeTrue();
+    Assert.True(result.IsSuccess);
     }
 
     #endregion
@@ -427,7 +426,7 @@ public class SecurityServiceTests
 
         var result = await service.ValidateSessionAsync(null!, false);
 
-        result.Should().BeNull();
+    Assert.Null(result);
     }
 
     [Fact]
@@ -438,7 +437,7 @@ public class SecurityServiceTests
 
         var result = await service.ValidateSessionAsync("", false);
 
-        result.Should().BeNull();
+    Assert.Null(result);
     }
 
     [Fact]
@@ -449,7 +448,7 @@ public class SecurityServiceTests
 
         var result = await service.ValidateSessionAsync("nonexistent-token", false);
 
-        result.Should().BeNull();
+    Assert.Null(result);
     }
 
     [Fact]
@@ -464,9 +463,9 @@ public class SecurityServiceTests
 
         var user = await service.ValidateSessionAsync(token, false);
 
-        user.Should().NotBeNull();
-        user!.UserName.Should().Be("admin");
-        user.Role.Should().Be(SecurityRole.Admin);
+    Assert.NotNull(user);
+    Assert.Equal("admin", user!.UserName);
+    Assert.Equal(SecurityRole.Admin, user.Role);
     }
 
     [Fact]
@@ -484,12 +483,12 @@ public class SecurityServiceTests
         await Task.Delay(100);
 
         var user = await service.ValidateSessionAsync(token, refresh: true);
-        user.Should().NotBeNull();
+    Assert.NotNull(user);
 
         // Login again to get the updated expiry (indirectly verify refresh happened)
         // We can't directly access the session, but we can validate it's still working
         var stillValid = await service.ValidateSessionAsync(token, refresh: false);
-        stillValid.Should().NotBeNull();
+    Assert.NotNull(stillValid);
     }
 
     [Fact]
@@ -502,12 +501,12 @@ public class SecurityServiceTests
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
         var token = loginResult.Value!.Token;
 
-        var user = await service.ValidateSessionAsync(token, refresh: false);
-        user.Should().NotBeNull();
+    var user = await service.ValidateSessionAsync(token, refresh: false);
+    Assert.NotNull(user);
 
         // Session should still be valid
         var stillValid = await service.ValidateSessionAsync(token, refresh: false);
-        stillValid.Should().NotBeNull();
+    Assert.NotNull(stillValid);
     }
 
     [Fact]
@@ -528,7 +527,7 @@ public class SecurityServiceTests
 
         // Verify session is valid
         var user1 = await service.ValidateSessionAsync(token, false);
-        user1.Should().NotBeNull();
+    Assert.NotNull(user1);
 
         // Remove all users except the original admin
         await store.UpdateAsync(s => s with
@@ -541,7 +540,7 @@ public class SecurityServiceTests
 
         // Session should now be invalid
         var user2 = await service.ValidateSessionAsync(token, false);
-        user2.Should().BeNull();
+    Assert.Null(user2);
     }
 
     #endregion
@@ -556,8 +555,8 @@ public class SecurityServiceTests
 
         var result = await service.UpdateSecuritySettingsAsync(null!);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Invalid security settings command.");
+    Assert.False(result.IsSuccess);
+    Assert.Equal("Invalid security settings command.", result.Error);
     }
 
     [Fact]
@@ -569,8 +568,8 @@ public class SecurityServiceTests
 
         var result = await service.UpdateSecuritySettingsAsync(new UpdateSecuritySettings(SecurityLevel.RestrictedEditing));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
     }
 
     [Fact]
@@ -584,9 +583,9 @@ public class SecurityServiceTests
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = reader.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
-        result.Error.Should().Contain("Only administrators can update security settings");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.Contains("Only administrators can update security settings", result.Error);
     }
 
     [Fact]
@@ -599,8 +598,8 @@ public class SecurityServiceTests
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = Guid.NewGuid() };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Unauthorized);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
     }
 
     [Fact]
@@ -614,9 +613,9 @@ public class SecurityServiceTests
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Level.Should().Be(SecurityLevel.RestrictedEditing);
-        result.Value!.UpdatedAt.Should().Be(settings.UpdatedAt);
+    Assert.True(result.IsSuccess);
+    Assert.Equal(SecurityLevel.RestrictedEditing, result.Value!.Level);
+    Assert.Equal(settings.UpdatedAt, result.Value!.UpdatedAt);
     }
 
     [Fact]
@@ -627,14 +626,14 @@ public class SecurityServiceTests
         var service = new SecurityService(store);
 
         var state = await service.GetSecurityStateAsync();
-        state.RequiresSetup.Should().BeTrue();
+    Assert.True(state.RequiresSetup);
 
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = Guid.NewGuid() };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-        result.Error.Should().Contain("administrator account must be created before security settings can be modified");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
+    Assert.Contains("administrator account must be created before security settings can be modified", result.Error);
     }
 
     [Fact]
@@ -667,9 +666,9 @@ public class SecurityServiceTests
         var result = await service.UpdateSecuritySettingsAsync(command);
 
         // Now with the RequiresSetup check, this will fail with Validation error first
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
-        result.Error.Should().Contain("administrator account must be created before security settings can be modified");
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
+    Assert.Contains("administrator account must be created before security settings can be modified", result.Error);
     }
 
     [Fact]
@@ -683,12 +682,12 @@ public class SecurityServiceTests
         var command = new UpdateSecuritySettings(SecurityLevel.FullyRestricted) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Level.Should().Be(SecurityLevel.FullyRestricted);
-        result.Value!.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    Assert.True(result.IsSuccess);
+    Assert.Equal(SecurityLevel.FullyRestricted, result.Value!.Level);
+    Assert.InRange(result.Value!.UpdatedAt, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
 
-        var state = await service.GetSecurityStateAsync();
-        state.Settings.Level.Should().Be(SecurityLevel.FullyRestricted);
+    var state = await service.GetSecurityStateAsync();
+    Assert.Equal(SecurityLevel.FullyRestricted, state.Settings.Level);
     }
 
     [Fact]
@@ -702,8 +701,8 @@ public class SecurityServiceTests
         var command = new UpdateSecuritySettings(SecurityLevel.None) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Level.Should().Be(SecurityLevel.None);
+    Assert.True(result.IsSuccess);
+    Assert.Equal(SecurityLevel.None, result.Value!.Level);
     }
 
     #endregion
@@ -718,42 +717,42 @@ public class SecurityServiceTests
 
         // 1. Create initial admin user
         var createAdminResult = await service.CreateUserAsync(new CreateSecurityUser("admin", "admin123", SecurityRole.Admin));
-        createAdminResult.IsSuccess.Should().BeTrue();
+    Assert.True(createAdminResult.IsSuccess);
         var adminId = createAdminResult.Value!.Id;
 
         // 2. Login as admin
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "admin123"));
-        loginResult.IsSuccess.Should().BeTrue();
+    Assert.True(loginResult.IsSuccess);
         var token = loginResult.Value!.Token;
 
         // 3. Validate session
         var validatedUser = await service.ValidateSessionAsync(token, false);
-        validatedUser.Should().NotBeNull();
-        validatedUser!.Id.Should().Be(adminId);
+    Assert.NotNull(validatedUser);
+    Assert.Equal(adminId, validatedUser!.Id);
 
         // 4. Create a reader user
         var createReaderCommand = new CreateSecurityUser("reader", "reader123", SecurityRole.Reader) { RequestedBy = adminId };
         var createReaderResult = await service.CreateUserAsync(createReaderCommand);
-        createReaderResult.IsSuccess.Should().BeTrue();
+    Assert.True(createReaderResult.IsSuccess);
 
         // 5. Update security settings
         var updateSettingsCommand = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = adminId };
         var updateSettingsResult = await service.UpdateSecuritySettingsAsync(updateSettingsCommand);
-        updateSettingsResult.IsSuccess.Should().BeTrue();
+    Assert.True(updateSettingsResult.IsSuccess);
 
         // 6. Logout
         var logoutResult = await service.LogoutAsync(new LogoutSecurityUser(token));
-        logoutResult.IsSuccess.Should().BeTrue();
+    Assert.True(logoutResult.IsSuccess);
 
         // 7. Session should be invalid after logout
         var invalidSession = await service.ValidateSessionAsync(token, false);
-        invalidSession.Should().BeNull();
+    Assert.Null(invalidSession);
 
         // 8. Verify final state
         var finalState = await service.GetSecurityStateAsync();
-        finalState.Users.Should().HaveCount(2);
-        finalState.Settings.Level.Should().Be(SecurityLevel.RestrictedEditing);
-        finalState.RequiresSetup.Should().BeFalse();
+    Assert.Equal(2, finalState.Users.Count);
+    Assert.Equal(SecurityLevel.RestrictedEditing, finalState.Settings.Level);
+    Assert.False(finalState.RequiresSetup);
     }
 
     [Fact]
@@ -764,21 +763,21 @@ public class SecurityServiceTests
 
         // Create two users with the same password
         var user1Result = await service.CreateUserAsync(new CreateSecurityUser("user1", "samepassword", SecurityRole.Admin));
-        user1Result.IsSuccess.Should().BeTrue();
+    Assert.True(user1Result.IsSuccess);
         
         var user2Result = await service.CreateUserAsync(new CreateSecurityUser("user2", "samepassword", SecurityRole.Admin) { RequestedBy = user1Result.Value!.Id });
-        user2Result.IsSuccess.Should().BeTrue();
+    Assert.True(user2Result.IsSuccess);
 
         // Even with the same password, hashes should be different due to different salts
-        user1Result.Value!.PasswordHash.Should().NotBe(user2Result.Value!.PasswordHash);
-        user1Result.Value!.PasswordSalt.Should().NotBe(user2Result.Value!.PasswordSalt);
+    Assert.NotEqual(user2Result.Value!.PasswordHash, user1Result.Value!.PasswordHash);
+    Assert.NotEqual(user2Result.Value!.PasswordSalt, user1Result.Value!.PasswordSalt);
 
         // Both should be able to login
         var login1 = await service.LoginAsync(new LoginSecurityUser("user1", "samepassword"));
         var login2 = await service.LoginAsync(new LoginSecurityUser("user2", "samepassword"));
 
-        login1.IsSuccess.Should().BeTrue();
-        login2.IsSuccess.Should().BeTrue();
+    Assert.True(login1.IsSuccess);
+    Assert.True(login2.IsSuccess);
     }
 
     [Fact]
@@ -788,27 +787,27 @@ public class SecurityServiceTests
         var store1 = NewStore();
         var service1 = new SecurityService(store1);
         var state1 = await service1.GetSecurityStateAsync();
-        state1.RequiresSetup.Should().BeTrue();
+    Assert.True(state1.RequiresSetup);
 
         // Only reader - requires setup
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store2 = NewStore(users: new[] { reader });
         var service2 = new SecurityService(store2);
         var state2 = await service2.GetSecurityStateAsync();
-        state2.RequiresSetup.Should().BeTrue();
+    Assert.True(state2.RequiresSetup);
 
         // Has admin - does not require setup
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store3 = NewStore(users: new[] { admin });
         var service3 = new SecurityService(store3);
         var state3 = await service3.GetSecurityStateAsync();
-        state3.RequiresSetup.Should().BeFalse();
+    Assert.False(state3.RequiresSetup);
 
         // Has both admin and reader - does not require setup
         var store4 = NewStore(users: new[] { admin, reader });
         var service4 = new SecurityService(store4);
         var state4 = await service4.GetSecurityStateAsync();
-        state4.RequiresSetup.Should().BeFalse();
+    Assert.False(state4.RequiresSetup);
     }
 
     #endregion

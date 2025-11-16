@@ -17,5 +17,14 @@ public static class FuseCodeModule
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
+        services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
+        services.AddHttpClient("kuma-validator");
+        services.AddHttpClient("kuma-metrics");
+        services.AddScoped<IKumaIntegrationValidator, HttpKumaIntegrationValidator>();
+        
+        // Register KumaMetricsService as both hosted service and singleton for health queries
+        services.AddSingleton<KumaMetricsService>();
+        services.AddHostedService(provider => provider.GetRequiredService<KumaMetricsService>());
+        services.AddSingleton<IKumaHealthService>(provider => provider.GetRequiredService<KumaMetricsService>());
     }
 }

@@ -4,7 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
-using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -34,6 +34,7 @@ public class EnvironmentServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -47,8 +48,8 @@ public class EnvironmentServiceTests
 
         var result = await service.CreateEnvironment(new CreateEnvironment("", null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -60,8 +61,8 @@ public class EnvironmentServiceTests
 
         var result = await service.CreateEnvironment(new CreateEnvironment("Prod", null, new HashSet<Guid> { missing }));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -73,8 +74,8 @@ public class EnvironmentServiceTests
 
         var result = await service.CreateEnvironment(new CreateEnvironment("prod", null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -86,10 +87,10 @@ public class EnvironmentServiceTests
 
         var result = await service.CreateEnvironment(new CreateEnvironment("Prod", "desc", new HashSet<Guid> { tag.Id }));
 
-        result.IsSuccess.Should().BeTrue();
-        var created = result.Value!;
-        created.Name.Should().Be("Prod");
-        (await service.GetEnvironments()).Should().ContainSingle(e => e.Id == created.Id);
+    Assert.True(result.IsSuccess);
+    var created = result.Value!;
+    Assert.Equal("Prod", created.Name);
+    Assert.Single(await service.GetEnvironments(), e => e.Id == created.Id);
     }
 
     [Fact]
@@ -100,8 +101,8 @@ public class EnvironmentServiceTests
 
         var result = await service.UpdateEnvironment(new UpdateEnvironment(Guid.NewGuid(), "X", null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -114,8 +115,8 @@ public class EnvironmentServiceTests
 
         var result = await service.UpdateEnvironment(new UpdateEnvironment(e2.Id, "a", null, new HashSet<Guid>()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Conflict);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
 
     [Fact]
@@ -127,8 +128,8 @@ public class EnvironmentServiceTests
 
         var result = await service.UpdateEnvironment(new UpdateEnvironment(env.Id, "Env", null, new HashSet<Guid> { Guid.NewGuid() }));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Validation);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
 
     [Fact]
@@ -141,11 +142,11 @@ public class EnvironmentServiceTests
 
         var result = await service.UpdateEnvironment(new UpdateEnvironment(env.Id, "New", "nd", new HashSet<Guid> { tag.Id }));
 
-        result.IsSuccess.Should().BeTrue();
-        var updated = (await service.GetEnvironments()).First(e => e.Id == env.Id);
-        updated.Name.Should().Be("New");
-        updated.Description.Should().Be("nd");
-        updated.TagIds.Should().Contain(tag.Id);
+    Assert.True(result.IsSuccess);
+    var updated = (await service.GetEnvironments()).First(e => e.Id == env.Id);
+    Assert.Equal("New", updated.Name);
+    Assert.Equal("nd", updated.Description);
+    Assert.Contains(tag.Id, updated.TagIds);
     }
 
     [Fact]
@@ -156,8 +157,8 @@ public class EnvironmentServiceTests
 
         var result = await service.DeleteEnvironmentAsync(new DeleteEnvironment(Guid.NewGuid()));
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+    Assert.False(result.IsSuccess);
+    Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
 
     [Fact]
@@ -169,7 +170,7 @@ public class EnvironmentServiceTests
 
         var result = await service.DeleteEnvironmentAsync(new DeleteEnvironment(env.Id));
 
-        result.IsSuccess.Should().BeTrue();
-        (await service.GetEnvironments()).Should().BeEmpty();
+    Assert.True(result.IsSuccess);
+    Assert.Empty(await service.GetEnvironments());
     }
 }

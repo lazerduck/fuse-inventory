@@ -99,6 +99,7 @@
               v-for="instance in application.instances"
               :key="instance.id"
               :instance="instance"
+              :application-id="application.id ?? ''"
               :environment-lookup="environmentLookup"
               :platform-lookup="platformLookup"
               :tag-lookup="tagLookup"

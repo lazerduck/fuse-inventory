@@ -229,6 +229,33 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @return OK
+     */
+    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @return No Content
+     */
+    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     platformAll(signal?: AbortSignal): Promise<Platform[]>;
 
     /**
@@ -2433,6 +2460,253 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]> {
+        let url_ = this.baseUrl + "/api/KumaIntegration";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processKumaIntegrationAll(_response);
+        });
+    }
+
+    protected processKumaIntegrationAll(response: Response): Promise<KumaIntegrationResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(KumaIntegrationResponse.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<KumaIntegrationResponse[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+        let url_ = this.baseUrl + "/api/KumaIntegration";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processKumaIntegrationPOST(_response);
+        });
+    }
+
+    protected processKumaIntegrationPOST(response: Response): Promise<KumaIntegrationResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = KumaIntegrationResponse.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<KumaIntegrationResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+        let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processKumaIntegrationGET(_response);
+        });
+    }
+
+    protected processKumaIntegrationGET(response: Response): Promise<KumaIntegrationResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = KumaIntegrationResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<KumaIntegrationResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+        let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processKumaIntegrationPUT(_response);
+        });
+    }
+
+    protected processKumaIntegrationPUT(response: Response): Promise<KumaIntegrationResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = KumaIntegrationResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<KumaIntegrationResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processKumaIntegrationDELETE(_response);
+        });
+    }
+
+    protected processKumaIntegrationDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     platformAll(signal?: AbortSignal): Promise<Platform[]> {
         let url_ = this.baseUrl + "/api/Platform";
         url_ = url_.replace(/[?&]$/, "");
@@ -4353,6 +4627,70 @@ export interface ICreateExternalResource {
     tagIds?: string[] | undefined;
 }
 
+export class CreateKumaIntegration implements ICreateKumaIntegration {
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    apiKey?: string | undefined;
+
+    constructor(data?: ICreateKumaIntegration) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            if (Array.isArray(_data["EnvironmentIds"])) {
+                this.environmentIds = [] as any;
+                for (let item of _data["EnvironmentIds"])
+                    this.environmentIds!.push(item);
+            }
+            this.platformId = _data["PlatformId"];
+            this.accountId = _data["AccountId"];
+            this.uri = _data["Uri"];
+            this.apiKey = _data["ApiKey"];
+        }
+    }
+
+    static fromJS(data: any): CreateKumaIntegration {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateKumaIntegration();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        if (Array.isArray(this.environmentIds)) {
+            data["EnvironmentIds"] = [];
+            for (let item of this.environmentIds)
+                data["EnvironmentIds"].push(item);
+        }
+        data["PlatformId"] = this.platformId;
+        data["AccountId"] = this.accountId;
+        data["Uri"] = this.uri;
+        data["ApiKey"] = this.apiKey;
+        return data;
+    }
+}
+
+export interface ICreateKumaIntegration {
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    apiKey?: string | undefined;
+}
+
 export class CreatePlatform implements ICreatePlatform {
     displayName?: string | undefined;
     dnsName?: string | undefined;
@@ -4771,6 +5109,78 @@ export interface IGrant {
     database?: string | undefined;
     schema?: string | undefined;
     privileges?: Privilege[] | undefined;
+}
+
+export class KumaIntegrationResponse implements IKumaIntegrationResponse {
+    id?: string;
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IKumaIntegrationResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            if (Array.isArray(_data["EnvironmentIds"])) {
+                this.environmentIds = [] as any;
+                for (let item of _data["EnvironmentIds"])
+                    this.environmentIds!.push(item);
+            }
+            this.platformId = _data["PlatformId"];
+            this.accountId = _data["AccountId"];
+            this.uri = _data["Uri"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): KumaIntegrationResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new KumaIntegrationResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        if (Array.isArray(this.environmentIds)) {
+            data["EnvironmentIds"] = [];
+            for (let item of this.environmentIds)
+                data["EnvironmentIds"].push(item);
+        }
+        data["PlatformId"] = this.platformId;
+        data["AccountId"] = this.accountId;
+        data["Uri"] = this.uri;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IKumaIntegrationResponse {
+    id?: string;
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export class LoginSecurityUser implements ILoginSecurityUser {
@@ -5925,6 +6335,74 @@ export interface IUpdateExternalResource {
     description?: string | undefined;
     resourceUri?: string | undefined;
     tagIds?: string[] | undefined;
+}
+
+export class UpdateKumaIntegration implements IUpdateKumaIntegration {
+    id?: string;
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    apiKey?: string | undefined;
+
+    constructor(data?: IUpdateKumaIntegration) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            if (Array.isArray(_data["EnvironmentIds"])) {
+                this.environmentIds = [] as any;
+                for (let item of _data["EnvironmentIds"])
+                    this.environmentIds!.push(item);
+            }
+            this.platformId = _data["PlatformId"];
+            this.accountId = _data["AccountId"];
+            this.uri = _data["Uri"];
+            this.apiKey = _data["ApiKey"];
+        }
+    }
+
+    static fromJS(data: any): UpdateKumaIntegration {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateKumaIntegration();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        if (Array.isArray(this.environmentIds)) {
+            data["EnvironmentIds"] = [];
+            for (let item of this.environmentIds)
+                data["EnvironmentIds"].push(item);
+        }
+        data["PlatformId"] = this.platformId;
+        data["AccountId"] = this.accountId;
+        data["Uri"] = this.uri;
+        data["ApiKey"] = this.apiKey;
+        return data;
+    }
+}
+
+export interface IUpdateKumaIntegration {
+    id?: string;
+    name?: string | undefined;
+    environmentIds?: string[] | undefined;
+    platformId?: string | undefined;
+    accountId?: string | undefined;
+    uri?: string | undefined;
+    apiKey?: string | undefined;
 }
 
 export class UpdatePlatform implements IUpdatePlatform {

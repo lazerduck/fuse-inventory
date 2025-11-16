@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Fuse.Core.Models;
 
 namespace Fuse.Core.Commands;
