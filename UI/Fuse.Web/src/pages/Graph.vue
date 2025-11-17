@@ -43,6 +43,7 @@ import cytoscape, { type Core, type ElementDefinition } from 'cytoscape';
 import fcose from 'cytoscape-fcose'
 // fcose layout plugin improves compound graph spacing
 import { computed, onMounted, ref, watch } from 'vue';
+import { useQuasar } from 'quasar';
 import { useApplications } from '../composables/useApplications';
 import { useEnvironments } from '../composables/useEnvironments';
 import { usePlatforms } from '../composables/usePlatforms';
@@ -50,7 +51,9 @@ import { useDataStores } from '../composables/useDataStores';
 import { useExternalResources } from '../composables/useExternalResources';
 
 const graphEl = ref<HTMLDivElement | null>(null)
+
 let cy: Core | null = null
+const $q = useQuasar();
 
 const applicationStore = useApplications();
 const environmentStore = useEnvironments();
@@ -180,25 +183,34 @@ function refreshGraph() {
 
   cy.elements().remove()
   cy.add([...nodes, ...edges])
-  
+
+  // Update node text color based on theme
+  const textColor = $q.dark.isActive ? '#fff' : '#222';
+  cy.style()
+    .selector('node')
+    .style({ 'label': 'data(label)', 'color': textColor })
+    .update();
+
   // Apply node focus filtering if a node is selected
   applyNodeFocusFilter()
-  
+
   cy.layout({
-      name: 'fcose',
-      // animate option removed – plugin typings may not expose it here
-      fit: true,
-      padding: 30,
-      quality: 'default',
-      packComponents: true,
-      nodeSeparation: 75,
-      nodeDimensionsIncludeLabels: true
+    name: 'fcose',
+    fit: true,
+    padding: 30,
+    quality: 'default',
+    packComponents: true,
+    nodeSeparation: 75,
+    nodeDimensionsIncludeLabels: true
   } as any).run()
 }
 
 function applyNodeFocusFilter() {
   if (!cy) return
-  
+
+  // Always clear previous selection highlight
+  cy.elements().removeClass('selected neighbor')
+
   if (selectedNodeId.value) {
     // Get the selected node and its neighborhood
     const selectedNode = cy.getElementById(selectedNodeId.value)
@@ -207,15 +219,15 @@ function applyNodeFocusFilter() {
       selectedNodeId.value = null
       return
     }
-    
+
     // Get connected nodes (neighbors) and edges
     const neighborhood = selectedNode.neighborhood()
     const connectedNodes = neighborhood.nodes()
     const connectedEdges = neighborhood.edges()
-    
+
     // Hide all elements first
     cy.elements().addClass('dimmed')
-    
+
     // Show and highlight the selected node and its connections
     selectedNode.removeClass('dimmed').addClass('selected')
     connectedNodes.removeClass('dimmed').addClass('neighbor')
@@ -241,14 +253,13 @@ onMounted(() => {
   if (!graphEl.value) return
 
   // Register fcose layout once
-    cytoscape.use(fcose as any)
+  cytoscape.use(fcose as any)
 
   cy = cytoscape({
     container: graphEl.value,
     elements: [],
     layout: {
       name: 'fcose',
-      // Options to improve spacing and reduce overlap, especially with compounds
       nodeDimensionsIncludeLabels: true,
       packComponents: true,
       nodeSeparation: 75,
@@ -257,12 +268,11 @@ onMounted(() => {
       quality: 'default'
     } as any,
     style: [
-      { selector: 'node', style: { 'label': 'data(label)' } as any },
+      { selector: 'node', style: { 'label': 'data(label)', 'color': $q.dark.isActive ? '#fff' : '#222' } as any },
       { selector: '[type="environment"]', style: { 'background-color': '#444' }},
       { selector: '[type="appInstance"]', style: { 'background-color': '#0080ff' }},
       { selector: '[type="datastore"]', style: { 'background-color': '#8b5cf6' }},
       { selector: '[type="external"]', style: { 'background-color': '#10b981' }},
-      // Improve compound environment appearance & spacing
       { selector: ':parent', style: { 'padding': '20px', 'border-width': '2px', 'background-opacity': 0.12 } },
       { selector: 'edge', style: { 
         'width': 2, 
@@ -271,23 +281,20 @@ onMounted(() => {
         'target-arrow-color': '#ccc',
         'curve-style': 'bezier'
       }},
-      // Selected node styling
       { selector: '.selected', style: {
-        'border-width': 4,
-        'border-color': '#ff0',
-        'border-style': 'solid',
-        'z-index': 999
-      } as any },
-      // Neighbor nodes styling
-      { selector: '.neighbor', style: {
-        'border-width': 2,
-        'border-color': '#ff0',
-        'border-style': 'solid'
-      } as any },
-      // Dimmed (hidden) elements
+          'background-color': '#ffe600',
+          'border-width': 0,
+          'z-index': 999
+        } as any },
+        { selector: '.neighbor', style: {
+          'border-width': 0
+        } as any },
       { selector: '.dimmed', style: {
         'opacity': 0.1,
         'z-index': 0
+      } as any },
+      { selector: '[type="environment"].dimmed', style: {
+        'opacity': 1
       } as any }
     ]
   })
@@ -303,6 +310,19 @@ onMounted(() => {
   // Try initial render if data already present
   refreshGraph()
 })
+
+// Watch for theme changes and update node text color
+watch(() => $q.dark.isActive, (isDark) => {
+  if (!cy) return;
+  // Recreate node text color style
+  const textColor = isDark ? '#fff' : '#222';
+  cy.style()
+    .selector('node')
+    .style({ 'label': 'data(label)', 'color': textColor })
+    .update();
+  // Optionally, force a graph refresh to ensure all nodes update
+  refreshGraph();
+});
 </script>
 
 <style scoped>
@@ -315,6 +335,17 @@ onMounted(() => {
   min-height: 400px; /* fallback if container can't stretch */
   min-width: 0; /* allow flex shrink */
   outline: none;
+}
+
+:root {
+  --graph-node-text-color: #fff;
+}
+
+[data-theme="dark"] {
+  --graph-node-text-color: #fff;
+}
+[data-theme="light"] {
+  --graph-node-text-color: #222;
 }
 
 /* Make the page and card stretch to available viewport height */
@@ -331,13 +362,23 @@ onMounted(() => {
 
 .graph-filters {
   display: flex;
-  gap: 1rem;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2rem 2.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0;
+  justify-content: flex-start;
 }
 
 .node-filter-info {
   display: flex;
   align-items: center;
+  margin-top: 0.5rem;
+  min-width: 220px;
+}
+
+.env-select {
+  min-width: 260px;
+  margin-right: 1.5rem;
 }
 </style>
