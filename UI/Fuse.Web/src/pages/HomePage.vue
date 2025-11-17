@@ -60,6 +60,18 @@
       <div class="section-header">
         <h2>Inventory</h2>
         <div class="filters">
+          <q-input
+            v-model="searchText"
+            dense
+            outlined
+            clearable
+            class="filter-select"
+            placeholder="Search by name..."
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
           <q-select
             v-model="selectedEnvironments"
             dense
@@ -72,11 +84,12 @@
             class="filter-select"
             placeholder="Filter by environment"
             popup-content-class="filter-popup"
+            @clear="selectedEnvironments = []"
           >
             <template #option="scope">
-              <q-item v-bind="scope.itemProps">
+              <q-item v-bind="scope.itemProps" @click="scope.toggleOption">
                 <q-item-section side>
-                  <q-checkbox :model-value="scope.selected" @update:model-value="scope.toggleOption" />
+                  <q-checkbox :model-value="scope.selected" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ scope.opt.label }}</q-item-label>
@@ -97,11 +110,12 @@
             class="filter-select"
             placeholder="Filter by item type"
             popup-content-class="filter-popup"
+            @clear="selectedItemTypes = ['instance', 'datastore', 'external']"
           >
             <template #option="scope">
-              <q-item v-bind="scope.itemProps">
+              <q-item v-bind="scope.itemProps" @click="scope.toggleOption">
                 <q-item-section side>
-                  <q-checkbox :model-value="scope.selected" @update:model-value="scope.toggleOption" />
+                  <q-checkbox :model-value="scope.selected" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ scope.opt.label }}</q-item-label>
@@ -171,6 +185,7 @@ import { getErrorMessage } from '../utils/error'
 
 const selectedEnvironments = ref<string[]>([])
 const selectedItemTypes = ref<string[]>(['instance', 'datastore', 'external'])
+const searchText = ref<string>('')
 
 const onboardingStore = useOnboardingStore()
 const { startTour } = useOnboardingTour()
@@ -260,11 +275,13 @@ const filteredInventoryItems = computed(() => {
     key: string
     type: 'instance' | 'datastore' | 'external'
     environmentId?: string
+    name: string
     data: any
   }> = []
 
-  const environments = selectedEnvironments.value
+  const environments = selectedEnvironments.value ?? []
   const types = selectedItemTypes.value.length > 0 ? selectedItemTypes.value : ['instance', 'datastore', 'external']
+  const searchLower = searchText.value.toLowerCase().trim()
 
   // Add instances
   if (types.includes('instance')) {
@@ -276,15 +293,25 @@ const filteredInventoryItems = computed(() => {
           continue
         }
 
+        const appName = app.name ?? 'Unknown'
+        const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
+        const instanceName = `${appName} — ${envName}`
+        
+        // Filter by search text
+        if (searchLower && !instanceName.toLowerCase().includes(searchLower)) {
+          continue
+        }
+
         items.push({
           key: `instance-${app.id}-${instance.id}`,
           type: 'instance',
           environmentId: instance.environmentId,
+          name: instanceName,
           data: {
             instance,
             applicationId: app.id ?? '',
-            applicationName: app.name ?? 'Unknown',
-            environmentName: environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown',
+            applicationName: appName,
+            environmentName: envName,
             platformName: platformLookup.value[instance.platformId ?? ''] ?? 'Unknown'
           }
         })
@@ -301,10 +328,18 @@ const filteredInventoryItems = computed(() => {
         continue
       }
 
+      const storeName = store.name ?? 'Unknown'
+      
+      // Filter by search text
+      if (searchLower && !storeName.toLowerCase().includes(searchLower)) {
+        continue
+      }
+
       items.push({
         key: `datastore-${store.id}`,
         type: 'datastore',
         environmentId: store.environmentId,
+        name: storeName,
         data: {
           dataStore: store,
           environmentName: environmentLookup.value[store.environmentId ?? ''] ?? 'Unknown',
@@ -318,9 +353,17 @@ const filteredInventoryItems = computed(() => {
   if (types.includes('external')) {
     const resources = externalResourcesQuery.data.value ?? []
     for (const resource of resources) {
+      const resourceName = resource.name ?? 'Unknown'
+      
+      // Filter by search text
+      if (searchLower && !resourceName.toLowerCase().includes(searchLower)) {
+        continue
+      }
+
       items.push({
         key: `external-${resource.id}`,
         type: 'external',
+        name: resourceName,
         data: {
           externalResource: resource
         }
@@ -328,7 +371,8 @@ const filteredInventoryItems = computed(() => {
     }
   }
 
-  return items
+  // Sort items alphabetically by name
+  return items.sort((a, b) => a.name.localeCompare(b.name))
 })
 
 function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; targetId?: string | null }) {
