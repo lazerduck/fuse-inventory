@@ -44,6 +44,7 @@ import fcose from 'cytoscape-fcose'
 // fcose layout plugin improves compound graph spacing
 import { computed, onMounted, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
 import { useApplications } from '../composables/useApplications';
 import { useEnvironments } from '../composables/useEnvironments';
 import { usePlatforms } from '../composables/usePlatforms';
@@ -54,6 +55,7 @@ const graphEl = ref<HTMLDivElement | null>(null)
 
 let cy: Core | null = null
 const $q = useQuasar();
+const router = useRouter();
 
 const applicationStore = useApplications();
 const environmentStore = useEnvironments();
@@ -249,6 +251,35 @@ function handleNodeClick(nodeId: string) {
   applyNodeFocusFilter()
 }
 
+function handleNodeDoubleClick(nodeId: string) {
+  // Parse node ID to get type and actual ID
+  const [prefix, ...idParts] = nodeId.split('-')
+  const actualId = idParts.join('-')
+  
+  // Navigate based on node type
+  switch (prefix) {
+    case 'appi':
+      // For app instances, we need to find the application ID
+      const applications = applicationStore.data.value ?? []
+      for (const app of applications) {
+        const instance = app.instances?.find(inst => inst.id === actualId)
+        if (instance && app.id) {
+          router.push({ name: 'instanceEdit', params: { applicationId: app.id, instanceId: actualId } })
+          return
+        }
+      }
+      break
+    case 'ds':
+      router.push({ name: 'dataStores' })
+      // TODO: Navigate to specific datastore when edit page exists
+      break
+    case 'ext':
+      router.push({ name: 'externalResources' })
+      // TODO: Navigate to specific external resource when edit page exists
+      break
+  }
+}
+
 onMounted(() => {
   if (!graphEl.value) return
 
@@ -305,6 +336,14 @@ onMounted(() => {
     // Don't allow selecting environment parent nodes
     if (node.data('type') === 'environment') return
     handleNodeClick(node.id())
+  })
+
+  // Add double-click handler for navigation
+  cy.on('dbltap', 'node', (event) => {
+    const node = event.target
+    // Don't allow navigating from environment parent nodes
+    if (node.data('type') === 'environment') return
+    handleNodeDoubleClick(node.id())
   })
 
   // Try initial render if data already present
