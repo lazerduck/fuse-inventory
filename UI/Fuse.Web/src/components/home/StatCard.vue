@@ -7,9 +7,11 @@
       <div class="stat-value-container">
         <p class="stat-value">{{ value }}</p>
         <div v-if="healthBreakdown" class="health-breakdown">
-          <span class="health-stat healthy">{{ healthBreakdown.healthy }}</span>
-          <span class="health-separator">/</span>
-          <span class="health-stat unhealthy">{{ healthBreakdown.unhealthy }}</span>
+          <span v-if="healthBreakdown.healthy > 0" class="health-stat healthy">{{ healthBreakdown.healthy }}</span>
+          <span v-else class="health-stat">-</span>
+          <span class="health-separator">|</span>
+          <span v-if="healthBreakdown.unhealthy > 0" class="health-stat unhealthy">{{ healthBreakdown.unhealthy }}</span>
+          <span v-else class="health-stat">-</span>
         </div>
       </div>
       <p class="stat-label">{{ label }}</p>
