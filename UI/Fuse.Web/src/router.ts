@@ -73,6 +73,11 @@ const router = createRouter({
       path: '/kuma-integrations',
       name: 'kumaIntegrations',
       component: () => import('./pages/KumaIntegrationsPage.vue')
+    },
+    {
+      path: '/audit-logs',
+      name: 'auditLogs',
+      component: () => import('./pages/AuditLogsPage.vue')
     }
   ]
 })

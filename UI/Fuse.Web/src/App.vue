@@ -178,6 +178,16 @@
               Security
             </q-item-section>
           </q-item>
+
+          <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
+            data-tour-id="nav-audit-logs">
+            <q-item-section avatar>
+              <q-icon name="history" />
+            </q-item-section>
+            <q-item-section>
+              Audit Logs
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-scroll-area>
     </q-drawer>
