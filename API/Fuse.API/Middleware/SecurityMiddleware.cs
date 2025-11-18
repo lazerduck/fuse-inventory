@@ -58,6 +58,21 @@ public sealed class SecurityMiddleware
         }
         else
         {
+            // Enforce admin-only access for Audit endpoints
+            if (path.StartsWithSegments("/api/audit", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+                if (user.Role != SecurityRole.Admin)
+                {
+                    await WriteForbiddenAsync(context, cancellationToken);
+                    return;
+                }
+            }
+
             var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
             if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
                 return;

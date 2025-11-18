@@ -98,6 +98,11 @@ export interface IFuseApiClient {
     instancesDELETE(appId: string, instanceId: string, signal?: AbortSignal): Promise<void>;
 
     /**
+     * @return OK
+     */
+    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse>;
+
+    /**
      * @param body (optional) 
      * @return Created
      */
@@ -130,6 +135,35 @@ export interface IFuseApiClient {
      * @return No Content
      */
     dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param action (optional) 
+     * @param area (optional) 
+     * @param userName (optional) 
+     * @param entityId (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult>;
+
+    /**
+     * @return OK
+     */
+    audit2(id: string, signal?: AbortSignal): Promise<AuditLog>;
+
+    /**
+     * @return OK
+     */
+    actions(signal?: AbortSignal): Promise<string[]>;
+
+    /**
+     * @return OK
+     */
+    areas(signal?: AbortSignal): Promise<string[]>;
 
     /**
      * @param format (optional) 
@@ -203,7 +237,7 @@ export interface IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    environmentApplyAutomationPOST(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
+    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
 
     /**
      * @return OK
@@ -1218,6 +1252,57 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
+     * @return OK
+     */
+    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse> {
+        let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/health";
+        if (appId === undefined || appId === null)
+            throw new globalThis.Error("The parameter 'appId' must be defined.");
+        url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+        if (instanceId === undefined || instanceId === null)
+            throw new globalThis.Error("The parameter 'instanceId' must be defined.");
+        url_ = url_.replace("{instanceId}", encodeURIComponent("" + instanceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealth(_response);
+        });
+    }
+
+    protected processHealth(response: Response): Promise<HealthStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = HealthStatusResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<HealthStatusResponse>(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return Created
      */
@@ -1578,6 +1663,227 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param action (optional) 
+     * @param area (optional) 
+     * @param userName (optional) 
+     * @param entityId (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult> {
+        let url_ = this.baseUrl + "/api/Audit?";
+        if (startTime === null)
+            throw new globalThis.Error("The parameter 'startTime' cannot be null.");
+        else if (startTime !== undefined)
+            url_ += "startTime=" + encodeURIComponent(startTime ? "" + startTime.toISOString() : "") + "&";
+        if (endTime === null)
+            throw new globalThis.Error("The parameter 'endTime' cannot be null.");
+        else if (endTime !== undefined)
+            url_ += "endTime=" + encodeURIComponent(endTime ? "" + endTime.toISOString() : "") + "&";
+        if (action === null)
+            throw new globalThis.Error("The parameter 'action' cannot be null.");
+        else if (action !== undefined)
+            url_ += "action=" + encodeURIComponent("" + action) + "&";
+        if (area === null)
+            throw new globalThis.Error("The parameter 'area' cannot be null.");
+        else if (area !== undefined)
+            url_ += "area=" + encodeURIComponent("" + area) + "&";
+        if (userName === null)
+            throw new globalThis.Error("The parameter 'userName' cannot be null.");
+        else if (userName !== undefined)
+            url_ += "userName=" + encodeURIComponent("" + userName) + "&";
+        if (entityId === null)
+            throw new globalThis.Error("The parameter 'entityId' cannot be null.");
+        else if (entityId !== undefined)
+            url_ += "entityId=" + encodeURIComponent("" + entityId) + "&";
+        if (searchText === null)
+            throw new globalThis.Error("The parameter 'searchText' cannot be null.");
+        else if (searchText !== undefined)
+            url_ += "searchText=" + encodeURIComponent("" + searchText) + "&";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAudit(_response);
+        });
+    }
+
+    protected processAudit(response: Response): Promise<AuditLogResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AuditLogResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuditLogResult>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    audit2(id: string, signal?: AbortSignal): Promise<AuditLog> {
+        let url_ = this.baseUrl + "/api/Audit/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAudit2(_response);
+        });
+    }
+
+    protected processAudit2(response: Response): Promise<AuditLog> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AuditLog.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuditLog>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    actions(signal?: AbortSignal): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Audit/actions";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processActions(_response);
+        });
+    }
+
+    protected processActions(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(item);
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    areas(signal?: AbortSignal): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Audit/areas";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAreas(_response);
+        });
+    }
+
+    protected processAreas(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(item);
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
     }
 
     /**
@@ -2206,7 +2512,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    environmentApplyAutomationPOST(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
+    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
         let url_ = this.baseUrl + "/api/Environment/apply-automation";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2223,18 +2529,19 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processEnvironmentApplyAutomationPOST(_response);
+            return this.processApplyAutomation(_response);
         });
     }
 
-    protected processEnvironmentApplyAutomationPOST(response: Response): Promise<number> {
+    protected processApplyAutomation(response: Response): Promise<number> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 !== undefined ? resultData200.instancesCreated : null as any;
+                result200 = resultData200 !== undefined ? resultData200 : null as any;
+    
             return result200;
             });
         } else if (status === 400) {
@@ -4108,6 +4415,224 @@ export interface IApplicationPipeline {
     pipelineUri?: string | undefined;
 }
 
+export class ApplyEnvironmentAutomation implements IApplyEnvironmentAutomation {
+    environmentId?: string | undefined;
+    applicationId?: string | undefined;
+
+    constructor(data?: IApplyEnvironmentAutomation) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.environmentId = _data["EnvironmentId"];
+            this.applicationId = _data["ApplicationId"];
+        }
+    }
+
+    static fromJS(data: any): ApplyEnvironmentAutomation {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApplyEnvironmentAutomation();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["EnvironmentId"] = this.environmentId;
+        data["ApplicationId"] = this.applicationId;
+        return data;
+    }
+}
+
+export interface IApplyEnvironmentAutomation {
+    environmentId?: string | undefined;
+    applicationId?: string | undefined;
+}
+
+export enum AuditAction {
+    ApplicationCreated = "ApplicationCreated",
+    ApplicationUpdated = "ApplicationUpdated",
+    ApplicationDeleted = "ApplicationDeleted",
+    ApplicationInstanceCreated = "ApplicationInstanceCreated",
+    ApplicationInstanceUpdated = "ApplicationInstanceUpdated",
+    ApplicationInstanceDeleted = "ApplicationInstanceDeleted",
+    AccountCreated = "AccountCreated",
+    AccountUpdated = "AccountUpdated",
+    AccountDeleted = "AccountDeleted",
+    AccountGrantCreated = "AccountGrantCreated",
+    AccountGrantUpdated = "AccountGrantUpdated",
+    AccountGrantDeleted = "AccountGrantDeleted",
+    DataStoreCreated = "DataStoreCreated",
+    DataStoreUpdated = "DataStoreUpdated",
+    DataStoreDeleted = "DataStoreDeleted",
+    EnvironmentCreated = "EnvironmentCreated",
+    EnvironmentUpdated = "EnvironmentUpdated",
+    EnvironmentDeleted = "EnvironmentDeleted",
+    ExternalResourceCreated = "ExternalResourceCreated",
+    ExternalResourceUpdated = "ExternalResourceUpdated",
+    ExternalResourceDeleted = "ExternalResourceDeleted",
+    PlatformCreated = "PlatformCreated",
+    PlatformUpdated = "PlatformUpdated",
+    PlatformDeleted = "PlatformDeleted",
+    TagCreated = "TagCreated",
+    TagUpdated = "TagUpdated",
+    TagDeleted = "TagDeleted",
+    SecurityUserCreated = "SecurityUserCreated",
+    SecurityUserUpdated = "SecurityUserUpdated",
+    SecurityUserDeleted = "SecurityUserDeleted",
+    SecurityUserLogin = "SecurityUserLogin",
+    SecurityUserLogout = "SecurityUserLogout",
+    SecuritySettingsUpdated = "SecuritySettingsUpdated",
+    KumaIntegrationCreated = "KumaIntegrationCreated",
+    KumaIntegrationUpdated = "KumaIntegrationUpdated",
+    KumaIntegrationDeleted = "KumaIntegrationDeleted",
+    ConfigImported = "ConfigImported",
+    ConfigExported = "ConfigExported",
+}
+
+export enum AuditArea {
+    Application = "Application",
+    Account = "Account",
+    DataStore = "DataStore",
+    Environment = "Environment",
+    ExternalResource = "ExternalResource",
+    Platform = "Platform",
+    Tag = "Tag",
+    Security = "Security",
+    KumaIntegration = "KumaIntegration",
+    Config = "Config",
+}
+
+export class AuditLog implements IAuditLog {
+    id?: string;
+    timestamp?: Date;
+    action?: AuditAction;
+    area?: AuditArea;
+    userName?: string | undefined;
+    userId?: string | undefined;
+    entityId?: string | undefined;
+    changeDetails?: string | undefined;
+
+    constructor(data?: IAuditLog) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+            this.action = _data["Action"];
+            this.area = _data["Area"];
+            this.userName = _data["UserName"];
+            this.userId = _data["UserId"];
+            this.entityId = _data["EntityId"];
+            this.changeDetails = _data["ChangeDetails"];
+        }
+    }
+
+    static fromJS(data: any): AuditLog {
+        data = typeof data === 'object' ? data : {};
+        let result = new AuditLog();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        data["Action"] = this.action;
+        data["Area"] = this.area;
+        data["UserName"] = this.userName;
+        data["UserId"] = this.userId;
+        data["EntityId"] = this.entityId;
+        data["ChangeDetails"] = this.changeDetails;
+        return data;
+    }
+}
+
+export interface IAuditLog {
+    id?: string;
+    timestamp?: Date;
+    action?: AuditAction;
+    area?: AuditArea;
+    userName?: string | undefined;
+    userId?: string | undefined;
+    entityId?: string | undefined;
+    changeDetails?: string | undefined;
+}
+
+export class AuditLogResult implements IAuditLogResult {
+    logs?: AuditLog[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+    readonly totalPages?: number;
+
+    constructor(data?: IAuditLogResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Logs"])) {
+                this.logs = [] as any;
+                for (let item of _data["Logs"])
+                    this.logs!.push(AuditLog.fromJS(item));
+            }
+            this.totalCount = _data["TotalCount"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+            (this as any).totalPages = _data["TotalPages"];
+        }
+    }
+
+    static fromJS(data: any): AuditLogResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new AuditLogResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.logs)) {
+            data["Logs"] = [];
+            for (let item of this.logs)
+                data["Logs"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["TotalCount"] = this.totalCount;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        data["TotalPages"] = this.totalPages;
+        return data;
+    }
+}
+
+export interface IAuditLogResult {
+    logs?: AuditLog[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+}
+
 export enum AuthKind {
     None = "None",
     UserPassword = "UserPassword",
@@ -5199,6 +5724,54 @@ export interface IGrant {
     privileges?: Privilege[] | undefined;
 }
 
+export class HealthStatusResponse implements IHealthStatusResponse {
+    monitorUrl?: string | undefined;
+    status?: MonitorStatus;
+    monitorName?: string | undefined;
+    lastChecked?: Date;
+
+    constructor(data?: IHealthStatusResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.monitorUrl = _data["MonitorUrl"];
+            this.status = _data["Status"];
+            this.monitorName = _data["MonitorName"];
+            this.lastChecked = _data["LastChecked"] ? new Date(_data["LastChecked"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): HealthStatusResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new HealthStatusResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["MonitorUrl"] = this.monitorUrl;
+        data["Status"] = this.status;
+        data["MonitorName"] = this.monitorName;
+        data["LastChecked"] = this.lastChecked ? this.lastChecked.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IHealthStatusResponse {
+    monitorUrl?: string | undefined;
+    status?: MonitorStatus;
+    monitorName?: string | undefined;
+    lastChecked?: Date;
+}
+
 export class KumaIntegrationResponse implements IKumaIntegrationResponse {
     id?: string;
     name?: string | undefined;
@@ -5389,6 +5962,13 @@ export class LogoutSecurityUser implements ILogoutSecurityUser {
 
 export interface ILogoutSecurityUser {
     token?: string | undefined;
+}
+
+export enum MonitorStatus {
+    Down = "Down",
+    Up = "Up",
+    Pending = "Pending",
+    Maintenance = "Maintenance",
 }
 
 export class Platform implements IPlatform {
@@ -6379,46 +6959,6 @@ export interface IUpdateEnvironment {
     baseUriTemplate?: string | undefined;
     healthUriTemplate?: string | undefined;
     openApiUriTemplate?: string | undefined;
-}
-
-export class ApplyEnvironmentAutomation implements IApplyEnvironmentAutomation {
-    environmentId?: string | undefined;
-    applicationId?: string | undefined;
-
-    constructor(data?: IApplyEnvironmentAutomation) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.environmentId = _data["EnvironmentId"];
-            this.applicationId = _data["ApplicationId"];
-        }
-    }
-
-    static fromJS(data: any): ApplyEnvironmentAutomation {
-        data = typeof data === 'object' ? data : {};
-        let result = new ApplyEnvironmentAutomation();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["EnvironmentId"] = this.environmentId;
-        data["ApplicationId"] = this.applicationId;
-        return data;
-    }
-}
-
-export interface IApplyEnvironmentAutomation {
-    environmentId?: string | undefined;
-    applicationId?: string | undefined;
 }
 
 export class UpdateExternalResource implements IUpdateExternalResource {

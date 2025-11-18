@@ -1,16 +1,6 @@
 import { ref } from 'vue'
 import { useFuseClient } from './useFuseClient'
-
-export interface AuditLog {
-  Id: string
-  Timestamp: string
-  Action: string
-  Area: string
-  UserName: string
-  UserId: string | null
-  EntityId: string | null
-  ChangeDetails: string | null
-}
+import { AuditAction, AuditArea, AuditLog, AuditLogResult } from '../api/client'
 
 export interface AuditLogQuery {
   startTime?: string
@@ -24,16 +14,8 @@ export interface AuditLogQuery {
   pageSize?: number
 }
 
-export interface AuditLogResult {
-  Logs: AuditLog[]
-  TotalCount: number
-  Page: number
-  PageSize: number
-  TotalPages: number
-}
-
 export function useAuditLogs() {
-  const { client } = useFuseClient()
+  const client = useFuseClient()
   const logs = ref<AuditLog[]>([])
   const totalCount = ref(0)
   const currentPage = ref(1)
@@ -49,23 +31,27 @@ export function useAuditLogs() {
     loading.value = true
     error.value = null
     try {
-      const params = new URLSearchParams()
-      if (query.startTime) params.append('startTime', query.startTime)
-      if (query.endTime) params.append('endTime', query.endTime)
-      if (query.action) params.append('action', query.action)
-      if (query.area) params.append('area', query.area)
-      if (query.userName) params.append('userName', query.userName)
-      if (query.entityId) params.append('entityId', query.entityId)
-      if (query.searchText) params.append('searchText', query.searchText)
-      params.append('page', String(query.page || 1))
-      params.append('pageSize', String(query.pageSize || 50))
+      const start = query.startTime ? new Date(query.startTime) : undefined
+      const end = query.endTime ? new Date(query.endTime) : undefined
+      const act = query.action ? (query.action as AuditAction) : undefined
+      const ar = query.area ? (query.area as AuditArea) : undefined
 
-      const response = await client.get<AuditLogResult>(`/api/audit?${params.toString()}`)
-      logs.value = response.Logs
-      totalCount.value = response.TotalCount
-      currentPage.value = response.Page
-      pageSize.value = response.PageSize
-      totalPages.value = response.TotalPages
+      const response = await client.audit(
+        start,
+        end,
+        act,
+        ar,
+        query.userName,
+        query.entityId,
+        query.searchText,
+        query.page ?? 1,
+        query.pageSize ?? 50
+      )
+      logs.value = response.logs ?? []
+      totalCount.value = response.totalCount ?? 0
+      currentPage.value = response.page ?? 1
+      pageSize.value = response.pageSize ?? 50
+      totalPages.value = (response as any).totalPages ?? Math.ceil((totalCount.value || 0) / (pageSize.value || 1))
     } catch (err: any) {
       error.value = err.message || 'Failed to load audit logs'
       console.error('Error loading audit logs:', err)
@@ -76,7 +62,7 @@ export function useAuditLogs() {
 
   async function getAuditLog(id: string): Promise<AuditLog | null> {
     try {
-      return await client.get<AuditLog>(`/api/audit/${id}`)
+      return await client.audit2(id)
     } catch (err: any) {
       error.value = err.message || 'Failed to load audit log'
       console.error('Error loading audit log:', err)
@@ -86,7 +72,7 @@ export function useAuditLogs() {
 
   async function loadActions() {
     try {
-      actions.value = await client.get<string[]>('/api/audit/actions')
+      actions.value = await client.actions()
     } catch (err: any) {
       console.error('Error loading audit actions:', err)
     }
@@ -94,7 +80,7 @@ export function useAuditLogs() {
 
   async function loadAreas() {
     try {
-      areas.value = await client.get<string[]>('/api/audit/areas')
+      areas.value = await client.areas()
     } catch (err: any) {
       console.error('Error loading audit areas:', err)
     }

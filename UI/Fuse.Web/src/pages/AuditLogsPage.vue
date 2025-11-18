@@ -1,198 +1,133 @@
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
-      <p class="text-gray-600 dark:text-gray-400 mt-2">View and search all audit events in the system</p>
+  <q-page padding>
+    <div class="q-mb-md">
+      <div class="text-h4">Audit Logs</div>
+      <div class="text-subtitle2 text-grey-7">View and search all audit events in the system</div>
     </div>
 
-    <!-- Search Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Filters</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <!-- Time Range -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
-          <input
-            v-model="filters.startTime"
-            type="datetime-local"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
-          <input
-            v-model="filters.endTime"
-            type="datetime-local"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
+    <!-- Access restriction banner -->
+    <q-banner v-if="!isAdmin" dense class="bg-orange-1 text-orange-9 q-mb-md" rounded>
+      You do not have permission to view audit logs. Please log in as an administrator.
+    </q-banner>
 
-        <!-- Area Filter -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area</label>
-          <select
-            v-model="filters.area"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">All Areas</option>
-            <option v-for="area in areas" :key="area" :value="area">{{ area }}</option>
-          </select>
-        </div>
+    <template v-else>
+      <!-- Search Filters -->
+      <q-card class="q-mb-md">
+        <q-card-section>
+          <div class="text-h6 q-mb-md">Filters</div>
+          <div class="row q-col-gutter-md">
+            <!-- Start Time -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-input v-model="filters.startTime" type="datetime-local" dense outlined label="Start Time" />
+            </div>
+            <!-- End Time -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-input v-model="filters.endTime" type="datetime-local" dense outlined label="End Time" />
+            </div>
+            <!-- Area -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-select v-model="filters.area" :options="areaOptions" dense outlined emit-value map-options label="Area" stack-label />
+            </div>
+            <!-- Action -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-select v-model="filters.action" :options="actionOptions" dense outlined emit-value map-options label="Action" stack-label />
+            </div>
+            <!-- User -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-input v-model="filters.userName" dense outlined label="User Name" placeholder="Filter by user..." />
+            </div>
+            <!-- Search Text -->
+            <div class="col-12 col-md-6 col-lg-4">
+              <q-input v-model="filters.searchText" dense outlined label="Search Details" placeholder="Search in change details..." />
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions>
+          <q-btn color="primary" label="Search" @click="search" />
+          <q-btn flat color="primary" label="Clear Filters" @click="clearFilters" />
+        </q-card-actions>
+      </q-card>
 
-        <!-- Action Filter -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
-          <select
-            v-model="filters.action"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">All Actions</option>
-            <option v-for="action in actions" :key="action" :value="action">{{ action }}</option>
-          </select>
-        </div>
-
-        <!-- User Name Filter -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User Name</label>
-          <input
-            v-model="filters.userName"
-            type="text"
-            placeholder="Filter by user..."
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-
-        <!-- Search Text -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search Details</label>
-          <input
-            v-model="filters.searchText"
-            type="text"
-            placeholder="Search in change details..."
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="column items-center q-py-xl">
+        <q-spinner color="primary" size="42px" />
+        <div class="q-mt-sm text-grey-7">Loading audit logs...</div>
       </div>
 
-      <div class="flex gap-2">
-        <button
-          @click="search"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <!-- Error State -->
+      <q-banner v-else-if="error" class="q-mb-md bg-negative text-white" rounded>
+        {{ error }}
+      </q-banner>
+
+      <!-- Results -->
+      <q-card v-else>
+        <q-card-section class="q-py-sm">
+          <div class="text-caption text-grey-7">Showing {{ logs.length }} of {{ totalCount }} results</div>
+        </q-card-section>
+
+        <!-- Audit Logs Table (Quasar) -->
+        <q-table
+          :rows="logs"
+          :columns="columns"
+          row-key="id"
+          :loading="loading"
+          :pagination="qPagination"
+          :rows-per-page-options="[10,25,50,100]"
+          @request="onRequest"
+          flat
         >
-          Search
-        </button>
-        <button
-          @click="clearFilters"
-          class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none"
-        >
-          Clear Filters
-        </button>
-      </div>
-    </div>
+          <template #body-cell-timestamp="props">
+            <q-td :props="props">{{ formatTimestamp(props.row.timestamp as any) }}</q-td>
+          </template>
+          <template #body-cell-area="props">
+            <q-td :props="props"><q-chip color="primary" text-color="white" dense>{{ props.row.area }}</q-chip></q-td>
+          </template>
+          <template #body-cell-action="props">
+            <q-td :props="props">{{ formatAction(String(props.row.action)) }}</q-td>
+          </template>
+          <template #body-cell-userName="props">
+            <q-td :props="props">{{ props.row.userName }}</q-td>
+          </template>
+          <template #body-cell-details="props">
+            <q-td :props="props">
+              <template v-if="props.row.changeDetails">
+                <q-expansion-item dense expand-separator label="View Details">
+                  <pre :class="['q-mt-sm','q-pa-sm','rounded-borders','text-caption', $q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-grey-2']" style="white-space: pre; overflow-x: auto;">{{ formatDetails(props.row.changeDetails) }}</pre>
+                </q-expansion-item>
+              </template>
+              <template v-else>
+                <span class="text-grey-6">No details</span>
+              </template>
+            </q-td>
+          </template>
+        </q-table>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p class="mt-4 text-gray-600 dark:text-gray-400">Loading audit logs...</p>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-      <p class="text-red-800 dark:text-red-200">{{ error }}</p>
-    </div>
-
-    <!-- Results -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-      <!-- Results Header -->
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          Showing {{ logs.length }} of {{ totalCount }} results
-        </p>
-      </div>
-
-      <!-- Audit Logs Table -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Timestamp</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Area</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="log in logs" :key="log.Id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                {{ formatTimestamp(log.Timestamp) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                  {{ log.Area }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                {{ formatAction(log.Action) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                {{ log.UserName }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                <details v-if="log.ChangeDetails" class="cursor-pointer">
-                  <summary class="text-blue-600 dark:text-blue-400 hover:underline">View Details</summary>
-                  <pre class="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">{{ formatDetails(log.ChangeDetails) }}</pre>
-                </details>
-                <span v-else class="text-gray-400 dark:text-gray-600">No details</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Empty State -->
-      <div v-if="!loading && logs.length === 0" class="text-center py-12">
-        <p class="text-gray-500 dark:text-gray-400">No audit logs found matching your criteria.</p>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <button
-          @click="previousPage"
-          :disabled="currentPage <= 1"
-          class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
-        
-        <span class="text-sm text-gray-600 dark:text-gray-400">
-          Page {{ currentPage }} of {{ totalPages }}
-        </span>
-        
-        <button
-          @click="nextPage"
-          :disabled="currentPage >= totalPages"
-          class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
-      </div>
-    </div>
-  </div>
+        <!-- Empty State -->
+        <div v-if="!loading && logs.length === 0" class="text-center q-pa-xl text-grey-6">
+          No audit logs found matching your criteria.
+        </div>
+      </q-card>
+    </template>
+  </q-page>
+  
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useAuditLogs } from '../composables/useAuditLogs'
+import type { QTableProps } from 'quasar'
+import { useQuasar } from 'quasar'
+import { useFuseStore } from '../stores/FuseStore'
+import { SecurityRole } from '../api/client'
 
-const {
+const fuseStore = useFuseStore()
+const isAdmin = computed(() => fuseStore.currentUser?.role === SecurityRole.Admin)
+
+const { 
   logs,
   totalCount,
   currentPage,
   pageSize,
-  totalPages,
   loading,
   error,
   actions,
@@ -202,36 +137,44 @@ const {
   loadAreas
 } = useAuditLogs()
 
+const $q = useQuasar()
+
 const filters = ref({
   startTime: '',
   endTime: '',
-  area: '',
-  action: '',
+  area: null as string | null,
+  action: null as string | null,
   userName: '',
   searchText: ''
 })
 
 onMounted(async () => {
-  await Promise.all([loadActions(), loadAreas(), search()])
+  if (!isAdmin.value) return
+  await Promise.all([loadActions(), loadAreas()])
+  await search()
 })
+
+const actionOptions = computed(() => [
+  { label: 'All Actions', value: null },
+  ...actions.value.map(a => ({ label: a, value: a }))
+])
+
+const areaOptions = computed(() => [
+  { label: 'All Areas', value: null },
+  ...areas.value.map(a => ({ label: a, value: a }))
+])
 
 function search() {
   const query: any = {
     page: 1,
     pageSize: pageSize.value
   }
-
-  if (filters.value.startTime) {
-    query.startTime = new Date(filters.value.startTime).toISOString()
-  }
-  if (filters.value.endTime) {
-    query.endTime = new Date(filters.value.endTime).toISOString()
-  }
+  if (filters.value.startTime) query.startTime = new Date(filters.value.startTime).toISOString()
+  if (filters.value.endTime) query.endTime = new Date(filters.value.endTime).toISOString()
   if (filters.value.area) query.area = filters.value.area
   if (filters.value.action) query.action = filters.value.action
   if (filters.value.userName) query.userName = filters.value.userName
   if (filters.value.searchText) query.searchText = filters.value.searchText
-
   queryLogs(query)
 }
 
@@ -239,24 +182,36 @@ function clearFilters() {
   filters.value = {
     startTime: '',
     endTime: '',
-    area: '',
-    action: '',
+    area: null,
+    action: null,
     userName: '',
     searchText: ''
   }
   search()
 }
 
-function previousPage() {
-  if (currentPage.value > 1) {
-    queryLogs({ ...buildQuery(), page: currentPage.value - 1 })
-  }
-}
+const columns: QTableProps['columns'] = [
+  { name: 'timestamp', label: 'Timestamp', field: 'timestamp', align: 'left' },
+  { name: 'area', label: 'Area', field: 'area', align: 'left' },
+  { name: 'action', label: 'Action', field: 'action', align: 'left' },
+  { name: 'userName', label: 'User', field: 'userName', align: 'left' },
+  { name: 'details', label: 'Details', field: 'changeDetails', align: 'left' }
+]
 
-function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    queryLogs({ ...buildQuery(), page: currentPage.value + 1 })
+const qPagination = ref({ page: 1, rowsPerPage: pageSize.value, rowsNumber: totalCount.value })
+
+watch([totalCount, currentPage, pageSize], () => {
+  qPagination.value = {
+    page: currentPage.value,
+    rowsPerPage: pageSize.value,
+    rowsNumber: totalCount.value
   }
+})
+
+async function onRequest(props: Parameters<NonNullable<QTableProps['onRequest']>>[0]) {
+  if (!isAdmin.value) return
+  const { page, rowsPerPage } = props.pagination
+  await queryLogs({ ...buildQuery(), page, pageSize: rowsPerPage })
 }
 
 function buildQuery() {
@@ -270,12 +225,12 @@ function buildQuery() {
   return query
 }
 
-function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleString()
+function formatTimestamp(timestamp: string | Date): string {
+  const d = timestamp instanceof Date ? timestamp : new Date(timestamp)
+  return d.toLocaleString()
 }
 
 function formatAction(action: string): string {
-  // Convert PascalCase to space-separated words
   return action.replace(/([A-Z])/g, ' $1').trim()
 }
 
