@@ -9,5 +9,6 @@ public record Snapshot(
     IReadOnlyList<Tag> Tags,
     IReadOnlyList<EnvironmentInfo> Environments,
     IReadOnlyList<KumaIntegration> KumaIntegrations,
+    IReadOnlyList<SecretProvider> SecretProviders,
     SecurityState Security
 );

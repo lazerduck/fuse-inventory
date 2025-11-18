@@ -271,7 +271,7 @@ public class ApplicationServiceTests
             TargetId: ds.Id,
             TargetKind: TargetKind.DataStore,
             AuthKind: AuthKind.ApiKey,
-            SecretRef: "secret:ref",
+            SecretBinding: new SecretBinding(SecretBindingKind.PlainReference, "secret:ref", null),
             UserName: null,
             Parameters: null,
             Grants: new List<Grant>(),
@@ -339,7 +339,8 @@ public class ApplicationServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }

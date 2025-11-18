@@ -48,8 +48,9 @@ public sealed class JsonFuseStore : IFuseStore
                 Accounts: await ReadAsync<Account>("accounts.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
-                Security: await ReadSecurityAsync("security.json", ct),
-                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct)
+                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
+                SecretProviders: await ReadAsync<SecretProvider>("secretproviders.json", ct),
+                Security: await ReadSecurityAsync("security.json", ct)
             );
 
             // Temporary migration: convert application-target dependencies to instance-target dependencies.
@@ -106,6 +107,35 @@ public sealed class JsonFuseStore : IFuseStore
                 _cache = _cache with { Applications = migratedApps };
             }
 
+            // Migration: Convert legacy SecretRef string to SecretBinding
+            var migratedAccounts = new List<Account>();
+            bool accountsMigrated = false;
+            foreach (var account in _cache.Accounts)
+            {
+                // Check if account needs migration (has old-style SecretRef)
+                if (account.SecretBinding.Kind == SecretBindingKind.None && 
+                    !string.IsNullOrEmpty(account.SecretRef))
+                {
+                    // Migrate plain string SecretRef to SecretBinding
+                    var binding = new SecretBinding(
+                        Kind: SecretBindingKind.PlainReference,
+                        PlainReference: account.SecretRef,
+                        AzureKeyVault: null
+                    );
+                    migratedAccounts.Add(account with { SecretBinding = binding, UpdatedAt = DateTime.UtcNow });
+                    accountsMigrated = true;
+                }
+                else
+                {
+                    migratedAccounts.Add(account);
+                }
+            }
+
+            if (accountsMigrated)
+            {
+                _cache = _cache with { Accounts = migratedAccounts };
+            }
+
             var errors = SnapshotValidator.Validate(_cache);
             if (errors.Count > 0)
                 throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
@@ -131,8 +161,9 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("accounts.json", snapshot.Accounts, ct);
             await WriteAsync("tags.json", snapshot.Tags, ct);
             await WriteAsync("environments.json", snapshot.Environments, ct);
-            await WriteAsync("security.json", snapshot.Security, ct);
             await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
+            await WriteAsync("secretproviders.json", snapshot.SecretProviders, ct);
+            await WriteAsync("security.json", snapshot.Security, ct);
 
             _cache = snapshot; // swap the in-memory snapshot
             Changed?.Invoke(snapshot);

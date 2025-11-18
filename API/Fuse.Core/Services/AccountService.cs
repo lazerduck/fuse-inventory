@@ -26,7 +26,7 @@ public class AccountService : IAccountService
     {
         var tagIds = command.TagIds ?? new HashSet<Guid>();
 
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, tagIds);
+        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
@@ -41,7 +41,7 @@ public class AccountService : IAccountService
             TargetId: command.TargetId,
             TargetKind: command.TargetKind,
             AuthKind: command.AuthKind,
-            SecretRef: command.SecretRef,
+            SecretBinding: command.SecretBinding,
             UserName: command.UserName,
             Parameters: command.Parameters,
             Grants: normalizedGrants,
@@ -62,7 +62,7 @@ public class AccountService : IAccountService
         if (existing is null)
             return Result<Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretRef, command.UserName, tagIds);
+        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
@@ -76,7 +76,7 @@ public class AccountService : IAccountService
             TargetId = command.TargetId,
             TargetKind = command.TargetKind,
             AuthKind = command.AuthKind,
-            SecretRef = command.SecretRef,
+            SecretBinding = command.SecretBinding,
             UserName = command.UserName,
             Parameters = command.Parameters,
             Grants = normalizedGrants,
@@ -98,7 +98,7 @@ public class AccountService : IAccountService
         return Result.Success();
     }
 
-    private async Task<Result<Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, string secretRef, string? userName, HashSet<Guid> tagIds)
+    private async Task<Result<Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
     {
         if (targetId == Guid.Empty)
             return Result<Account>.Failure("TargetId is required.", ErrorType.Validation);
@@ -125,8 +125,28 @@ public class AccountService : IAccountService
 
         // Basic auth-specific validation
         bool requiresSecret = authKind is AuthKind.UserPassword or AuthKind.ApiKey or AuthKind.BearerToken or AuthKind.OAuthClient or AuthKind.ManagedIdentity or AuthKind.Certificate;
-        if (requiresSecret && string.IsNullOrWhiteSpace(secretRef))
-            return Result<Account>.Failure("SecretRef is required for the selected AuthKind.", ErrorType.Validation);
+        if (requiresSecret)
+        {
+            if (secretBinding.Kind == SecretBindingKind.None)
+                return Result<Account>.Failure("Secret binding is required for the selected AuthKind.", ErrorType.Validation);
+            
+            if (secretBinding.Kind == SecretBindingKind.PlainReference && string.IsNullOrWhiteSpace(secretBinding.PlainReference))
+                return Result<Account>.Failure("Plain reference value is required.", ErrorType.Validation);
+            
+            if (secretBinding.Kind == SecretBindingKind.AzureKeyVault)
+            {
+                if (secretBinding.AzureKeyVault is null)
+                    return Result<Account>.Failure("Azure Key Vault binding is required.", ErrorType.Validation);
+                
+                if (string.IsNullOrWhiteSpace(secretBinding.AzureKeyVault.SecretName))
+                    return Result<Account>.Failure("Secret name is required for Azure Key Vault binding.", ErrorType.Validation);
+                
+                // Validate provider exists
+                if (!store.SecretProviders.Any(p => p.Id == secretBinding.AzureKeyVault.ProviderId))
+                    return Result<Account>.Failure($"Secret provider with ID '{secretBinding.AzureKeyVault.ProviderId}' not found.", ErrorType.Validation);
+            }
+        }
+        
         if (authKind == AuthKind.UserPassword && string.IsNullOrWhiteSpace(userName))
             return Result<Account>.Failure("UserName is required for UserPassword.", ErrorType.Validation);
 

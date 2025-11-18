@@ -35,7 +35,8 @@ public class EnvironmentServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -239,7 +240,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -309,7 +311,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -363,7 +366,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -406,7 +410,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env1, env2, env3 },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -446,7 +451,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env1, env2 },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -484,7 +490,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -555,7 +562,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
@@ -626,7 +634,8 @@ public class EnvironmentServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: new[] { env },
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var store = new InMemoryFuseStore(snapshot);
         var service = new EnvironmentService(store, new TagLookupService(store));
