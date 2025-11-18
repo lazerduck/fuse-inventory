@@ -4,7 +4,14 @@
       <q-icon :name="icon" size="24px" />
     </div>
     <div class="stat-content">
-      <p class="stat-value">{{ value }}</p>
+      <div class="stat-value-container">
+        <p class="stat-value">{{ value }}</p>
+        <div v-if="healthBreakdown" class="health-breakdown">
+          <span class="health-stat healthy">{{ healthBreakdown.healthy }}</span>
+          <span class="health-separator">/</span>
+          <span class="health-stat unhealthy">{{ healthBreakdown.unhealthy }}</span>
+        </div>
+      </div>
       <p class="stat-label">{{ label }}</p>
     </div>
     <q-icon name="chevron_right" size="20px" class="stat-arrow" />
@@ -20,6 +27,10 @@ const props = defineProps<{
   icon: string
   iconClass: string
   to?: string
+  healthBreakdown?: {
+    healthy: number
+    unhealthy: number
+  }
 }>()
 
 const router = useRouter()
@@ -62,11 +73,43 @@ function navigate() {
   min-width: 0;
 }
 
+.stat-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.125rem;
+  line-height: 1;
+}
+
 .stat-value {
   font-size: 1.5rem;
   font-weight: 600;
-  margin: 0 0 0.125rem;
+  margin: 0;
   line-height: 1;
+}
+
+.health-breakdown {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.health-stat {
+  font-weight: 600;
+}
+
+.health-stat.healthy {
+  color: #21ba45;
+}
+
+.health-stat.unhealthy {
+  color: #c10015;
+}
+
+.health-separator {
+  color: var(--fuse-text-subtle);
 }
 
 .stat-label {

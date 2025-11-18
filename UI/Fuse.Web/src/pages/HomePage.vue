@@ -32,6 +32,7 @@
         icon="apps"
         icon-class="bg-primary text-white"
         to="/applications"
+        :health-breakdown="applicationHealthBreakdown"
       />
       <StatCard
         :value="platformCount"
@@ -176,6 +177,7 @@ import { useEnvironments } from '../composables/useEnvironments'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useDataStores } from '../composables/useDataStores'
 import { useTags } from '../composables/useTags'
+import { useApplicationHealth } from '../composables/useApplicationHealth'
 import StatCard from '../components/home/StatCard.vue'
 import InventoryInstanceCard from '../components/home/InventoryInstanceCard.vue'
 import InventoryDataStoreCard from '../components/home/InventoryDataStoreCard.vue'
@@ -202,6 +204,7 @@ const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()
 const tagsQuery = useTags()
+const applicationHealthQuery = useApplicationHealth()
 
 const isLoading = computed(() => 
   applicationsQuery.isLoading.value || 
@@ -214,6 +217,26 @@ const applicationCount = computed(() => applicationsQuery.data.value?.length ?? 
 const platformCount = computed(() => platformsQuery.data.value?.length ?? 0)
 const environmentCount = computed(() => environmentsQuery.data.value?.length ?? 0)
 const externalResourceCount = computed(() => externalResourcesQuery.data.value?.length ?? 0)
+
+// Compute health breakdown for applications
+const applicationHealthBreakdown = computed(() => {
+  const healthStats = applicationHealthQuery.data.value
+  
+  // Only show breakdown if Kuma integration is available and we have health data
+  if (!healthStats?.hasKumaIntegration) {
+    return undefined
+  }
+  
+  // Only show if we have at least one application with health status
+  if (healthStats.healthy === 0 && healthStats.unhealthy === 0) {
+    return undefined
+  }
+  
+  return {
+    healthy: healthStats.healthy,
+    unhealthy: healthStats.unhealthy
+  }
+})
 
 function makeLookup<T>(
   arr: T[] | undefined | null,
