@@ -9,11 +9,13 @@ public class ApplicationService : IApplicationService
 {
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
+    private readonly IAuditService _auditService;
 
-    public ApplicationService(IFuseStore fuseStore, ITagService tagService)
+    public ApplicationService(IFuseStore fuseStore, ITagService tagService, IAuditService auditService)
     {
         _fuseStore = fuseStore;
         _tagService = tagService;
+        _auditService = auditService;
     }
 
     public async Task<IReadOnlyList<Application>> GetApplicationsAsync() => (await _fuseStore.GetAsync()).Applications;
@@ -54,6 +56,18 @@ public class ApplicationService : IApplicationService
         );
 
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Append(app).ToList() });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationCreated,
+            AuditArea.Application,
+            "System",
+            null,
+            app.Id,
+            new { app.Id, app.Name, app.Version, app.Owner }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result<Application>.Success(app);
     }
 
@@ -91,6 +105,18 @@ public class ApplicationService : IApplicationService
         };
 
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationUpdated,
+            AuditArea.Application,
+            "System",
+            null,
+            updated.Id,
+            new { updated.Id, updated.Name, updated.Version, updated.Owner }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result<Application>.Success(updated);
     }
 
@@ -133,6 +159,18 @@ public class ApplicationService : IApplicationService
             }
             return s with { Applications = apps };
         });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationDeleted,
+            AuditArea.Application,
+            "System",
+            null,
+            appToDelete.Id,
+            new { appToDelete.Id, appToDelete.Name }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result.Success();
     }
 
@@ -177,6 +215,18 @@ public class ApplicationService : IApplicationService
 
         var updated = app with { Instances = app.Instances.Append(inst).ToList(), UpdatedAt = now };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updated : x).ToList() });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationInstanceCreated,
+            AuditArea.Application,
+            "System",
+            null,
+            inst.Id,
+            new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = inst.Id, inst.EnvironmentId }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result<ApplicationInstance>.Success(inst);
     }
 
@@ -221,6 +271,18 @@ public class ApplicationService : IApplicationService
 
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationInstanceUpdated,
+            AuditArea.Application,
+            "System",
+            null,
+            updatedInst.Id,
+            new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = updatedInst.Id, updatedInst.EnvironmentId }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result<ApplicationInstance>.Success(updatedInst);
     }
 
@@ -266,6 +328,18 @@ public class ApplicationService : IApplicationService
             }
             return s with { Applications = apps };
         });
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApplicationInstanceDeleted,
+            AuditArea.Application,
+            "System",
+            null,
+            instance.Id,
+            new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = instance.Id, instance.EnvironmentId }
+        );
+        await _auditService.LogAsync(auditLog);
+        
         return Result.Success();
     }
 
