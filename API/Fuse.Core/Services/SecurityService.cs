@@ -10,12 +10,14 @@ namespace Fuse.Core.Services;
 public sealed class SecurityService : ISecurityService
 {
     private readonly IFuseStore _store;
+    private readonly IAuditService _auditService;
     private readonly ConcurrentDictionary<string, SessionRecord> _sessions = new();
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromDays(30);
 
-    public SecurityService(IFuseStore store)
+    public SecurityService(IFuseStore store, IAuditService auditService)
     {
         _store = store;
+        _auditService = auditService;
     }
 
     public async Task<SecurityState> GetSecurityStateAsync(CancellationToken ct = default)
@@ -47,6 +49,18 @@ public sealed class SecurityService : ISecurityService
 
         var updated = new SecuritySettings(command.Level, DateTime.UtcNow);
         await _store.UpdateAsync(s => s with { Security = s.Security with { Settings = updated } }, ct);
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SecuritySettingsUpdated,
+            AuditArea.Security,
+            requester.UserName,
+            requester.Id,
+            null,
+            new { OldLevel = state.Settings.Level, NewLevel = updated.Level }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+        
         return Result<SecuritySettings>.Success(updated);
     }
 
@@ -91,6 +105,17 @@ public sealed class SecurityService : ISecurityService
             Security = s.Security with { Users = s.Security.Users.Append(user).ToList() }
         }, ct);
 
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SecurityUserCreated,
+            AuditArea.Security,
+            requiresSetup ? "System" : state.Users.First(u => u.Id == command.RequestedBy).UserName,
+            command.RequestedBy,
+            user.Id,
+            AuditHelper.SanitizeSecurityUser(user)
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
         return Result<SecurityUser>.Success(user);
     }
 
@@ -115,16 +140,48 @@ public sealed class SecurityService : ISecurityService
         var info = new SecurityUserInfo(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
 
         _sessions[token] = new SessionRecord(token, user.Id, expires);
+        
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SecurityUserLogin,
+            AuditArea.Security,
+            user.UserName,
+            user.Id,
+            user.Id,
+            null
+        );
+        await _auditService.LogAsync(auditLog, ct);
+        
         return Result<LoginSession>.Success(new LoginSession(token, expires, info));
     }
 
-    public Task<Result> LogoutAsync(LogoutSecurityUser command)
+    public async Task<Result> LogoutAsync(LogoutSecurityUser command)
     {
         if (command is null || string.IsNullOrWhiteSpace(command.Token))
-            return Task.FromResult(Result.Failure("Invalid logout request."));
+            return Result.Failure("Invalid logout request.");
 
-        _sessions.TryRemove(command.Token, out _);
-        return Task.FromResult(Result.Success());
+        if (_sessions.TryRemove(command.Token, out var session))
+        {
+            // Get user info for audit log
+            var snapshot = _store.Current ?? await _store.GetAsync();
+            var user = snapshot.Security.Users.FirstOrDefault(u => u.Id == session.UserId);
+            
+            if (user != null)
+            {
+                // Audit log
+                var auditLog = AuditHelper.CreateLog(
+                    AuditAction.SecurityUserLogout,
+                    AuditArea.Security,
+                    user.UserName,
+                    user.Id,
+                    user.Id,
+                    null
+                );
+                await _auditService.LogAsync(auditLog);
+            }
+        }
+        
+        return Result.Success();
     }
 
     public async Task<SecurityUser?> ValidateSessionAsync(string token, bool refresh, CancellationToken ct = default)
@@ -167,12 +224,25 @@ public sealed class SecurityService : ISecurityService
             return Result<SecurityUser>.Failure("User not found", ErrorType.NotFound);
         }
 
+        var updatedUser = user with { Role = command.Role };
+        
         await _store.UpdateAsync(s => s with
         {
-            Security = s.Security with { Users = s.Security.Users.Select(m => m.Id == command.Id ? m with { Role = command.Role } : m).ToList() }
+            Security = s.Security with { Users = s.Security.Users.Select(m => m.Id == command.Id ? updatedUser : m).ToList() }
         }, ct);
 
-        return Result<SecurityUser>.Success(user with { Role = command.Role });
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SecurityUserUpdated,
+            AuditArea.Security,
+            "System", // RequestedBy should be passed in command for proper audit
+            null,
+            user.Id,
+            AuditHelper.SanitizeSecurityUser(updatedUser)
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<SecurityUser>.Success(updatedUser);
     }
 
     public async Task<Result> DeleteUser(DeleteUser command, CancellationToken ct)
@@ -194,6 +264,17 @@ public sealed class SecurityService : ISecurityService
         {
             Security = s.Security with { Users = s.Security.Users.Where(m => m.Id != command.Id).ToList() }
         }, ct);
+
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SecurityUserDeleted,
+            AuditArea.Security,
+            "System", // RequestedBy should be passed in command for proper audit
+            null,
+            user.Id,
+            AuditHelper.SanitizeSecurityUser(user)
+        );
+        await _auditService.LogAsync(auditLog, ct);
 
         return Result.Success();
     }

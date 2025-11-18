@@ -41,7 +41,8 @@ public class SecurityServiceTests
     {
         var settings = new SecuritySettings(SecurityLevel.RestrictedEditing, DateTime.UtcNow);
         var store = NewStore(settings: settings);
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var state = await service.GetSecurityStateAsync();
 
@@ -58,7 +59,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_NullCommand_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(null!);
 
@@ -70,7 +72,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_EmptyUserName_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("", "password123", SecurityRole.Admin));
 
@@ -82,7 +85,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_EmptyPassword_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "", SecurityRole.Admin));
 
@@ -95,7 +99,8 @@ public class SecurityServiceTests
     {
         var existingUser = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { existingUser });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "password", SecurityRole.Reader));
 
@@ -109,7 +114,8 @@ public class SecurityServiceTests
     {
         var existingUser = new SecurityUser(Guid.NewGuid(), "Admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { existingUser });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("ADMIN", "password", SecurityRole.Reader));
 
@@ -121,7 +127,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_InitialUser_MustBeAdmin()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("user", "password", SecurityRole.Reader));
 
@@ -134,7 +141,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_InitialUser_Success()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
 
@@ -156,7 +164,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_TrimsUserName()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("  admin  ", "password123", SecurityRole.Admin));
 
@@ -169,7 +178,8 @@ public class SecurityServiceTests
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.CreateUserAsync(new CreateSecurityUser("user", "password", SecurityRole.Reader));
 
@@ -184,7 +194,8 @@ public class SecurityServiceTests
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin, reader });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = reader.Id };
         var result = await service.CreateUserAsync(command);
@@ -198,7 +209,8 @@ public class SecurityServiceTests
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = admin.Id };
         var result = await service.CreateUserAsync(command);
@@ -215,7 +227,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_GeneratesUniqueSalt()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var user1 = await service.CreateUserAsync(new CreateSecurityUser("admin1", "password", SecurityRole.Admin));
     Assert.True(user1.IsSuccess);
@@ -229,7 +242,8 @@ public class SecurityServiceTests
     public async Task CreateUserAsync_DifferentPasswords_ProduceDifferentHashes()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var user1 = await service.CreateUserAsync(new CreateSecurityUser("admin1", "password1", SecurityRole.Admin));
     Assert.True(user1.IsSuccess);
@@ -247,7 +261,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_NullCommand_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LoginAsync(null!);
 
@@ -259,7 +274,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_EmptyUserName_ReturnsValidationFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LoginAsync(new LoginSecurityUser("", "password"));
 
@@ -271,7 +287,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_EmptyPassword_ReturnsValidationFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LoginAsync(new LoginSecurityUser("admin", ""));
 
@@ -283,7 +300,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_UserNotFound_ReturnsUnauthorized()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LoginAsync(new LoginSecurityUser("nonexistent", "password"));
 
@@ -296,7 +314,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_WrongPassword_ReturnsUnauthorized()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         // Create a user
         await service.CreateUserAsync(new CreateSecurityUser("admin", "correctpassword", SecurityRole.Admin));
@@ -313,7 +332,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_CorrectCredentials_ReturnsSession()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var createResult = await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
         var userId = createResult.Value!.Id;
@@ -334,7 +354,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_CaseInsensitiveUserName()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("Admin", "password123", SecurityRole.Admin));
         var result = await service.LoginAsync(new LoginSecurityUser("ADMIN", "password123"));
@@ -346,7 +367,8 @@ public class SecurityServiceTests
     public async Task LoginAsync_MultipleSessions_GeneratesDifferentTokens()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
 
@@ -364,7 +386,8 @@ public class SecurityServiceTests
     public async Task LogoutAsync_NullCommand_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LogoutAsync(null!);
 
@@ -376,7 +399,8 @@ public class SecurityServiceTests
     public async Task LogoutAsync_EmptyToken_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LogoutAsync(new LogoutSecurityUser(""));
 
@@ -388,7 +412,8 @@ public class SecurityServiceTests
     public async Task LogoutAsync_ValidToken_Success()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
@@ -407,7 +432,8 @@ public class SecurityServiceTests
     public async Task LogoutAsync_NonexistentToken_Success()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.LogoutAsync(new LogoutSecurityUser("nonexistent-token"));
 
@@ -422,7 +448,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_NullToken_ReturnsNull()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.ValidateSessionAsync(null!, false);
 
@@ -433,7 +460,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_EmptyToken_ReturnsNull()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.ValidateSessionAsync("", false);
 
@@ -444,7 +472,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_NonexistentToken_ReturnsNull()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.ValidateSessionAsync("nonexistent-token", false);
 
@@ -455,7 +484,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_ValidToken_ReturnsUser()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
@@ -472,7 +502,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_WithRefresh_ExtendsSession()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
@@ -495,7 +526,8 @@ public class SecurityServiceTests
     public async Task ValidateSessionAsync_WithoutRefresh_DoesNotExtendSession()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         await service.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
@@ -516,7 +548,8 @@ public class SecurityServiceTests
         // their session becomes invalid even if the token hasn't expired
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var loginResult = await service.LoginAsync(new LoginSecurityUser("admin", "password123"));
         // Login will fail because the password hash won't match, but we can manually create a session
@@ -551,7 +584,8 @@ public class SecurityServiceTests
     public async Task UpdateSecuritySettingsAsync_NullCommand_ReturnsFailure()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.UpdateSecuritySettingsAsync(null!);
 
@@ -564,7 +598,8 @@ public class SecurityServiceTests
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var result = await service.UpdateSecuritySettingsAsync(new UpdateSecuritySettings(SecurityLevel.RestrictedEditing));
 
@@ -578,7 +613,8 @@ public class SecurityServiceTests
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin, reader });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = reader.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
@@ -593,7 +629,8 @@ public class SecurityServiceTests
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = Guid.NewGuid() };
         var result = await service.UpdateSecuritySettingsAsync(command);
@@ -608,7 +645,8 @@ public class SecurityServiceTests
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var settings = new SecuritySettings(SecurityLevel.RestrictedEditing, DateTime.UtcNow.AddDays(-1));
         var store = NewStore(settings: settings, users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new UpdateSecuritySettings(SecurityLevel.RestrictedEditing) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
@@ -623,7 +661,8 @@ public class SecurityServiceTests
     {
         // When no admin exists (RequiresSetup = true), settings cannot be modified
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var state = await service.GetSecurityStateAsync();
     Assert.True(state.RequiresSetup);
@@ -649,7 +688,8 @@ public class SecurityServiceTests
         
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         // Manually remove all admins from the store (simulating external modification)
         await store.UpdateAsync(s => s with
@@ -677,7 +717,8 @@ public class SecurityServiceTests
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var settings = new SecuritySettings(SecurityLevel.None, DateTime.UtcNow.AddDays(-1));
         var store = NewStore(settings: settings, users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new UpdateSecuritySettings(SecurityLevel.FullyRestricted) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
@@ -696,7 +737,8 @@ public class SecurityServiceTests
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var settings = new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow.AddDays(-1));
         var store = NewStore(settings: settings, users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var command = new UpdateSecuritySettings(SecurityLevel.None) { RequestedBy = admin.Id };
         var result = await service.UpdateSecuritySettingsAsync(command);
@@ -713,7 +755,8 @@ public class SecurityServiceTests
     public async Task IntegrationTest_CompleteUserLifecycle()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         // 1. Create initial admin user
         var createAdminResult = await service.CreateUserAsync(new CreateSecurityUser("admin", "admin123", SecurityRole.Admin));
@@ -759,7 +802,8 @@ public class SecurityServiceTests
     public async Task IntegrationTest_PasswordHashingSecurity()
     {
         var store = NewStore();
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         // Create two users with the same password
         var user1Result = await service.CreateUserAsync(new CreateSecurityUser("user1", "samepassword", SecurityRole.Admin));
@@ -783,29 +827,31 @@ public class SecurityServiceTests
     [Fact]
     public async Task IntegrationTest_SecurityStateRequiresSetup()
     {
+        var auditService = new FakeAuditService();
+        
         // No users - requires setup
         var store1 = NewStore();
-        var service1 = new SecurityService(store1);
+        var service1 = new SecurityService(store1, auditService);
         var state1 = await service1.GetSecurityStateAsync();
     Assert.True(state1.RequiresSetup);
 
         // Only reader - requires setup
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store2 = NewStore(users: new[] { reader });
-        var service2 = new SecurityService(store2);
+        var service2 = new SecurityService(store2, auditService);
         var state2 = await service2.GetSecurityStateAsync();
     Assert.True(state2.RequiresSetup);
 
         // Has admin - does not require setup
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store3 = NewStore(users: new[] { admin });
-        var service3 = new SecurityService(store3);
+        var service3 = new SecurityService(store3, auditService);
         var state3 = await service3.GetSecurityStateAsync();
     Assert.False(state3.RequiresSetup);
 
         // Has both admin and reader - does not require setup
         var store4 = NewStore(users: new[] { admin, reader });
-        var service4 = new SecurityService(store4);
+        var service4 = new SecurityService(store4, auditService);
         var state4 = await service4.GetSecurityStateAsync();
     Assert.False(state4.RequiresSetup);
     }
@@ -819,7 +865,8 @@ public class SecurityServiceTests
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var bad = await service.UpdateUser(null!, default);
     Assert.False(bad.IsSuccess);
@@ -835,7 +882,8 @@ public class SecurityServiceTests
     {
         var user = new SecurityUser(Guid.NewGuid(), "user", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { user });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var res = await service.UpdateUser(new UpdateUser(user.Id, SecurityRole.Admin), default);
     Assert.True(res.IsSuccess);
@@ -847,7 +895,8 @@ public class SecurityServiceTests
     {
         var user = new SecurityUser(Guid.NewGuid(), "user", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { user });
-        var service = new SecurityService(store);
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
 
         var bad = await service.DeleteUser(null!, default);
     Assert.False(bad.IsSuccess);
