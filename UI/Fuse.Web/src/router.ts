@@ -75,6 +75,11 @@ const router = createRouter({
       component: () => import('./pages/KumaIntegrationsPage.vue')
     },
     {
+      path: '/secret-providers',
+      name: 'secretProviders',
+      component: () => import('./pages/SecretProvidersPage.vue')
+    },
+    {
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')

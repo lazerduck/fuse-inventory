@@ -169,6 +169,16 @@
             </q-item-section>
           </q-item>
 
+          <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
+            data-tour-id="nav-secret-providers">
+            <q-item-section avatar>
+              <q-icon name="vpn_key" />
+            </q-item-section>
+            <q-item-section>
+              Secret Providers
+            </q-item-section>
+          </q-item>
+
           <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
             data-tour-id="nav-security">
             <q-item-section avatar>
