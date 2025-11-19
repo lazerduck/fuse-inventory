@@ -346,10 +346,10 @@ const emptyAccountForm = (): AccountFormModel => ({
   grants: []
 })
 
-const form = reactive<AccountFormModel>(emptyAccountForm())
+const form = ref<AccountFormModel>(emptyAccountForm())
 
 const targetOptions = computed<TargetOption[]>(() => {
-  const kind = form.targetKind ?? TargetKind.Application
+  const kind = form.value.targetKind ?? TargetKind.Application
   if (kind === TargetKind.Application) {
     const apps = applicationsQuery.data.value ?? []
     const envLookup = environmentsQuery.lookup.value
@@ -383,11 +383,11 @@ const grantDialogTitle = computed(() => (editingGrant.value ? 'Edit Grant' : 'Ad
 
 // Secret operations
 const selectedProvider = computed(() =>
-  secretProvidersQuery.data.value?.find((p) => p.id === form.secret.providerId) ?? null
+  secretProvidersQuery.data.value?.find((p) => p.id === form.value.secret.providerId) ?? null
 )
 
 const showSecretOperations = computed(
-  () => isEditMode.value && form.secret.providerId && form.secret.secretName
+  () => isEditMode.value && form.value.secret.providerId && form.value.secret.secretName
 )
 
 const canRotateSecret = computed(
@@ -410,7 +410,7 @@ watch(
   [account, isLoadingInitialData],
   ([acc, loading]) => {
     if (acc && !loading) {
-      Object.assign(form, {
+      Object.assign(form.value, {
         targetKind: acc.targetKind ?? TargetKind.Application,
         targetId: acc.targetId ?? null,
         authKind: acc.authKind ?? AuthKind.None,
@@ -427,7 +427,7 @@ watch(
 )
 
 watch(
-  () => form.targetKind,
+  () => form.value.targetKind,
   () => ensureTarget()
 )
 
@@ -438,8 +438,8 @@ watch(
 
 function ensureTarget() {
   const options = targetOptions.value
-  if (!form.targetId || !options.some((option) => option.value === form.targetId)) {
-    form.targetId = options[0]?.value ?? null
+  if (!form.value.targetId || !options.some((option) => option.value === form.value.targetId)) {
+    form.value.targetId = options[0]?.value ?? null
   }
 }
 
@@ -634,33 +634,33 @@ function handleCancel() {
 }
 
 function handleSave() {
-  if (form.secret.providerId && !form.secret.secretName) {
+  if (form.value.secret.providerId && !form.value.secret.secretName) {
     Notify.create({ type: 'warning', message: 'Select a secret name before saving.' })
     return
   }
 
   if (isEditMode.value && accountId.value) {
     const payload = Object.assign(new UpdateAccount(), {
-      targetKind: form.targetKind,
-      targetId: form.targetId ?? undefined,
-      authKind: form.authKind,
-      userName: form.userName || undefined,
-      secretBinding: buildSecretBindingPayload(form.secret),
-      parameters: buildParameters(form.parameters),
+      targetKind: form.value.targetKind,
+      targetId: form.value.targetId ?? undefined,
+      authKind: form.value.authKind,
+      userName: form.value.userName || undefined,
+      secretBinding: buildSecretBindingPayload(form.value.secret),
+      parameters: buildParameters(form.value.parameters),
       grants: (account.value?.grants ?? []).map(buildGrantPayload),
-      tagIds: form.tagIds.length ? [...form.tagIds] : undefined
+      tagIds: form.value.tagIds.length ? [...form.value.tagIds] : undefined
     })
     updateMutation.mutate({ id: accountId.value, payload })
   } else {
     const payload = Object.assign(new CreateAccount(), {
-      targetKind: form.targetKind,
-      targetId: form.targetId ?? undefined,
-      authKind: form.authKind,
-      userName: form.userName || undefined,
-      secretBinding: buildSecretBindingPayload(form.secret),
-      parameters: buildParameters(form.parameters),
-      grants: form.grants.map(buildGrantPayload),
-      tagIds: form.tagIds.length ? [...form.tagIds] : undefined
+      targetKind: form.value.targetKind,
+      targetId: form.value.targetId ?? undefined,
+      authKind: form.value.authKind,
+      userName: form.value.userName || undefined,
+      secretBinding: buildSecretBindingPayload(form.value.secret),
+      parameters: buildParameters(form.value.parameters),
+      grants: form.value.grants.map(buildGrantPayload),
+      tagIds: form.value.tagIds.length ? [...form.value.tagIds] : undefined
     })
     createMutation.mutate(payload)
   }
@@ -737,10 +737,10 @@ function closeRotateDialog() {
 }
 
 function handleRotateSecret() {
-  if (!form.secret.providerId || !form.secret.secretName || !newSecretValue.value) return
+  if (!form.value.secret.providerId || !form.value.secret.secretName || !newSecretValue.value) return
   rotateSecretMutation.mutate({
-    providerId: form.secret.providerId,
-    secretName: form.secret.secretName,
+    providerId: form.value.secret.providerId,
+    secretName: form.value.secret.secretName,
     newValue: newSecretValue.value
   })
 }
@@ -758,10 +758,10 @@ function closeRevealDialog() {
 }
 
 function handleRevealSecret() {
-  if (!form.secret.providerId || !form.secret.secretName) return
+  if (!form.value.secret.providerId || !form.value.secret.secretName) return
   revealSecretMutation.mutate({
-    providerId: form.secret.providerId,
-    secretName: form.secret.secretName
+    providerId: form.value.secret.providerId,
+    secretName: form.value.secret.secretName
   })
 }
 
