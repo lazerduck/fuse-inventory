@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useFuseClient } from './useFuseClient'
-import { AuditAction, AuditArea, AuditLog, AuditLogResult } from '../api/client'
+import { AuditAction, AuditArea, AuditLog } from '../api/client'
 
 export interface AuditLogQuery {
   startTime?: string

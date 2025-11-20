@@ -28,7 +28,8 @@ public class SecurityServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: securityState
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: securityState
         );
 
         return new InMemoryFuseStore(snapshot);

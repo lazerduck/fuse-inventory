@@ -23,7 +23,8 @@ public class KumaMetricsServiceTests
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: (integrations ?? Array.Empty<KumaIntegration>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }

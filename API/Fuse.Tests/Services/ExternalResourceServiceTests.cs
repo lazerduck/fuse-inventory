@@ -35,7 +35,8 @@ public class ExternalResourceServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }

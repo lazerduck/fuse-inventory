@@ -59,6 +59,17 @@ public enum AuditAction
     KumaIntegrationUpdated,
     KumaIntegrationDeleted,
     
+    // SecretProvider actions
+    SecretProviderCreated,
+    SecretProviderUpdated,
+    SecretProviderDeleted,
+    SecretProviderTested,
+    
+    // Secret operations
+    SecretCreated,
+    SecretRotated,
+    SecretRevealed,
+    
     // Config actions
     ConfigImported,
     ConfigExported
@@ -78,6 +89,8 @@ public enum AuditArea
     Tag,
     Security,
     KumaIntegration,
+    SecretProvider,
+    Secret,
     Config
 }
 

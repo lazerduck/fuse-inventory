@@ -30,6 +30,16 @@ const router = createRouter({
       component: () => import('./pages/AccountsPage.vue')
     },
     {
+      path: '/accounts/create',
+      name: 'accountCreate',
+      component: () => import('./pages/AccountEditPage.vue')
+    },
+    {
+      path: '/accounts/:id/edit',
+      name: 'accountEdit',
+      component: () => import('./pages/AccountEditPage.vue')
+    },
+    {
       path: '/data-stores',
       name: 'dataStores',
       component: () => import('./pages/DataStoresPage.vue')
@@ -73,6 +83,11 @@ const router = createRouter({
       path: '/kuma-integrations',
       name: 'kumaIntegrations',
       component: () => import('./pages/KumaIntegrationsPage.vue')
+    },
+    {
+      path: '/secret-providers',
+      name: 'secretProviders',
+      component: () => import('./pages/SecretProvidersPage.vue')
     },
     {
       path: '/audit-logs',

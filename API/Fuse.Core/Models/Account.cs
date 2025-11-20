@@ -9,7 +9,7 @@ public record Account
 
     // Connection
     AuthKind AuthKind,
-    string SecretRef,
+    SecretBinding SecretBinding,
     string? UserName,
     Dictionary<string, string>? Parameters,
     IReadOnlyList<Grant> Grants,
@@ -18,7 +18,16 @@ public record Account
     HashSet<Guid> TagIds,
     DateTime CreatedAt,
     DateTime UpdatedAt
-);
+)
+{
+    // Legacy property for backward compatibility during migration
+    public string SecretRef => SecretBinding.Kind switch
+    {
+        SecretBindingKind.PlainReference => SecretBinding.PlainReference ?? string.Empty,
+        SecretBindingKind.AzureKeyVault => $"akv:{SecretBinding.AzureKeyVault?.SecretName}",
+        _ => string.Empty
+    };
+};
 
 public enum AuthKind { None, UserPassword, ApiKey, BearerToken, OAuthClient, ManagedIdentity, Certificate, Other }
 

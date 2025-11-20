@@ -38,7 +38,8 @@ public class AccountServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -48,7 +49,7 @@ public class AccountServiceTests
     {
         var store = NewStore();
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.CreateAccountAsync(new CreateAccount(Guid.NewGuid(), TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(Guid.NewGuid(), TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -59,7 +60,7 @@ public class AccountServiceTests
         var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.CreateAccountAsync(new CreateAccount(app.Id, TargetKind.Application, AuthKind.UserPassword, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(app.Id, TargetKind.Application, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -70,7 +71,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.True(result.IsSuccess);
     Assert.Single(await service.GetAccountsAsync());
     }
@@ -81,7 +82,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -92,7 +93,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid> { Guid.NewGuid() }));
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid> { Guid.NewGuid() }));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -103,7 +104,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
-        var result = await service.UpdateAccountAsync(new UpdateAccount(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var result = await service.UpdateAccountAsync(new UpdateAccount(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
@@ -112,10 +113,10 @@ public class AccountServiceTests
     public async Task UpdateAccount_Success()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
-        var updated = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec2", null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+        var updated = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec2", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.True(updated.IsSuccess);
     var got = await service.GetAccountByIdAsync(acc.Id);
     Assert.Equal("sec2", got!.SecretRef);
@@ -135,7 +136,7 @@ public class AccountServiceTests
     public async Task DeleteAccount_Success()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.DeleteAccountAsync(new DeleteAccount(acc.Id));
@@ -155,7 +156,7 @@ public class AccountServiceTests
             new Grant(Guid.Empty, "db1", "schema1", new HashSet<Privilege>())
         };
 
-        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, grants, new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, grants, new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -172,7 +173,7 @@ public class AccountServiceTests
             new Grant(Guid.Empty, "db1", "schema1", new HashSet<Privilege> { Privilege.Select })
         };
 
-        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, grants, new HashSet<Guid>()));
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, grants, new HashSet<Guid>()));
     Assert.True(result.IsSuccess);
 
     var created = result.Value!;
@@ -190,7 +191,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 
@@ -199,7 +200,7 @@ public class AccountServiceTests
             new Grant(grant.Id, "db1", "schema1", new HashSet<Privilege>())
         };
 
-        var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, updatedGrants, new HashSet<Guid>()));
+        var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, updatedGrants, new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -208,7 +209,7 @@ public class AccountServiceTests
     public async Task UpdateAccount_AssignsIdsForNewGrants()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 
@@ -217,7 +218,7 @@ public class AccountServiceTests
             new Grant(Guid.Empty, "db1", "schema1", new HashSet<Privilege> { Privilege.Select })
         };
 
-        var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, updatedGrants, new HashSet<Guid>()));
+        var result = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, updatedGrants, new HashSet<Guid>()));
     Assert.True(result.IsSuccess);
 
     var updated = result.Value!;
@@ -230,7 +231,7 @@ public class AccountServiceTests
     public async Task CreateGrantOnAccount_Success()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 
@@ -259,7 +260,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 
@@ -276,7 +277,7 @@ public class AccountServiceTests
     public async Task UpdateGrantOnAccount_GrantNotFound()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
         var result = await service.UpdateGrant(new UpdateAccountGrant(acc.Id, Guid.NewGuid(), "db2", "schema2", new HashSet<Privilege> { Privilege.Insert }));
@@ -289,7 +290,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 
@@ -304,7 +305,7 @@ public class AccountServiceTests
     public async Task DeleteGrant_GrantNotFound()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, "sec", null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
         var service = new AccountService(store, new TagLookupService(store));
 

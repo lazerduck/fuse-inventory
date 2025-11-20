@@ -20,7 +20,8 @@ public class TagServiceTests
             Accounts: Array.Empty<Account>(),
             Tags: tags,
             Environments: Array.Empty<EnvironmentInfo>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             KumaIntegrations: Array.Empty<KumaIntegration>()
         );
         return new InMemoryFuseStore(snapshot);

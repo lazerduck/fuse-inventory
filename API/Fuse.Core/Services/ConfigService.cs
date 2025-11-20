@@ -260,6 +260,7 @@ public class ConfigService : IConfigService
                 Tags: existingTags.Values.ToList(),
                 Environments: existingEnvironments.Values.ToList(),
                 KumaIntegrations: existingKumaIntegrations.Values.ToList(),
+                SecretProviders: current.SecretProviders,
                 Security: current.Security
             );
         }, ct);

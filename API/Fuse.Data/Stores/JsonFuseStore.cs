@@ -45,11 +45,12 @@ public sealed class JsonFuseStore : IFuseStore
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
                 Platforms: await ReadAsync<Platform>("platforms.json", ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
-                Accounts: await ReadAsync<Account>("accounts.json", ct),
+                Accounts: await ReadAccountsWithMigrationAsync("accounts.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
-                Security: await ReadSecurityAsync("security.json", ct),
-                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct)
+                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
+                SecretProviders: await ReadAsync<SecretProvider>("secretproviders.json", ct),
+                Security: await ReadSecurityAsync("security.json", ct)
             );
 
             // Temporary migration: convert application-target dependencies to instance-target dependencies.
@@ -131,8 +132,9 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("accounts.json", snapshot.Accounts, ct);
             await WriteAsync("tags.json", snapshot.Tags, ct);
             await WriteAsync("environments.json", snapshot.Environments, ct);
-            await WriteAsync("security.json", snapshot.Security, ct);
             await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
+            await WriteAsync("secretproviders.json", snapshot.SecretProviders, ct);
+            await WriteAsync("security.json", snapshot.Security, ct);
 
             _cache = snapshot; // swap the in-memory snapshot
             Changed?.Invoke(snapshot);
@@ -188,5 +190,57 @@ public sealed class JsonFuseStore : IFuseStore
             await JsonSerializer.SerializeAsync(fs, value, Json, ct);
         }
         File.Move(tmp, path, overwrite: true);
+    }
+
+    private async Task<IReadOnlyList<Account>> ReadAccountsWithMigrationAsync(string file, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return Array.Empty<Account>();
+
+        await using var fs = File.OpenRead(path);
+        using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
+
+        var accounts = new List<Account>();
+        
+        foreach (var element in doc.RootElement.EnumerateArray())
+        {
+            // Check if this is a legacy account with secretRef field instead of secretBinding
+            var hasLegacySecretRef = element.TryGetProperty("secretRef", out var secretRefProp);
+            var hasSecretBinding = element.TryGetProperty("secretBinding", out _);
+
+            Account account;
+            
+            if (hasLegacySecretRef && !hasSecretBinding)
+            {
+                // Legacy format: deserialize and migrate
+                var legacySecretRef = secretRefProp.GetString() ?? string.Empty;
+                
+                // Deserialize the account (it will have a default SecretBinding)
+                var tempAccount = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json);
+                if (tempAccount is null) continue;
+
+                // Create the migrated account with proper SecretBinding
+                var binding = new SecretBinding(
+                    Kind: SecretBindingKind.PlainReference,
+                    PlainReference: legacySecretRef,
+                    AzureKeyVault: null
+                );
+
+                account = tempAccount with 
+                { 
+                    SecretBinding = binding,
+                    UpdatedAt = DateTime.UtcNow
+                };
+            }
+            else
+            {
+                // New format: deserialize normally
+                account = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json)!;
+            }
+
+            accounts.Add(account);
+        }
+
+        return accounts;
     }
 }

@@ -323,6 +323,62 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @return OK
+     */
+    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @return No Content
+     */
+    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param version (optional) 
+     * @return OK
+     */
+    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse>;
+
+    /**
+     * @return OK
+     */
     state(signal?: AbortSignal): Promise<SecurityStateResponse>;
 
     /**
@@ -3331,6 +3387,553 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
+        let url_ = this.baseUrl + "/api/SecretProvider";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretProviderAll(_response);
+        });
+    }
+
+    protected processSecretProviderAll(response: Response): Promise<SecretProviderResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(SecretProviderResponse.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretProviderResponse[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretProviderPOST(_response);
+        });
+    }
+
+    protected processSecretProviderPOST(response: Response): Promise<SecretProviderResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = SecretProviderResponse.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretProviderResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretProviderGET(_response);
+        });
+    }
+
+    protected processSecretProviderGET(response: Response): Promise<SecretProviderResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SecretProviderResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretProviderResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretProviderPUT(_response);
+        });
+    }
+
+    protected processSecretProviderPUT(response: Response): Promise<SecretProviderResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SecretProviderResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretProviderResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretProviderDELETE(_response);
+        });
+    }
+
+    protected processSecretProviderDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/SecretProvider/test-connection";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processTestConnection(_response);
+        });
+    }
+
+    protected processTestConnection(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecretsAll(_response);
+        });
+    }
+
+    protected processSecretsAll(response: Response): Promise<SecretMetadataResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(SecretMetadataResponse.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretMetadataResponse[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSecrets(_response);
+        });
+    }
+
+    protected processSecrets(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/rotate";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        if (secretName === undefined || secretName === null)
+            throw new globalThis.Error("The parameter 'secretName' must be defined.");
+        url_ = url_.replace("{secretName}", encodeURIComponent("" + secretName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRotate(_response);
+        });
+    }
+
+    protected processRotate(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param version (optional) 
+     * @return OK
+     */
+    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/reveal?";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        if (secretName === undefined || secretName === null)
+            throw new globalThis.Error("The parameter 'secretName' must be defined.");
+        url_ = url_.replace("{secretName}", encodeURIComponent("" + secretName));
+        if (version === null)
+            throw new globalThis.Error("The parameter 'version' cannot be null.");
+        else if (version !== undefined)
+            url_ += "version=" + encodeURIComponent("" + version) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReveal(_response);
+        });
+    }
+
+    protected processReveal(response: Response): Promise<SecretValueResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SecretValueResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SecretValueResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     state(signal?: AbortSignal): Promise<SecurityStateResponse> {
         let url_ = this.baseUrl + "/api/Security/state";
         url_ = url_.replace(/[?&]$/, "");
@@ -4020,13 +4623,14 @@ export class Account implements IAccount {
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    readonly secretRef?: string | undefined;
 
     constructor(data?: IAccount) {
         if (data) {
@@ -4043,7 +4647,7 @@ export class Account implements IAccount {
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.authKind = _data["AuthKind"];
-            this.secretRef = _data["SecretRef"];
+            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
             this.userName = _data["UserName"];
             if (_data["Parameters"]) {
                 this.parameters = {} as any;
@@ -4064,6 +4668,7 @@ export class Account implements IAccount {
             }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            (this as any).secretRef = _data["SecretRef"];
         }
     }
 
@@ -4080,7 +4685,7 @@ export class Account implements IAccount {
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["AuthKind"] = this.authKind;
-        data["SecretRef"] = this.secretRef;
+        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
         data["UserName"] = this.userName;
         if (this.parameters) {
             data["Parameters"] = {};
@@ -4101,6 +4706,7 @@ export class Account implements IAccount {
         }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["SecretRef"] = this.secretRef;
         return data;
     }
 }
@@ -4110,13 +4716,14 @@ export interface IAccount {
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    secretRef?: string | undefined;
 }
 
 export class Application implements IApplication {
@@ -4492,6 +5099,13 @@ export enum AuditAction {
     KumaIntegrationCreated = "KumaIntegrationCreated",
     KumaIntegrationUpdated = "KumaIntegrationUpdated",
     KumaIntegrationDeleted = "KumaIntegrationDeleted",
+    SecretProviderCreated = "SecretProviderCreated",
+    SecretProviderUpdated = "SecretProviderUpdated",
+    SecretProviderDeleted = "SecretProviderDeleted",
+    SecretProviderTested = "SecretProviderTested",
+    SecretCreated = "SecretCreated",
+    SecretRotated = "SecretRotated",
+    SecretRevealed = "SecretRevealed",
     ConfigImported = "ConfigImported",
     ConfigExported = "ConfigExported",
 }
@@ -4506,6 +5120,8 @@ export enum AuditArea {
     Tag = "Tag",
     Security = "Security",
     KumaIntegration = "KumaIntegration",
+    SecretProvider = "SecretProvider",
+    Secret = "Secret",
     Config = "Config",
 }
 
@@ -4644,11 +5260,55 @@ export enum AuthKind {
     Other = "Other",
 }
 
+export class AzureKeyVaultBinding implements IAzureKeyVaultBinding {
+    providerId?: string;
+    secretName?: string | undefined;
+    version?: string | undefined;
+
+    constructor(data?: IAzureKeyVaultBinding) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.providerId = _data["ProviderId"];
+            this.secretName = _data["SecretName"];
+            this.version = _data["Version"];
+        }
+    }
+
+    static fromJS(data: any): AzureKeyVaultBinding {
+        data = typeof data === 'object' ? data : {};
+        let result = new AzureKeyVaultBinding();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ProviderId"] = this.providerId;
+        data["SecretName"] = this.secretName;
+        data["Version"] = this.version;
+        return data;
+    }
+}
+
+export interface IAzureKeyVaultBinding {
+    providerId?: string;
+    secretName?: string | undefined;
+    version?: string | undefined;
+}
+
 export class CreateAccount implements ICreateAccount {
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
@@ -4668,7 +5328,7 @@ export class CreateAccount implements ICreateAccount {
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.authKind = _data["AuthKind"];
-            this.secretRef = _data["SecretRef"];
+            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
             this.userName = _data["UserName"];
             if (_data["Parameters"]) {
                 this.parameters = {} as any;
@@ -4702,7 +5362,7 @@ export class CreateAccount implements ICreateAccount {
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["AuthKind"] = this.authKind;
-        data["SecretRef"] = this.secretRef;
+        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
         data["UserName"] = this.userName;
         if (this.parameters) {
             data["Parameters"] = {};
@@ -4729,7 +5389,7 @@ export interface ICreateAccount {
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
@@ -5354,6 +6014,102 @@ export interface ICreatePlatform {
     ipAddress?: string | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+}
+
+export class CreateSecret implements ICreateSecret {
+    providerId?: string;
+    secretName?: string | undefined;
+    secretValue?: string | undefined;
+
+    constructor(data?: ICreateSecret) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.providerId = _data["ProviderId"];
+            this.secretName = _data["SecretName"];
+            this.secretValue = _data["SecretValue"];
+        }
+    }
+
+    static fromJS(data: any): CreateSecret {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateSecret();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ProviderId"] = this.providerId;
+        data["SecretName"] = this.secretName;
+        data["SecretValue"] = this.secretValue;
+        return data;
+    }
+}
+
+export interface ICreateSecret {
+    providerId?: string;
+    secretName?: string | undefined;
+    secretValue?: string | undefined;
+}
+
+export class CreateSecretProvider implements ICreateSecretProvider {
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
+
+    constructor(data?: ICreateSecretProvider) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.vaultUri = _data["VaultUri"];
+            this.authMode = _data["AuthMode"];
+            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
+            this.capabilities = _data["Capabilities"];
+        }
+    }
+
+    static fromJS(data: any): CreateSecretProvider {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateSecretProvider();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["VaultUri"] = this.vaultUri;
+        data["AuthMode"] = this.authMode;
+        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        data["Capabilities"] = this.capabilities;
+        return data;
+    }
+}
+
+export interface ICreateSecretProvider {
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
 }
 
 export class CreateSecurityUser implements ICreateSecurityUser {
@@ -6133,6 +6889,301 @@ export interface IProblemDetails {
     [key: string]: any;
 }
 
+export class RotateSecret implements IRotateSecret {
+    providerId?: string;
+    secretName?: string | undefined;
+    newSecretValue?: string | undefined;
+
+    constructor(data?: IRotateSecret) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.providerId = _data["ProviderId"];
+            this.secretName = _data["SecretName"];
+            this.newSecretValue = _data["NewSecretValue"];
+        }
+    }
+
+    static fromJS(data: any): RotateSecret {
+        data = typeof data === 'object' ? data : {};
+        let result = new RotateSecret();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ProviderId"] = this.providerId;
+        data["SecretName"] = this.secretName;
+        data["NewSecretValue"] = this.newSecretValue;
+        return data;
+    }
+}
+
+export interface IRotateSecret {
+    providerId?: string;
+    secretName?: string | undefined;
+    newSecretValue?: string | undefined;
+}
+
+export class SecretBinding implements ISecretBinding {
+    kind?: SecretBindingKind;
+    plainReference?: string | undefined;
+    azureKeyVault?: AzureKeyVaultBinding;
+
+    constructor(data?: ISecretBinding) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.kind = _data["Kind"];
+            this.plainReference = _data["PlainReference"];
+            this.azureKeyVault = _data["AzureKeyVault"] ? AzureKeyVaultBinding.fromJS(_data["AzureKeyVault"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): SecretBinding {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecretBinding();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Kind"] = this.kind;
+        data["PlainReference"] = this.plainReference;
+        data["AzureKeyVault"] = this.azureKeyVault ? this.azureKeyVault.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface ISecretBinding {
+    kind?: SecretBindingKind;
+    plainReference?: string | undefined;
+    azureKeyVault?: AzureKeyVaultBinding;
+}
+
+export enum SecretBindingKind {
+    None = "None",
+    PlainReference = "PlainReference",
+    AzureKeyVault = "AzureKeyVault",
+}
+
+export class SecretMetadataResponse implements ISecretMetadataResponse {
+    name?: string | undefined;
+    enabled?: boolean;
+    updatedOn?: Date | undefined;
+    contentType?: string | undefined;
+
+    constructor(data?: ISecretMetadataResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.enabled = _data["Enabled"];
+            this.updatedOn = _data["UpdatedOn"] ? new Date(_data["UpdatedOn"].toString()) : undefined as any;
+            this.contentType = _data["ContentType"];
+        }
+    }
+
+    static fromJS(data: any): SecretMetadataResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecretMetadataResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Enabled"] = this.enabled;
+        data["UpdatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["ContentType"] = this.contentType;
+        return data;
+    }
+}
+
+export interface ISecretMetadataResponse {
+    name?: string | undefined;
+    enabled?: boolean;
+    updatedOn?: Date | undefined;
+    contentType?: string | undefined;
+}
+
+export enum SecretProviderAuthMode {
+    ManagedIdentity = "ManagedIdentity",
+    ClientSecret = "ClientSecret",
+}
+
+export enum SecretProviderCapabilities {
+    None = "None",
+    Check = "Check",
+    Create = "Create",
+    Rotate = "Rotate",
+    Read = "Read",
+}
+
+export class SecretProviderCredentials implements ISecretProviderCredentials {
+    tenantId?: string | undefined;
+    clientId?: string | undefined;
+    clientSecret?: string | undefined;
+
+    constructor(data?: ISecretProviderCredentials) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.tenantId = _data["TenantId"];
+            this.clientId = _data["ClientId"];
+            this.clientSecret = _data["ClientSecret"];
+        }
+    }
+
+    static fromJS(data: any): SecretProviderCredentials {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecretProviderCredentials();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["TenantId"] = this.tenantId;
+        data["ClientId"] = this.clientId;
+        data["ClientSecret"] = this.clientSecret;
+        return data;
+    }
+}
+
+export interface ISecretProviderCredentials {
+    tenantId?: string | undefined;
+    clientId?: string | undefined;
+    clientSecret?: string | undefined;
+}
+
+export class SecretProviderResponse implements ISecretProviderResponse {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    capabilities?: SecretProviderCapabilities;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: ISecretProviderResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.vaultUri = _data["VaultUri"];
+            this.authMode = _data["AuthMode"];
+            this.capabilities = _data["Capabilities"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): SecretProviderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecretProviderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["VaultUri"] = this.vaultUri;
+        data["AuthMode"] = this.authMode;
+        data["Capabilities"] = this.capabilities;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ISecretProviderResponse {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    capabilities?: SecretProviderCapabilities;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export class SecretValueResponse implements ISecretValueResponse {
+    value?: string | undefined;
+
+    constructor(data?: ISecretValueResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.value = _data["Value"];
+        }
+    }
+
+    static fromJS(data: any): SecretValueResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SecretValueResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Value"] = this.value;
+        return data;
+    }
+}
+
+export interface ISecretValueResponse {
+    value?: string | undefined;
+}
+
 export enum SecurityLevel {
     None = "None",
     RestrictedEditing = "RestrictedEditing",
@@ -6405,12 +7456,56 @@ export enum TargetKind {
     External = "External",
 }
 
+export class TestSecretProviderConnection implements ITestSecretProviderConnection {
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+
+    constructor(data?: ITestSecretProviderConnection) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.vaultUri = _data["VaultUri"];
+            this.authMode = _data["AuthMode"];
+            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): TestSecretProviderConnection {
+        data = typeof data === 'object' ? data : {};
+        let result = new TestSecretProviderConnection();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["VaultUri"] = this.vaultUri;
+        data["AuthMode"] = this.authMode;
+        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface ITestSecretProviderConnection {
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+}
+
 export class UpdateAccount implements IUpdateAccount {
     id?: string;
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
@@ -6431,7 +7526,7 @@ export class UpdateAccount implements IUpdateAccount {
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.authKind = _data["AuthKind"];
-            this.secretRef = _data["SecretRef"];
+            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
             this.userName = _data["UserName"];
             if (_data["Parameters"]) {
                 this.parameters = {} as any;
@@ -6466,7 +7561,7 @@ export class UpdateAccount implements IUpdateAccount {
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["AuthKind"] = this.authKind;
-        data["SecretRef"] = this.secretRef;
+        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
         data["UserName"] = this.userName;
         if (this.parameters) {
             data["Parameters"] = {};
@@ -6494,7 +7589,7 @@ export interface IUpdateAccount {
     targetId?: string;
     targetKind?: TargetKind;
     authKind?: AuthKind;
-    secretRef?: string | undefined;
+    secretBinding?: SecretBinding;
     userName?: string | undefined;
     parameters?: { [key: string]: string; } | undefined;
     grants?: Grant[] | undefined;
@@ -7159,6 +8254,62 @@ export interface IUpdatePlatform {
     ipAddress?: string | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+}
+
+export class UpdateSecretProvider implements IUpdateSecretProvider {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
+
+    constructor(data?: IUpdateSecretProvider) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.vaultUri = _data["VaultUri"];
+            this.authMode = _data["AuthMode"];
+            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
+            this.capabilities = _data["Capabilities"];
+        }
+    }
+
+    static fromJS(data: any): UpdateSecretProvider {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateSecretProvider();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["VaultUri"] = this.vaultUri;
+        data["AuthMode"] = this.authMode;
+        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        data["Capabilities"] = this.capabilities;
+        return data;
+    }
+}
+
+export interface IUpdateSecretProvider {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
 }
 
 export class UpdateSecuritySettings implements IUpdateSecuritySettings {

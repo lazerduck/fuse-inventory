@@ -32,7 +32,8 @@ public class SnapshotValidatorTests
             tags,
             envs,
             new List<KumaIntegration>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            SecretProviders: Array.Empty<SecretProvider>(),
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -71,14 +72,14 @@ public class SnapshotValidatorTests
 
         var accounts = new List<Account>
         {
-            new Account(Guid.NewGuid(), instId, TargetKind.Application, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
-            new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
-            new Account(Guid.NewGuid(), extId, TargetKind.External, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
+            new Account(Guid.NewGuid(), instId, TargetKind.Application, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
+            new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow),
+            new Account(Guid.NewGuid(), extId, TargetKind.External, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
 
         var security = new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>());
 
-    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, new List<KumaIntegration>(), security);
+    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), security);
 
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Empty(errors);
@@ -98,6 +99,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -107,7 +109,7 @@ public class SnapshotValidatorTests
     [Fact]
     public void Validate_Account_TargetMissing_Application()
     {
-        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.Application, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.Application, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
@@ -117,6 +119,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -126,7 +129,7 @@ public class SnapshotValidatorTests
     [Fact]
     public void Validate_Account_TargetMissing_DataStore()
     {
-        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.DataStore, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.DataStore, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
@@ -136,6 +139,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -145,7 +149,7 @@ public class SnapshotValidatorTests
     [Fact]
     public void Validate_Account_TargetMissing_External()
     {
-        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.External, AuthKind.None, "secret", null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), Guid.NewGuid(), TargetKind.External, AuthKind.None, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, new List<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var snapshot = new Snapshot(
             new List<Application>(),
             new List<DataStore>(),
@@ -155,6 +159,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -182,6 +187,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -210,6 +216,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -238,6 +245,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -262,6 +270,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -288,6 +297,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -316,6 +326,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -344,6 +355,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -368,6 +380,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -393,6 +406,7 @@ public class SnapshotValidatorTests
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -422,6 +436,7 @@ public class SnapshotValidatorTests
             tags,
             envs,
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -446,6 +461,7 @@ public class SnapshotValidatorTests
             tags,
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
+            new List<SecretProvider>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);

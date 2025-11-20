@@ -203,7 +203,7 @@ const deleteMutation = useMutation({
 })
 
 const automationMutation = useMutation({
-  mutationFn: (payload: ApplyEnvironmentAutomation) => client.environmentApplyAutomationPOST(payload),
+  mutationFn: (payload: ApplyEnvironmentAutomation) => client.applyAutomation(payload),
   onSuccess: (instancesCreated) => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     const message = instancesCreated === 0 

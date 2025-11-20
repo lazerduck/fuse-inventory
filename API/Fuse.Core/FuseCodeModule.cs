@@ -26,5 +26,10 @@ public static class FuseCodeModule
         services.AddSingleton<KumaMetricsService>();
         services.AddHostedService(provider => provider.GetRequiredService<KumaMetricsService>());
         services.AddSingleton<IKumaHealthService>(provider => provider.GetRequiredService<KumaMetricsService>());
+        
+        // Register Secret Provider services
+        services.AddScoped<ISecretProviderService, SecretProviderService>();
+        services.AddScoped<IAzureKeyVaultClient, AzureKeyVaultClient>();
+        services.AddScoped<ISecretOperationService, SecretOperationService>();
     }
 }

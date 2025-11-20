@@ -5,12 +5,18 @@ export interface KeyValuePair {
   value: string
 }
 
+export interface AccountSecretFields {
+  providerId: string | null
+  secretName: string | null
+  plainReference: string
+}
+
 export interface AccountFormModel {
   targetKind: TargetKind
   targetId: string | null
   authKind: AuthKind
   userName: string
-  secretRef: string
+  secret: AccountSecretFields
   parameters: KeyValuePair[]
   tagIds: string[]
   grants: Grant[]
