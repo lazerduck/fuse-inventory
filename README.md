@@ -3,7 +3,8 @@
 [![CI Pipeline](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml)
 [![Docker Image](https://ghcr-badge.egpl.dev/lazerduck/fuse-inventory/latest_tag?trim=major\&label=latest)](https://github.com/lazerduck/fuse-inventory/pkgs/container/fuse-inventory)
 
-<img width="512" height="512" alt="Fuse-inventory" src="https://github.com/user-attachments/assets/2b4cd430-ed63-4f62-af85-3e89470bd0aa" />
+<img width="512" height="512" alt="ChatGPT Image Nov 20, 2025, 09_34_32 PM" src="https://github.com/user-attachments/assets/f21dc1c0-1211-4473-8984-188e69d6a8fe" />
+
 
 **Fuse-Inventory** is a self-hosted application inventory and environment tracker designed for teams that want visibility without overhead.
 It helps you describe what you have deployed, where it is deployed, and what dependencies, permissions, and accounts each system needs.
