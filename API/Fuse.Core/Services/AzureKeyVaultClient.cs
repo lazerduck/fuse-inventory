@@ -11,12 +11,23 @@ namespace Fuse.Core.Services;
 
 public class AzureKeyVaultClient : IAzureKeyVaultClient
 {
+    private readonly ITokenCredentialFactory _credentialFactory;
+    private readonly IKeyVaultSecretClientFactory _secretClientFactory;
+
+    public AzureKeyVaultClient(
+        ITokenCredentialFactory? credentialFactory = null,
+        IKeyVaultSecretClientFactory? secretClientFactory = null)
+    {
+        _credentialFactory = credentialFactory ?? new DefaultTokenCredentialFactory();
+        _secretClientFactory = secretClientFactory ?? new DefaultKeyVaultSecretClientFactory();
+    }
+
     public async Task<Result> TestConnectionAsync(Uri vaultUri, SecretProviderAuthMode authMode, SecretProviderCredentials? credentials)
     {
         try
         {
-            var credential = GetCredential(authMode, credentials);
-            var client = new SecretClient(vaultUri, credential);
+            var credential = _credentialFactory.Create(authMode, credentials);
+            var client = _secretClientFactory.Create(vaultUri, credential);
             
             // Test by attempting to list secrets (doesn't return actual values, just metadata)
             var response = client.GetPropertiesOfSecretsAsync();
@@ -99,16 +110,15 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
         {
             var client = GetClient(provider);
             KeyVaultSecret secret;
-            
             if (!string.IsNullOrEmpty(version))
             {
-                // Get specific version
-                secret = await client.GetSecretAsync(secretName, version);
+                var resp = await client.GetSecretVersionAsync(secretName, version);
+                secret = resp.Value;
             }
             else
             {
-                // Get latest version
-                secret = await client.GetSecretAsync(secretName);
+                var resp = await client.GetSecretAsync(secretName);
+                secret = resp.Value;
             }
             
             return Result<string>.Success(secret.Value);
@@ -152,36 +162,47 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
         }
     }
 
-    private SecretClient GetClient(SecretProvider provider)
+    private IKeyVaultSecretClient GetClient(SecretProvider provider)
     {
-        var credential = GetCredential(provider.AuthMode, provider.Credentials);
-        return new SecretClient(provider.VaultUri, credential);
+        var credential = _credentialFactory.Create(provider.AuthMode, provider.Credentials);
+        return _secretClientFactory.Create(provider.VaultUri, credential);
     }
+}
 
-    private TokenCredential GetCredential(SecretProviderAuthMode authMode, SecretProviderCredentials? credentials)
+// Default factories (internal) used when not injected
+internal sealed class DefaultTokenCredentialFactory : ITokenCredentialFactory
+{
+    public TokenCredential Create(SecretProviderAuthMode mode, SecretProviderCredentials? credentials) => mode switch
     {
-        return authMode switch
-        {
-            SecretProviderAuthMode.ManagedIdentity => new DefaultAzureCredential(),
-            SecretProviderAuthMode.ClientSecret => CreateClientSecretCredential(credentials),
-            _ => throw new ArgumentException($"Unsupported auth mode: {authMode}")
-        };
-    }
+        SecretProviderAuthMode.ManagedIdentity => new DefaultAzureCredential(),
+        SecretProviderAuthMode.ClientSecret => CreateClientSecretCredential(credentials),
+        _ => throw new ArgumentException($"Unsupported auth mode: {mode}")
+    };
 
-    private TokenCredential CreateClientSecretCredential(SecretProviderCredentials? credentials)
+    private static TokenCredential CreateClientSecretCredential(SecretProviderCredentials? credentials)
     {
-        if (credentials is null || 
+        if (credentials is null ||
             string.IsNullOrWhiteSpace(credentials.TenantId) ||
             string.IsNullOrWhiteSpace(credentials.ClientId) ||
             string.IsNullOrWhiteSpace(credentials.ClientSecret))
         {
             throw new ArgumentException("Client secret credentials require TenantId, ClientId, and ClientSecret.");
         }
-
-        return new ClientSecretCredential(
-            credentials.TenantId,
-            credentials.ClientId,
-            credentials.ClientSecret
-        );
+        return new ClientSecretCredential(credentials.TenantId, credentials.ClientId, credentials.ClientSecret);
     }
+}
+
+internal sealed class DefaultKeyVaultSecretClientFactory : IKeyVaultSecretClientFactory
+{
+    public IKeyVaultSecretClient Create(Uri vaultUri, TokenCredential credential) => new KeyVaultSecretClientWrapper(new SecretClient(vaultUri, credential));
+}
+
+internal sealed class KeyVaultSecretClientWrapper : IKeyVaultSecretClient
+{
+    private readonly SecretClient _inner;
+    public KeyVaultSecretClientWrapper(SecretClient inner) => _inner = inner;
+    public Task<Response<KeyVaultSecret>> GetSecretAsync(string name, CancellationToken ct = default) => _inner.GetSecretAsync(name, cancellationToken: ct);
+    public Task<Response<KeyVaultSecret>> GetSecretVersionAsync(string name, string version, CancellationToken ct = default) => _inner.GetSecretAsync(name, version, ct);
+    public Task<Response<KeyVaultSecret>> SetSecretAsync(string name, string value, CancellationToken ct = default) => _inner.SetSecretAsync(name, value, ct);
+    public AsyncPageable<SecretProperties> GetPropertiesOfSecretsAsync(CancellationToken ct = default) => _inner.GetPropertiesOfSecretsAsync(ct);
 }
