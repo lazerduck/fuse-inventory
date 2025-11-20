@@ -20,5 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Fuse.Core/Fuse.Core.csproj" />
+    <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
   </ItemGroup>
 </Project>

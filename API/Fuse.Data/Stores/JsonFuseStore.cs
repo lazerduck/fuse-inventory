@@ -45,7 +45,7 @@ public sealed class JsonFuseStore : IFuseStore
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
                 Platforms: await ReadAsync<Platform>("platforms.json", ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
-                Accounts: await ReadAsync<Account>("accounts.json", ct),
+                Accounts: await ReadAccountsWithMigrationAsync("accounts.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
                 KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
@@ -105,35 +105,6 @@ public sealed class JsonFuseStore : IFuseStore
             if (hasChange)
             {
                 _cache = _cache with { Applications = migratedApps };
-            }
-
-            // Migration: Convert legacy SecretRef string to SecretBinding
-            var migratedAccounts = new List<Account>();
-            bool accountsMigrated = false;
-            foreach (var account in _cache.Accounts)
-            {
-                // Check if account needs migration (has old-style SecretRef)
-                if (account.SecretBinding.Kind == SecretBindingKind.None && 
-                    !string.IsNullOrEmpty(account.SecretRef))
-                {
-                    // Migrate plain string SecretRef to SecretBinding
-                    var binding = new SecretBinding(
-                        Kind: SecretBindingKind.PlainReference,
-                        PlainReference: account.SecretRef,
-                        AzureKeyVault: null
-                    );
-                    migratedAccounts.Add(account with { SecretBinding = binding, UpdatedAt = DateTime.UtcNow });
-                    accountsMigrated = true;
-                }
-                else
-                {
-                    migratedAccounts.Add(account);
-                }
-            }
-
-            if (accountsMigrated)
-            {
-                _cache = _cache with { Accounts = migratedAccounts };
             }
 
             var errors = SnapshotValidator.Validate(_cache);
@@ -219,5 +190,57 @@ public sealed class JsonFuseStore : IFuseStore
             await JsonSerializer.SerializeAsync(fs, value, Json, ct);
         }
         File.Move(tmp, path, overwrite: true);
+    }
+
+    private async Task<IReadOnlyList<Account>> ReadAccountsWithMigrationAsync(string file, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return Array.Empty<Account>();
+
+        await using var fs = File.OpenRead(path);
+        using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
+
+        var accounts = new List<Account>();
+        
+        foreach (var element in doc.RootElement.EnumerateArray())
+        {
+            // Check if this is a legacy account with secretRef field instead of secretBinding
+            var hasLegacySecretRef = element.TryGetProperty("secretRef", out var secretRefProp);
+            var hasSecretBinding = element.TryGetProperty("secretBinding", out _);
+
+            Account account;
+            
+            if (hasLegacySecretRef && !hasSecretBinding)
+            {
+                // Legacy format: deserialize and migrate
+                var legacySecretRef = secretRefProp.GetString() ?? string.Empty;
+                
+                // Deserialize the account (it will have a default SecretBinding)
+                var tempAccount = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json);
+                if (tempAccount is null) continue;
+
+                // Create the migrated account with proper SecretBinding
+                var binding = new SecretBinding(
+                    Kind: SecretBindingKind.PlainReference,
+                    PlainReference: legacySecretRef,
+                    AzureKeyVault: null
+                );
+
+                account = tempAccount with 
+                { 
+                    SecretBinding = binding,
+                    UpdatedAt = DateTime.UtcNow
+                };
+            }
+            else
+            {
+                // New format: deserialize normally
+                account = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json)!;
+            }
+
+            accounts.Add(account);
+        }
+
+        return accounts;
     }
 }
