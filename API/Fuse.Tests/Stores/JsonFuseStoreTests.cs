@@ -401,6 +401,7 @@ public class JsonFuseStoreTests : IDisposable
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: new[] { secretProvider },
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 

@@ -10,5 +10,6 @@ public record Snapshot(
     IReadOnlyList<EnvironmentInfo> Environments,
     IReadOnlyList<KumaIntegration> KumaIntegrations,
     IReadOnlyList<SecretProvider> SecretProviders,
+    IReadOnlyList<SqlIntegration> SqlIntegrations,
     SecurityState Security
 );

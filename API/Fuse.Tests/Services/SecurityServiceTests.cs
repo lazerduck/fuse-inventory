@@ -29,6 +29,7 @@ public class SecurityServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
                 SecretProviders: Array.Empty<SecretProvider>(),
+                SqlIntegrations: Array.Empty<SqlIntegration>(),
                 Security: securityState
         );
 

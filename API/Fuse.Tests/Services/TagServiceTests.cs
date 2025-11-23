@@ -21,6 +21,7 @@ public class TagServiceTests
             Tags: tags,
             Environments: Array.Empty<EnvironmentInfo>(),
             SecretProviders: Array.Empty<SecretProvider>(),
+                SqlIntegrations: Array.Empty<SqlIntegration>(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             KumaIntegrations: Array.Empty<KumaIntegration>()
         );
