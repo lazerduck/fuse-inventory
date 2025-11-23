@@ -1,0 +1,66 @@
+# Copilot Setup Steps for Fuse-Inventory
+#
+# This file contains the steps needed to set up the development environment
+# for working on the Fuse-Inventory project.
+
+steps:
+  - name: Install .NET 10 SDK
+    description: Install the .NET 10 SDK required for building the backend API
+    command: |
+      # The .NET 10 SDK is required for this project
+      # Check if .NET 10 is available, if not, use the latest available
+      if ! dotnet --list-sdks | grep -q "10.0"; then
+        echo "Warning: .NET 10 SDK not found. Attempting to use available SDK."
+        echo "If builds fail, you may need to install .NET 10 SDK manually."
+      fi
+    
+  - name: Verify .NET installation
+    description: Verify that .NET is installed and check the version
+    command: dotnet --version
+
+  - name: Install Node.js and npm
+    description: Install Node.js (LTS version recommended) for the frontend UI
+    command: |
+      # Node.js 18+ is recommended for Vue 3 and Quasar
+      node --version || echo "Node.js not found. Please install Node.js 18 or higher."
+      npm --version || echo "npm not found. Please install npm."
+
+  - name: Restore .NET dependencies
+    description: Restore NuGet packages for the backend solution
+    command: dotnet restore
+    working_directory: .
+
+  - name: Build .NET solution
+    description: Build the backend solution to verify everything compiles
+    command: dotnet build --no-restore --configuration Release
+    working_directory: .
+
+  - name: Install UI dependencies
+    description: Install npm packages for the Vue/Quasar frontend
+    command: npm install
+    working_directory: ./UI/Fuse.Web
+
+  - name: Run backend tests
+    description: Run the test suite to ensure everything is working
+    command: dotnet test --no-build --configuration Release --verbosity normal
+    working_directory: .
+
+  - name: Verify Docker availability (optional)
+    description: Check if Docker is available for containerized development
+    command: |
+      if command -v docker &> /dev/null; then
+        echo "Docker is available"
+        docker --version
+      else
+        echo "Docker not found. Docker is optional but recommended for testing the full application."
+      fi
+
+# Additional notes for the setup process
+notes:
+  - The project requires .NET 10 SDK. If unavailable, check GitHub Actions setup for alternative SDK versions.
+  - Node.js 18+ and npm are required for the frontend development.
+  - The UI can be developed independently by running 'npm run dev' in the UI/Fuse.Web directory.
+  - For full integration testing, Docker and Docker Compose are recommended.
+  - The solution file has a typo in its name: 'fuse-invetory.sln' (missing 'n' in inventory).
+  - Tests should always pass before committing changes.
+  - The CI pipeline runs tests with code coverage, so ensure test coverage is maintained or improved.
