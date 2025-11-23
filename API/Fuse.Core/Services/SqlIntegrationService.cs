@@ -74,7 +74,11 @@ public class SqlIntegrationService : ISqlIntegrationService
             UpdatedAt: now
         );
 
-        await _store.UpdateAsync(s => s with { SqlIntegrations = s.SqlIntegrations.Append(integration).ToList() }, ct);
+        await _store.UpdateAsync(s =>
+        {
+            var integrations = new List<SqlIntegration>(s.SqlIntegrations) { integration };
+            return s with { SqlIntegrations = integrations };
+        }, ct);
 
         return Result<SqlIntegrationResponse>.Success(new SqlIntegrationResponse(
             integration.Id,

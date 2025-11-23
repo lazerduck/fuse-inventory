@@ -108,10 +108,12 @@ public class SqlConnectionValidator : ISqlConnectionValidator
     {
         try
         {
-            // Check if user has CREATE USER permission
+            // Check if user has user management permissions (CREATE USER, ALTER ANY USER)
+            // These are the permissions needed for future account creation features
             const string query = @"
                 SELECT HAS_PERMS_BY_NAME(NULL, NULL, 'CREATE USER') AS HasCreateUser,
-                       HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY USER') AS HasAlterUser";
+                       HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY USER') AS HasAlterUser,
+                       HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') AS HasAlterLogin";
             
             await using var command = new SqlCommand(query, connection);
             await using var reader = await command.ExecuteReaderAsync(ct);
@@ -120,7 +122,9 @@ public class SqlConnectionValidator : ISqlConnectionValidator
             {
                 var hasCreateUser = reader.GetInt32(0) == 1;
                 var hasAlterUser = reader.GetInt32(1) == 1;
-                return hasCreateUser || hasAlterUser;
+                var hasAlterLogin = reader.GetInt32(2) == 1;
+                // User needs at least one of these permissions for account management
+                return hasCreateUser || hasAlterUser || hasAlterLogin;
             }
 
             return false;
