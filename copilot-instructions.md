@@ -184,7 +184,6 @@ Fuse-Inventory is built to enable users to work the way *they* want. It doesn't 
 ## Notes for Copilot
 
 - This is an active project with a stable core data model
-- The solution file has a typo: `fuse-invetory.sln` (missing 'n')
 - The backend targets .NET 10 (very recent, ensure SDK is available)
 - The UI uses Vue 3 Composition API exclusively
 - The project values simplicity and self-hosting over complex architectures

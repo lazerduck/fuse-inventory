@@ -61,6 +61,5 @@ notes:
   - Node.js 18+ and npm are required for the frontend development.
   - The UI can be developed independently by running 'npm run dev' in the UI/Fuse.Web directory.
   - For full integration testing, Docker and Docker Compose are recommended.
-  - The solution file has a typo in its name: 'fuse-invetory.sln' (missing 'n' in inventory).
   - Tests should always pass before committing changes.
   - The CI pipeline runs tests with code coverage, so ensure test coverage is maintained or improved.
