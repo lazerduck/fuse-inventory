@@ -17,7 +17,19 @@ public class SqlConnectionValidator : ISqlConnectionValidator
 
         try
         {
-            await using var connection = new SqlConnection(connectionString);
+            // Parse and normalize the connection string using SqlConnectionStringBuilder to prevent resource injection
+            string sanitizedConnectionString;
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(connectionString);
+                sanitizedConnectionString = builder.ConnectionString;
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, SqlPermissions.None, $"Invalid connection string: {ex.Message}");
+            }
+
+            await using var connection = new SqlConnection(sanitizedConnectionString);
             await connection.OpenAsync(ct);
 
             var permissions = SqlPermissions.None;
