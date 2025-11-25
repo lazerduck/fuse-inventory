@@ -31,7 +31,21 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        :filter="filter"
       >
+        <template #top-right>
+          <q-input
+            v-model="filter"
+            dense
+            outlined
+            debounce="300"
+            placeholder="Search..."
+          >
+            <template #append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
@@ -112,6 +126,7 @@ const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
+const filter = ref('')
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['externalResources'],

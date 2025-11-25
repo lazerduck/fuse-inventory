@@ -8,7 +8,21 @@
       row-key="id"
       :loading="loading"
       :pagination="pagination"
+      :filter="filter"
     >
+      <template #top-right>
+        <q-input
+          v-model="filter"
+          dense
+          outlined
+          debounce="300"
+          placeholder="Search..."
+        >
+          <template #append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </template>
       <template #body-cell-target="props">
         <q-td :props="props">
           {{ targetResolver(props.row) }}
@@ -64,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { QTableColumn } from 'quasar'
 import type { Account } from '../../api/client'
 
@@ -80,6 +94,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ (event: 'edit', account: Account): void; (event: 'delete', account: Account): void }>()
 
+const filter = ref('')
 const rows = computed(() => props.accounts ?? [])
 
 const columns: QTableColumn<Account>[] = [
