@@ -5,6 +5,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
+    using Fuse.Core.Responses;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -31,6 +32,24 @@ namespace Fuse.API.Controllers
         {
             var a = await _accountService.GetAccountByIdAsync(id);
             return a is not null ? Ok(a) : NotFound(new { error = $"Account with ID '{id}' not found." });
+        }
+
+        [HttpGet("{id}/sql-status")]
+        [ProducesResponseType(200, Type = typeof(AccountSqlStatusResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<AccountSqlStatusResponse>> GetAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
+        {
+            var result = await _accountService.GetAccountSqlStatusAsync(id, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            return Ok(result.Value);
         }
 
         [HttpPost]

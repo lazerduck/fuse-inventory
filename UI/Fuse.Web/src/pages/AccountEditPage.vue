@@ -53,6 +53,13 @@
         />
       </q-card-section>
 
+      <q-separator v-if="showSqlStatus" />
+
+      <q-card-section v-if="showSqlStatus">
+        <div class="text-h6 q-mb-md">SQL Status</div>
+        <AccountSqlStatusSection :account-id="accountId!" />
+      </q-card-section>
+
       <q-separator v-if="showSecretOperations" />
 
       <q-card-section v-if="showSecretOperations">
@@ -247,6 +254,7 @@ import {
 } from '../api/client'
 import AccountForm from '../components/accounts/AccountForm.vue'
 import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
+import AccountSqlStatusSection from '../components/accounts/AccountSqlStatusSection.vue'
 import type {
   AccountFormModel,
   AccountSecretFields,
@@ -388,6 +396,10 @@ const selectedProvider = computed(() =>
 
 const showSecretOperations = computed(
   () => isEditMode.value && form.value.secret.providerId && form.value.secret.secretName
+)
+
+const showSqlStatus = computed(
+  () => isEditMode.value && accountId.value && form.value.targetKind === TargetKind.DataStore
 )
 
 const canRotateSecret = computed(

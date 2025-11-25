@@ -1,6 +1,7 @@
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Interfaces;
 
@@ -16,4 +17,7 @@ public interface IAccountService
     Task<Result<Grant>> CreateGrant(CreateAccountGrant command);
     Task<Result<Grant>> UpdateGrant(UpdateAccountGrant command);
     Task<Result> DeleteGrant(DeleteAccountGrant command);
+
+    // SQL Status
+    Task<Result<AccountSqlStatusResponse>> GetAccountSqlStatusAsync(Guid accountId, CancellationToken ct = default);
 }

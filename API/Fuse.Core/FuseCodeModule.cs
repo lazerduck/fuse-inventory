@@ -14,6 +14,7 @@ public static class FuseCodeModule
         services.AddScoped<IDataStoreService, DataStoreService>();
         services.AddScoped<IExternalResourceService, ExternalResourceService>();
         services.AddScoped<IApplicationService, ApplicationService>();
+        services.AddScoped<IAccountSqlInspector, AccountSqlInspector>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
