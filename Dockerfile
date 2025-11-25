@@ -19,7 +19,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
 WORKDIR /app
 
 # Copy solution and project files
-COPY fuse-invetory.sln ./
+COPY fuse-inventory.sln ./
 COPY API/Fuse.API/*.csproj ./API/Fuse.API/
 COPY API/Fuse.Core/*.csproj ./API/Fuse.Core/
 COPY API/Fuse.Data/*.csproj ./API/Fuse.Data/
