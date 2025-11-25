@@ -27,6 +27,7 @@ public class KumaIntegrationServiceTests
             Environments: (environments ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: (integrations ?? Array.Empty<KumaIntegration>()).ToArray(),
             SecretProviders: Array.Empty<SecretProvider>(),
+                SqlIntegrations: Array.Empty<SqlIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);

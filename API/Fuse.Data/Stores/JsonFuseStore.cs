@@ -50,6 +50,7 @@ public sealed class JsonFuseStore : IFuseStore
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
                 KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
                 SecretProviders: await ReadAsync<SecretProvider>("secretproviders.json", ct),
+                SqlIntegrations: await ReadAsync<SqlIntegration>("sqlintegrations.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct)
             );
 
@@ -134,6 +135,7 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("environments.json", snapshot.Environments, ct);
             await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
             await WriteAsync("secretproviders.json", snapshot.SecretProviders, ct);
+            await WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct);
             await WriteAsync("security.json", snapshot.Security, ct);
 
             _cache = snapshot; // swap the in-memory snapshot

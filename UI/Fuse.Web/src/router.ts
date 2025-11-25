@@ -90,6 +90,11 @@ const router = createRouter({
       component: () => import('./pages/SecretProvidersPage.vue')
     },
     {
+      path: '/sql-integrations',
+      name: 'sqlIntegrations',
+      component: () => import('./pages/SqlIntegrationsPage.vue')
+    },
+    {
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')

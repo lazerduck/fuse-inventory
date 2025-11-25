@@ -33,6 +33,7 @@ public class SnapshotValidatorTests
             envs,
             new List<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
+                SqlIntegrations: Array.Empty<SqlIntegration>(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -79,7 +80,7 @@ public class SnapshotValidatorTests
 
         var security = new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>());
 
-    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), security);
+    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), new List<SqlIntegration>(), security);
 
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Empty(errors);
@@ -100,6 +101,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -120,6 +122,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -140,6 +143,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -160,6 +164,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);
@@ -188,6 +193,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -217,6 +223,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -246,6 +253,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -271,6 +279,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -298,6 +307,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -327,6 +337,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -356,6 +367,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -381,6 +393,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -407,6 +420,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -437,6 +451,7 @@ public class SnapshotValidatorTests
             envs,
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
 
@@ -462,6 +477,7 @@ public class SnapshotValidatorTests
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
             new List<SecretProvider>(),
+            new List<SqlIntegration>(),
             new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         var errors = SnapshotValidator.Validate(snapshot);

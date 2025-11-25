@@ -39,6 +39,7 @@ public class AccountServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
                 SecretProviders: Array.Empty<SecretProvider>(),
+                SqlIntegrations: Array.Empty<SqlIntegration>(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);

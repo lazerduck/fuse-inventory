@@ -25,6 +25,7 @@ public class SecretProviderServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: (providers ?? Array.Empty<SecretProvider>()).ToArray(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);

@@ -31,5 +31,9 @@ public static class FuseCodeModule
         services.AddScoped<ISecretProviderService, SecretProviderService>();
         services.AddScoped<IAzureKeyVaultClient, AzureKeyVaultClient>();
         services.AddScoped<ISecretOperationService, SecretOperationService>();
+        
+        // Register SQL Integration services
+        services.AddScoped<ISqlIntegrationService, SqlIntegrationService>();
+        services.AddScoped<ISqlConnectionValidator, SqlConnectionValidator>();
     }
 }

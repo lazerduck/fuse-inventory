@@ -261,6 +261,7 @@ public class ConfigService : IConfigService
                 Environments: existingEnvironments.Values.ToList(),
                 KumaIntegrations: existingKumaIntegrations.Values.ToList(),
                 SecretProviders: current.SecretProviders,
+                SqlIntegrations: current.SqlIntegrations,
                 Security: current.Security
             );
         }, ct);

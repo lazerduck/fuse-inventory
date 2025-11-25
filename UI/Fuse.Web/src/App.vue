@@ -175,9 +175,21 @@
               <q-icon name="vpn_key" />
             </q-item-section>
             <q-item-section>
-              Secret Providers
+              Secret Provider Integrations
             </q-item-section>
           </q-item>
+
+          <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+            data-tour-id="nav-sql-integrations">
+            <q-item-section avatar>
+              <q-icon name="storage" />
+            </q-item-section>
+            <q-item-section>
+              SQL Integrations
+            </q-item-section>
+          </q-item>
+
+          <q-separator class="q-my-md" />
 
           <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
             data-tour-id="nav-security">

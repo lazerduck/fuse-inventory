@@ -21,7 +21,8 @@ public sealed class InMemoryFuseStore : IFuseStore
             Environments: Array.Empty<EnvironmentInfo>(),
             SecretProviders: Array.Empty<SecretProvider>(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            KumaIntegrations: Array.Empty<KumaIntegration>()
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>()
         );
     }
 
