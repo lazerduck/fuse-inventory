@@ -20,7 +20,33 @@
           :disable="loading || testLoading" 
           required
           hint="The data store this integration connects to"
-        />
+          option-label="label"
+          option-value="value"
+          emit-value
+          map-options
+        >
+          <template #option="scope">
+            <q-item :clickable="true" @click="scope.toggleOption(scope.opt)">
+              <q-item-section>
+                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                <q-item-label v-if="scope.opt.description" caption>
+                  {{ scope.opt.description }}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+
+          <template #selected-item="scope">
+            <q-item>
+              <q-item-section>
+                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                <q-item-label v-if="scope.opt.description" caption>
+                  {{ scope.opt.description }}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
         
         <q-input 
           v-model="form.connectionString" 
@@ -89,8 +115,9 @@ import { useMutation } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
 import { useDataStores } from '../../composables/useDataStores'
 import { useFuseClient } from '../../composables/useFuseClient'
-import { TestSqlConnection, SqlPermissions } from '../../api/client'
+import { TestSqlConnection, SqlConnectionTestResult } from '../../api/client'
 import { getErrorMessage } from '../../utils/error'
+import { parseSqlPermissions } from '../../utils/sqlPermissions'
 
 const props = defineProps<{ 
   mode: 'create' | 'edit'
@@ -102,13 +129,35 @@ const emit = defineEmits(['submit', 'cancel'])
 const client = useFuseClient()
 const dataStoresStore = useDataStores()
 
-const dataStoreOptions = computed(() =>
-  dataStoresStore.data.value?.map(ds => ({ label: ds.name ?? ds.id!, value: ds.id })) ?? []
-)
+const dataStoreOptions = computed(() => {
+  const stores = dataStoresStore.data.value ?? []
+
+  const options = stores.map(ds => {
+    const kind = (ds.kind ?? '').toString()
+    return {
+      label: ds.name ?? ds.id!,
+      value: ds.id,
+      description: kind,
+      kindKey: kind.toLowerCase()
+    }
+  })
+
+  const sqlKinds = ['sql', 'sql server', 'mssql', 'postgresql', 'postgres', 'mysql', 'sqlite']
+
+  options.sort((a, b) => {
+    const aIsSql = sqlKinds.includes(a.kindKey)
+    const bIsSql = sqlKinds.includes(b.kindKey)
+    if (aIsSql && !bIsSql) return -1
+    if (!aIsSql && bIsSql) return 1
+    return a.label.localeCompare(b.label)
+  })
+
+  return options
+})
 
 const form = ref<{
   name: string
-  dataStoreId: any
+  dataStoreId: string | null
   connectionString: string
 }>({
   name: '',
@@ -116,18 +165,14 @@ const form = ref<{
   connectionString: ''
 })
 
-const testResult = ref<any>(null)
+const testResult = ref<SqlConnectionTestResult | null>(null)
 const testLoading = ref(false)
 
 watch(() => props.initialValue, (val) => {
   if (val) {
-    const dataStoreId = val.dataStoreId
-      ? dataStoreOptions.value.find(opt => opt.value === val.dataStoreId) ?? null
-      : null
-
     form.value = {
       name: val.name ?? '',
-      dataStoreId,
+      dataStoreId: val.dataStoreId ?? null,
       connectionString: '' // Don't show stored connection string for security
     }
     testResult.value = null // Reset test result on edit
@@ -172,10 +217,7 @@ const testConnectionMutation = useMutation({
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Failed to test connection') })
-    testResult.value = {
-      isSuccessful: false,
-      errorMessage: getErrorMessage(err, 'Connection test failed')
-    }
+    testResult.value = null
   }
 })
 
@@ -189,32 +231,15 @@ function testConnection() {
   })
 }
 
-function parsePermissions(permissions?: SqlPermissions): string[] {
-  if (!permissions) return []
-  
-  // Handle as string with comma-separated values
-  if (typeof permissions === 'string') {
-    return permissions.split(',').map(p => p.trim()).filter(Boolean)
-  }
-  
-  // Handle as enum flags (bitwise)
-  const perms: string[] = []
-  const permValue = permissions as any
-  
-  if (typeof permValue === 'number') {
-    if (permValue & 1) perms.push('Read')
-    if (permValue & 2) perms.push('Write')
-    if (permValue & 4) perms.push('Create')
-  }
-  
-  return perms
-}
+const parsePermissions = parseSqlPermissions
 
 function submitForm() {
-  // Extract value from q-select option object
-  const dataStoreId = typeof form.value.dataStoreId === 'object' && form.value.dataStoreId !== null
-    ? (form.value.dataStoreId as any).value
-    : form.value.dataStoreId
+  const dataStoreId = form.value.dataStoreId
+
+  if (!dataStoreId) {
+    Notify.create({ type: 'negative', message: 'Please select a data store.' })
+    return
+  }
 
   emit('submit', {
     name: form.value.name,

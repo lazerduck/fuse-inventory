@@ -16,13 +16,18 @@
             required
             :rules="[val => !!val || 'Data store name is required']"
           />
-          <q-input
+          <q-select
             v-model="form.kind"
             label="Kind*"
             dense
             outlined
+            use-input
+            hide-dropdown-icon
+            new-value-mode="add"
+            :options="kindOptions"
             required
             :rules="[val => !!val || 'Data store kind is required']"
+            @new-value="onNewKind"
           />
           <q-select
             v-model="form.environmentId"
@@ -69,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch, onMounted } from 'vue'
+import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
 import { useTags } from '../../composables/useTags'
@@ -112,6 +117,21 @@ const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
 const tagOptions = tagsStore.options
 
+const defaultKindOptions = [
+  'SQL',
+  'PostgreSQL',
+  'MySQL',
+  'SQL Server',
+  'SQLite',
+  'MongoDB',
+  'Azure Cosmos DB',
+  'Elasticsearch',
+  'Redis',
+  'Other'
+]
+
+const kindOptions = ref<string[]>([...defaultKindOptions])
+
 const form = reactive<DataStoreFormModel>({
   name: '',
   kind: '',
@@ -142,10 +162,26 @@ function applyInitialValue(value?: Partial<DataStore> | null) {
   form.platformId = value.platformId ?? null
   form.connectionUri = value.connectionUri ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
+
+  if (form.kind && !kindOptions.value.includes(form.kind)) {
+    kindOptions.value.push(form.kind)
+  }
 }
 
 onMounted(() => applyInitialValue(props.initialValue))
 watch(() => props.initialValue, (val) => applyInitialValue(val))
+
+function onNewKind(val: string, done: (item?: any, mode?: 'add' | 'add-unique' | 'toggle') => void) {
+  const trimmed = val.trim()
+  if (!trimmed) {
+    done()
+    return
+  }
+  if (!kindOptions.value.includes(trimmed)) {
+    kindOptions.value.push(trimmed)
+  }
+  done(trimmed, 'add')
+}
 
 function handleSubmit() {
   emit('submit', { ...form })

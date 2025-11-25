@@ -102,14 +102,14 @@ import type { QTableColumn } from 'quasar'
 import { 
   SqlIntegrationResponse, 
   CreateSqlIntegration, 
-  UpdateSqlIntegration,
-  SqlPermissions
+  UpdateSqlIntegration
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useDataStores } from '../composables/useDataStores'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { getErrorMessage } from '../utils/error'
+import { parseSqlPermissions } from '../utils/sqlPermissions'
 import SqlIntegrationForm from '../components/sqlIntegration/SqlIntegrationForm.vue'
 
 interface SqlIntegrationFormModel {
@@ -166,26 +166,7 @@ function closeFormDialog() {
   isFormDialogOpen.value = false
 }
 
-function parsePermissions(permissions?: SqlPermissions): string[] {
-  if (!permissions) return []
-  
-  // Handle as string with comma-separated values
-  if (typeof permissions === 'string') {
-    return permissions.split(',').map(p => p.trim()).filter(Boolean)
-  }
-  
-  // Handle as enum flags (bitwise)
-  const perms: string[] = []
-  const permValue = permissions as any
-  
-  if (typeof permValue === 'number') {
-    if (permValue & 1) perms.push('Read')
-    if (permValue & 2) perms.push('Write')
-    if (permValue & 4) perms.push('Create')
-  }
-  
-  return perms
-}
+const parsePermissions = parseSqlPermissions
 
 const createMutation = useMutation({
   mutationFn: (payload: CreateSqlIntegration) => client.sqlIntegrationPOST(payload),

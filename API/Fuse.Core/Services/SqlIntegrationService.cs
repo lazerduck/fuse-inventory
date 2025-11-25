@@ -17,6 +17,21 @@ public class SqlIntegrationService : ISqlIntegrationService
         _validator = validator;
     }
 
+    private static Result ValidateCoreFields(string name, string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Result.Failure("Name is required.", ErrorType.Validation);
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return Result.Failure("Connection string is required.", ErrorType.Validation);
+        }
+
+        return Result.Success();
+    }
+
     public async Task<IReadOnlyList<SqlIntegrationResponse>> GetSqlIntegrationsAsync() =>
         (await _store.GetAsync()).SqlIntegrations
             .Select(s => new SqlIntegrationResponse(
@@ -42,11 +57,11 @@ public class SqlIntegrationService : ISqlIntegrationService
 
     public async Task<Result<SqlIntegrationResponse>> CreateSqlIntegrationAsync(CreateSqlIntegration command, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(command.Name))
-            return Result<SqlIntegrationResponse>.Failure("Name is required.", ErrorType.Validation);
-
-        if (string.IsNullOrWhiteSpace(command.ConnectionString))
-            return Result<SqlIntegrationResponse>.Failure("Connection string is required.", ErrorType.Validation);
+        var validation = ValidateCoreFields(command.Name, command.ConnectionString);
+        if (!validation.IsSuccess)
+        {
+            return Result<SqlIntegrationResponse>.Failure(validation.Error!, validation.ErrorType!.Value);
+        }
 
         var snapshot = await _store.GetAsync(ct);
 
@@ -96,11 +111,11 @@ public class SqlIntegrationService : ISqlIntegrationService
         if (existing is null)
             return Result<SqlIntegrationResponse>.Failure($"SQL integration {command.Id} not found.", ErrorType.NotFound);
 
-        if (string.IsNullOrWhiteSpace(command.Name))
-            return Result<SqlIntegrationResponse>.Failure("Name is required.", ErrorType.Validation);
-
-        if (string.IsNullOrWhiteSpace(command.ConnectionString))
-            return Result<SqlIntegrationResponse>.Failure("Connection string is required.", ErrorType.Validation);
+        var validation = ValidateCoreFields(command.Name, command.ConnectionString);
+        if (!validation.IsSuccess)
+        {
+            return Result<SqlIntegrationResponse>.Failure(validation.Error!, validation.ErrorType!.Value);
+        }
 
         // Validate datastore exists
         if (!snapshot.DataStores.Any(d => d.Id == command.DataStoreId))
@@ -159,15 +174,18 @@ public class SqlIntegrationService : ISqlIntegrationService
 
     public async Task<Result<SqlConnectionTestResult>> TestConnectionAsync(TestSqlConnection command, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(command.ConnectionString))
-            return Result<SqlConnectionTestResult>.Failure("Connection string is required.", ErrorType.Validation);
+        var validation = ValidateCoreFields("test", command.ConnectionString);
+        if (!validation.IsSuccess)
+        {
+            return Result<SqlConnectionTestResult>.Failure(validation.Error!, validation.ErrorType!.Value);
+        }
 
         var (isSuccessful, permissions, errorMessage) = await _validator.ValidateConnectionAsync(command.ConnectionString, ct);
-        
-        var result = new SqlConnectionTestResult(isSuccessful, permissions, errorMessage);
-        
+
         if (!isSuccessful)
             return Result<SqlConnectionTestResult>.Failure(errorMessage ?? "Connection test failed.", ErrorType.Validation);
+
+        var result = new SqlConnectionTestResult(isSuccessful, permissions, errorMessage);
 
         return Result<SqlConnectionTestResult>.Success(result);
     }

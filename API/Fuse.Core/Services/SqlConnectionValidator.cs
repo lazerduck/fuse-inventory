@@ -131,10 +131,13 @@ public class SqlConnectionValidator : ISqlConnectionValidator
             
             if (await reader.ReadAsync(ct))
             {
-                var hasCreateUser = reader.GetInt32(0) == 1;
-                var hasAlterUser = reader.GetInt32(1) == 1;
-                var hasAlterLogin = reader.GetInt32(2) == 1;
-                // User needs at least one of these permissions for account management
+                bool HasPerm(int ordinal)
+                    => !reader.IsDBNull(ordinal) && reader.GetInt32(ordinal) == 1;
+
+                var hasCreateUser = HasPerm(0);
+                var hasAlterUser = HasPerm(1);
+                var hasAlterLogin = HasPerm(2);
+
                 return hasCreateUser || hasAlterUser || hasAlterLogin;
             }
 
