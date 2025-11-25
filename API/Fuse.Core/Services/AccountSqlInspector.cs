@@ -80,18 +80,24 @@ public class AccountSqlInspector : IAccountSqlInspector
     private static async Task<IReadOnlyList<SqlActualGrant>> GetPrincipalGrantsAsync(SqlConnection connection, string principalName, CancellationToken ct)
     {
         // Query database permissions for the principal
-        // This query gets object-level and database-level permissions
+        // This query gets database-level (class=0), object-level (class=1), and schema-level (class=3) permissions
         const string query = @"
             SELECT 
                 DB_NAME() AS DatabaseName,
-                SCHEMA_NAME(o.schema_id) AS SchemaName,
+                CASE 
+                    WHEN p.class = 0 THEN NULL  -- Database-level permissions
+                    WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id)  -- Schema-level permissions
+                    ELSE SCHEMA_NAME(o.schema_id)  -- Object-level permissions
+                END AS SchemaName,
                 p.permission_name AS PermissionName,
-                p.state_desc AS StateDesc
+                p.state_desc AS StateDesc,
+                p.class AS PermissionClass
             FROM sys.database_permissions p
             INNER JOIN sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
             LEFT JOIN sys.objects o ON p.major_id = o.object_id AND p.class = 1
             WHERE dp.name = @PrincipalName
               AND p.state_desc IN ('GRANT', 'GRANT_WITH_GRANT_OPTION')
+              AND p.class IN (0, 1, 3)
             ORDER BY DatabaseName, SchemaName, PermissionName";
 
         await using var command = new SqlCommand(query, connection);

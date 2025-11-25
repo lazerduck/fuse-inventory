@@ -244,7 +244,7 @@ const columns: QTableColumn<ComparisonRow>[] = [
 const comparisonRows = computed<ComparisonRow[]>(() => {
   if (!data.value?.permissionComparisons) return []
   return data.value.permissionComparisons.map((comp: SqlPermissionComparison, index: number) => ({
-    key: `${comp.database ?? 'null'}-${comp.schema ?? 'null'}-${index}`,
+    key: `perm-${index}-${comp.database ?? ''}-${comp.schema ?? ''}`,
     database: comp.database ?? '—',
     schema: comp.schema ?? '—',
     configuredPrivileges: comp.configuredPrivileges ?? [],
