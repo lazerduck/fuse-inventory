@@ -359,10 +359,16 @@ function closeInstanceDialog() {
 const createInstanceMutation = useMutation({
   mutationFn: ({ appId, payload }: { appId: string; payload: CreateApplicationInstance }) =>
     client.instancesPOST(appId, payload),
-  onSuccess: () => {
+  onSuccess: (createdInstance) => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     Notify.create({ type: 'positive', message: 'Instance created' })
     closeInstanceDialog()
+    if (createdInstance?.id && application.value?.id) {
+      router.push({
+        name: 'instanceEdit',
+        params: { applicationId: application.value.id, instanceId: createdInstance.id }
+      })
+    }
   },
   onError: (error) => {
     Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to create instance') })

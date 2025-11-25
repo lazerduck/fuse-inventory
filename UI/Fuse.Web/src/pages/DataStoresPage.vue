@@ -32,8 +32,22 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        :filter="filter"
         data-tour-id="data-stores-table"
       >
+        <template #top-right>
+          <q-input
+            v-model="filter"
+            dense
+            outlined
+            debounce="300"
+            placeholder="Search..."
+          >
+            <template #append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
         <template #body-cell-environment="props">
           <q-td :props="props">
             {{ environmentLookup[props.row.environmentId ?? ''] ?? '—' }}
@@ -131,6 +145,7 @@ const platformsStore = usePlatforms()
 const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
+const filter = ref('')
 
 const { data, isLoading, error } = useDataStores()
 

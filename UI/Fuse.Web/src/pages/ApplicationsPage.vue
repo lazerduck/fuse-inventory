@@ -32,8 +32,22 @@
         row-key="id"
         :loading="applicationsLoading"
         :pagination="pagination"
+        :filter="filter"
         data-tour-id="applications-table"
       >
+        <template #top-right>
+          <q-input
+            v-model="filter"
+            dense
+            outlined
+            debounce="300"
+            placeholder="Search..."
+          >
+            <template #append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
@@ -170,6 +184,7 @@ const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 
 const pagination = { rowsPerPage: 10 }
+const filter = ref('')
 
 const { data: applicationsData, isLoading, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],
@@ -229,10 +244,13 @@ function navigateToEdit(app: Application) {
 
 const createApplicationMutation = useMutation({
   mutationFn: (payload: CreateApplication) => client.applicationPOST(payload),
-  onSuccess: () => {
+  onSuccess: (createdApp) => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     isCreateDialogOpen.value = false
     Notify.create({ type: 'positive', message: 'Application created' })
+    if (createdApp?.id) {
+      router.push({ name: 'applicationEdit', params: { id: createdApp.id } })
+    }
   },
   onError: (error) => {
     Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to create application') })

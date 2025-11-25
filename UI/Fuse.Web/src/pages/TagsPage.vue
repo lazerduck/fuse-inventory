@@ -31,7 +31,21 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        :filter="filter"
       >
+        <template #top-right>
+          <q-input
+            v-model="filter"
+            dense
+            outlined
+            debounce="300"
+            placeholder="Search..."
+          >
+            <template #append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
         <template #body-cell-color="props">
           <q-td :props="props">
             <q-badge
@@ -177,6 +191,7 @@ const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
 const pagination = { rowsPerPage: 10 }
+const filter = ref('')
 
 const tags = computed(() => tagsStore.data.value ?? [])
 const isLoading = computed(() => tagsStore.isLoading.value)
