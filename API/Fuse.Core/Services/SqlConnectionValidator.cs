@@ -17,7 +17,6 @@ public class SqlConnectionValidator : ISqlConnectionValidator
 
         try
         {
-            // Parse and normalize the connection string using SqlConnectionStringBuilder to prevent resource injection
             string sanitizedConnectionString;
             try
             {

@@ -179,6 +179,16 @@
             </q-item-section>
           </q-item>
 
+          <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+            data-tour-id="nav-sql-integrations">
+            <q-item-section avatar>
+              <q-icon name="storage" />
+            </q-item-section>
+            <q-item-section>
+              SQL Integrations
+            </q-item-section>
+          </q-item>
+
           <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
             data-tour-id="nav-security">
             <q-item-section avatar>
