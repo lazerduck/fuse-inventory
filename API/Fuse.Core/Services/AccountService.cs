@@ -387,15 +387,22 @@ public class AccountService : IAccountService
     {
         var comparisons = new List<SqlPermissionComparison>();
 
+        // Normalize database/schema keys (null vs empty string)
+        static string? NormalizeKey(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
         // Group actual grants by database/schema for easier lookup
         var actualGrantsLookup = actualPermissions.Grants
-            .ToDictionary(g => (g.Database, g.Schema), g => g.Privileges);
+            .GroupBy(g => (Database: NormalizeKey(g.Database), Schema: NormalizeKey(g.Schema)))
+            .ToDictionary(
+                g => g.Key,
+                g => g.SelectMany(x => x.Privileges).ToHashSet()
+            );
 
         // Process configured grants
         var processedKeys = new HashSet<(string?, string?)>();
         foreach (var configured in configuredGrants)
         {
-            var key = (configured.Database, configured.Schema);
+            var key = (Database: NormalizeKey(configured.Database), Schema: NormalizeKey(configured.Schema));
             processedKeys.Add(key);
 
             actualGrantsLookup.TryGetValue(key, out var actualPrivileges);
@@ -416,18 +423,17 @@ public class AccountService : IAccountService
         }
 
         // Add any actual grants that weren't in configured
-        foreach (var actual in actualPermissions.Grants)
+        foreach (var actualKey in actualGrantsLookup.Keys)
         {
-            var key = (actual.Database, actual.Schema);
-            if (!processedKeys.Contains(key))
+            if (!processedKeys.Contains(actualKey))
             {
                 comparisons.Add(new SqlPermissionComparison(
-                    Database: actual.Database,
-                    Schema: actual.Schema,
+                    Database: actualKey.Database,
+                    Schema: actualKey.Schema,
                     ConfiguredPrivileges: new HashSet<Privilege>(),
-                    ActualPrivileges: actual.Privileges,
+                    ActualPrivileges: actualGrantsLookup[actualKey],
                     MissingPrivileges: new HashSet<Privilege>(),
-                    ExtraPrivileges: actual.Privileges
+                    ExtraPrivileges: actualGrantsLookup[actualKey]
                 ));
             }
         }

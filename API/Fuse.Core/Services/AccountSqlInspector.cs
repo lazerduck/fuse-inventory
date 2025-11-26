@@ -65,9 +65,10 @@ public class AccountSqlInspector : IAccountSqlInspector
 
     private static async Task<bool> CheckPrincipalExistsAsync(SqlConnection connection, string principalName, CancellationToken ct)
     {
+        // Check if login exists at server level (not just user in current database)
         const string query = @"
             SELECT COUNT(*) 
-            FROM sys.database_principals 
+            FROM sys.server_principals 
             WHERE name = @PrincipalName AND type IN ('S', 'U', 'G', 'E', 'X')";
 
         await using var command = new SqlCommand(query, connection);
@@ -79,29 +80,57 @@ public class AccountSqlInspector : IAccountSqlInspector
 
     private static async Task<IReadOnlyList<SqlActualGrant>> GetPrincipalGrantsAsync(SqlConnection connection, string principalName, CancellationToken ct)
     {
-        // Query database permissions for the principal
-        // This query gets database-level (class=0), object-level (class=1), and schema-level (class=3) permissions
+        // Query to check permissions across all accessible databases
         const string query = @"
-            SELECT 
-                DB_NAME() AS DatabaseName,
-                CASE 
-                    WHEN p.class = 0 THEN NULL  -- Database-level permissions
-                    WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id)  -- Schema-level permissions
-                    ELSE SCHEMA_NAME(o.schema_id)  -- Object-level permissions
-                END AS SchemaName,
-                p.permission_name AS PermissionName,
-                p.state_desc AS StateDesc,
-                p.class AS PermissionClass
-            FROM sys.database_permissions p
-            INNER JOIN sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
-            LEFT JOIN sys.objects o ON p.major_id = o.object_id AND p.class = 1
-            WHERE dp.name = @PrincipalName
-              AND p.state_desc IN ('GRANT', 'GRANT_WITH_GRANT_OPTION')
-              AND p.class IN (0, 1, 3)
-            ORDER BY DatabaseName, SchemaName, PermissionName";
+            DECLARE @PrincipalName NVARCHAR(128) = @PrincipalNameParam;
+            DECLARE @SQL NVARCHAR(MAX) = '';
+
+            -- Build dynamic SQL to query each database using fully qualified names
+            SELECT @SQL = @SQL + 
+                'SELECT 
+                    ''' + name + ''' AS DatabaseName,
+                    CASE 
+                        WHEN p.class = 0 THEN NULL
+                        WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id)
+                        ELSE SCHEMA_NAME(o.schema_id)
+                    END AS SchemaName,
+                    p.permission_name AS PermissionName
+                FROM ' + QUOTENAME(name) + '.sys.database_permissions p
+                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
+                LEFT JOIN ' + QUOTENAME(name) + '.sys.objects o ON p.major_id = o.object_id AND p.class = 1
+                WHERE dp.name = @PrincipalName
+                  AND p.state_desc IN (''GRANT'', ''GRANT_WITH_GRANT_OPTION'')
+                  AND p.class IN (0, 1, 3)
+                UNION ALL
+                SELECT 
+                    ''' + name + ''' AS DatabaseName,
+                    NULL AS SchemaName,
+                    CASE r.name
+                        WHEN ''db_datareader'' THEN ''SELECT''
+                        WHEN ''db_datawriter'' THEN ''INSERT''
+                        WHEN ''db_owner'' THEN ''CONTROL''
+                        WHEN ''db_ddladmin'' THEN ''ALTER''
+                        WHEN ''db_executor'' THEN ''EXECUTE''
+                    END AS PermissionName
+                FROM ' + QUOTENAME(name) + '.sys.database_role_members rm
+                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id
+                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id
+                WHERE dp.name = @PrincipalName
+                  AND r.name IN (''db_datareader'', ''db_datawriter'', ''db_owner'', ''db_ddladmin'', ''db_executor'')
+                UNION ALL '
+            FROM sys.databases
+            WHERE state_desc = 'ONLINE' 
+              AND (database_id > 4 OR name IN ('master', 'msdb', 'model', 'tempdb'));
+
+            -- Remove trailing UNION ALL and execute
+            IF LEN(@SQL) > 0
+            BEGIN
+                SET @SQL = LEFT(@SQL, LEN(@SQL) - 10);  -- Remove last 'UNION ALL'
+                EXEC sp_executesql @SQL, N'@PrincipalName NVARCHAR(128)', @PrincipalName;
+            END";
 
         await using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@PrincipalName", principalName);
+        command.Parameters.AddWithValue("@PrincipalNameParam", principalName);
 
         var grants = new Dictionary<(string?, string?), HashSet<Privilege>>();
 
@@ -110,7 +139,10 @@ public class AccountSqlInspector : IAccountSqlInspector
         {
             var databaseName = reader.IsDBNull(0) ? null : reader.GetString(0);
             var schemaName = reader.IsDBNull(1) ? null : reader.GetString(1);
-            var permissionName = reader.GetString(2);
+            var permissionName = reader.IsDBNull(2) ? null : reader.GetString(2);
+
+            if (string.IsNullOrWhiteSpace(permissionName))
+                continue;
 
             var key = (databaseName, schemaName);
             if (!grants.TryGetValue(key, out var privileges))

@@ -214,18 +214,18 @@ const statusColor = computed(() => {
 })
 
 const statusClass = computed(() => {
-  if (!data.value) return 'bg-grey-2'
+  if (!data.value) return 'status-na'
   switch (data.value.status) {
     case SyncStatus.InSync:
-      return 'bg-green-1'
+      return 'status-in-sync'
     case SyncStatus.DriftDetected:
-      return 'bg-orange-1'
+      return 'status-drift'
     case SyncStatus.Error:
-      return 'bg-red-1'
+      return 'status-error'
     case SyncStatus.NotApplicable:
-      return 'bg-grey-2'
+      return 'status-na'
     default:
-      return 'bg-grey-2'
+      return 'status-na'
   }
 })
 
@@ -269,6 +269,20 @@ const comparisonRows = computed<ComparisonRow[]>(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  background: var(--fuse-status-bg);
+  border: 1px solid var(--fuse-panel-border);
+  transition: background 0.2s ease;
+}
+
+.status-summary.status-in-sync { --fuse-status-bg: var(--fuse-status-in-sync-bg); }
+.status-summary.status-drift { --fuse-status-bg: var(--fuse-status-drift-bg); }
+.status-summary.status-error { --fuse-status-bg: var(--fuse-status-error-bg); }
+.status-summary.status-na { --fuse-status-bg: var(--fuse-status-na-bg); }
+
+/* Ensure readable selection inside status summary */
+.status-summary ::selection {
+  background: var(--fuse-selection-bg);
+  color: var(--fuse-selection-color);
 }
 
 .tag-list {
