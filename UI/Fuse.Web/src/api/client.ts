@@ -459,6 +459,11 @@ export interface IFuseApiClient {
     permissionsOverview(id: string, signal?: AbortSignal): Promise<SqlIntegrationPermissionsOverviewResponse>;
 
     /**
+     * @return OK
+     */
+    resolveDrift(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse>;
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -4764,6 +4769,64 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
+     * @return OK
+     */
+    resolveDrift(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/resolve";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        if (accountId === undefined || accountId === null)
+            throw new globalThis.Error("The parameter 'accountId' must be defined.");
+        url_ = url_.replace("{accountId}", encodeURIComponent("" + accountId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResolveDrift(_response);
+        });
+    }
+
+    protected processResolveDrift(response: Response): Promise<ResolveDriftResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResolveDriftResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResolveDriftResponse>(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -8021,6 +8084,126 @@ export interface ISqlAccountPermissionsStatus {
     principalName?: string | undefined;
     status?: SyncStatus;
     permissionComparisons?: SqlPermissionComparison[] | undefined;
+    errorMessage?: string | undefined;
+}
+
+export class DriftResolutionOperation implements IDriftResolutionOperation {
+    operationType?: string | undefined;
+    database?: string | undefined;
+    schema?: string | undefined;
+    privilege?: Privilege;
+    success?: boolean;
+    errorMessage?: string | undefined;
+
+    constructor(data?: IDriftResolutionOperation) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.operationType = _data["OperationType"];
+            this.database = _data["Database"];
+            this.schema = _data["Schema"];
+            this.privilege = _data["Privilege"];
+            this.success = _data["Success"];
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): DriftResolutionOperation {
+        data = typeof data === 'object' ? data : {};
+        let result = new DriftResolutionOperation();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["OperationType"] = this.operationType;
+        data["Database"] = this.database;
+        data["Schema"] = this.schema;
+        data["Privilege"] = this.privilege;
+        data["Success"] = this.success;
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface IDriftResolutionOperation {
+    operationType?: string | undefined;
+    database?: string | undefined;
+    schema?: string | undefined;
+    privilege?: Privilege;
+    success?: boolean;
+    errorMessage?: string | undefined;
+}
+
+export class ResolveDriftResponse implements IResolveDriftResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    operations?: DriftResolutionOperation[] | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
+    errorMessage?: string | undefined;
+
+    constructor(data?: IResolveDriftResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accountId = _data["AccountId"];
+            this.principalName = _data["PrincipalName"];
+            this.success = _data["Success"];
+            if (Array.isArray(_data["Operations"])) {
+                this.operations = [] as any;
+                for (let item of _data["Operations"])
+                    this.operations!.push(DriftResolutionOperation.fromJS(item));
+            }
+            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): ResolveDriftResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolveDriftResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["AccountId"] = this.accountId;
+        data["PrincipalName"] = this.principalName;
+        data["Success"] = this.success;
+        if (Array.isArray(this.operations)) {
+            data["Operations"] = [];
+            for (let item of this.operations)
+                data["Operations"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface IResolveDriftResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    operations?: DriftResolutionOperation[] | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
     errorMessage?: string | undefined;
 }
 
