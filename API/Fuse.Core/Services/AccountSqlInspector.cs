@@ -105,16 +105,22 @@ public class AccountSqlInspector : IAccountSqlInspector
                 SELECT 
                     ''' + name + ''' AS DatabaseName,
                     NULL AS SchemaName,
-                    CASE r.name
-                        WHEN ''db_datareader'' THEN ''SELECT''
-                        WHEN ''db_datawriter'' THEN ''INSERT''
-                        WHEN ''db_owner'' THEN ''CONTROL''
-                        WHEN ''db_ddladmin'' THEN ''ALTER''
-                        WHEN ''db_executor'' THEN ''EXECUTE''
-                    END AS PermissionName
+                    perms.PermissionName
                 FROM ' + QUOTENAME(name) + '.sys.database_role_members rm
                 INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id
                 INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id
+                CROSS APPLY (
+                    SELECT PermissionName FROM (VALUES
+                        (''db_datareader'', ''SELECT''),
+                        (''db_datawriter'', ''INSERT''),
+                        (''db_datawriter'', ''UPDATE''),
+                        (''db_datawriter'', ''DELETE''),
+                        (''db_owner'', ''CONTROL''),
+                        (''db_ddladmin'', ''ALTER''),
+                        (''db_executor'', ''EXECUTE'')
+                    ) AS RolePerms(RoleName, PermissionName)
+                    WHERE RolePerms.RoleName = r.name
+                ) perms
                 WHERE dp.name = @PrincipalName
                   AND r.name IN (''db_datareader'', ''db_datawriter'', ''db_owner'', ''db_ddladmin'', ''db_executor'')
                 UNION ALL '
