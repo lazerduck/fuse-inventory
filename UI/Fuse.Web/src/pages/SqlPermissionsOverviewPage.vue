@@ -148,7 +148,7 @@
             <template #body-cell-actions="props">
               <q-td :props="props" class="text-right">
                 <q-btn 
-                  v-if="props.row.status === SyncStatus.DriftDetected && hasWritePermission"
+                  v-if="props.row.status === SyncStatus.DriftDetected && hasWritePermission && canResolve"
                   flat 
                   dense 
                   size="sm"
@@ -328,10 +328,12 @@ import type { QTableColumn } from 'quasar'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useResolveDrift } from '../composables/useResolveDrift'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
-import { SyncStatus, ResolveDriftResponse, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
+import { useFuseStore } from '../stores/FuseStore'
+import { SyncStatus, SecurityLevel, ResolveDriftResponse, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
+const fuseStore = useFuseStore()
 
 const integrationId = computed(() => route.params.id as string)
 const { data, isLoading, isFetching, error, refetch } = useSqlPermissionsOverview(integrationId)
@@ -352,6 +354,17 @@ const hasWritePermission = computed(() => {
   if (!integration?.permissions) return false
   const permStr = String(integration.permissions)
   return permStr.includes('Write')
+})
+
+// Check if user can resolve drift based on security level
+// Level None: anyone can resolve
+// Level above None: only logged-in admins can resolve
+const canResolve = computed(() => {
+  if (fuseStore.securityLevel === SecurityLevel.None) {
+    return true
+  }
+  // For any security level above None, require admin role
+  return fuseStore.canModify
 })
 
 const statusFilter = ref<string>('all')
@@ -461,7 +474,14 @@ async function handleResolveDrift() {
     errorResponse.principalName = selectedAccount.value.principalName
     errorResponse.success = false
     errorResponse.operations = []
-    errorResponse.errorMessage = err?.message || 'An error occurred while resolving drift.'
+    
+    // Check for 401 Unauthorized error
+    if (err?.status === 401) {
+      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to resolve permission drift.'
+    } else {
+      errorResponse.errorMessage = err?.message || 'An error occurred while resolving drift.'
+    }
+    
     resolveResult.value = errorResponse
     showResolveDialog.value = false
     showResultDialog.value = true
