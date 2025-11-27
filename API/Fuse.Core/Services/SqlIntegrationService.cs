@@ -579,6 +579,12 @@ public class SqlIntegrationService : ISqlIntegrationService
             ErrorMessage: applyError));
     }
 
+    private static bool HasSecretProviderBinding(Account account)
+    {
+        return account.SecretBinding.Kind == SecretBindingKind.AzureKeyVault && 
+               account.SecretBinding.AzureKeyVault is not null;
+    }
+
     public async Task<Result<CreateSqlAccountResponse>> CreateSqlAccountAsync(CreateSqlAccount command, string userName, Guid? userId, CancellationToken ct = default)
     {
         var snapshot = await _store.GetAsync(ct);
@@ -652,8 +658,7 @@ public class SqlIntegrationService : ISqlIntegrationService
         {
             case PasswordSource.SecretProvider:
                 // Retrieve from linked secret provider
-                if (account.SecretBinding.Kind != SecretBindingKind.AzureKeyVault || 
-                    account.SecretBinding.AzureKeyVault is null)
+                if (!HasSecretProviderBinding(account))
                 {
                     return Result<CreateSqlAccountResponse>.Failure(
                         "Account is not linked to a Secret Provider. Cannot retrieve password.",
@@ -662,7 +667,7 @@ public class SqlIntegrationService : ISqlIntegrationService
 
                 var secretResult = await _secretOperationService.RevealSecretAsync(
                     new RevealSecret(
-                        account.SecretBinding.AzureKeyVault.ProviderId,
+                        account.SecretBinding.AzureKeyVault!.ProviderId,
                         account.SecretBinding.AzureKeyVault.SecretName,
                         account.SecretBinding.AzureKeyVault.Version),
                     userName,
@@ -699,8 +704,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 }
 
                 // Verify account has a secret provider binding for storing the new secret
-                if (account.SecretBinding.Kind != SecretBindingKind.AzureKeyVault || 
-                    account.SecretBinding.AzureKeyVault is null)
+                if (!HasSecretProviderBinding(account))
                 {
                     return Result<CreateSqlAccountResponse>.Failure(
                         "Account is not linked to a Secret Provider. Cannot store new secret.",
@@ -710,7 +714,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 // Create the secret in the provider
                 var createSecretResult = await _secretOperationService.CreateSecretAsync(
                     new CreateSecret(
-                        account.SecretBinding.AzureKeyVault.ProviderId,
+                        account.SecretBinding.AzureKeyVault!.ProviderId,
                         account.SecretBinding.AzureKeyVault.SecretName,
                         command.Password),
                     userName,

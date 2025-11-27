@@ -515,7 +515,7 @@ public class AccountSqlInspector : IAccountSqlInspector
                 if (string.IsNullOrWhiteSpace(database))
                     continue;
 
-                var userResult = await CreateUserAsync(connection, principalName, database, ct);
+                var userResult = await CreateUserAsync(sanitizedConnectionString, principalName, database, ct);
                 operations.Add(userResult);
                 if (!userResult.Success)
                 {
@@ -570,17 +570,25 @@ public class AccountSqlInspector : IAccountSqlInspector
     }
 
     private static async Task<SqlAccountCreationOperation> CreateUserAsync(
-        SqlConnection connection,
+        string connectionString,
         string principalName,
         string database,
         CancellationToken ct)
     {
         try
         {
-            var escapedPrincipal = EscapeIdentifier(principalName);
-            var escapedDatabase = EscapeIdentifier(database);
+            // Create a separate connection to the specific database
+            // This is safer than using USE statement as it doesn't change the main connection context
+            var builder = new SqlConnectionStringBuilder(connectionString)
+            {
+                InitialCatalog = database
+            };
             
-            var sql = $"USE {escapedDatabase}; CREATE USER {escapedPrincipal} FOR LOGIN {escapedPrincipal};";
+            await using var connection = new SqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(ct);
+            
+            var escapedPrincipal = EscapeIdentifier(principalName);
+            var sql = $"CREATE USER {escapedPrincipal} FOR LOGIN {escapedPrincipal};";
 
             await using var command = new SqlCommand(sql, connection);
             await command.ExecuteNonQueryAsync(ct);
@@ -603,7 +611,11 @@ public class AccountSqlInspector : IAccountSqlInspector
 
     private static string EscapePassword(string password)
     {
-        // SQL Server password escaping: wrap in single quotes and escape single quotes
+        // SQL Server password escaping: wrap in N-prefixed single quotes (Unicode string literal)
+        // and escape embedded single quotes by doubling them.
+        // This is the standard and secure way to include a string literal in SQL Server.
+        // The N prefix ensures Unicode support for passwords with special characters.
+        // Single-quote doubling handles the only SQL injection vector in string literals.
         return "N'" + password.Replace("'", "''") + "'";
     }
 }

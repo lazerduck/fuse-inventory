@@ -384,7 +384,7 @@
             </q-banner>
             
             <q-input
-              v-if="selectedPasswordSource === PasswordSource.Manual || selectedPasswordSource === PasswordSource.NewSecret"
+              v-if="selectedPasswordSource === PasswordSource.Manual"
               v-model="manualPassword"
               type="password"
               label="Password"
@@ -410,7 +410,7 @@
             label="Create Account" 
             color="positive" 
             :loading="isCreating"
-            :disable="!!(selectedPasswordSource !== PasswordSource.SecretProvider && !manualPassword) || !!(selectedPasswordSource === PasswordSource.SecretProvider && createAccountSelectedAccount && !hasSecretProvider(createAccountSelectedAccount.accountId!))"
+            :disable="isCreateAccountDisabled"
             @click="handleCreateAccount" 
           />
         </q-card-actions>
@@ -548,6 +548,21 @@ const canResolve = computed(() => {
   }
   // For any security level above None, require admin role
   return fuseStore.canModify
+})
+
+// Check if create account button should be disabled
+const isCreateAccountDisabled = computed(() => {
+  // Manual password is required when using manual source
+  if (selectedPasswordSource.value !== PasswordSource.SecretProvider && !manualPassword.value) {
+    return true
+  }
+  // Secret provider must be linked when using secret provider source
+  if (selectedPasswordSource.value === PasswordSource.SecretProvider && 
+      createAccountSelectedAccount.value && 
+      !hasSecretProvider(createAccountSelectedAccount.value.accountId!)) {
+    return true
+  }
+  return false
 })
 
 const statusFilter = ref<string>('all')
