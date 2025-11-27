@@ -516,6 +516,30 @@ public class SqlIntegrationService : ISqlIntegrationService
         }
 
         // Log the drift resolution to audit
+        // Materialize operations list to avoid multiple enumerations
+        var operationsList = operations.ToList();
+        var successfulCount = 0;
+        var failedCount = 0;
+        var operationDetails = new List<object>();
+        
+        foreach (var op in operationsList)
+        {
+            if (op.Success)
+                successfulCount++;
+            else
+                failedCount++;
+                
+            operationDetails.Add(new
+            {
+                op.OperationType,
+                op.Database,
+                op.Schema,
+                Privilege = op.Privilege.ToString(),
+                op.Success,
+                op.ErrorMessage
+            });
+        }
+
         var auditDetails = new
         {
             IntegrationId = integration.Id,
@@ -523,18 +547,10 @@ public class SqlIntegrationService : ISqlIntegrationService
             AccountId = account.Id,
             PrincipalName = principalName,
             Success = applySuccess,
-            OperationsCount = operations.Count,
-            SuccessfulOperations = operations.Count(o => o.Success),
-            FailedOperations = operations.Count(o => !o.Success),
-            Operations = operations.Select(o => new
-            {
-                o.OperationType,
-                o.Database,
-                o.Schema,
-                Privilege = o.Privilege.ToString(),
-                o.Success,
-                o.ErrorMessage
-            }).ToList()
+            OperationsCount = operationsList.Count,
+            SuccessfulOperations = successfulCount,
+            FailedOperations = failedCount,
+            Operations = operationDetails
         };
 
         var auditLog = AuditHelper.CreateLog(
@@ -551,7 +567,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             AccountId: account.Id,
             PrincipalName: principalName,
             Success: applySuccess,
-            Operations: operations,
+            Operations: operationsList,
             UpdatedStatus: updatedStatus,
             ErrorMessage: applyError));
     }

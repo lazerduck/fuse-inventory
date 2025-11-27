@@ -239,8 +239,20 @@ public class AccountSqlInspector : IAccountSqlInspector
         }
     }
 
+    // Whitelist of valid SQL permission names to prevent injection
+    private static readonly HashSet<string> ValidPermissions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE", "CONNECT", "ALTER", "CONTROL"
+    };
+
     private static string BuildGrantStatement(string principalName, string? database, string? schema, string permission)
     {
+        // Validate permission against whitelist to prevent SQL injection
+        if (!ValidPermissions.Contains(permission))
+        {
+            throw new ArgumentException($"Invalid permission: {permission}", nameof(permission));
+        }
+
         // Escape identifiers to prevent SQL injection
         var escapedPrincipal = EscapeIdentifier(principalName);
         
@@ -264,6 +276,12 @@ public class AccountSqlInspector : IAccountSqlInspector
 
     private static string BuildRevokeStatement(string principalName, string? database, string? schema, string permission)
     {
+        // Validate permission against whitelist to prevent SQL injection
+        if (!ValidPermissions.Contains(permission))
+        {
+            throw new ArgumentException($"Invalid permission: {permission}", nameof(permission));
+        }
+
         // Escape identifiers to prevent SQL injection
         var escapedPrincipal = EscapeIdentifier(principalName);
         

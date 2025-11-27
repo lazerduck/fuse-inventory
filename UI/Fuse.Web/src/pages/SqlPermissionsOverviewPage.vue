@@ -328,7 +328,7 @@ import type { QTableColumn } from 'quasar'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useResolveDrift } from '../composables/useResolveDrift'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
-import { SyncStatus, SqlPermissions, ResolveDriftResponse, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
+import { SyncStatus, ResolveDriftResponse, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -346,12 +346,12 @@ const resolveResult = ref<ResolveDriftResponse | null>(null)
 const isResolvingAccount = ref<string | null>(null)
 
 // Check if integration has write permission
+// SqlPermissions is a flags enum serialized as comma-separated string (e.g., "Read, Write")
 const hasWritePermission = computed(() => {
   const integration = sqlIntegrations.value?.find(i => i.id === integrationId.value)
   if (!integration?.permissions) return false
-  // SqlPermissions is a flags enum, check if Write flag is set
-  return (integration.permissions as string) === SqlPermissions.Write || 
-         (integration.permissions as string)?.includes('Write')
+  const permStr = String(integration.permissions)
+  return permStr.includes('Write')
 })
 
 const statusFilter = ref<string>('all')
