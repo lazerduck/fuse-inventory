@@ -21,6 +21,8 @@ Fuse-Inventory lets development and DevOps teams:
 * Import/export everything as simple YAML or JSON
 * Visualise applications and dependencies in a graph view with highlightable nodes
 * Track changes with comprehensive audits
+* Detect account and permissions drift with SQL integration
+* Optionally resolve account drift by creating accounts and applying permissions
 
 Fuse-Inventory can also integrate with:
 
@@ -127,8 +129,6 @@ Fuse-Inventory is under active development, but the core data model is stable an
 
 ## 🛣️ Roadmap
 
-* Environment drift detection
-* SQL integration to validate and create accounts
 * Additional Azure Key Vault tooling
 * Usability improvements and guided setup flows
 

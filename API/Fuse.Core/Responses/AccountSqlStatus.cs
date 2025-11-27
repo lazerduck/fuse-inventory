@@ -108,3 +108,36 @@ public record ResolveDriftResponse(
     SqlAccountPermissionsStatus UpdatedStatus,
     string? ErrorMessage
 );
+
+/// <summary>
+/// Result of a SQL account creation operation.
+/// </summary>
+public record SqlAccountCreationOperation(
+    string OperationType,
+    string? Database,
+    bool Success,
+    string? ErrorMessage
+);
+
+/// <summary>
+/// Specifies how the password was obtained for SQL account creation.
+/// </summary>
+public enum PasswordSourceUsed
+{
+    SecretProvider,
+    Manual,
+    NewSecret
+}
+
+/// <summary>
+/// Response DTO for SQL account creation endpoint.
+/// </summary>
+public record CreateSqlAccountResponse(
+    Guid AccountId,
+    string? PrincipalName,
+    bool Success,
+    PasswordSourceUsed PasswordSource,
+    IReadOnlyList<SqlAccountCreationOperation> Operations,
+    SqlAccountPermissionsStatus? UpdatedStatus,
+    string? ErrorMessage
+);

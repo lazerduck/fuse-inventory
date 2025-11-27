@@ -450,4 +450,169 @@ public class AccountSqlInspector : IAccountSqlInspector
             _ => null // Unmapped permissions are ignored
         };
     }
+
+    /// <inheritdoc />
+    public async Task<(bool IsSuccessful, IReadOnlyList<SqlAccountCreationOperation> Operations, string? ErrorMessage)> CreatePrincipalAsync(
+        SqlIntegration sqlIntegration,
+        string principalName,
+        string password,
+        IReadOnlyList<string> databases,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "Principal name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "Password is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sqlIntegration.ConnectionString))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "SQL integration has no connection string configured.");
+        }
+
+        // Check if integration has create permissions
+        if ((sqlIntegration.Permissions & SqlPermissions.Create) == 0)
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "SQL integration does not have Create permission to create logins/users.");
+        }
+
+        var operations = new List<SqlAccountCreationOperation>();
+        bool hasFailures = false;
+
+        try
+        {
+            string sanitizedConnectionString;
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(sqlIntegration.ConnectionString);
+                sanitizedConnectionString = builder.ConnectionString;
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, Array.Empty<SqlAccountCreationOperation>(), $"Invalid connection string: {ex.Message}");
+            }
+
+            await using var connection = new SqlConnection(sanitizedConnectionString);
+            await connection.OpenAsync(ct);
+
+            // Step 1: Create the server login
+            var loginResult = await CreateLoginAsync(connection, principalName, password, ct);
+            operations.Add(loginResult);
+            if (!loginResult.Success)
+            {
+                hasFailures = true;
+                // If login creation failed, we can't create users
+                return (false, operations, "Failed to create SQL login. Cannot proceed with user creation.");
+            }
+
+            // Step 2: Create users in each specified database
+            foreach (var database in databases.Distinct())
+            {
+                if (string.IsNullOrWhiteSpace(database))
+                    continue;
+
+                var userResult = await CreateUserAsync(sanitizedConnectionString, principalName, database, ct);
+                operations.Add(userResult);
+                if (!userResult.Success)
+                {
+                    hasFailures = true;
+                }
+            }
+
+            return (!hasFailures, operations, hasFailures ? "Some operations failed. Check individual operation results." : null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, operations, $"SQL error: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (false, operations, $"Unexpected error: {ex.Message}");
+        }
+    }
+
+    private static async Task<SqlAccountCreationOperation> CreateLoginAsync(
+        SqlConnection connection,
+        string principalName,
+        string password,
+        CancellationToken ct)
+    {
+        try
+        {
+            // Use sp_executesql with parameterized password to avoid SQL injection.
+            // The login name must be an identifier (escaped with brackets), but the password
+            // can be safely passed as a parameter through dynamic SQL execution.
+            var escapedPrincipal = EscapeIdentifier(principalName);
+            
+            // Build the dynamic SQL that will be executed by sp_executesql
+            // The @password parameter is safely passed to the dynamic SQL
+            var dynamicSql = $"CREATE LOGIN {escapedPrincipal} WITH PASSWORD = @password;";
+
+            await using var command = new SqlCommand("sp_executesql", connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@stmt", dynamicSql);
+            command.Parameters.AddWithValue("@params", "@password NVARCHAR(MAX)");
+            command.Parameters.AddWithValue("@password", password);
+            
+            await command.ExecuteNonQueryAsync(ct);
+
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE LOGIN",
+                Database: null,
+                Success: true,
+                ErrorMessage: null);
+        }
+        catch (SqlException ex)
+        {
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE LOGIN",
+                Database: null,
+                Success: false,
+                ErrorMessage: ex.Message);
+        }
+    }
+
+    private static async Task<SqlAccountCreationOperation> CreateUserAsync(
+        string connectionString,
+        string principalName,
+        string database,
+        CancellationToken ct)
+    {
+        try
+        {
+            // Create a separate connection to the specific database
+            // This is safer than using USE statement as it doesn't change the main connection context
+            var builder = new SqlConnectionStringBuilder(connectionString)
+            {
+                InitialCatalog = database
+            };
+            
+            await using var connection = new SqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(ct);
+            
+            var escapedPrincipal = EscapeIdentifier(principalName);
+            var sql = $"CREATE USER {escapedPrincipal} FOR LOGIN {escapedPrincipal};";
+
+            await using var command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync(ct);
+
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE USER",
+                Database: database,
+                Success: true,
+                ErrorMessage: null);
+        }
+        catch (SqlException ex)
+        {
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE USER",
+                Database: database,
+                Success: false,
+                ErrorMessage: ex.Message);
+        }
+    }
 }
