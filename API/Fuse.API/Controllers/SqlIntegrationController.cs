@@ -30,6 +30,23 @@ namespace Fuse.API.Controllers
             return integration is not null ? Ok(integration) : NotFound(new { error = $"SQL integration '{id}' not found." });
         }
 
+        [HttpGet("{id}/permissions-overview")]
+        [ProducesResponseType(200, Type = typeof(SqlIntegrationPermissionsOverviewResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<SqlIntegrationPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
+        {
+            var result = await _service.GetPermissionsOverviewAsync(id, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost("test-connection")]
         [ProducesResponseType(200, Type = typeof(SqlConnectionTestResult))]
         [ProducesResponseType(400)]

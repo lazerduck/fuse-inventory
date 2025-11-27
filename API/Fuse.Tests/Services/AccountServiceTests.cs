@@ -411,7 +411,7 @@ public class AccountServiceTests
     }
 
     [Fact]
-    public async Task GetAccountSqlStatus_PrincipalNotExists_ReturnsDriftDetected()
+    public async Task GetAccountSqlStatus_PrincipalNotExists_ReturnsMissingPrincipal()
     {
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
@@ -430,7 +430,7 @@ public class AccountServiceTests
         var result = await service.GetAccountSqlStatusAsync(acc.Id);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(SyncStatus.DriftDetected, result.Value!.Status);
+        Assert.Equal(SyncStatus.MissingPrincipal, result.Value!.Status);
         Assert.Contains("does not exist", result.Value.StatusSummary);
     }
 

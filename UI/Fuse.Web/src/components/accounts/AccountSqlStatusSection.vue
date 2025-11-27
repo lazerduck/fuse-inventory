@@ -172,6 +172,8 @@ const statusLabel = computed(() => {
       return 'In Sync'
     case SyncStatus.DriftDetected:
       return 'Drift Detected'
+    case SyncStatus.MissingPrincipal:
+      return 'Missing Principal'
     case SyncStatus.Error:
       return 'Error'
     case SyncStatus.NotApplicable:
@@ -188,6 +190,8 @@ const statusIcon = computed(() => {
       return 'check_circle'
     case SyncStatus.DriftDetected:
       return 'warning'
+    case SyncStatus.MissingPrincipal:
+      return 'person_off'
     case SyncStatus.Error:
       return 'error'
     case SyncStatus.NotApplicable:
@@ -204,6 +208,8 @@ const statusColor = computed(() => {
       return 'positive'
     case SyncStatus.DriftDetected:
       return 'warning'
+    case SyncStatus.MissingPrincipal:
+      return 'orange'
     case SyncStatus.Error:
       return 'negative'
     case SyncStatus.NotApplicable:
@@ -219,6 +225,8 @@ const statusClass = computed(() => {
     case SyncStatus.InSync:
       return 'status-in-sync'
     case SyncStatus.DriftDetected:
+      return 'status-drift'
+    case SyncStatus.MissingPrincipal:
       return 'status-drift'
     case SyncStatus.Error:
       return 'status-error'

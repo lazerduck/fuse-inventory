@@ -95,6 +95,11 @@ const router = createRouter({
       component: () => import('./pages/SqlIntegrationsPage.vue')
     },
     {
+      path: '/sql-integrations/:id/permissions',
+      name: 'sqlPermissionsOverview',
+      component: () => import('./pages/SqlPermissionsOverviewPage.vue')
+    },
+    {
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')
