@@ -245,6 +245,13 @@ function navigateToEdit(app: Application) {
 const createApplicationMutation = useMutation({
   mutationFn: (payload: CreateApplication) => client.applicationPOST(payload),
   onSuccess: (createdApp) => {
+    // Immediately add the new application to the cache so the edit page can find it
+    if (createdApp) {
+      queryClient.setQueryData<Application[]>(['applications'], (old) => {
+        return old ? [...old, createdApp] : [createdApp]
+      })
+    }
+    // Still invalidate to ensure a fresh fetch in the background
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     isCreateDialogOpen.value = false
     Notify.create({ type: 'positive', message: 'Application created' })

@@ -73,6 +73,21 @@ public sealed class SecurityMiddleware
                 }
             }
 
+            // Enforce admin-only access for Config export endpoint (exposes secrets)
+            if (path.StartsWithSegments("/api/config/export", StringComparison.OrdinalIgnoreCase))
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+                if (user.Role != SecurityRole.Admin)
+                {
+                    await WriteForbiddenAsync(context, cancellationToken);
+                    return;
+                }
+            }
+
             var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
             if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
                 return;

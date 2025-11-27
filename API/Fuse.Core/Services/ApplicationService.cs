@@ -10,12 +10,14 @@ public class ApplicationService : IApplicationService
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
     private readonly IAuditService _auditService;
+    private readonly IEnvironmentService _environmentService;
 
-    public ApplicationService(IFuseStore fuseStore, ITagService tagService, IAuditService auditService)
+    public ApplicationService(IFuseStore fuseStore, ITagService tagService, IAuditService auditService, IEnvironmentService environmentService)
     {
         _fuseStore = fuseStore;
         _tagService = tagService;
         _auditService = auditService;
+        _environmentService = environmentService;
     }
 
     public async Task<IReadOnlyList<Application>> GetApplicationsAsync() => (await _fuseStore.GetAsync()).Applications;
@@ -68,7 +70,13 @@ public class ApplicationService : IApplicationService
         );
         await _auditService.LogAsync(auditLog);
         
-        return Result<Application>.Success(app);
+        // Apply environment automation to create instances for environments with AutoCreateInstances enabled
+        await _environmentService.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation(ApplicationId: app.Id));
+        
+        // Return the updated application with any auto-created instances
+        // This should always succeed since we just created the app, but we fetch it to get the latest state
+        var updatedApp = await GetApplicationByIdAsync(app.Id);
+        return Result<Application>.Success(updatedApp!);
     }
 
     public async Task<Result<Application>> UpdateApplicationAsync(UpdateApplication command)

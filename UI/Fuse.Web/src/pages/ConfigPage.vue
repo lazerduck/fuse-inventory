@@ -165,9 +165,20 @@
 import { ref, computed } from 'vue'
 import { Notify, useQuasar } from 'quasar'
 import { useQueryClient } from '@tanstack/vue-query'
+import { useAuthToken } from '../composables/useAuthToken'
 
 const queryClient = useQueryClient()
 const $q = useQuasar()
+const { getToken } = useAuthToken()
+
+function getAuthHeaders(): HeadersInit {
+  const token = getToken()
+  const headers: HeadersInit = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
 
 const exportFormat = ref<'json' | 'yaml'>('json')
 const templateFormat = ref<'json' | 'yaml'>('json')
@@ -211,7 +222,9 @@ async function handleExport() {
   isExporting.value = true
   
   try {
-    const response = await fetch(`${window.location.origin}/api/Config/export?format=${exportFormat.value}`)
+    const response = await fetch(`${window.location.origin}/api/Config/export?format=${exportFormat.value}`, {
+      headers: getAuthHeaders()
+    })
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Export failed' }))
@@ -307,7 +320,8 @@ async function handleImport() {
 
     const response = await fetch(`${window.location.origin}/api/Config/import?format=${importFormat.value}`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: getAuthHeaders()
     })
 
     if (!response.ok) {
