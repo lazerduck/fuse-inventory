@@ -148,6 +148,18 @@
             <template #body-cell-actions="props">
               <q-td :props="props" class="text-right">
                 <q-btn 
+                  v-if="props.row.status === SyncStatus.MissingPrincipal && hasCreatePermission && canResolve"
+                  flat 
+                  dense 
+                  size="sm"
+                  color="positive"
+                  label="Create Account"
+                  :loading="isCreatingAccount === props.row.accountId"
+                  @click="openCreateAccountDialog(props.row)"
+                >
+                  <q-tooltip>Create SQL login and user</q-tooltip>
+                </q-btn>
+                <q-btn 
                   v-if="props.row.status === SyncStatus.DriftDetected && hasWritePermission && canResolve"
                   flat 
                   dense 
@@ -318,6 +330,156 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Create SQL Account Dialog -->
+    <q-dialog v-model="showCreateAccountDialog" persistent>
+      <q-card style="min-width: 450px">
+        <q-card-section class="row items-center">
+          <q-icon name="person_add" color="positive" size="2em" class="q-mr-sm" />
+          <span class="text-h6">Create SQL Account</span>
+        </q-card-section>
+
+        <q-card-section>
+          <p v-if="createAccountSelectedAccount">
+            Create SQL login and user for 
+            <strong>{{ createAccountSelectedAccount.principalName }}</strong>?
+          </p>
+          
+          <div class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Password Source</div>
+            
+            <q-option-group
+              v-model="selectedPasswordSource"
+              :options="[
+                { 
+                  label: 'Retrieve from Secret Provider', 
+                  value: PasswordSource.SecretProvider,
+                  disable: createAccountSelectedAccount && !hasSecretProvider(createAccountSelectedAccount.accountId!)
+                },
+                { label: 'Enter password manually', value: PasswordSource.Manual }
+              ]"
+              color="primary"
+            />
+
+            <q-banner 
+              v-if="selectedPasswordSource === PasswordSource.SecretProvider && createAccountSelectedAccount && !hasSecretProvider(createAccountSelectedAccount.accountId!)"
+              dense 
+              class="bg-orange-1 text-orange-9 q-mt-md"
+            >
+              <template #avatar>
+                <q-icon name="warning" color="orange" />
+              </template>
+              This account is not linked to a Secret Provider.
+            </q-banner>
+
+            <q-banner 
+              v-if="selectedPasswordSource === PasswordSource.SecretProvider && createAccountSelectedAccount && hasSecretProvider(createAccountSelectedAccount.accountId!)"
+              dense 
+              class="bg-blue-1 text-blue-9 q-mt-md"
+            >
+              <template #avatar>
+                <q-icon name="info" color="primary" />
+              </template>
+              Password will be retrieved from the linked Secret Provider.
+            </q-banner>
+            
+            <q-input
+              v-if="selectedPasswordSource === PasswordSource.Manual || selectedPasswordSource === PasswordSource.NewSecret"
+              v-model="manualPassword"
+              type="password"
+              label="Password"
+              outlined
+              dense
+              class="q-mt-md"
+              :rules="[val => !!val || 'Password is required']"
+            >
+              <template #hint>
+                <span class="text-caption text-grey-7">
+                  <q-icon name="security" size="xs" class="q-mr-xs" />
+                  Fuse does not store passwords. This will only be used once to create the SQL account.
+                </span>
+              </template>
+            </q-input>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey" v-close-popup :disable="isCreating" />
+          <q-btn 
+            flat 
+            label="Create Account" 
+            color="positive" 
+            :loading="isCreating"
+            :disable="!!(selectedPasswordSource !== PasswordSource.SecretProvider && !manualPassword) || !!(selectedPasswordSource === PasswordSource.SecretProvider && createAccountSelectedAccount && !hasSecretProvider(createAccountSelectedAccount.accountId!))"
+            @click="handleCreateAccount" 
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Create Account Result Dialog -->
+    <q-dialog v-model="showCreateResultDialog">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon 
+            :name="createAccountResult?.success ? 'check_circle' : 'error'" 
+            :color="createAccountResult?.success ? 'positive' : 'negative'" 
+            size="2em" 
+            class="q-mr-sm" 
+          />
+          <span class="text-h6">
+            {{ createAccountResult?.success ? 'Account Created' : 'Creation Failed' }}
+          </span>
+        </q-card-section>
+
+        <q-card-section v-if="createAccountResult">
+          <div v-if="createAccountResult.success" class="q-mb-md">
+            <span class="text-subtitle2">Password source: </span>
+            <q-badge 
+              outline
+              color="primary"
+              :label="getPasswordSourceLabel(createAccountResult.passwordSource)"
+            />
+          </div>
+
+          <div v-if="createAccountResult.operations && createAccountResult.operations.length > 0" class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Operations performed:</div>
+            <div 
+              v-for="(op, index) in createAccountResult.operations" 
+              :key="index"
+              class="text-caption q-mb-xs"
+            >
+              <q-icon 
+                :name="op.success ? 'check' : 'close'" 
+                :color="op.success ? 'positive' : 'negative'" 
+                size="xs" 
+              />
+              {{ op.operationType }} 
+              <span v-if="op.database">in {{ op.database }}</span>
+              <span v-if="!op.success" class="text-negative"> - {{ op.errorMessage }}</span>
+            </div>
+          </div>
+          <div v-if="createAccountResult.errorMessage" class="text-negative">
+            {{ createAccountResult.errorMessage }}
+          </div>
+          <div v-if="createAccountResult.updatedStatus" class="q-mt-md">
+            <span class="text-subtitle2">Account status: </span>
+            <q-badge 
+              :color="getStatusColor(createAccountResult.updatedStatus.status)"
+              :label="getStatusLabel(createAccountResult.updatedStatus.status)"
+            />
+            <div v-if="createAccountResult.success && createAccountResult.updatedStatus.status === SyncStatus.DriftDetected" class="text-caption text-orange q-mt-sm">
+              <q-icon name="info" size="xs" />
+              Account created but permissions need to be applied. Use "Resolve" to apply expected permissions.
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -327,9 +489,11 @@ import { useRoute, useRouter } from 'vue-router'
 import type { QTableColumn } from 'quasar'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useResolveDrift } from '../composables/useResolveDrift'
+import { useCreateSqlAccount } from '../composables/useCreateSqlAccount'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
+import { useAccounts } from '../composables/useAccounts'
 import { useFuseStore } from '../stores/FuseStore'
-import { SyncStatus, SecurityLevel, ResolveDriftResponse, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
+import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, PasswordSource, PasswordSourceUsed, SecretBindingKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -338,7 +502,9 @@ const fuseStore = useFuseStore()
 const integrationId = computed(() => route.params.id as string)
 const { data, isLoading, isFetching, error, refetch } = useSqlPermissionsOverview(integrationId)
 const { data: sqlIntegrations } = useSqlIntegrations()
+const { data: accounts } = useAccounts()
 const { mutateAsync: resolveDrift, isPending: isResolving } = useResolveDrift()
+const { mutateAsync: createSqlAccount, isPending: isCreating } = useCreateSqlAccount()
 
 // Resolve drift dialog state
 const showResolveDialog = ref(false)
@@ -347,6 +513,15 @@ const selectedAccount = ref<SqlAccountPermissionsStatus | null>(null)
 const resolveResult = ref<ResolveDriftResponse | null>(null)
 const isResolvingAccount = ref<string | null>(null)
 
+// Create account dialog state
+const showCreateAccountDialog = ref(false)
+const showCreateResultDialog = ref(false)
+const createAccountSelectedAccount = ref<SqlAccountPermissionsStatus | null>(null)
+const createAccountResult = ref<CreateSqlAccountResponse | null>(null)
+const isCreatingAccount = ref<string | null>(null)
+const selectedPasswordSource = ref<PasswordSource>(PasswordSource.Manual)
+const manualPassword = ref('')
+
 // Check if integration has write permission
 // SqlPermissions is a flags enum serialized as comma-separated string (e.g., "Read, Write")
 const hasWritePermission = computed(() => {
@@ -354,6 +529,14 @@ const hasWritePermission = computed(() => {
   if (!integration?.permissions) return false
   const permStr = String(integration.permissions)
   return permStr.includes('Write')
+})
+
+// Check if integration has create permission
+const hasCreatePermission = computed(() => {
+  const integration = sqlIntegrations.value?.find(i => i.id === integrationId.value)
+  if (!integration?.permissions) return false
+  const permStr = String(integration.permissions)
+  return permStr.includes('Create')
 })
 
 // Check if user can resolve drift based on security level
@@ -487,6 +670,92 @@ async function handleResolveDrift() {
     showResultDialog.value = true
   } finally {
     isResolvingAccount.value = null
+  }
+}
+
+// Helper to get account secret binding info
+function getAccountSecretBinding(accountId: string) {
+  const account = accounts.value?.find(a => a.id === accountId)
+  return account?.secretBinding
+}
+
+// Check if account has a secret provider linked
+function hasSecretProvider(accountId: string): boolean {
+  const binding = getAccountSecretBinding(accountId)
+  return binding?.kind === SecretBindingKind.AzureKeyVault && !!binding.azureKeyVault
+}
+
+function openCreateAccountDialog(account: SqlAccountPermissionsStatus) {
+  createAccountSelectedAccount.value = account
+  manualPassword.value = ''
+  
+  // Default to SecretProvider if available, otherwise Manual
+  if (account.accountId && hasSecretProvider(account.accountId)) {
+    selectedPasswordSource.value = PasswordSource.SecretProvider
+  } else {
+    selectedPasswordSource.value = PasswordSource.Manual
+  }
+  
+  showCreateAccountDialog.value = true
+}
+
+async function handleCreateAccount() {
+  if (!createAccountSelectedAccount.value?.accountId) return
+  
+  isCreatingAccount.value = createAccountSelectedAccount.value.accountId
+  
+  try {
+    const result = await createSqlAccount({
+      integrationId: integrationId.value,
+      accountId: createAccountSelectedAccount.value.accountId,
+      passwordSource: selectedPasswordSource.value,
+      password: selectedPasswordSource.value === PasswordSource.SecretProvider ? undefined : manualPassword.value
+    })
+    
+    createAccountResult.value = result
+    showCreateAccountDialog.value = false
+    showCreateResultDialog.value = true
+    
+    // Clear the password immediately after use
+    manualPassword.value = ''
+    
+    // Refetch the permissions overview
+    await refetch()
+  } catch (err: any) {
+    // Create an error response object
+    const errorResponse = new CreateSqlAccountResponse()
+    errorResponse.accountId = createAccountSelectedAccount.value.accountId
+    errorResponse.principalName = createAccountSelectedAccount.value.principalName
+    errorResponse.success = false
+    errorResponse.operations = []
+    
+    // Check for 401 Unauthorized error
+    if (err?.status === 401) {
+      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to create SQL accounts.'
+    } else {
+      errorResponse.errorMessage = err?.message || 'An error occurred while creating the account.'
+    }
+    
+    createAccountResult.value = errorResponse
+    showCreateAccountDialog.value = false
+    showCreateResultDialog.value = true
+    manualPassword.value = ''
+  } finally {
+    isCreatingAccount.value = null
+  }
+}
+
+// Helper to get password source label
+function getPasswordSourceLabel(source?: PasswordSourceUsed): string {
+  switch (source) {
+    case PasswordSourceUsed.SecretProvider:
+      return 'Secret Provider'
+    case PasswordSourceUsed.Manual:
+      return 'Manual Entry'
+    case PasswordSourceUsed.NewSecret:
+      return 'New Secret Created'
+    default:
+      return 'Unknown'
   }
 }
 </script>

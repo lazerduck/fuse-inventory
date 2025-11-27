@@ -1,14 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { ResolveDriftResponse } from '../api/client'
+import { CreateSqlAccountRequest, CreateSqlAccountResponse, PasswordSource } from '../api/client'
 
-export function useResolveDrift() {
+export function useCreateSqlAccount() {
   const client = useFuseClient()
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: (params: { integrationId: string; accountId: string }): Promise<ResolveDriftResponse> =>
-      client.resolve(params.integrationId, params.accountId),
+    mutationFn: (params: { 
+      integrationId: string
+      accountId: string
+      passwordSource: PasswordSource
+      password?: string
+    }): Promise<CreateSqlAccountResponse> => {
+      const request = new CreateSqlAccountRequest()
+      request.passwordSource = params.passwordSource
+      request.password = params.password
+      return client.create(params.integrationId, params.accountId, request)
+    },
     onSuccess: (_data, variables) => {
       // Invalidate the permissions overview to refresh the data
       queryClient.invalidateQueries({
