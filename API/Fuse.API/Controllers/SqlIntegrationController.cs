@@ -90,6 +90,26 @@ namespace Fuse.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPost("{id}/bulk-resolve")]
+        [ProducesResponseType(200, Type = typeof(BulkResolveResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<BulkResolveResponse>> BulkResolve([FromRoute] Guid id, [FromBody] BulkResolveRequest request, CancellationToken ct)
+        {
+            var command = new BulkResolve(id, request.PasswordSource);
+            var (userName, userId) = GetUserInfo();
+            var result = await _service.BulkResolveAsync(command, userName, userId, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost("test-connection")]
         [ProducesResponseType(200, Type = typeof(SqlConnectionTestResult))]
         [ProducesResponseType(400)]

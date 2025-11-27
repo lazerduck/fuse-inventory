@@ -83,6 +83,31 @@
         </q-card>
       </div>
 
+      <!-- Bulk Actions Section -->
+      <div v-if="hasResolvableAccounts && canBulkResolve" class="q-mb-md">
+        <q-card flat bordered>
+          <q-card-section class="row items-center q-gutter-md">
+            <div class="col">
+              <div class="text-subtitle2">Bulk Actions</div>
+              <div class="text-caption text-grey-7">
+                Apply all pending changes at once. Creates missing accounts and resolves drift.
+              </div>
+            </div>
+            <q-btn
+              color="primary"
+              icon="auto_fix_high"
+              label="Bulk Resolve All"
+              :loading="isBulkResolving"
+              @click="openBulkResolveDialog"
+            >
+              <q-tooltip>
+                Create {{ resolvableMissingCount }} missing account(s) and resolve {{ resolvableDriftCount }} drift(s)
+              </q-tooltip>
+            </q-btn>
+          </q-card-section>
+        </q-card>
+      </div>
+
       <!-- Accounts Table -->
       <q-card class="content-card">
         <q-card-section>
@@ -480,6 +505,140 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Bulk Resolve Confirmation Dialog -->
+    <q-dialog v-model="showBulkResolveDialog" persistent>
+      <q-card style="min-width: 500px">
+        <q-card-section class="row items-center">
+          <q-icon name="auto_fix_high" color="primary" size="2em" class="q-mr-sm" />
+          <span class="text-h6">Bulk Resolve All</span>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            This will apply all pending changes to align SQL permissions with Fuse configuration.
+          </p>
+          
+          <div class="q-mt-md">
+            <div v-if="resolvableMissingCount > 0" class="text-caption q-mb-sm">
+              <q-icon name="person_add" color="positive" size="xs" />
+              {{ resolvableMissingCount }} account(s) will be created
+              <div class="text-grey-7 q-ml-lg">
+                Only accounts linked to a Secret Provider will be processed.
+              </div>
+            </div>
+            <div v-if="resolvableDriftCount > 0" class="text-caption q-mb-sm">
+              <q-icon name="sync" color="primary" size="xs" />
+              {{ resolvableDriftCount }} drift(s) will be resolved
+            </div>
+            <div v-if="skippedAccountsCount > 0" class="text-caption text-orange q-mb-sm">
+              <q-icon name="warning" color="orange" size="xs" />
+              {{ skippedAccountsCount }} account(s) will be skipped (no Secret Provider linked)
+            </div>
+          </div>
+
+          <q-banner dense class="bg-blue-1 text-blue-9 q-mt-md">
+            <template #avatar>
+              <q-icon name="info" color="primary" />
+            </template>
+            Passwords will be retrieved from linked Secret Providers. 
+            Accounts without a Secret Provider link will be skipped.
+          </q-banner>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey" v-close-popup :disable="isBulkResolving" />
+          <q-btn 
+            flat 
+            label="Bulk Resolve" 
+            color="primary" 
+            :loading="isBulkResolving"
+            @click="handleBulkResolve" 
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Bulk Resolve Result Dialog -->
+    <q-dialog v-model="showBulkResolveResultDialog">
+      <q-card style="min-width: 550px; max-width: 700px">
+        <q-card-section class="row items-center">
+          <q-icon 
+            :name="bulkResolveResult?.success ? 'check_circle' : 'warning'" 
+            :color="bulkResolveResult?.success ? 'positive' : 'orange'" 
+            size="2em" 
+            class="q-mr-sm" 
+          />
+          <span class="text-h6">
+            {{ bulkResolveResult?.success ? 'Bulk Resolve Complete' : 'Bulk Resolve Completed with Issues' }}
+          </span>
+        </q-card-section>
+
+        <q-card-section v-if="bulkResolveResult">
+          <!-- Summary -->
+          <div class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Summary</div>
+            <div class="row q-gutter-md">
+              <div class="col-auto">
+                <q-badge color="primary" :label="`${bulkResolveResult.summary?.totalProcessed ?? 0} Processed`" />
+              </div>
+              <div v-if="bulkResolveResult.summary?.accountsCreated" class="col-auto">
+                <q-badge color="positive" :label="`${bulkResolveResult.summary.accountsCreated} Created`" />
+              </div>
+              <div v-if="bulkResolveResult.summary?.driftsResolved" class="col-auto">
+                <q-badge color="info" :label="`${bulkResolveResult.summary.driftsResolved} Resolved`" />
+              </div>
+              <div v-if="bulkResolveResult.summary?.skipped" class="col-auto">
+                <q-badge color="orange" :label="`${bulkResolveResult.summary.skipped} Skipped`" />
+              </div>
+              <div v-if="bulkResolveResult.summary?.failed" class="col-auto">
+                <q-badge color="negative" :label="`${bulkResolveResult.summary.failed} Failed`" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Table -->
+          <div v-if="bulkResolveResult.results && bulkResolveResult.results.length > 0" class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Details</div>
+            <q-table
+              flat
+              bordered
+              dense
+              :rows="bulkResolveResult.results"
+              :columns="bulkResultColumns"
+              row-key="accountId"
+              :pagination="{ rowsPerPage: 10 }"
+            >
+              <template #body-cell-status="props">
+                <q-td :props="props">
+                  <q-icon 
+                    :name="props.row.success ? 'check_circle' : (props.row.errorMessage?.includes('skipped') ? 'warning' : 'error')" 
+                    :color="props.row.success ? 'positive' : (props.row.errorMessage?.includes('skipped') ? 'orange' : 'negative')" 
+                    size="sm" 
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-message="props">
+                <q-td :props="props">
+                  <span v-if="props.row.success" class="text-positive">Success</span>
+                  <span v-else :class="props.row.errorMessage?.includes('skipped') ? 'text-orange' : 'text-negative'">
+                    {{ props.row.errorMessage ?? 'Failed' }}
+                  </span>
+                </q-td>
+              </template>
+            </q-table>
+          </div>
+
+          <div v-if="bulkResolveResult.errorMessage" class="text-negative">
+            {{ bulkResolveResult.errorMessage }}
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -490,10 +649,11 @@ import type { QTableColumn } from 'quasar'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useResolveDrift } from '../composables/useResolveDrift'
 import { useCreateSqlAccount } from '../composables/useCreateSqlAccount'
+import { useBulkResolve } from '../composables/useBulkResolve'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useAccounts } from '../composables/useAccounts'
 import { useFuseStore } from '../stores/FuseStore'
-import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, PasswordSource, PasswordSourceUsed, SecretBindingKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal } from '../api/client'
+import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, BulkResolveResponse, PasswordSource, PasswordSourceUsed, BulkPasswordSource, SecretBindingKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal, type BulkResolveAccountResult } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -505,6 +665,7 @@ const { data: sqlIntegrations } = useSqlIntegrations()
 const { data: accounts } = useAccounts()
 const { mutateAsync: resolveDrift, isPending: isResolving } = useResolveDrift()
 const { mutateAsync: createSqlAccount, isPending: isCreating } = useCreateSqlAccount()
+const { mutateAsync: bulkResolve, isPending: isBulkResolving } = useBulkResolve()
 
 // Resolve drift dialog state
 const showResolveDialog = ref(false)
@@ -521,6 +682,11 @@ const createAccountResult = ref<CreateSqlAccountResponse | null>(null)
 const isCreatingAccount = ref<string | null>(null)
 const selectedPasswordSource = ref<PasswordSource>(PasswordSource.Manual)
 const manualPassword = ref('')
+
+// Bulk resolve dialog state
+const showBulkResolveDialog = ref(false)
+const showBulkResolveResultDialog = ref(false)
+const bulkResolveResult = ref<BulkResolveResponse | null>(null)
 
 // Check if integration has write permission
 // SqlPermissions is a flags enum serialized as comma-separated string (e.g., "Read, Write")
@@ -548,6 +714,41 @@ const canResolve = computed(() => {
   }
   // For any security level above None, require admin role
   return fuseStore.canModify
+})
+
+// Check if user can bulk resolve (needs both write and create permissions)
+const canBulkResolve = computed(() => {
+  return canResolve.value && hasWritePermission.value && hasCreatePermission.value
+})
+
+// Check if there are any accounts that can be bulk resolved
+const hasResolvableAccounts = computed(() => {
+  return resolvableMissingCount.value > 0 || resolvableDriftCount.value > 0
+})
+
+// Count of accounts with missing principals that can be resolved (have Secret Provider)
+const resolvableMissingCount = computed(() => {
+  if (!data.value?.accounts) return 0
+  return data.value.accounts.filter(a => 
+    a.status === SyncStatus.MissingPrincipal && 
+    a.accountId && 
+    hasSecretProvider(a.accountId)
+  ).length
+})
+
+// Count of accounts with drift detected
+const resolvableDriftCount = computed(() => {
+  return data.value?.summary?.driftCount ?? 0
+})
+
+// Count of accounts that will be skipped (missing principals without Secret Provider)
+const skippedAccountsCount = computed(() => {
+  if (!data.value?.accounts) return 0
+  return data.value.accounts.filter(a => 
+    a.status === SyncStatus.MissingPrincipal && 
+    a.accountId && 
+    !hasSecretProvider(a.accountId)
+  ).length
 })
 
 // Check if create account button should be disabled
@@ -771,6 +972,52 @@ function getPasswordSourceLabel(source?: PasswordSourceUsed): string {
       return 'New Secret Created'
     default:
       return 'Unknown'
+  }
+}
+
+// Bulk resolve table columns
+const bulkResultColumns: QTableColumn<BulkResolveAccountResult>[] = [
+  { name: 'status', label: '', field: (row) => row.accountId, align: 'center', style: 'width: 40px' },
+  { name: 'accountName', label: 'Account', field: 'accountName', align: 'left' },
+  { name: 'principalName', label: 'Principal', field: 'principalName', align: 'left' },
+  { name: 'operationType', label: 'Operation', field: 'operationType', align: 'left' },
+  { name: 'message', label: 'Result', field: (row) => row.accountId, align: 'left' }
+]
+
+function openBulkResolveDialog() {
+  showBulkResolveDialog.value = true
+}
+
+async function handleBulkResolve() {
+  try {
+    const result = await bulkResolve({
+      integrationId: integrationId.value,
+      passwordSource: BulkPasswordSource.SecretProvider
+    })
+    
+    bulkResolveResult.value = result
+    showBulkResolveDialog.value = false
+    showBulkResolveResultDialog.value = true
+    
+    // Refetch the permissions overview
+    await refetch()
+  } catch (err: any) {
+    // Create an error response object
+    const errorResponse = new BulkResolveResponse()
+    errorResponse.integrationId = integrationId.value
+    errorResponse.success = false
+    errorResponse.results = []
+    
+    // Check for 401 Unauthorized error
+    if (err?.status === 401) {
+      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to perform bulk resolve.'
+    } else {
+      errorResponse.errorMessage = err?.message || 'An error occurred during bulk resolve.'
+    }
+    
+    bulkResolveResult.value = errorResponse
+    showBulkResolveDialog.value = false
+    showBulkResolveResultDialog.value = true
   }
 }
 </script>
