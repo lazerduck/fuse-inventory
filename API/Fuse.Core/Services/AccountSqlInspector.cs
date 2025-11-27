@@ -543,14 +543,21 @@ public class AccountSqlInspector : IAccountSqlInspector
     {
         try
         {
-            // Use parameterized approach for the principal name (escaped identifier)
-            // Password cannot be parameterized in CREATE LOGIN, so we must escape it carefully
+            // Use sp_executesql with parameterized password to avoid SQL injection.
+            // The login name must be an identifier (escaped with brackets), but the password
+            // can be safely passed as a parameter through dynamic SQL execution.
             var escapedPrincipal = EscapeIdentifier(principalName);
-            var escapedPassword = EscapePassword(password);
             
-            var sql = $"CREATE LOGIN {escapedPrincipal} WITH PASSWORD = {escapedPassword};";
+            // Build the dynamic SQL that will be executed by sp_executesql
+            // The @password parameter is safely passed to the dynamic SQL
+            var dynamicSql = $"CREATE LOGIN {escapedPrincipal} WITH PASSWORD = @password;";
 
-            await using var command = new SqlCommand(sql, connection);
+            await using var command = new SqlCommand("sp_executesql", connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@stmt", dynamicSql);
+            command.Parameters.AddWithValue("@params", "@password NVARCHAR(MAX)");
+            command.Parameters.AddWithValue("@password", password);
+            
             await command.ExecuteNonQueryAsync(ct);
 
             return new SqlAccountCreationOperation(
@@ -607,15 +614,5 @@ public class AccountSqlInspector : IAccountSqlInspector
                 Success: false,
                 ErrorMessage: ex.Message);
         }
-    }
-
-    private static string EscapePassword(string password)
-    {
-        // SQL Server password escaping: wrap in N-prefixed single quotes (Unicode string literal)
-        // and escape embedded single quotes by doubling them.
-        // This is the standard and secure way to include a string literal in SQL Server.
-        // The N prefix ensures Unicode support for passwords with special characters.
-        // Single-quote doubling handles the only SQL injection vector in string literals.
-        return "N'" + password.Replace("'", "''") + "'";
     }
 }
