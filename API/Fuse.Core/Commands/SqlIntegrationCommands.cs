@@ -20,3 +20,8 @@ public record DeleteSqlIntegration(Guid Id);
 public record TestSqlConnection(
     string ConnectionString
 );
+
+public record ResolveDrift(
+    Guid IntegrationId,
+    Guid AccountId
+);

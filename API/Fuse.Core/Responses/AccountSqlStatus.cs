@@ -84,3 +84,27 @@ public record SqlIntegrationPermissionsOverviewResponse(
     SqlPermissionsOverviewSummary Summary,
     string? ErrorMessage
 );
+
+/// <summary>
+/// Result of a single GRANT or REVOKE SQL operation.
+/// </summary>
+public record DriftResolutionOperation(
+    string OperationType,
+    string? Database,
+    string? Schema,
+    Privilege Privilege,
+    bool Success,
+    string? ErrorMessage
+);
+
+/// <summary>
+/// Response DTO for drift resolution endpoint.
+/// </summary>
+public record ResolveDriftResponse(
+    Guid AccountId,
+    string? PrincipalName,
+    bool Success,
+    IReadOnlyList<DriftResolutionOperation> Operations,
+    SqlAccountPermissionsStatus UpdatedStatus,
+    string? ErrorMessage
+);

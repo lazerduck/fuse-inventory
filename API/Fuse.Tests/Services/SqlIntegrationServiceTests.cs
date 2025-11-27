@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
 using Moq;
@@ -32,12 +33,14 @@ public class SqlIntegrationServiceTests
     private static SqlIntegrationService CreateService(
         InMemoryFuseStore store,
         ISqlConnectionValidator? validator = null,
-        IAccountSqlInspector? inspector = null)
+        IAccountSqlInspector? inspector = null,
+        IAuditService? auditService = null)
     {
         return new SqlIntegrationService(
             store,
             validator ?? Mock.Of<ISqlConnectionValidator>(),
-            inspector ?? Mock.Of<IAccountSqlInspector>());
+            inspector ?? Mock.Of<IAccountSqlInspector>(),
+            auditService ?? Mock.Of<IAuditService>());
     }
 
     [Fact]
@@ -472,5 +475,279 @@ public class SqlIntegrationServiceTests
         Assert.Single(result.Value.Accounts);
         Assert.Equal(Fuse.Core.Responses.SyncStatus.MissingPrincipal, result.Value.Accounts[0].Status);
         Assert.Equal(1, result.Value.Summary.MissingPrincipalCount);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsNotFoundForMissingIntegration()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(Guid.NewGuid(), Guid.NewGuid()), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Contains("not found", result.Error!);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsErrorWhenNoWritePermission()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow); // No Write permission
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        var service = CreateService(store);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("Write permission", result.Error!);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsNotFoundForMissingAccount()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
+        var service = CreateService(store);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, Guid.NewGuid()), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Contains("Account", result.Error!);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsErrorWhenAccountNotAssociatedWithDataStore()
+    {
+        var dsId = Guid.NewGuid();
+        var otherDsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var otherDs = new DataStore(otherDsId, "DS2", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            otherDsId, // Different datastore
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds, otherDs }, accounts: new[] { account });
+        var service = CreateService(store);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("not associated", result.Error!);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsErrorWhenAccountHasNoUsername()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            null, // No username
+            null,
+            new List<Grant>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        var service = CreateService(store);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("username", result.Error!.ToLowerInvariant());
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsErrorWhenPrincipalDoesNotExist()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null)); // Principal doesn't exist
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("does not exist", result.Error!);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_ReturnsSuccessWhenAlreadyInSync()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+            }), null)); // Already in sync
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.Empty(result.Value.Operations);
+        Assert.Equal(SyncStatus.InSync, result.Value.UpdatedStatus.Status);
+    }
+
+    [Fact]
+    public async Task ResolveDriftAsync_AppliesGrantsAndRevokes()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        
+        // Initial state: has SELECT and DELETE, but needs INSERT (has extra DELETE)
+        mockInspector
+            .SetupSequence(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Delete })
+            }), null))
+            // After applying changes, now in sync
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert })
+            }), null));
+
+        mockInspector
+            .Setup(i => i.ApplyPermissionChangesAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<IReadOnlyList<SqlPermissionComparison>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new List<DriftResolutionOperation>
+            {
+                new DriftResolutionOperation("GRANT", "TestDB", null, Privilege.Insert, true, null),
+                new DriftResolutionOperation("REVOKE", "TestDB", null, Privilege.Delete, true, null)
+            }, null));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var result = await service.ResolveDriftAsync(new ResolveDrift(intId, accountId), "testUser", Guid.NewGuid());
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.Equal(2, result.Value.Operations.Count);
+        Assert.Contains(result.Value.Operations, o => o.OperationType == "GRANT" && o.Privilege == Privilege.Insert);
+        Assert.Contains(result.Value.Operations, o => o.OperationType == "REVOKE" && o.Privilege == Privilege.Delete);
+        Assert.Equal(SyncStatus.InSync, result.Value.UpdatedStatus.Status);
+        
+        // Verify audit log was created
+        mockAuditService.Verify(a => a.LogAsync(It.Is<AuditLog>(l => l.Action == AuditAction.SqlIntegrationDriftResolved), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

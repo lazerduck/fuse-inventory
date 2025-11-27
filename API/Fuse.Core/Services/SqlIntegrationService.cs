@@ -11,12 +11,14 @@ public class SqlIntegrationService : ISqlIntegrationService
     private readonly IFuseStore _store;
     private readonly ISqlConnectionValidator _validator;
     private readonly IAccountSqlInspector _sqlInspector;
+    private readonly IAuditService _auditService;
 
-    public SqlIntegrationService(IFuseStore store, ISqlConnectionValidator validator, IAccountSqlInspector sqlInspector)
+    public SqlIntegrationService(IFuseStore store, ISqlConnectionValidator validator, IAccountSqlInspector sqlInspector, IAuditService auditService)
     {
         _store = store;
         _validator = validator;
         _sqlInspector = sqlInspector;
+        _auditService = auditService;
     }
 
     private static Result ValidateCoreFields(string name, string connectionString)
@@ -386,5 +388,171 @@ public class SqlIntegrationService : ISqlIntegrationService
         }
 
         return comparisons;
+    }
+
+    public async Task<Result<ResolveDriftResponse>> ResolveDriftAsync(ResolveDrift command, string userName, Guid? userId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == command.IntegrationId);
+        if (integration is null)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                $"SQL integration {command.IntegrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has Write permission
+        if ((integration.Permissions & SqlPermissions.Write) == 0)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                "SQL integration does not have Write permission to modify grants.",
+                ErrorType.Validation);
+        }
+
+        // Find the account
+        var account = snapshot.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+        if (account is null)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                $"Account {command.AccountId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Verify account is associated with this integration's DataStore
+        if (account.TargetKind != TargetKind.DataStore || account.TargetId != integration.DataStoreId)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                "Account is not associated with this SQL integration's DataStore.",
+                ErrorType.Validation);
+        }
+
+        // Check if account has a username
+        var principalName = account.UserName;
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                "Account has no username configured for SQL principal mapping.",
+                ErrorType.Validation);
+        }
+
+        // Get current permissions to determine what needs to change
+        var (inspectSuccess, actualPermissions, inspectError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, principalName, ct);
+
+        if (!inspectSuccess || actualPermissions is null)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                inspectError ?? "Failed to retrieve SQL permissions.",
+                ErrorType.ServerError);
+        }
+
+        // Check if principal exists (we can't resolve drift for missing principals)
+        if (!actualPermissions.Exists)
+        {
+            return Result<ResolveDriftResponse>.Failure(
+                "SQL principal does not exist. Cannot resolve drift for missing principals.",
+                ErrorType.Validation);
+        }
+
+        // Build permission comparisons to see what needs to change
+        var comparisons = BuildPermissionComparisons(account.Grants, actualPermissions);
+
+        // Check if there's any drift to resolve
+        var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
+        if (!hasDrift)
+        {
+            // Already in sync - return success with no operations
+            var inSyncStatus = new SqlAccountPermissionsStatus(
+                AccountId: account.Id,
+                AccountName: GetAccountDisplayName(account, snapshot),
+                PrincipalName: principalName,
+                Status: SyncStatus.InSync,
+                PermissionComparisons: comparisons,
+                ErrorMessage: null);
+
+            return Result<ResolveDriftResponse>.Success(new ResolveDriftResponse(
+                AccountId: account.Id,
+                PrincipalName: principalName,
+                Success: true,
+                Operations: Array.Empty<DriftResolutionOperation>(),
+                UpdatedStatus: inSyncStatus,
+                ErrorMessage: null));
+        }
+
+        // Apply the permission changes
+        var (applySuccess, operations, applyError) = await _sqlInspector.ApplyPermissionChangesAsync(
+            integration, principalName, comparisons, ct);
+
+        // Re-check permissions to get updated status
+        var (recheckSuccess, updatedPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, principalName, ct);
+
+        SqlAccountPermissionsStatus updatedStatus;
+        if (recheckSuccess && updatedPermissions is not null)
+        {
+            var updatedComparisons = BuildPermissionComparisons(account.Grants, updatedPermissions);
+            var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
+
+            updatedStatus = new SqlAccountPermissionsStatus(
+                AccountId: account.Id,
+                AccountName: GetAccountDisplayName(account, snapshot),
+                PrincipalName: principalName,
+                Status: updatedHasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync,
+                PermissionComparisons: updatedComparisons,
+                ErrorMessage: null);
+        }
+        else
+        {
+            // Couldn't recheck, report error status
+            updatedStatus = new SqlAccountPermissionsStatus(
+                AccountId: account.Id,
+                AccountName: GetAccountDisplayName(account, snapshot),
+                PrincipalName: principalName,
+                Status: SyncStatus.Error,
+                PermissionComparisons: comparisons,
+                ErrorMessage: recheckError ?? "Failed to verify updated permissions.");
+        }
+
+        // Log the drift resolution to audit
+        var auditDetails = new
+        {
+            IntegrationId = integration.Id,
+            IntegrationName = integration.Name,
+            AccountId = account.Id,
+            PrincipalName = principalName,
+            Success = applySuccess,
+            OperationsCount = operations.Count,
+            SuccessfulOperations = operations.Count(o => o.Success),
+            FailedOperations = operations.Count(o => !o.Success),
+            Operations = operations.Select(o => new
+            {
+                o.OperationType,
+                o.Database,
+                o.Schema,
+                Privilege = o.Privilege.ToString(),
+                o.Success,
+                o.ErrorMessage
+            }).ToList()
+        };
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SqlIntegrationDriftResolved,
+            AuditArea.SqlIntegration,
+            userName,
+            userId,
+            account.Id,
+            auditDetails);
+
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<ResolveDriftResponse>.Success(new ResolveDriftResponse(
+            AccountId: account.Id,
+            PrincipalName: principalName,
+            Success: applySuccess,
+            Operations: operations,
+            UpdatedStatus: updatedStatus,
+            ErrorMessage: applyError));
     }
 }

@@ -5,6 +5,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
     using Fuse.Core.Responses;
+    using System.Security.Claims;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -36,6 +37,26 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<SqlIntegrationPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
         {
             var result = await _service.GetPermissionsOverviewAsync(id, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/accounts/{accountId}/resolve")]
+        [ProducesResponseType(200, Type = typeof(ResolveDriftResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<ResolveDriftResponse>> ResolveDrift([FromRoute] Guid id, [FromRoute] Guid accountId, CancellationToken ct)
+        {
+            var command = new ResolveDrift(id, accountId);
+            var (userName, userId) = GetUserInfo();
+            var result = await _service.ResolveDriftAsync(command, userName, userId, ct);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -117,6 +138,27 @@ namespace Fuse.API.Controllers
                 };
             }
             return NoContent();
+        }
+
+        private (string userName, Guid? userId) GetUserInfo()
+        {
+            // If unauthenticated, return Anonymous/null
+            if (User?.Identity?.IsAuthenticated != true)
+                return ("Anonymous", null);
+
+            // Prefer explicit Name claim set by middleware, fallback to Identity.Name
+            var nameClaim = User.FindFirst(ClaimTypes.Name)?.Value;
+            var userName = string.IsNullOrWhiteSpace(nameClaim) ? (User.Identity?.Name ?? "Anonymous") : nameClaim;
+
+            // Extract user id from NameIdentifier claim when available
+            Guid? userId = null;
+            var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdValue) && Guid.TryParse(userIdValue, out var parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+
+            return (userName, userId);
         }
     }
 }

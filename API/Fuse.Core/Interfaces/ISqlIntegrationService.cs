@@ -13,4 +13,5 @@ public interface ISqlIntegrationService
     Task<Result> DeleteSqlIntegrationAsync(DeleteSqlIntegration command);
     Task<Result<SqlConnectionTestResult>> TestConnectionAsync(TestSqlConnection command, CancellationToken ct = default);
     Task<Result<SqlIntegrationPermissionsOverviewResponse>> GetPermissionsOverviewAsync(Guid integrationId, CancellationToken ct = default);
+    Task<Result<ResolveDriftResponse>> ResolveDriftAsync(ResolveDrift command, string userName, Guid? userId, CancellationToken ct = default);
 }

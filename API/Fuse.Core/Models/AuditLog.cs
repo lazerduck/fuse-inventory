@@ -72,7 +72,10 @@ public enum AuditAction
     
     // Config actions
     ConfigImported,
-    ConfigExported
+    ConfigExported,
+    
+    // SqlIntegration actions
+    SqlIntegrationDriftResolved
 }
 
 /// <summary>
@@ -91,7 +94,8 @@ public enum AuditArea
     KumaIntegration,
     SecretProvider,
     Secret,
-    Config
+    Config,
+    SqlIntegration
 }
 
 /// <summary>
