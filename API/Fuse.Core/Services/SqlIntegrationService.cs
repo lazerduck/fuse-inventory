@@ -12,13 +12,20 @@ public class SqlIntegrationService : ISqlIntegrationService
     private readonly ISqlConnectionValidator _validator;
     private readonly IAccountSqlInspector _sqlInspector;
     private readonly IAuditService _auditService;
+    private readonly ISecretOperationService _secretOperationService;
 
-    public SqlIntegrationService(IFuseStore store, ISqlConnectionValidator validator, IAccountSqlInspector sqlInspector, IAuditService auditService)
+    public SqlIntegrationService(
+        IFuseStore store, 
+        ISqlConnectionValidator validator, 
+        IAccountSqlInspector sqlInspector, 
+        IAuditService auditService,
+        ISecretOperationService secretOperationService)
     {
         _store = store;
         _validator = validator;
         _sqlInspector = sqlInspector;
         _auditService = auditService;
+        _secretOperationService = secretOperationService;
     }
 
     private static Result ValidateCoreFields(string name, string connectionString)
@@ -570,5 +577,253 @@ public class SqlIntegrationService : ISqlIntegrationService
             Operations: operationsList,
             UpdatedStatus: updatedStatus,
             ErrorMessage: applyError));
+    }
+
+    public async Task<Result<CreateSqlAccountResponse>> CreateSqlAccountAsync(CreateSqlAccount command, string userName, Guid? userId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == command.IntegrationId);
+        if (integration is null)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                $"SQL integration {command.IntegrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has Create permission
+        if ((integration.Permissions & SqlPermissions.Create) == 0)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                "SQL integration does not have Create permission to create logins/users.",
+                ErrorType.Validation);
+        }
+
+        // Find the account
+        var account = snapshot.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+        if (account is null)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                $"Account {command.AccountId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Verify account is associated with this integration's DataStore
+        if (account.TargetKind != TargetKind.DataStore || account.TargetId != integration.DataStoreId)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                "Account is not associated with this SQL integration's DataStore.",
+                ErrorType.Validation);
+        }
+
+        // Check if account has a username
+        var principalName = account.UserName;
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                "Account has no username configured for SQL principal mapping.",
+                ErrorType.Validation);
+        }
+
+        // Verify the principal doesn't already exist
+        var (inspectSuccess, existingPermissions, inspectError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, principalName, ct);
+
+        if (!inspectSuccess)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                inspectError ?? "Failed to check if SQL principal exists.",
+                ErrorType.ServerError);
+        }
+
+        if (existingPermissions?.Exists == true)
+        {
+            return Result<CreateSqlAccountResponse>.Failure(
+                "SQL principal already exists. Use drift resolution to update permissions.",
+                ErrorType.Conflict);
+        }
+
+        // Get the password based on the source
+        string? password;
+        PasswordSourceUsed passwordSourceUsed;
+
+        switch (command.PasswordSource)
+        {
+            case PasswordSource.SecretProvider:
+                // Retrieve from linked secret provider
+                if (account.SecretBinding.Kind != SecretBindingKind.AzureKeyVault || 
+                    account.SecretBinding.AzureKeyVault is null)
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        "Account is not linked to a Secret Provider. Cannot retrieve password.",
+                        ErrorType.Validation);
+                }
+
+                var secretResult = await _secretOperationService.RevealSecretAsync(
+                    new RevealSecret(
+                        account.SecretBinding.AzureKeyVault.ProviderId,
+                        account.SecretBinding.AzureKeyVault.SecretName,
+                        account.SecretBinding.AzureKeyVault.Version),
+                    userName,
+                    userId);
+
+                if (!secretResult.IsSuccess || string.IsNullOrWhiteSpace(secretResult.Value))
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        $"Failed to retrieve password from Secret Provider: {secretResult.Error ?? "Secret value is empty."}",
+                        ErrorType.ServerError);
+                }
+
+                password = secretResult.Value;
+                passwordSourceUsed = PasswordSourceUsed.SecretProvider;
+                break;
+
+            case PasswordSource.Manual:
+                if (string.IsNullOrWhiteSpace(command.Password))
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        "Password is required when using manual password source.",
+                        ErrorType.Validation);
+                }
+                password = command.Password;
+                passwordSourceUsed = PasswordSourceUsed.Manual;
+                break;
+
+            case PasswordSource.NewSecret:
+                if (string.IsNullOrWhiteSpace(command.Password))
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        "Password is required when creating a new secret.",
+                        ErrorType.Validation);
+                }
+
+                // Verify account has a secret provider binding for storing the new secret
+                if (account.SecretBinding.Kind != SecretBindingKind.AzureKeyVault || 
+                    account.SecretBinding.AzureKeyVault is null)
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        "Account is not linked to a Secret Provider. Cannot store new secret.",
+                        ErrorType.Validation);
+                }
+
+                // Create the secret in the provider
+                var createSecretResult = await _secretOperationService.CreateSecretAsync(
+                    new CreateSecret(
+                        account.SecretBinding.AzureKeyVault.ProviderId,
+                        account.SecretBinding.AzureKeyVault.SecretName,
+                        command.Password),
+                    userName,
+                    userId);
+
+                if (!createSecretResult.IsSuccess)
+                {
+                    return Result<CreateSqlAccountResponse>.Failure(
+                        $"Failed to create secret in Secret Provider: {createSecretResult.Error}",
+                        ErrorType.ServerError);
+                }
+
+                password = command.Password;
+                passwordSourceUsed = PasswordSourceUsed.NewSecret;
+                break;
+
+            default:
+                return Result<CreateSqlAccountResponse>.Failure(
+                    "Invalid password source.",
+                    ErrorType.Validation);
+        }
+
+        // Get the list of databases from the account's grants
+        var databases = account.Grants
+            .Where(g => !string.IsNullOrWhiteSpace(g.Database))
+            .Select(g => g.Database!)
+            .Distinct()
+            .ToList();
+
+        // Create the SQL login and users
+        var (createSuccess, operations, createError) = await _sqlInspector.CreatePrincipalAsync(
+            integration, principalName, password, databases, ct);
+
+        // Re-check permissions to get updated status
+        SqlAccountPermissionsStatus? updatedStatus = null;
+        if (createSuccess)
+        {
+            var (recheckSuccess, updatedPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+                integration, principalName, ct);
+
+            if (recheckSuccess && updatedPermissions is not null)
+            {
+                var updatedComparisons = BuildPermissionComparisons(account.Grants, updatedPermissions);
+                var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
+                var principalMissing = !updatedPermissions.Exists;
+
+                SyncStatus status;
+                if (principalMissing)
+                {
+                    status = SyncStatus.MissingPrincipal;
+                }
+                else if (updatedHasDrift)
+                {
+                    status = SyncStatus.DriftDetected;
+                }
+                else
+                {
+                    status = SyncStatus.InSync;
+                }
+
+                updatedStatus = new SqlAccountPermissionsStatus(
+                    AccountId: account.Id,
+                    AccountName: GetAccountDisplayName(account, snapshot),
+                    PrincipalName: principalName,
+                    Status: status,
+                    PermissionComparisons: updatedComparisons,
+                    ErrorMessage: null);
+            }
+        }
+
+        // Log the account creation to audit
+        var operationsList = operations.ToList();
+        var successfulCount = operationsList.Count(op => op.Success);
+        var failedCount = operationsList.Count(op => !op.Success);
+        var operationDetails = operationsList.Select(op => new
+        {
+            op.OperationType,
+            op.Database,
+            op.Success,
+            op.ErrorMessage
+        }).ToList();
+
+        var auditDetails = new
+        {
+            IntegrationId = integration.Id,
+            IntegrationName = integration.Name,
+            AccountId = account.Id,
+            PrincipalName = principalName,
+            PasswordSource = passwordSourceUsed.ToString(),
+            Success = createSuccess,
+            OperationsCount = operationsList.Count,
+            SuccessfulOperations = successfulCount,
+            FailedOperations = failedCount,
+            Operations = operationDetails
+        };
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SqlAccountCreated,
+            AuditArea.SqlIntegration,
+            userName,
+            userId,
+            account.Id,
+            auditDetails);
+
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<CreateSqlAccountResponse>.Success(new CreateSqlAccountResponse(
+            AccountId: account.Id,
+            PrincipalName: principalName,
+            Success: createSuccess,
+            PasswordSource: passwordSourceUsed,
+            Operations: operationsList,
+            UpdatedStatus: updatedStatus,
+            ErrorMessage: createError));
     }
 }

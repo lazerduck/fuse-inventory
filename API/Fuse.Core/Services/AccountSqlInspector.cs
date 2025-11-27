@@ -450,4 +450,160 @@ public class AccountSqlInspector : IAccountSqlInspector
             _ => null // Unmapped permissions are ignored
         };
     }
+
+    /// <inheritdoc />
+    public async Task<(bool IsSuccessful, IReadOnlyList<SqlAccountCreationOperation> Operations, string? ErrorMessage)> CreatePrincipalAsync(
+        SqlIntegration sqlIntegration,
+        string principalName,
+        string password,
+        IReadOnlyList<string> databases,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "Principal name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "Password is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sqlIntegration.ConnectionString))
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "SQL integration has no connection string configured.");
+        }
+
+        // Check if integration has create permissions
+        if ((sqlIntegration.Permissions & SqlPermissions.Create) == 0)
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "SQL integration does not have Create permission to create logins/users.");
+        }
+
+        var operations = new List<SqlAccountCreationOperation>();
+        bool hasFailures = false;
+
+        try
+        {
+            string sanitizedConnectionString;
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(sqlIntegration.ConnectionString);
+                sanitizedConnectionString = builder.ConnectionString;
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, Array.Empty<SqlAccountCreationOperation>(), $"Invalid connection string: {ex.Message}");
+            }
+
+            await using var connection = new SqlConnection(sanitizedConnectionString);
+            await connection.OpenAsync(ct);
+
+            // Step 1: Create the server login
+            var loginResult = await CreateLoginAsync(connection, principalName, password, ct);
+            operations.Add(loginResult);
+            if (!loginResult.Success)
+            {
+                hasFailures = true;
+                // If login creation failed, we can't create users
+                return (false, operations, "Failed to create SQL login. Cannot proceed with user creation.");
+            }
+
+            // Step 2: Create users in each specified database
+            foreach (var database in databases.Distinct())
+            {
+                if (string.IsNullOrWhiteSpace(database))
+                    continue;
+
+                var userResult = await CreateUserAsync(connection, principalName, database, ct);
+                operations.Add(userResult);
+                if (!userResult.Success)
+                {
+                    hasFailures = true;
+                }
+            }
+
+            return (!hasFailures, operations, hasFailures ? "Some operations failed. Check individual operation results." : null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, operations, $"SQL error: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (false, operations, $"Unexpected error: {ex.Message}");
+        }
+    }
+
+    private static async Task<SqlAccountCreationOperation> CreateLoginAsync(
+        SqlConnection connection,
+        string principalName,
+        string password,
+        CancellationToken ct)
+    {
+        try
+        {
+            // Use parameterized approach for the principal name (escaped identifier)
+            // Password cannot be parameterized in CREATE LOGIN, so we must escape it carefully
+            var escapedPrincipal = EscapeIdentifier(principalName);
+            var escapedPassword = EscapePassword(password);
+            
+            var sql = $"CREATE LOGIN {escapedPrincipal} WITH PASSWORD = {escapedPassword};";
+
+            await using var command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync(ct);
+
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE LOGIN",
+                Database: null,
+                Success: true,
+                ErrorMessage: null);
+        }
+        catch (SqlException ex)
+        {
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE LOGIN",
+                Database: null,
+                Success: false,
+                ErrorMessage: ex.Message);
+        }
+    }
+
+    private static async Task<SqlAccountCreationOperation> CreateUserAsync(
+        SqlConnection connection,
+        string principalName,
+        string database,
+        CancellationToken ct)
+    {
+        try
+        {
+            var escapedPrincipal = EscapeIdentifier(principalName);
+            var escapedDatabase = EscapeIdentifier(database);
+            
+            var sql = $"USE {escapedDatabase}; CREATE USER {escapedPrincipal} FOR LOGIN {escapedPrincipal};";
+
+            await using var command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync(ct);
+
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE USER",
+                Database: database,
+                Success: true,
+                ErrorMessage: null);
+        }
+        catch (SqlException ex)
+        {
+            return new SqlAccountCreationOperation(
+                OperationType: "CREATE USER",
+                Database: database,
+                Success: false,
+                ErrorMessage: ex.Message);
+        }
+    }
+
+    private static string EscapePassword(string password)
+    {
+        // SQL Server password escaping: wrap in single quotes and escape single quotes
+        return "N'" + password.Replace("'", "''") + "'";
+    }
 }

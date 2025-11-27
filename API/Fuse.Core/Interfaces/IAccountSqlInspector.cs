@@ -51,4 +51,20 @@ public interface IAccountSqlInspector
         string principalName,
         IReadOnlyList<SqlPermissionComparison> permissionComparisons,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a SQL login and user for a principal that does not exist.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalName">The SQL principal name to create.</param>
+    /// <param name="password">The password for the new login.</param>
+    /// <param name="databases">The list of databases where the user should be created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of operations performed with their success/failure status.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<SqlAccountCreationOperation> Operations, string? ErrorMessage)> CreatePrincipalAsync(
+        SqlIntegration sqlIntegration,
+        string principalName,
+        string password,
+        IReadOnlyList<string> databases,
+        CancellationToken ct = default);
 }

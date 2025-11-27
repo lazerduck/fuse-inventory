@@ -68,6 +68,28 @@ namespace Fuse.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPost("{id}/accounts/{accountId}/create")]
+        [ProducesResponseType(200, Type = typeof(CreateSqlAccountResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
+        public async Task<ActionResult<CreateSqlAccountResponse>> CreateAccount([FromRoute] Guid id, [FromRoute] Guid accountId, [FromBody] CreateSqlAccountRequest request, CancellationToken ct)
+        {
+            var command = new CreateSqlAccount(id, accountId, request.PasswordSource, request.Password);
+            var (userName, userId) = GetUserInfo();
+            var result = await _service.CreateSqlAccountAsync(command, userName, userId, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost("test-connection")]
         [ProducesResponseType(200, Type = typeof(SqlConnectionTestResult))]
         [ProducesResponseType(400)]

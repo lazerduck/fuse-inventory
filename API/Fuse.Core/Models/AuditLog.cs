@@ -75,7 +75,8 @@ public enum AuditAction
     ConfigExported,
     
     // SqlIntegration actions
-    SqlIntegrationDriftResolved
+    SqlIntegrationDriftResolved,
+    SqlAccountCreated
 }
 
 /// <summary>
