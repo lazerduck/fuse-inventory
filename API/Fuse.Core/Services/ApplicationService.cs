@@ -74,8 +74,9 @@ public class ApplicationService : IApplicationService
         await _environmentService.ApplyEnvironmentAutomationAsync(new ApplyEnvironmentAutomation(ApplicationId: app.Id));
         
         // Return the updated application with any auto-created instances
+        // This should always succeed since we just created the app, but we fetch it to get the latest state
         var updatedApp = await GetApplicationByIdAsync(app.Id);
-        return Result<Application>.Success(updatedApp ?? app);
+        return Result<Application>.Success(updatedApp!);
     }
 
     public async Task<Result<Application>> UpdateApplicationAsync(UpdateApplication command)
