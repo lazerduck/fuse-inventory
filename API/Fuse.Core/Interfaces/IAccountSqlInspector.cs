@@ -1,4 +1,5 @@
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Interfaces;
 
@@ -35,5 +36,19 @@ public interface IAccountSqlInspector
     Task<(bool IsSuccessful, SqlPrincipalPermissions? Permissions, string? ErrorMessage)> GetPrincipalPermissionsAsync(
         SqlIntegration sqlIntegration,
         string principalName,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Applies GRANT and REVOKE statements to resolve permission drift for a principal.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalName">The SQL principal name to modify.</param>
+    /// <param name="permissionComparisons">The permission comparisons showing what needs to be granted/revoked.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of operations performed with their success/failure status.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<DriftResolutionOperation> Operations, string? ErrorMessage)> ApplyPermissionChangesAsync(
+        SqlIntegration sqlIntegration,
+        string principalName,
+        IReadOnlyList<SqlPermissionComparison> permissionComparisons,
         CancellationToken ct = default);
 }
