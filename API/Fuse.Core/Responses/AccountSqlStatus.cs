@@ -1,4 +1,5 @@
 using Fuse.Core.Models;
+using Fuse.Core.Interfaces;
 
 namespace Fuse.Core.Responses;
 
@@ -21,6 +22,7 @@ public enum SyncStatus
 {
     InSync,
     DriftDetected,
+    MissingPrincipal,
     Error,
     NotApplicable
 }
@@ -36,5 +38,49 @@ public record AccountSqlStatusResponse(
     SyncStatus Status,
     string StatusSummary,
     IReadOnlyList<SqlPermissionComparison> PermissionComparisons,
+    string? ErrorMessage
+);
+
+/// <summary>
+/// Permission status for a single account within an integration overview.
+/// </summary>
+public record SqlAccountPermissionsStatus(
+    Guid AccountId,
+    string? AccountName,
+    string? PrincipalName,
+    SyncStatus Status,
+    IReadOnlyList<SqlPermissionComparison> PermissionComparisons,
+    string? ErrorMessage
+);
+
+/// <summary>
+/// Represents an orphan SQL principal that exists but is not mapped to any Fuse account.
+/// </summary>
+public record SqlOrphanPrincipal(
+    string PrincipalName,
+    IReadOnlyList<SqlActualGrant> ActualPermissions
+);
+
+/// <summary>
+/// Summary aggregates for the integration permissions overview.
+/// </summary>
+public record SqlPermissionsOverviewSummary(
+    int TotalAccounts,
+    int InSyncCount,
+    int DriftCount,
+    int MissingPrincipalCount,
+    int ErrorCount,
+    int OrphanPrincipalCount
+);
+
+/// <summary>
+/// Response DTO for the SQL integration permissions overview endpoint.
+/// </summary>
+public record SqlIntegrationPermissionsOverviewResponse(
+    Guid IntegrationId,
+    string IntegrationName,
+    IReadOnlyList<SqlAccountPermissionsStatus> Accounts,
+    IReadOnlyList<SqlOrphanPrincipal> OrphanPrincipals,
+    SqlPermissionsOverviewSummary Summary,
     string? ErrorMessage
 );

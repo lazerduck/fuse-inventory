@@ -359,14 +359,26 @@ public class AccountService : IAccountService
         // Determine sync status
         var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
         var principalMissing = !actualPermissions.Exists;
-        var status = principalMissing ? SyncStatus.DriftDetected :
-                     hasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync;
-
-        var statusSummary = (status, principalMissing) switch
+        
+        SyncStatus status;
+        if (principalMissing)
         {
-            (SyncStatus.InSync, _) => "Permissions are in sync.",
-            (SyncStatus.DriftDetected, true) => $"SQL principal '{principalName}' does not exist.",
-            (SyncStatus.DriftDetected, false) => "Permission drift detected between configured and actual grants.",
+            status = SyncStatus.MissingPrincipal;
+        }
+        else if (hasDrift)
+        {
+            status = SyncStatus.DriftDetected;
+        }
+        else
+        {
+            status = SyncStatus.InSync;
+        }
+
+        var statusSummary = status switch
+        {
+            SyncStatus.InSync => "Permissions are in sync.",
+            SyncStatus.MissingPrincipal => $"SQL principal '{principalName}' does not exist.",
+            SyncStatus.DriftDetected => "Permission drift detected between configured and actual grants.",
             _ => "Unknown status."
         };
 
