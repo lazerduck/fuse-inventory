@@ -76,7 +76,8 @@ public enum AuditAction
     
     // SqlIntegration actions
     SqlIntegrationDriftResolved,
-    SqlAccountCreated
+    SqlAccountCreated,
+    SqlIntegrationBulkResolved
 }
 
 /// <summary>

@@ -141,3 +141,38 @@ public record CreateSqlAccountResponse(
     SqlAccountPermissionsStatus? UpdatedStatus,
     string? ErrorMessage
 );
+
+/// <summary>
+/// Result for a single account operation during bulk resolve.
+/// </summary>
+public record BulkResolveAccountResult(
+    Guid AccountId,
+    string? AccountName,
+    string? PrincipalName,
+    string OperationType,
+    bool Success,
+    string? ErrorMessage,
+    SqlAccountPermissionsStatus? UpdatedStatus
+);
+
+/// <summary>
+/// Summary of bulk resolve operations.
+/// </summary>
+public record BulkResolveSummary(
+    int TotalProcessed,
+    int AccountsCreated,
+    int DriftsResolved,
+    int Skipped,
+    int Failed
+);
+
+/// <summary>
+/// Response DTO for bulk resolve endpoint.
+/// </summary>
+public record BulkResolveResponse(
+    Guid IntegrationId,
+    bool Success,
+    BulkResolveSummary Summary,
+    IReadOnlyList<BulkResolveAccountResult> Results,
+    string? ErrorMessage
+);

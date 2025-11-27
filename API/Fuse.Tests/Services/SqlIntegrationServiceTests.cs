@@ -1125,4 +1125,252 @@ public class SqlIntegrationServiceTests
         // Verify secret was retrieved from provider
         mockSecretService.Verify(s => s.RevealSecretAsync(It.IsAny<RevealSecret>(), It.IsAny<string>(), It.IsAny<Guid?>()), Times.Once);
     }
+
+    [Fact]
+    public async Task BulkResolveAsync_ReturnsNotFoundForMissingIntegration()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(Guid.NewGuid(), BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task BulkResolveAsync_ReturnsErrorWhenMissingPermissions()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        // Integration only has Read permission, needs Read, Write, and Create
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
+        var service = CreateService(store);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(intId, BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("permission", result.Error!.ToLowerInvariant());
+    }
+
+    [Fact]
+    public async Task BulkResolveAsync_ReturnsEmptyResultsWhenNoAccountsNeedAction()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+            }), null)); // Already in sync
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(intId, BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value.Results);
+        Assert.Equal(0, result.Value.Summary.TotalProcessed);
+    }
+
+    [Fact]
+    public async Task BulkResolveAsync_ResolvesDriftForExistingAccounts()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        // Initial check: has SELECT only, needs INSERT too
+        mockInspector
+            .SetupSequence(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+            }), null))
+            // After resolve: in sync
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert })
+            }), null));
+
+        mockInspector
+            .Setup(i => i.ApplyPermissionChangesAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<IReadOnlyList<SqlPermissionComparison>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new List<DriftResolutionOperation>
+            {
+                new DriftResolutionOperation("GRANT", "TestDB", null, Privilege.Insert, true, null)
+            }, null));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(intId, BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.Single(result.Value.Results);
+        Assert.Equal("Resolve Drift", result.Value.Results[0].OperationType);
+        Assert.True(result.Value.Results[0].Success);
+        Assert.Equal(1, result.Value.Summary.DriftsResolved);
+    }
+
+    [Fact]
+    public async Task BulkResolveAsync_SkipsMissingAccountsWithoutSecretProvider()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, DateTime.UtcNow, DateTime.UtcNow);
+        // Account without Secret Provider binding
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null), // Plain reference, not AKV
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        // Principal doesn't exist
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(intId, BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value.Results);
+        Assert.Equal("Create Account", result.Value.Results[0].OperationType);
+        Assert.False(result.Value.Results[0].Success);
+        Assert.Contains("skipped", result.Value.Results[0].ErrorMessage!.ToLowerInvariant());
+        Assert.Equal(1, result.Value.Summary.Skipped);
+    }
+
+    [Fact]
+    public async Task BulkResolveAsync_CreatesMissingAccountsWithSecretProvider()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var providerId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, DateTime.UtcNow, DateTime.UtcNow);
+        // Account with Secret Provider binding
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.AzureKeyVault, null, new AzureKeyVaultBinding(providerId, "testuser-password", null)),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        // Principal doesn't exist initially
+        mockInspector
+            .SetupSequence(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            // First call: overview - principal doesn't exist
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null))
+            // Second call: during create account check - principal doesn't exist
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null))
+            // Third call: after creation - principal exists with SELECT permission (in sync)
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+            }), null));
+
+        mockInspector
+            .Setup(i => i.CreatePrincipalAsync(It.IsAny<SqlIntegration>(), "testuser", "secret-password", It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new List<SqlAccountCreationOperation>
+            {
+                new SqlAccountCreationOperation("CREATE LOGIN", null, true, null),
+                new SqlAccountCreationOperation("CREATE USER", "TestDB", true, null)
+            }, null));
+
+        var mockSecretService = new Mock<ISecretOperationService>();
+        mockSecretService
+            .Setup(s => s.RevealSecretAsync(It.Is<RevealSecret>(r => r.ProviderId == providerId && r.SecretName == "testuser-password"), It.IsAny<string>(), It.IsAny<Guid?>()))
+            .ReturnsAsync(Result<string>.Success("secret-password"));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object, secretOperationService: mockSecretService.Object);
+
+        var result = await service.BulkResolveAsync(new BulkResolve(intId, BulkPasswordSource.SecretProvider), "testUser", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.NotEmpty(result.Value.Results);
+        Assert.Contains(result.Value.Results, r => r.OperationType == "Create Account" && r.Success);
+        Assert.Equal(1, result.Value.Summary.AccountsCreated);
+        
+        // Verify secret was retrieved and audit was logged
+        mockSecretService.Verify(s => s.RevealSecretAsync(It.IsAny<RevealSecret>(), It.IsAny<string>(), It.IsAny<Guid?>()), Times.Once);
+        mockAuditService.Verify(a => a.LogAsync(It.Is<AuditLog>(l => l.Action == AuditAction.SqlIntegrationBulkResolved), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

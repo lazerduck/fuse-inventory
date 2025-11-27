@@ -830,4 +830,247 @@ public class SqlIntegrationService : ISqlIntegrationService
             UpdatedStatus: updatedStatus,
             ErrorMessage: createError));
     }
+
+    public async Task<Result<BulkResolveResponse>> BulkResolveAsync(BulkResolve command, string userName, Guid? userId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == command.IntegrationId);
+        if (integration is null)
+        {
+            return Result<BulkResolveResponse>.Failure(
+                $"SQL integration {command.IntegrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has required permissions
+        // For bulk resolve, we need Read (to inspect), Write (to resolve drift), and Create (to create accounts)
+        var requiredPermissions = SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create;
+        var missingPermissions = requiredPermissions & ~integration.Permissions;
+        if (missingPermissions != SqlPermissions.None)
+        {
+            return Result<BulkResolveResponse>.Failure(
+                $"SQL integration does not have all required permissions for bulk resolve. Missing: {missingPermissions}",
+                ErrorType.Validation);
+        }
+
+        // Get the permissions overview to identify accounts that need action
+        var overviewResult = await GetPermissionsOverviewAsync(integration.Id, ct);
+        if (!overviewResult.IsSuccess || overviewResult.Value is null)
+        {
+            return Result<BulkResolveResponse>.Failure(
+                overviewResult.Error ?? "Failed to get permissions overview.",
+                overviewResult.ErrorType ?? ErrorType.ServerError);
+        }
+
+        var overview = overviewResult.Value;
+        var results = new List<BulkResolveAccountResult>();
+        var accountsCreated = 0;
+        var driftsResolved = 0;
+        var skipped = 0;
+        var failed = 0;
+
+        foreach (var accountStatus in overview.Accounts)
+        {
+            if (accountStatus.Status == SyncStatus.MissingPrincipal)
+            {
+                // Try to create the account
+                var createResult = await TryCreateAccountForBulkResolve(
+                    integration, accountStatus, snapshot, userName, userId, ct);
+                
+                results.Add(createResult);
+                
+                if (createResult.Success)
+                {
+                    accountsCreated++;
+                    
+                    // After creating, check if we need to resolve drift for the new account
+                    if (createResult.UpdatedStatus?.Status == SyncStatus.DriftDetected)
+                    {
+                        var driftResult = await TryResolveDriftForBulkResolve(
+                            integration, accountStatus.AccountId, accountStatus.AccountName, 
+                            accountStatus.PrincipalName, snapshot, userName, userId, ct);
+                        
+                        results.Add(driftResult);
+                        
+                        if (driftResult.Success)
+                            driftsResolved++;
+                        else
+                            failed++;
+                    }
+                }
+                else if (createResult.ErrorMessage?.Contains("skipped") == true)
+                {
+                    skipped++;
+                }
+                else
+                {
+                    failed++;
+                }
+            }
+            else if (accountStatus.Status == SyncStatus.DriftDetected)
+            {
+                // Try to resolve drift
+                var resolveResult = await TryResolveDriftForBulkResolve(
+                    integration, accountStatus.AccountId, accountStatus.AccountName, 
+                    accountStatus.PrincipalName, snapshot, userName, userId, ct);
+                
+                results.Add(resolveResult);
+                
+                if (resolveResult.Success)
+                    driftsResolved++;
+                else
+                    failed++;
+            }
+            // Skip InSync, Error, and NotApplicable accounts
+        }
+
+        var summary = new BulkResolveSummary(
+            TotalProcessed: results.Count,
+            AccountsCreated: accountsCreated,
+            DriftsResolved: driftsResolved,
+            Skipped: skipped,
+            Failed: failed
+        );
+
+        // Log the bulk resolve to audit
+        var auditDetails = new
+        {
+            IntegrationId = integration.Id,
+            IntegrationName = integration.Name,
+            Summary = summary,
+            Results = results.Select(r => new
+            {
+                r.AccountId,
+                r.AccountName,
+                r.PrincipalName,
+                r.OperationType,
+                r.Success,
+                r.ErrorMessage
+            }).ToList()
+        };
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SqlIntegrationBulkResolved,
+            AuditArea.SqlIntegration,
+            userName,
+            userId,
+            integration.Id,
+            auditDetails);
+
+        await _auditService.LogAsync(auditLog, ct);
+
+        // Success is true if there were no failures. Even if nothing was processed
+        // (all accounts already in sync), that's still a successful operation.
+        var overallSuccess = failed == 0;
+        
+        return Result<BulkResolveResponse>.Success(new BulkResolveResponse(
+            IntegrationId: integration.Id,
+            Success: overallSuccess,
+            Summary: summary,
+            Results: results,
+            ErrorMessage: failed > 0 ? $"{failed} operation(s) failed. See individual results for details." : null));
+    }
+
+    private async Task<BulkResolveAccountResult> TryCreateAccountForBulkResolve(
+        SqlIntegration integration,
+        SqlAccountPermissionsStatus accountStatus,
+        Snapshot snapshot,
+        string userName,
+        Guid? userId,
+        CancellationToken ct)
+    {
+        var account = snapshot.Accounts.FirstOrDefault(a => a.Id == accountStatus.AccountId);
+        if (account is null)
+        {
+            return new BulkResolveAccountResult(
+                AccountId: accountStatus.AccountId,
+                AccountName: accountStatus.AccountName,
+                PrincipalName: accountStatus.PrincipalName,
+                OperationType: "Create Account",
+                Success: false,
+                ErrorMessage: "Account not found in store.",
+                UpdatedStatus: null);
+        }
+
+        // For bulk resolve, only use SecretProvider as password source
+        // Skip accounts that don't have a secret provider linked
+        if (!HasSecretProviderBinding(account))
+        {
+            return new BulkResolveAccountResult(
+                AccountId: account.Id,
+                AccountName: accountStatus.AccountName,
+                PrincipalName: accountStatus.PrincipalName,
+                OperationType: "Create Account",
+                Success: false,
+                ErrorMessage: "Account skipped: not linked to a Secret Provider.",
+                UpdatedStatus: null);
+        }
+
+        // Use the existing CreateSqlAccountAsync method
+        var createCommand = new CreateSqlAccount(
+            integration.Id,
+            account.Id,
+            PasswordSource.SecretProvider,
+            null);
+
+        var result = await CreateSqlAccountAsync(createCommand, userName, userId, ct);
+
+        if (result.IsSuccess && result.Value is not null)
+        {
+            return new BulkResolveAccountResult(
+                AccountId: account.Id,
+                AccountName: accountStatus.AccountName,
+                PrincipalName: result.Value.PrincipalName,
+                OperationType: "Create Account",
+                Success: result.Value.Success,
+                ErrorMessage: result.Value.ErrorMessage,
+                UpdatedStatus: result.Value.UpdatedStatus);
+        }
+
+        return new BulkResolveAccountResult(
+            AccountId: account.Id,
+            AccountName: accountStatus.AccountName,
+            PrincipalName: accountStatus.PrincipalName,
+            OperationType: "Create Account",
+            Success: false,
+            ErrorMessage: result.Error ?? "Failed to create account.",
+            UpdatedStatus: null);
+    }
+
+    private async Task<BulkResolveAccountResult> TryResolveDriftForBulkResolve(
+        SqlIntegration integration,
+        Guid accountId,
+        string? accountName,
+        string? principalName,
+        Snapshot snapshot,
+        string userName,
+        Guid? userId,
+        CancellationToken ct)
+    {
+        var resolveCommand = new ResolveDrift(integration.Id, accountId);
+        var result = await ResolveDriftAsync(resolveCommand, userName, userId, ct);
+
+        if (result.IsSuccess && result.Value is not null)
+        {
+            return new BulkResolveAccountResult(
+                AccountId: accountId,
+                AccountName: accountName,
+                PrincipalName: result.Value.PrincipalName,
+                OperationType: "Resolve Drift",
+                Success: result.Value.Success,
+                ErrorMessage: result.Value.ErrorMessage,
+                UpdatedStatus: result.Value.UpdatedStatus);
+        }
+
+        return new BulkResolveAccountResult(
+            AccountId: accountId,
+            AccountName: accountName,
+            PrincipalName: principalName,
+            OperationType: "Resolve Drift",
+            Success: false,
+            ErrorMessage: result.Error ?? "Failed to resolve drift.",
+            UpdatedStatus: null);
+    }
 }

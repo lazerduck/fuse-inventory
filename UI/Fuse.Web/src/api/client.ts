@@ -473,6 +473,12 @@ export interface IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
+    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult>;
 
     /**
@@ -4906,6 +4912,66 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
+    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/bulk-resolve";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processBulkResolve(_response);
+        });
+    }
+
+    protected processBulkResolve(response: Response): Promise<BulkResolveResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = BulkResolveResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BulkResolveResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult> {
         let url_ = this.baseUrl + "/api/SqlIntegration/test-connection";
         url_ = url_.replace(/[?&]$/, "");
@@ -5774,6 +5840,7 @@ export enum AuditAction {
     ConfigExported = "ConfigExported",
     SqlIntegrationDriftResolved = "SqlIntegrationDriftResolved",
     SqlAccountCreated = "SqlAccountCreated",
+    SqlIntegrationBulkResolved = "SqlIntegrationBulkResolved",
 }
 
 export enum AuditArea {
@@ -5969,6 +6036,218 @@ export interface IAzureKeyVaultBinding {
     providerId?: string;
     secretName?: string | undefined;
     version?: string | undefined;
+}
+
+export enum BulkPasswordSource {
+    SecretProvider = "SecretProvider",
+}
+
+export class BulkResolveAccountResult implements IBulkResolveAccountResult {
+    accountId?: string;
+    accountName?: string | undefined;
+    principalName?: string | undefined;
+    operationType?: string | undefined;
+    success?: boolean;
+    errorMessage?: string | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
+
+    constructor(data?: IBulkResolveAccountResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accountId = _data["AccountId"];
+            this.accountName = _data["AccountName"];
+            this.principalName = _data["PrincipalName"];
+            this.operationType = _data["OperationType"];
+            this.success = _data["Success"];
+            this.errorMessage = _data["ErrorMessage"];
+            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): BulkResolveAccountResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new BulkResolveAccountResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["AccountId"] = this.accountId;
+        data["AccountName"] = this.accountName;
+        data["PrincipalName"] = this.principalName;
+        data["OperationType"] = this.operationType;
+        data["Success"] = this.success;
+        data["ErrorMessage"] = this.errorMessage;
+        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IBulkResolveAccountResult {
+    accountId?: string;
+    accountName?: string | undefined;
+    principalName?: string | undefined;
+    operationType?: string | undefined;
+    success?: boolean;
+    errorMessage?: string | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
+}
+
+export class BulkResolveRequest implements IBulkResolveRequest {
+    passwordSource?: BulkPasswordSource;
+
+    constructor(data?: IBulkResolveRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.passwordSource = _data["PasswordSource"];
+        }
+    }
+
+    static fromJS(data: any): BulkResolveRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new BulkResolveRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["PasswordSource"] = this.passwordSource;
+        return data;
+    }
+}
+
+export interface IBulkResolveRequest {
+    passwordSource?: BulkPasswordSource;
+}
+
+export class BulkResolveResponse implements IBulkResolveResponse {
+    integrationId?: string;
+    success?: boolean;
+    summary?: BulkResolveSummary;
+    results?: BulkResolveAccountResult[] | undefined;
+    errorMessage?: string | undefined;
+
+    constructor(data?: IBulkResolveResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.integrationId = _data["IntegrationId"];
+            this.success = _data["Success"];
+            this.summary = _data["Summary"] ? BulkResolveSummary.fromJS(_data["Summary"]) : undefined as any;
+            if (Array.isArray(_data["Results"])) {
+                this.results = [] as any;
+                for (let item of _data["Results"])
+                    this.results!.push(BulkResolveAccountResult.fromJS(item));
+            }
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): BulkResolveResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new BulkResolveResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["IntegrationId"] = this.integrationId;
+        data["Success"] = this.success;
+        data["Summary"] = this.summary ? this.summary.toJSON() : undefined as any;
+        if (Array.isArray(this.results)) {
+            data["Results"] = [];
+            for (let item of this.results)
+                data["Results"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface IBulkResolveResponse {
+    integrationId?: string;
+    success?: boolean;
+    summary?: BulkResolveSummary;
+    results?: BulkResolveAccountResult[] | undefined;
+    errorMessage?: string | undefined;
+}
+
+export class BulkResolveSummary implements IBulkResolveSummary {
+    totalProcessed?: number;
+    accountsCreated?: number;
+    driftsResolved?: number;
+    skipped?: number;
+    failed?: number;
+
+    constructor(data?: IBulkResolveSummary) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.totalProcessed = _data["TotalProcessed"];
+            this.accountsCreated = _data["AccountsCreated"];
+            this.driftsResolved = _data["DriftsResolved"];
+            this.skipped = _data["Skipped"];
+            this.failed = _data["Failed"];
+        }
+    }
+
+    static fromJS(data: any): BulkResolveSummary {
+        data = typeof data === 'object' ? data : {};
+        let result = new BulkResolveSummary();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["TotalProcessed"] = this.totalProcessed;
+        data["AccountsCreated"] = this.accountsCreated;
+        data["DriftsResolved"] = this.driftsResolved;
+        data["Skipped"] = this.skipped;
+        data["Failed"] = this.failed;
+        return data;
+    }
+}
+
+export interface IBulkResolveSummary {
+    totalProcessed?: number;
+    accountsCreated?: number;
+    driftsResolved?: number;
+    skipped?: number;
+    failed?: number;
 }
 
 export class CreateAccount implements ICreateAccount {
