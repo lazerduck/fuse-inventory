@@ -57,11 +57,24 @@
               flat 
               dense 
               round 
+              icon="list_alt" 
+              color="secondary"
+              @click="router.push({ name: 'sqlPermissionsOverview', params: { id: props.row.id } })"
+            >
+              <q-tooltip>Permissions Overview</q-tooltip>
+            </q-btn>
+            <q-btn 
+              flat 
+              dense 
+              round 
               icon="edit" 
               color="primary" 
+              class="q-ml-xs"
               :disable="!fuseStore.canModify"
               @click="openEditDialog(props.row)" 
-            />
+            >
+              <q-tooltip>Edit Integration</q-tooltip>
+            </q-btn>
             <q-btn
               flat
               dense
@@ -71,7 +84,9 @@
               class="q-ml-xs"
               :disable="!fuseStore.canModify"
               @click="confirmDelete(props.row)"
-            />
+            >
+              <q-tooltip>Delete Integration</q-tooltip>
+            </q-btn>
           </q-td>
         </template>
         <template #no-data>
@@ -96,6 +111,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -111,6 +127,8 @@ import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { getErrorMessage } from '../utils/error'
 import { parseSqlPermissions } from '../utils/sqlPermissions'
 import SqlIntegrationForm from '../components/sqlIntegration/SqlIntegrationForm.vue'
+
+const router = useRouter()
 
 interface SqlIntegrationFormModel {
   name: string

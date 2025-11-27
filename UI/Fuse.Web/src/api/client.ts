@@ -454,6 +454,11 @@ export interface IFuseApiClient {
     sqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
+     * @return OK
+     */
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<SqlIntegrationPermissionsOverviewResponse>;
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -4711,6 +4716,54 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
+     * @return OK
+     */
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<SqlIntegrationPermissionsOverviewResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPermissionsOverview(_response);
+        });
+    }
+
+    protected processPermissionsOverview(response: Response): Promise<SqlIntegrationPermissionsOverviewResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SqlIntegrationPermissionsOverviewResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SqlIntegrationPermissionsOverviewResponse>(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -7907,6 +7960,122 @@ export interface ISecurityUserResponse {
     updatedAt?: Date;
 }
 
+export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus {
+    accountId?: string;
+    accountName?: string | undefined;
+    principalName?: string | undefined;
+    status?: SyncStatus;
+    permissionComparisons?: SqlPermissionComparison[] | undefined;
+    errorMessage?: string | undefined;
+
+    constructor(data?: ISqlAccountPermissionsStatus) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accountId = _data["AccountId"];
+            this.accountName = _data["AccountName"];
+            this.principalName = _data["PrincipalName"];
+            this.status = _data["Status"];
+            if (Array.isArray(_data["PermissionComparisons"])) {
+                this.permissionComparisons = [] as any;
+                for (let item of _data["PermissionComparisons"])
+                    this.permissionComparisons!.push(SqlPermissionComparison.fromJS(item));
+            }
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): SqlAccountPermissionsStatus {
+        data = typeof data === 'object' ? data : {};
+        let result = new SqlAccountPermissionsStatus();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["AccountId"] = this.accountId;
+        data["AccountName"] = this.accountName;
+        data["PrincipalName"] = this.principalName;
+        data["Status"] = this.status;
+        if (Array.isArray(this.permissionComparisons)) {
+            data["PermissionComparisons"] = [];
+            for (let item of this.permissionComparisons)
+                data["PermissionComparisons"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface ISqlAccountPermissionsStatus {
+    accountId?: string;
+    accountName?: string | undefined;
+    principalName?: string | undefined;
+    status?: SyncStatus;
+    permissionComparisons?: SqlPermissionComparison[] | undefined;
+    errorMessage?: string | undefined;
+}
+
+export class SqlActualGrant implements ISqlActualGrant {
+    database?: string | undefined;
+    schema?: string | undefined;
+    privileges?: Privilege[] | undefined;
+
+    constructor(data?: ISqlActualGrant) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.database = _data["Database"];
+            this.schema = _data["Schema"];
+            if (Array.isArray(_data["Privileges"])) {
+                this.privileges = [] as any;
+                for (let item of _data["Privileges"])
+                    this.privileges!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): SqlActualGrant {
+        data = typeof data === 'object' ? data : {};
+        let result = new SqlActualGrant();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Database"] = this.database;
+        data["Schema"] = this.schema;
+        if (Array.isArray(this.privileges)) {
+            data["Privileges"] = [];
+            for (let item of this.privileges)
+                data["Privileges"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ISqlActualGrant {
+    database?: string | undefined;
+    schema?: string | undefined;
+    privileges?: Privilege[] | undefined;
+}
+
 export class SqlConnectionTestResult implements ISqlConnectionTestResult {
     isSuccessful?: boolean;
     permissions?: SqlPermissions;
@@ -7948,6 +8117,78 @@ export class SqlConnectionTestResult implements ISqlConnectionTestResult {
 export interface ISqlConnectionTestResult {
     isSuccessful?: boolean;
     permissions?: SqlPermissions;
+    errorMessage?: string | undefined;
+}
+
+export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegrationPermissionsOverviewResponse {
+    integrationId?: string;
+    integrationName?: string | undefined;
+    accounts?: SqlAccountPermissionsStatus[] | undefined;
+    orphanPrincipals?: SqlOrphanPrincipal[] | undefined;
+    summary?: SqlPermissionsOverviewSummary;
+    errorMessage?: string | undefined;
+
+    constructor(data?: ISqlIntegrationPermissionsOverviewResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.integrationId = _data["IntegrationId"];
+            this.integrationName = _data["IntegrationName"];
+            if (Array.isArray(_data["Accounts"])) {
+                this.accounts = [] as any;
+                for (let item of _data["Accounts"])
+                    this.accounts!.push(SqlAccountPermissionsStatus.fromJS(item));
+            }
+            if (Array.isArray(_data["OrphanPrincipals"])) {
+                this.orphanPrincipals = [] as any;
+                for (let item of _data["OrphanPrincipals"])
+                    this.orphanPrincipals!.push(SqlOrphanPrincipal.fromJS(item));
+            }
+            this.summary = _data["Summary"] ? SqlPermissionsOverviewSummary.fromJS(_data["Summary"]) : undefined as any;
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): SqlIntegrationPermissionsOverviewResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SqlIntegrationPermissionsOverviewResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["IntegrationId"] = this.integrationId;
+        data["IntegrationName"] = this.integrationName;
+        if (Array.isArray(this.accounts)) {
+            data["Accounts"] = [];
+            for (let item of this.accounts)
+                data["Accounts"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.orphanPrincipals)) {
+            data["OrphanPrincipals"] = [];
+            for (let item of this.orphanPrincipals)
+                data["OrphanPrincipals"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Summary"] = this.summary ? this.summary.toJSON() : undefined as any;
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface ISqlIntegrationPermissionsOverviewResponse {
+    integrationId?: string;
+    integrationName?: string | undefined;
+    accounts?: SqlAccountPermissionsStatus[] | undefined;
+    orphanPrincipals?: SqlOrphanPrincipal[] | undefined;
+    summary?: SqlPermissionsOverviewSummary;
     errorMessage?: string | undefined;
 }
 
@@ -8005,6 +8246,54 @@ export interface ISqlIntegrationResponse {
     permissions?: SqlPermissions;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
+    principalName?: string | undefined;
+    actualPermissions?: SqlActualGrant[] | undefined;
+
+    constructor(data?: ISqlOrphanPrincipal) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.principalName = _data["PrincipalName"];
+            if (Array.isArray(_data["ActualPermissions"])) {
+                this.actualPermissions = [] as any;
+                for (let item of _data["ActualPermissions"])
+                    this.actualPermissions!.push(SqlActualGrant.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): SqlOrphanPrincipal {
+        data = typeof data === 'object' ? data : {};
+        let result = new SqlOrphanPrincipal();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["PrincipalName"] = this.principalName;
+        if (Array.isArray(this.actualPermissions)) {
+            data["ActualPermissions"] = [];
+            for (let item of this.actualPermissions)
+                data["ActualPermissions"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface ISqlOrphanPrincipal {
+    principalName?: string | undefined;
+    actualPermissions?: SqlActualGrant[] | undefined;
 }
 
 export class SqlPermissionComparison implements ISqlPermissionComparison {
@@ -8102,9 +8391,66 @@ export enum SqlPermissions {
     Create = "Create",
 }
 
+export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSummary {
+    totalAccounts?: number;
+    inSyncCount?: number;
+    driftCount?: number;
+    missingPrincipalCount?: number;
+    errorCount?: number;
+    orphanPrincipalCount?: number;
+
+    constructor(data?: ISqlPermissionsOverviewSummary) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.totalAccounts = _data["TotalAccounts"];
+            this.inSyncCount = _data["InSyncCount"];
+            this.driftCount = _data["DriftCount"];
+            this.missingPrincipalCount = _data["MissingPrincipalCount"];
+            this.errorCount = _data["ErrorCount"];
+            this.orphanPrincipalCount = _data["OrphanPrincipalCount"];
+        }
+    }
+
+    static fromJS(data: any): SqlPermissionsOverviewSummary {
+        data = typeof data === 'object' ? data : {};
+        let result = new SqlPermissionsOverviewSummary();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["TotalAccounts"] = this.totalAccounts;
+        data["InSyncCount"] = this.inSyncCount;
+        data["DriftCount"] = this.driftCount;
+        data["MissingPrincipalCount"] = this.missingPrincipalCount;
+        data["ErrorCount"] = this.errorCount;
+        data["OrphanPrincipalCount"] = this.orphanPrincipalCount;
+        return data;
+    }
+}
+
+export interface ISqlPermissionsOverviewSummary {
+    totalAccounts?: number;
+    inSyncCount?: number;
+    driftCount?: number;
+    missingPrincipalCount?: number;
+    errorCount?: number;
+    orphanPrincipalCount?: number;
+}
+
 export enum SyncStatus {
     InSync = "InSync",
     DriftDetected = "DriftDetected",
+    MissingPrincipal = "MissingPrincipal",
     Error = "Error",
     NotApplicable = "NotApplicable",
 }
