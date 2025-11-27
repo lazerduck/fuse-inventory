@@ -1002,20 +1002,18 @@ async function handleBulkResolve() {
     // Refetch the permissions overview
     await refetch()
   } catch (err: any) {
-    // Create an error response object
-    const errorResponse = new BulkResolveResponse()
-    errorResponse.integrationId = integrationId.value
-    errorResponse.success = false
-    errorResponse.results = []
+    // Create an error response object using constructor pattern
+    const errorMessage = err?.status === 401 
+      ? 'Authentication required. Please log in as an admin to perform bulk resolve.'
+      : err?.message || 'An error occurred during bulk resolve.'
     
-    // Check for 401 Unauthorized error
-    if (err?.status === 401) {
-      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to perform bulk resolve.'
-    } else {
-      errorResponse.errorMessage = err?.message || 'An error occurred during bulk resolve.'
-    }
+    bulkResolveResult.value = new BulkResolveResponse({
+      integrationId: integrationId.value,
+      success: false,
+      results: [],
+      errorMessage
+    })
     
-    bulkResolveResult.value = errorResponse
     showBulkResolveDialog.value = false
     showBulkResolveResultDialog.value = true
   }

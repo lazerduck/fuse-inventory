@@ -961,7 +961,9 @@ public class SqlIntegrationService : ISqlIntegrationService
 
         await _auditService.LogAsync(auditLog, ct);
 
-        var overallSuccess = failed == 0 && (accountsCreated > 0 || driftsResolved > 0);
+        // Success is true if there were no failures. Even if nothing was processed
+        // (all accounts already in sync), that's still a successful operation.
+        var overallSuccess = failed == 0;
         
         return Result<BulkResolveResponse>.Success(new BulkResolveResponse(
             IntegrationId: integration.Id,
