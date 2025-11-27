@@ -16,6 +16,16 @@
   /* Elevation */
   --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
   --fuse-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Text selection */
+  --fuse-selection-bg: rgba(33, 150, 243, 0.30); /* primary 500 with opacity */
+  --fuse-selection-color: #000;
+
+  /* Status summary backgrounds (light) */
+  --fuse-status-in-sync-bg: rgba(76, 175, 80, 0.10); /* green */
+  --fuse-status-drift-bg: rgba(255, 152, 0, 0.12); /* orange */
+  --fuse-status-error-bg: rgba(244, 67, 54, 0.12); /* red */
+  --fuse-status-na-bg: rgba(158, 158, 158, 0.12); /* grey */
 }
 
 body.body--dark {
@@ -28,4 +38,24 @@ body.body--dark {
   /* Slightly stronger shadows on dark for elevation perception */
   --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
   --fuse-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.45);
+
+  /* Dark mode selection */
+  --fuse-selection-bg: rgba(255, 255, 255, 0.28);
+  --fuse-selection-color: #fff;
+
+  /* Status summary backgrounds (dark) */
+  --fuse-status-in-sync-bg: rgba(76, 175, 80, 0.25);
+  --fuse-status-drift-bg: rgba(255, 152, 0, 0.28);
+  --fuse-status-error-bg: rgba(244, 67, 54, 0.30);
+  --fuse-status-na-bg: rgba(158, 158, 158, 0.24);
+}
+
+/* Global selection styling */
+::selection {
+  background: var(--fuse-selection-bg);
+  color: var(--fuse-selection-color);
+}
+::-moz-selection {
+  background: var(--fuse-selection-bg);
+  color: var(--fuse-selection-color);
 }

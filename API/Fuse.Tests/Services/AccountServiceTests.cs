@@ -2,8 +2,10 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
+using Moq;
 using System.Linq;
 using Xunit;
 
@@ -27,7 +29,8 @@ public class AccountServiceTests
         IEnumerable<Account>? accounts = null,
         IEnumerable<Application>? apps = null,
         IEnumerable<DataStore>? ds = null,
-        IEnumerable<ExternalResource>? res = null)
+        IEnumerable<ExternalResource>? res = null,
+        IEnumerable<SqlIntegration>? sqlIntegrations = null)
     {
         var snapshot = new Snapshot(
             Applications: (apps ?? Array.Empty<Application>()).ToArray(),
@@ -39,17 +42,23 @@ public class AccountServiceTests
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
                 SecretProviders: Array.Empty<SecretProvider>(),
-                SqlIntegrations: Array.Empty<SqlIntegration>(),
+                SqlIntegrations: (sqlIntegrations ?? Array.Empty<SqlIntegration>()).ToArray(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
+    }
+
+    private static AccountService CreateService(InMemoryFuseStore store, IAccountSqlInspector? sqlInspector = null)
+    {
+        sqlInspector ??= Mock.Of<IAccountSqlInspector>();
+        return new AccountService(store, new TagLookupService(store), sqlInspector);
     }
 
     [Fact]
     public async Task CreateAccount_TargetMustExist()
     {
         var store = NewStore();
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.CreateAccountAsync(new CreateAccount(Guid.NewGuid(), TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -60,7 +69,7 @@ public class AccountServiceTests
     {
         var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.CreateAccountAsync(new CreateAccount(app.Id, TargetKind.Application, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -71,7 +80,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.True(result.IsSuccess);
     Assert.Single(await service.GetAccountsAsync());
@@ -82,7 +91,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -93,7 +102,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid> { Guid.NewGuid() }));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -104,7 +113,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.UpdateAccountAsync(new UpdateAccount(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -116,7 +125,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var updated = await service.UpdateAccountAsync(new UpdateAccount(acc.Id, res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec2", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.True(updated.IsSuccess);
     var got = await service.GetAccountByIdAsync(acc.Id);
@@ -127,7 +136,7 @@ public class AccountServiceTests
     public async Task DeleteAccount_NotFound()
     {
         var store = NewStore();
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.DeleteAccountAsync(new DeleteAccount(Guid.NewGuid()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -139,7 +148,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.DeleteAccountAsync(new DeleteAccount(acc.Id));
     Assert.True(result.IsSuccess);
     Assert.Empty(await service.GetAccountsAsync());
@@ -150,7 +159,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var grants = new[]
         {
@@ -167,7 +176,7 @@ public class AccountServiceTests
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var grants = new[]
         {
@@ -194,7 +203,7 @@ public class AccountServiceTests
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var updatedGrants = new[]
         {
@@ -212,7 +221,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var updatedGrants = new[]
         {
@@ -234,7 +243,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var result = await service.CreateGrant(new CreateAccountGrant(acc.Id, "db1", "schema1", new HashSet<Privilege> { Privilege.Select, Privilege.Update }));
     Assert.True(result.IsSuccess);
@@ -249,7 +258,7 @@ public class AccountServiceTests
     public async Task CreateGrantOnAccount_AccountNotFound()
     {
         var store = NewStore();
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var result = await service.CreateGrant(new CreateAccountGrant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select, Privilege.Update }));
     Assert.False(result.IsSuccess);
@@ -263,7 +272,7 @@ public class AccountServiceTests
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var result = await service.UpdateGrant(new UpdateAccountGrant(acc.Id, grant.Id, "db2", "schema2", new HashSet<Privilege> { Privilege.Insert }));
     Assert.True(result.IsSuccess);
@@ -280,7 +289,7 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
         var result = await service.UpdateGrant(new UpdateAccountGrant(acc.Id, Guid.NewGuid(), "db2", "schema2", new HashSet<Privilege> { Privilege.Insert }));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -293,7 +302,7 @@ public class AccountServiceTests
         var grant = new Grant(Guid.NewGuid(), "db1", "schema1", new HashSet<Privilege> { Privilege.Select });
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, new[] { grant }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var result = await service.DeleteGrant(new DeleteAccountGrant(acc.Id, grant.Id));
     Assert.True(result.IsSuccess);
@@ -308,10 +317,174 @@ public class AccountServiceTests
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, res: new[] { res });
-        var service = new AccountService(store, new TagLookupService(store));
+        var service = CreateService(store);
 
         var result = await service.DeleteGrant(new DeleteAccountGrant(acc.Id, Guid.NewGuid()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_AccountNotFound_ReturnsNotFound()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.GetAccountSqlStatusAsync(Guid.NewGuid());
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_NonDataStoreTarget_ReturnsNotApplicable()
+    {
+        var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, res: new[] { res });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.NotApplicable, result.Value!.Status);
+        Assert.Contains("DataStore", result.Value.StatusSummary);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_NoSqlIntegration_ReturnsNotApplicable()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.NotApplicable, result.Value!.Status);
+        Assert.Contains("No SQL integration", result.Value.StatusSummary);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_NoUsername_ReturnsNotApplicable()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, new SecretBinding(SecretBindingKind.None, null, null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.NotApplicable, result.Value!.Status);
+        Assert.Contains("username", result.Value.StatusSummary);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_SqlInspectorError_ReturnsError()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
+
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((false, null, "Connection failed"));
+
+        var service = CreateService(store, mockInspector.Object);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.Error, result.Value!.Status);
+        Assert.Equal("Connection failed", result.Value.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_PrincipalNotExists_ReturnsDriftDetected()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
+
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null));
+
+        var service = CreateService(store, mockInspector.Object);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.DriftDetected, result.Value!.Status);
+        Assert.Contains("does not exist", result.Value.StatusSummary);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_PermissionsInSync_ReturnsInSync()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
+
+        var actualGrants = new[] { new SqlActualGrant("db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, actualGrants), null));
+
+        var service = CreateService(store, mockInspector.Object);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.InSync, result.Value!.Status);
+        Assert.Contains("in sync", result.Value.StatusSummary);
+    }
+
+    [Fact]
+    public async Task GetAccountSqlStatus_MissingPermissions_ReturnsDriftDetected()
+    {
+        var dsId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) };
+        var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
+
+        // Only SELECT is in SQL, INSERT is missing
+        var actualGrants = new[] { new SqlActualGrant("db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, actualGrants), null));
+
+        var service = CreateService(store, mockInspector.Object);
+
+        var result = await service.GetAccountSqlStatusAsync(acc.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncStatus.DriftDetected, result.Value!.Status);
+        Assert.Single(result.Value.PermissionComparisons);
+        Assert.Contains(Privilege.Insert, result.Value.PermissionComparisons[0].MissingPrivileges);
     }
 }

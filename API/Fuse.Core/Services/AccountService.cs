@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Services;
 
@@ -9,11 +10,13 @@ public class AccountService : IAccountService
 {
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
+    private readonly IAccountSqlInspector _sqlInspector;
 
-    public AccountService(IFuseStore fuseStore, ITagService tagService)
+    public AccountService(IFuseStore fuseStore, ITagService tagService, IAccountSqlInspector sqlInspector)
     {
         _fuseStore = fuseStore;
         _tagService = tagService;
+        _sqlInspector = sqlInspector;
     }
 
     public async Task<IReadOnlyList<Account>> GetAccountsAsync()
@@ -263,6 +266,179 @@ public class AccountService : IAccountService
         });
 
         return Result.Success();
+    }
+
+    public async Task<Result<AccountSqlStatusResponse>> GetAccountSqlStatusAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var store = await _fuseStore.GetAsync(ct);
+        var account = store.Accounts.FirstOrDefault(a => a.Id == accountId);
+
+        if (account is null)
+        {
+            return Result<AccountSqlStatusResponse>.Failure($"Account with ID '{accountId}' not found.", ErrorType.NotFound);
+        }
+
+        // Only DataStore accounts can have SQL integration
+        if (account.TargetKind != TargetKind.DataStore)
+        {
+            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: null,
+                SqlIntegrationName: null,
+                Status: SyncStatus.NotApplicable,
+                StatusSummary: "SQL status is only available for DataStore accounts.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: null
+            ));
+        }
+
+        // Find SQL integration for the DataStore
+        var sqlIntegration = store.SqlIntegrations.FirstOrDefault(s => s.DataStoreId == account.TargetId);
+        if (sqlIntegration is null)
+        {
+            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: null,
+                SqlIntegrationName: null,
+                Status: SyncStatus.NotApplicable,
+                StatusSummary: "No SQL integration is configured for this DataStore.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: null
+            ));
+        }
+
+        // Check if the integration has Read permission
+        if ((sqlIntegration.Permissions & SqlPermissions.Read) == 0)
+        {
+            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: sqlIntegration.Id,
+                SqlIntegrationName: sqlIntegration.Name,
+                Status: SyncStatus.Error,
+                StatusSummary: "SQL integration does not have Read permission.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: "The SQL integration must have Read permission to inspect account status."
+            ));
+        }
+
+        // Get the principal name (username) - required for SQL inspection
+        var principalName = account.UserName;
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: sqlIntegration.Id,
+                SqlIntegrationName: sqlIntegration.Name,
+                Status: SyncStatus.NotApplicable,
+                StatusSummary: "Account has no username configured for SQL principal mapping.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: null
+            ));
+        }
+
+        // Query SQL for actual permissions
+        var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            sqlIntegration, principalName, ct);
+
+        if (!isSuccessful || actualPermissions is null)
+        {
+            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: sqlIntegration.Id,
+                SqlIntegrationName: sqlIntegration.Name,
+                Status: SyncStatus.Error,
+                StatusSummary: "Failed to retrieve SQL permissions.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: errorMessage ?? "Unknown error occurred while querying SQL permissions."
+            ));
+        }
+
+        // Build permission comparisons
+        var comparisons = BuildPermissionComparisons(account.Grants, actualPermissions);
+
+        // Determine sync status
+        var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
+        var principalMissing = !actualPermissions.Exists;
+        var status = principalMissing ? SyncStatus.DriftDetected :
+                     hasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync;
+
+        var statusSummary = (status, principalMissing) switch
+        {
+            (SyncStatus.InSync, _) => "Permissions are in sync.",
+            (SyncStatus.DriftDetected, true) => $"SQL principal '{principalName}' does not exist.",
+            (SyncStatus.DriftDetected, false) => "Permission drift detected between configured and actual grants.",
+            _ => "Unknown status."
+        };
+
+        return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
+            AccountId: accountId,
+            SqlIntegrationId: sqlIntegration.Id,
+            SqlIntegrationName: sqlIntegration.Name,
+            Status: status,
+            StatusSummary: statusSummary,
+            PermissionComparisons: comparisons,
+            ErrorMessage: null
+        ));
+    }
+
+    private static IReadOnlyList<SqlPermissionComparison> BuildPermissionComparisons(
+        IReadOnlyList<Grant> configuredGrants,
+        SqlPrincipalPermissions actualPermissions)
+    {
+        var comparisons = new List<SqlPermissionComparison>();
+
+        // Normalize database/schema keys (null vs empty string)
+        static string? NormalizeKey(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+        // Group actual grants by database/schema for easier lookup
+        var actualGrantsLookup = actualPermissions.Grants
+            .GroupBy(g => (Database: NormalizeKey(g.Database), Schema: NormalizeKey(g.Schema)))
+            .ToDictionary(
+                g => g.Key,
+                g => g.SelectMany(x => x.Privileges).ToHashSet()
+            );
+
+        // Process configured grants
+        var processedKeys = new HashSet<(string?, string?)>();
+        foreach (var configured in configuredGrants)
+        {
+            var key = (Database: NormalizeKey(configured.Database), Schema: NormalizeKey(configured.Schema));
+            processedKeys.Add(key);
+
+            actualGrantsLookup.TryGetValue(key, out var actualPrivileges);
+            actualPrivileges ??= new HashSet<Privilege>();
+
+            var configuredSet = configured.Privileges ?? new HashSet<Privilege>();
+            var missing = configuredSet.Except(actualPrivileges).ToHashSet();
+            var extra = actualPrivileges.Except(configuredSet).ToHashSet();
+
+            comparisons.Add(new SqlPermissionComparison(
+                Database: configured.Database,
+                Schema: configured.Schema,
+                ConfiguredPrivileges: configuredSet,
+                ActualPrivileges: actualPrivileges,
+                MissingPrivileges: missing,
+                ExtraPrivileges: extra
+            ));
+        }
+
+        // Add any actual grants that weren't in configured
+        foreach (var actualKey in actualGrantsLookup.Keys)
+        {
+            if (!processedKeys.Contains(actualKey))
+            {
+                comparisons.Add(new SqlPermissionComparison(
+                    Database: actualKey.Database,
+                    Schema: actualKey.Schema,
+                    ConfiguredPrivileges: new HashSet<Privilege>(),
+                    ActualPrivileges: actualGrantsLookup[actualKey],
+                    MissingPrivileges: new HashSet<Privilege>(),
+                    ExtraPrivileges: actualGrantsLookup[actualKey]
+                ));
+            }
+        }
+
+        return comparisons;
     }
 
     private Result<IReadOnlyList<Grant>> ValidateAndNormalizeGrants(IReadOnlyList<Grant>? grants)
