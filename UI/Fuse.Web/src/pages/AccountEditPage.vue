@@ -367,6 +367,25 @@ const isLoadingInitialData = computed(() => {
   return false
 })
 
+const emptySecretFields = (): AccountSecretFields => ({
+  providerId: null,
+  secretName: null,
+  plainReference: ''
+})
+
+const emptyAccountForm = (): AccountFormModel => ({
+  targetKind: TargetKind.Application,
+  targetId: null,
+  authKind: AuthKind.None,
+  userName: '',
+  secret: emptySecretFields(),
+  parameters: [],
+  tagIds: [],
+  grants: []
+})
+
+const form = ref<AccountFormModel>(emptyAccountForm())
+
 // Find the SQL integration for the selected DataStore target
 const currentSqlIntegrationId = computed<string | null>(() => {
   const formValue = form.value
@@ -396,25 +415,6 @@ const tagOptions = computed<TargetOption[]>(() => tagsStore.options.value)
 const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({ label: value, value }))
 const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
 const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))
-
-const emptySecretFields = (): AccountSecretFields => ({
-  providerId: null,
-  secretName: null,
-  plainReference: ''
-})
-
-const emptyAccountForm = (): AccountFormModel => ({
-  targetKind: TargetKind.Application,
-  targetId: null,
-  authKind: AuthKind.None,
-  userName: '',
-  secret: emptySecretFields(),
-  parameters: [],
-  tagIds: [],
-  grants: []
-})
-
-const form = ref<AccountFormModel>(emptyAccountForm())
 
 const targetOptions = computed<TargetOption[]>(() => {
   const kind = form.value.targetKind ?? TargetKind.Application
