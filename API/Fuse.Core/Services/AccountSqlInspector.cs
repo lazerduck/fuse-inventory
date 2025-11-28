@@ -643,6 +643,7 @@ public class AccountSqlInspector : IAccountSqlInspector
             await connection.OpenAsync(ct);
 
             // Query all online databases, excluding system databases
+            // System database IDs: master=1, tempdb=2, model=3, msdb=4
             const string query = @"
                 SELECT name 
                 FROM sys.databases 
