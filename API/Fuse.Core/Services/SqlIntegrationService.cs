@@ -1073,4 +1073,37 @@ public class SqlIntegrationService : ISqlIntegrationService
             ErrorMessage: result.Error ?? "Failed to resolve drift.",
             UpdatedStatus: null);
     }
+
+    public async Task<Result<SqlDatabasesResponse>> GetDatabasesAsync(Guid integrationId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == integrationId);
+        if (integration is null)
+        {
+            return Result<SqlDatabasesResponse>.Failure(
+                $"SQL integration {integrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has Read permission (needed to list databases)
+        if ((integration.Permissions & SqlPermissions.Read) == 0)
+        {
+            return Result<SqlDatabasesResponse>.Failure(
+                "SQL integration does not have Read permission to list databases.",
+                ErrorType.Validation);
+        }
+
+        var (isSuccessful, databases, errorMessage) = await _sqlInspector.GetDatabasesAsync(integration, ct);
+
+        if (!isSuccessful)
+        {
+            return Result<SqlDatabasesResponse>.Failure(
+                errorMessage ?? "Failed to list databases.",
+                ErrorType.ServerError);
+        }
+
+        return Result<SqlDatabasesResponse>.Success(new SqlDatabasesResponse(databases));
+    }
 }

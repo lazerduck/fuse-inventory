@@ -96,7 +96,39 @@
         <q-form @submit.prevent="submitGrant">
           <q-card-section>
             <div class="form-grid">
-              <q-input v-model="grantForm.database" label="Database" dense outlined />
+              <q-select
+                v-if="hasSqlIntegration"
+                v-model="grantForm.database"
+                label="Database"
+                dense
+                outlined
+                use-input
+                hide-selected
+                fill-input
+                input-debounce="0"
+                :options="filteredDatabaseOptions"
+                :loading="isDatabasesLoading"
+                @filter="filterDatabaseOptions"
+                @input-value="onDatabaseInput"
+                hint="Select from available databases or enter a custom name"
+                new-value-mode="add"
+              >
+                <template #no-option>
+                  <q-item>
+                    <q-item-section class="text-grey">
+                      {{ isDatabasesLoading ? 'Loading databases...' : 'No databases found. Type to enter a custom name.' }}
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+              <q-input
+                v-else
+                v-model="grantForm.database"
+                label="Database"
+                dense
+                outlined
+                hint="Enter database name"
+              />
               <q-input v-model="grantForm.schema" label="Schema" dense outlined />
               <q-select
                 v-model="grantForm.privileges"
@@ -271,6 +303,8 @@ import { useExternalResources } from '../composables/useExternalResources'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useSecretProviderSecrets } from '../composables/useSecretProviderSecrets'
+import { useSqlIntegrations } from '../composables/useSqlIntegrations'
+import { useSqlDatabases } from '../composables/useSqlDatabases'
 import { getErrorMessage } from '../utils/error'
 import { hasCapability } from '../utils/secretProviders'
 
@@ -291,6 +325,7 @@ const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
 const environmentsQuery = useEnvironments()
 const secretProvidersQuery = useSecretProviders()
+const sqlIntegrationsQuery = useSqlIntegrations()
 
 const accountId = computed(() => route.params.id as string | undefined)
 const isEditMode = computed(() => !!accountId.value)
@@ -332,11 +367,6 @@ const isLoadingInitialData = computed(() => {
   return false
 })
 
-const tagOptions = computed<TargetOption[]>(() => tagsStore.options.value)
-const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({ label: value, value }))
-const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
-const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))
-
 const emptySecretFields = (): AccountSecretFields => ({
   providerId: null,
   secretName: null,
@@ -355,6 +385,36 @@ const emptyAccountForm = (): AccountFormModel => ({
 })
 
 const form = ref<AccountFormModel>(emptyAccountForm())
+
+// Find the SQL integration for the selected DataStore target
+const currentSqlIntegrationId = computed<string | null>(() => {
+  const formValue = form.value
+  if (formValue.targetKind !== TargetKind.DataStore || !formValue.targetId) {
+    return null
+  }
+  // Find SQL integration that matches this DataStore
+  const integration = (sqlIntegrationsQuery.data.value ?? []).find(
+    (si) => si.dataStoreId === formValue.targetId
+  )
+  return integration?.id ?? null
+})
+
+// Fetch databases for the SQL integration
+const databasesQuery = useSqlDatabases(currentSqlIntegrationId)
+
+// Database options for the grant dialog - includes fetched databases plus option for free text
+const databaseOptions = computed(() => {
+  const databases = databasesQuery.data.value?.databases ?? []
+  return databases.map((db) => ({ label: db, value: db }))
+})
+
+const isDatabasesLoading = computed(() => databasesQuery.isLoading.value || databasesQuery.isFetching.value)
+const hasSqlIntegration = computed(() => !!currentSqlIntegrationId.value)
+
+const tagOptions = computed<TargetOption[]>(() => tagsStore.options.value)
+const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({ label: value, value }))
+const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
+const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))
 
 const targetOptions = computed<TargetOption[]>(() => {
   const kind = form.value.targetKind ?? TargetKind.Application
@@ -386,8 +446,26 @@ const targetOptions = computed<TargetOption[]>(() => {
 const isGrantDialogOpen = ref(false)
 const editingGrant = ref<Grant | null>(null)
 const grantForm = reactive<GrantForm>({ database: '', schema: '', privileges: [] })
+const filteredDatabaseOptions = ref<{ label: string; value: string }[]>([])
 
 const grantDialogTitle = computed(() => (editingGrant.value ? 'Edit Grant' : 'Add Grant'))
+
+// Database filtering for grant dialog
+function filterDatabaseOptions(
+  val: string,
+  update: (callbackFn: () => void) => void
+) {
+  update(() => {
+    const needle = val.toLowerCase()
+    filteredDatabaseOptions.value = databaseOptions.value.filter(
+      (opt) => opt.label.toLowerCase().includes(needle)
+    )
+  })
+}
+
+function onDatabaseInput(val: string) {
+  grantForm.database = val
+}
 
 // Secret operations
 const selectedProvider = computed(() =>

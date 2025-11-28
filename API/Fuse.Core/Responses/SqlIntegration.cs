@@ -18,3 +18,8 @@ public record SqlConnectionTestResult
     SqlPermissions Permissions,
     string? ErrorMessage
 );
+
+public record SqlDatabasesResponse
+(
+    IReadOnlyList<string> Databases
+);

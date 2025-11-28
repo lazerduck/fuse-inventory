@@ -182,6 +182,24 @@ namespace Fuse.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/databases")]
+        [ProducesResponseType(200, Type = typeof(SqlDatabasesResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<SqlDatabasesResponse>> GetDatabases([FromRoute] Guid id, CancellationToken ct)
+        {
+            var result = await _service.GetDatabasesAsync(id, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         private (string userName, Guid? userId) GetUserInfo()
         {
             // If unauthenticated, return Anonymous/null
