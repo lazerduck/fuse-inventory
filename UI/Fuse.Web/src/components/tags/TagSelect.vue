@@ -80,7 +80,7 @@ const filterText = ref('')
 
 const tagOptions = computed<TagOption[]>(() =>
   (tagsStore.data.value ?? [])
-    .filter((tag): tag is Tag & { id: string } => !!tag.id)
+    .filter((tag): tag is Tag & { id: string } => typeof tag.id === 'string' && tag.id.length > 0)
     .map((tag) => ({
       label: tag.name ?? tag.id,
       value: tag.id,
@@ -106,8 +106,9 @@ function getUnusedColor(): TagColor {
   if (unused) {
     return unused
   }
+  // availableColors is guaranteed to have elements since it's Object.values(TagColor)
   const randomIndex = Math.floor(Math.random() * availableColors.length)
-  return availableColors[randomIndex] ?? TagColor.Gray
+  return availableColors[randomIndex]!
 }
 
 const createMutation = useMutation({
@@ -148,7 +149,7 @@ function onNewValue(
     return
   }
 
-  const payload = Object.assign(new CreateTag(), {
+  const payload: CreateTag = Object.assign(new CreateTag(), {
     name: trimmed,
     color: getUnusedColor()
   })
