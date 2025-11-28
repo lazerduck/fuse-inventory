@@ -51,17 +51,7 @@
             :options="platformOptions"
           />
           <q-input v-model="form.connectionUri" label="Connection URI" dense outlined />
-          <q-select
-            v-model="form.tagIds"
-            label="Tags"
-            dense
-            outlined
-            use-chips
-            multiple
-            emit-value
-            map-options
-            :options="tagOptions"
-          />
+          <TagSelect v-model="form.tagIds" />
         </div>
       </q-card-section>
       <q-separator />
@@ -77,8 +67,8 @@
 import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
-import { useTags } from '../../composables/useTags'
 import type { DataStore } from '../../api/client'
+import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
 
@@ -111,11 +101,9 @@ const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
-const tagsStore = useTags()
 
 const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
-const tagOptions = tagsStore.options
 
 const defaultKindOptions = [
   'SQL',

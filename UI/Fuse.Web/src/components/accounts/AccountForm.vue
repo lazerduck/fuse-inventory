@@ -133,17 +133,7 @@
       dense
       outlined
     />
-    <q-select
-      v-model="form.tagIds"
-      label="Tags"
-      dense
-      outlined
-      use-chips
-      multiple
-      emit-value
-      map-options
-      :options="tagOptions"
-    />
+    <TagSelect v-model="form.tagIds" />
   </div>
 
   <div class="parameters-section">
@@ -174,6 +164,7 @@ import { useSecretProviderSecrets } from '../../composables/useSecretProviderSec
 import { useFuseClient } from '../../composables/useFuseClient'
 import { getErrorMessage } from '../../utils/error'
 import { hasCapability } from '../../utils/secretProviders'
+import TagSelect from '../tags/TagSelect.vue'
 
 const form = defineModel<AccountFormModel>({ required: true })
 
@@ -181,10 +172,9 @@ const props = defineProps<{
   targetKindOptions: SelectOption<TargetKind>[]
   targetOptions: TargetOption[]
   authKindOptions: SelectOption<AuthKind>[]
-  tagOptions: TargetOption[]
 }>()
 
-const { targetKindOptions, targetOptions, authKindOptions, tagOptions } = toRefs(props)
+const { targetKindOptions, targetOptions, authKindOptions } = toRefs(props)
 
 const client = useFuseClient()
 

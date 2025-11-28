@@ -10,17 +10,7 @@
         <div class="form-grid">
           <q-input v-model="form.name" label="Name*" dense outlined :rules="[v => !!v || 'Name is required']" />
           <q-input v-model="form.resourceUri" label="Resource URI" dense outlined />
-          <q-select
-            v-model="form.tagIds"
-            label="Tags"
-            dense
-            outlined
-            use-chips
-            multiple
-            emit-value
-            map-options
-            :options="tagOptions"
-          />
+          <TagSelect v-model="form.tagIds" />
           <q-input
             v-model="form.description"
             type="textarea"
@@ -43,8 +33,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted } from 'vue'
-import { useTags } from '../../composables/useTags'
 import type { ExternalResource } from '../../api/client'
+import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
 
@@ -72,9 +62,6 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
 const emit = defineEmits<Emits>()
-
-const tagsStore = useTags()
-const tagOptions = tagsStore.options
 
 const form = reactive<ExternalResourceFormModel>({
   name: '',
