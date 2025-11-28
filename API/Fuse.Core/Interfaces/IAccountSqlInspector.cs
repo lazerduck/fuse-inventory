@@ -67,4 +67,14 @@ public interface IAccountSqlInspector
         string password,
         IReadOnlyList<string> databases,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists databases available on the SQL server.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of database names available on the server.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<string> Databases, string? ErrorMessage)> GetDatabasesAsync(
+        SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
 }

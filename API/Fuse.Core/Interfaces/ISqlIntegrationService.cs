@@ -16,4 +16,5 @@ public interface ISqlIntegrationService
     Task<Result<ResolveDriftResponse>> ResolveDriftAsync(ResolveDrift command, string userName, Guid? userId, CancellationToken ct = default);
     Task<Result<CreateSqlAccountResponse>> CreateSqlAccountAsync(CreateSqlAccount command, string userName, Guid? userId, CancellationToken ct = default);
     Task<Result<BulkResolveResponse>> BulkResolveAsync(BulkResolve command, string userName, Guid? userId, CancellationToken ct = default);
+    Task<Result<SqlDatabasesResponse>> GetDatabasesAsync(Guid integrationId, CancellationToken ct = default);
 }

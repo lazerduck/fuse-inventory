@@ -615,4 +615,60 @@ public class AccountSqlInspector : IAccountSqlInspector
                 ErrorMessage: ex.Message);
         }
     }
+
+    /// <inheritdoc />
+    public async Task<(bool IsSuccessful, IReadOnlyList<string> Databases, string? ErrorMessage)> GetDatabasesAsync(
+        SqlIntegration sqlIntegration,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sqlIntegration.ConnectionString))
+        {
+            return (false, Array.Empty<string>(), "SQL integration has no connection string configured.");
+        }
+
+        try
+        {
+            string sanitizedConnectionString;
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(sqlIntegration.ConnectionString);
+                sanitizedConnectionString = builder.ConnectionString;
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, Array.Empty<string>(), $"Invalid connection string: {ex.Message}");
+            }
+
+            await using var connection = new SqlConnection(sanitizedConnectionString);
+            await connection.OpenAsync(ct);
+
+            // Query all online databases, excluding system databases
+            const string query = @"
+                SELECT name 
+                FROM sys.databases 
+                WHERE state_desc = 'ONLINE' 
+                  AND database_id > 4
+                ORDER BY name";
+
+            var databases = new List<string>();
+            await using var command = new SqlCommand(query, connection);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            
+            while (await reader.ReadAsync(ct))
+            {
+                var dbName = reader.GetString(0);
+                databases.Add(dbName);
+            }
+
+            return (true, databases, null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, Array.Empty<string>(), $"SQL error: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (false, Array.Empty<string>(), $"Unexpected error: {ex.Message}");
+        }
+    }
 }
