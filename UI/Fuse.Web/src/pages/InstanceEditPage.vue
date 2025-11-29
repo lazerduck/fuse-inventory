@@ -48,17 +48,7 @@
             <q-input v-model="form.baseUri" label="Base URI" dense outlined />
             <q-input v-model="form.healthUri" label="Health URI" dense outlined />
             <q-input v-model="form.openApiUri" label="OpenAPI URI" dense outlined />
-            <q-select
-              v-model="form.tagIds"
-              label="Tags"
-              dense
-              outlined
-              use-chips
-              multiple
-              emit-value
-              map-options
-              :options="tagOptions"
-            />
+            <TagSelect v-model="form.tagIds" label="Tags" />
           </div>
         </q-card-section>
         <q-separator />
@@ -236,7 +226,7 @@ import {
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
-import { useTags } from '../composables/useTags'
+import TagSelect from '../components/tags/TagSelect.vue'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
 import { useDataStores } from '../composables/useDataStores'
@@ -301,7 +291,6 @@ const accountsQuery = useQuery({
   queryFn: () => client.accountAll()
 })
 
-const tagsStore = useTags()
 const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
 const dataStoresQuery = useDataStores()
@@ -311,7 +300,6 @@ const environmentLookup = environmentsStore.lookup
 
 const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
-const tagOptions = tagsStore.options
 
 const form = reactive({
   environmentId: null as string | null,
