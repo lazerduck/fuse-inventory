@@ -10,6 +10,7 @@ public record Application
     string? Notes,
     string? Framework,
     Uri? RepositoryUri,
+    string? Icon,
     HashSet<Guid> TagIds,
     IReadOnlyList<ApplicationInstance> Instances,
     IReadOnlyList<ApplicationPipeline> Pipelines,

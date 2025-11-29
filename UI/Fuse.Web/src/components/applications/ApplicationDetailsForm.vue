@@ -12,6 +12,30 @@
           <q-input v-model="form.owner" label="Owner" dense outlined />
           <q-input v-model="form.framework" label="Framework" dense outlined />
           <q-input v-model="form.repositoryUri" label="Repository URI" dense outlined />
+          <q-select
+            v-model="form.icon"
+            :options="iconOptions"
+            label="Icon"
+            dense
+            outlined
+            emit-value
+            map-options
+            clearable
+          >
+            <template #prepend>
+              <q-icon :name="form.icon || 'precision_manufacturing'" />
+            </template>
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-icon :name="scope.opt.value" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
           <TagSelect v-model="form.tagIds" />
           <q-input
             v-model="form.description"
@@ -56,6 +80,7 @@ interface ApplicationFormModel {
   notes: string
   framework: string
   repositoryUri: string
+  icon: string
   tagIds: string[]
 }
 
@@ -78,6 +103,34 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
+const iconOptions = [
+  { label: 'Robot Arm (Default)', value: 'precision_manufacturing' },
+  { label: 'Web Application', value: 'web' },
+  { label: 'API', value: 'api' },
+  { label: 'Cloud', value: 'cloud' },
+  { label: 'Database', value: 'storage' },
+  { label: 'Mobile App', value: 'smartphone' },
+  { label: 'Desktop App', value: 'computer' },
+  { label: 'Terminal', value: 'terminal' },
+  { label: 'Dashboard', value: 'dashboard' },
+  { label: 'Analytics', value: 'analytics' },
+  { label: 'Code', value: 'code' },
+  { label: 'Settings', value: 'settings' },
+  { label: 'Security', value: 'security' },
+  { label: 'Shopping Cart', value: 'shopping_cart' },
+  { label: 'Payment', value: 'payment' },
+  { label: 'Email', value: 'email' },
+  { label: 'Message', value: 'message' },
+  { label: 'Notifications', value: 'notifications' },
+  { label: 'Schedule', value: 'schedule' },
+  { label: 'Sync', value: 'sync' },
+  { label: 'Build', value: 'build' },
+  { label: 'Memory', value: 'memory' },
+  { label: 'Hub', value: 'hub' },
+  { label: 'Integration', value: 'integration_instructions' },
+  { label: 'Rocket', value: 'rocket_launch' }
+]
+
 const form = reactive<ApplicationFormModel>({
   name: '',
   version: '',
@@ -86,6 +139,7 @@ const form = reactive<ApplicationFormModel>({
   notes: '',
   framework: '',
   repositoryUri: '',
+  icon: '',
   tagIds: []
 })
 
@@ -100,6 +154,7 @@ function applyInitial(value?: Partial<Application> | null) {
     form.notes = ''
     form.framework = ''
     form.repositoryUri = ''
+    form.icon = ''
     form.tagIds = []
     return
   }
@@ -110,6 +165,7 @@ function applyInitial(value?: Partial<Application> | null) {
   form.notes = value.notes ?? ''
   form.framework = value.framework ?? ''
   form.repositoryUri = value.repositoryUri ?? ''
+  form.icon = value.icon ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
 }
 

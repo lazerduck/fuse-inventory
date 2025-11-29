@@ -37,11 +37,11 @@ public class ApplicationServiceTests
     [Fact]
     public async Task UpdateApplication_EmptyName_ReturnsValidation()
     {
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
-        var result = await service.UpdateApplicationAsync(new UpdateApplication(app.Id, " ", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.UpdateApplicationAsync(new UpdateApplication(app.Id, " ", null, null, null, null, null, null, null, new HashSet<Guid>()));
 
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -50,12 +50,12 @@ public class ApplicationServiceTests
     [Fact]
     public async Task UpdateApplication_DuplicateName_ReturnsConflict()
     {
-        var app1 = new Application(Guid.NewGuid(), "App1", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app2 = new Application(Guid.NewGuid(), "App2", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app1 = new Application(Guid.NewGuid(), "App1", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app2 = new Application(Guid.NewGuid(), "App2", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app1, app2 });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
-        var result = await service.UpdateApplicationAsync(new UpdateApplication(app2.Id, "App1", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.UpdateApplicationAsync(new UpdateApplication(app2.Id, "App1", null, null, null, null, null, null, null, new HashSet<Guid>()));
 
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Conflict, result.ErrorType);
@@ -64,7 +64,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task UpdateApplication_Success_UpdatesFields()
     {
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1));
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1));
     var tag = new Tag(Guid.NewGuid(), "T", null, null);
         var store = NewStore(apps: new[] { app }, tags: new[] { tag });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
@@ -91,7 +91,7 @@ public class ApplicationServiceTests
     public async Task DeleteApplication_RemovesDependenciesFromOtherApps()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var appToDelete = new Application(Guid.NewGuid(), "Del", null, null, null, null, null, null, new HashSet<Guid>(),
+        var appToDelete = new Application(Guid.NewGuid(), "Del", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[]
             {
                 new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow)
@@ -104,7 +104,7 @@ public class ApplicationServiceTests
             {
                 new ApplicationInstanceDependency(Guid.NewGuid(), otherInstDepTarget, TargetKind.Application, 1234, DependencyAuthKind.None, null, null)
             }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var other = new Application(Guid.NewGuid(), "Other", null, null, null, null, null, null, new HashSet<Guid>(),
+        var other = new Application(Guid.NewGuid(), "Other", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { otherAppInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-2));
 
         var store = NewStore(apps: new[] { appToDelete, other }, envs: new[] { env });
@@ -132,7 +132,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task CreateInstance_EnvironmentNotFound_ReturnsValidation()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, Guid.NewGuid(), null, null, null, null, null, new HashSet<Guid>()));
@@ -144,7 +144,7 @@ public class ApplicationServiceTests
     public async Task CreateInstance_InvalidPlatform_ReturnsValidation()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, Guid.NewGuid(), null, null, null, null, new HashSet<Guid>()));
@@ -156,7 +156,7 @@ public class ApplicationServiceTests
     public async Task CreateInstance_InvalidTag_ReturnsValidation()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app }, envs: new[] { env }, tags: Array.Empty<Tag>());
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var res = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, null, null, null, null, new HashSet<Guid> { Guid.NewGuid() }));
@@ -170,7 +170,7 @@ public class ApplicationServiceTests
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
         var env2 = new EnvironmentInfo(Guid.NewGuid(), "E2", null, new HashSet<Guid>());
         var platform = new Platform(Guid.NewGuid(), "P", "p.example", "linux", PlatformKind.Server, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(),
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
             Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
@@ -201,11 +201,11 @@ public class ApplicationServiceTests
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
         var app1Inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app1 = new Application(Guid.NewGuid(), "A1", null, null, null, null, null, null, new HashSet<Guid>(), new[] { app1Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app1 = new Application(Guid.NewGuid(), "A1", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { app1Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), app1Inst.Id, TargetKind.Application, 8080, DependencyAuthKind.None, null, null);
         var app2Inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app2 = new Application(Guid.NewGuid(), "A2", null, null, null, null, null, null, new HashSet<Guid>(), new[] { app2Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app2 = new Application(Guid.NewGuid(), "A2", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { app2Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(apps: new[] { app1, app2 }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
@@ -221,7 +221,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task Pipeline_ValidationFailures()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
@@ -243,7 +243,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task Pipeline_NotFoundCases()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
@@ -280,7 +280,7 @@ public class ApplicationServiceTests
             UpdatedAt: DateTime.UtcNow
         );
 
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(),
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
             Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
@@ -352,7 +352,7 @@ public class ApplicationServiceTests
     {
         var store = NewStore();
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
-        var result = await service.CreateApplicationAsync(new CreateApplication("", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.CreateApplicationAsync(new CreateApplication("", null, null, null, null, null, null, null, new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -360,10 +360,10 @@ public class ApplicationServiceTests
     [Fact]
     public async Task CreateApplication_DuplicateName_ReturnsConflict()
     {
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
-        var result = await service.CreateApplicationAsync(new CreateApplication("app", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.CreateApplicationAsync(new CreateApplication("app", null, null, null, null, null, null, null, new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Conflict, result.ErrorType);
     }
@@ -373,7 +373,7 @@ public class ApplicationServiceTests
     {
         var store = NewStore();
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
-        var result = await service.CreateApplicationAsync(new CreateApplication("App", "1.0", "d", "o", "n", "fw", null, new HashSet<Guid>()));
+        var result = await service.CreateApplicationAsync(new CreateApplication("App", "1.0", "d", "o", "n", "fw", null, null, new HashSet<Guid>()));
     Assert.True(result.IsSuccess);
     Assert.Single(await service.GetApplicationsAsync(), a => a.Name == "App");
     }
@@ -395,7 +395,7 @@ public class ApplicationServiceTests
         var store = NewStore(envs: new[] { env });
         var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
-        var result = await service.CreateApplicationAsync(new CreateApplication("myapp", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.CreateApplicationAsync(new CreateApplication("myapp", null, null, null, null, null, null, null, new HashSet<Guid>()));
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!.Instances);
@@ -421,7 +421,7 @@ public class ApplicationServiceTests
         var store = NewStore(envs: new[] { env });
         var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
 
-        var result = await service.CreateApplicationAsync(new CreateApplication("myapp", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.CreateApplicationAsync(new CreateApplication("myapp", null, null, null, null, null, null, null, new HashSet<Guid>()));
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value!.Instances);
@@ -432,7 +432,7 @@ public class ApplicationServiceTests
     {
         var store = NewStore();
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
-        var result = await service.UpdateApplicationAsync(new UpdateApplication(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>()));
+        var result = await service.UpdateApplicationAsync(new UpdateApplication(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.NotFound, result.ErrorType);
     }
@@ -452,7 +452,7 @@ public class ApplicationServiceTests
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
         var platform = new Platform(Guid.NewGuid(), "P", "platform.example.com", "linux", PlatformKind.Server, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app }, envs: new[] { env }, platforms: new[] { platform });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var ok = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, platform.Id, new Uri("http://base"), null, null, null, new HashSet<Guid>()));
@@ -463,7 +463,7 @@ public class ApplicationServiceTests
     public async Task CreateInstance_AllowsMissingUris()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var result = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, null, null, null, null, new HashSet<Guid>()));
@@ -478,7 +478,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task UpdateInstance_NotFound()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
         var store = NewStore(apps: new[] { app }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
@@ -490,7 +490,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task Pipeline_CRUD_Works()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var create = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, "Build", new Uri("http://p")));
@@ -505,7 +505,7 @@ public class ApplicationServiceTests
     [Fact]
     public async Task Pipeline_AllowsMissingUri()
     {
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var create = await service.CreatePipelineAsync(new CreateApplicationPipeline(app.Id, "Build", null));
@@ -520,8 +520,8 @@ public class ApplicationServiceTests
     public async Task Dependency_CRUD_Works_WithValidation()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
-        var appTarget = new Application(Guid.NewGuid(), "TargetApp", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var appTarget = new Application(Guid.NewGuid(), "TargetApp", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(apps: new[] { app, appTarget }, envs: new[] { env });
     var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
         var instCreate = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, new Uri("http://base"), null, null, null, new HashSet<Guid>()));

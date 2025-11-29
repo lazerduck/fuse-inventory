@@ -3,7 +3,7 @@
     <q-card-section>
       <div class="row items-start q-gutter-sm">
         <q-avatar size="36px" rounded color="primary" text-color="white" class="q-pa-xs">
-          <q-icon name="precision_manufacturing" size="20px" />
+          <q-icon :name="displayIcon" size="20px" />
         </q-avatar>
         <div class="col" style="min-width: 0">
           <div class="text-subtitle2 text-weight-medium ellipsis">{{ applicationName }}</div>
@@ -155,10 +155,13 @@ const props = defineProps<{
   instance: ApplicationInstance
   applicationId: string
   applicationName: string
+  applicationIcon?: string
   environmentName: string
   platformName: string
   dependencyFormatter: (dependency: any) => string
 }>()
+
+const displayIcon = computed(() => props.applicationIcon || 'precision_manufacturing')
 
 const MAX_VISIBLE_DEPENDENCIES = 6
 

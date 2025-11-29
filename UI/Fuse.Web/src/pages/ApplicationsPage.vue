@@ -111,6 +111,30 @@
               <q-input v-model="createForm.framework" label="Framework" dense outlined />
               <q-input v-model="createForm.repositoryUri" label="Repository URI" dense outlined />
               <q-select
+                v-model="createForm.icon"
+                :options="iconOptions"
+                label="Icon"
+                dense
+                outlined
+                emit-value
+                map-options
+                clearable
+              >
+                <template #prepend>
+                  <q-icon :name="createForm.icon || 'precision_manufacturing'" />
+                </template>
+                <template #option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section avatar>
+                      <q-icon :name="scope.opt.value" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+              <q-select
                 v-model="createForm.tagIds"
                 label="Tags"
                 dense
@@ -175,6 +199,7 @@ interface ApplicationForm {
   notes: string
   framework: string
   repositoryUri: string
+  icon: string
   tagIds: string[]
 }
 
@@ -185,6 +210,34 @@ const fuseStore = useFuseStore()
 
 const pagination = { rowsPerPage: 10 }
 const filter = ref('')
+
+const iconOptions = [
+  { label: 'Robot Arm (Default)', value: 'precision_manufacturing' },
+  { label: 'Web Application', value: 'web' },
+  { label: 'API', value: 'api' },
+  { label: 'Cloud', value: 'cloud' },
+  { label: 'Database', value: 'storage' },
+  { label: 'Mobile App', value: 'smartphone' },
+  { label: 'Desktop App', value: 'computer' },
+  { label: 'Terminal', value: 'terminal' },
+  { label: 'Dashboard', value: 'dashboard' },
+  { label: 'Analytics', value: 'analytics' },
+  { label: 'Code', value: 'code' },
+  { label: 'Settings', value: 'settings' },
+  { label: 'Security', value: 'security' },
+  { label: 'Shopping Cart', value: 'shopping_cart' },
+  { label: 'Payment', value: 'payment' },
+  { label: 'Email', value: 'email' },
+  { label: 'Message', value: 'message' },
+  { label: 'Notifications', value: 'notifications' },
+  { label: 'Schedule', value: 'schedule' },
+  { label: 'Sync', value: 'sync' },
+  { label: 'Build', value: 'build' },
+  { label: 'Memory', value: 'memory' },
+  { label: 'Hub', value: 'hub' },
+  { label: 'Integration', value: 'integration_instructions' },
+  { label: 'Rocket', value: 'rocket_launch' }
+]
 
 const { data: applicationsData, isLoading, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],
@@ -224,6 +277,7 @@ function getEmptyApplicationForm(): ApplicationForm {
     notes: '',
     framework: '',
     repositoryUri: '',
+    icon: '',
     tagIds: []
   }
 }
@@ -284,6 +338,7 @@ function submitCreate() {
     notes: createForm.notes || undefined,
     framework: createForm.framework || undefined,
     repositoryUri: createForm.repositoryUri || undefined,
+    icon: createForm.icon || undefined,
     tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
   })
   createApplicationMutation.mutate(payload)
