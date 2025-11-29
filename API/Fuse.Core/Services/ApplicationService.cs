@@ -499,7 +499,9 @@ public class ApplicationService : IApplicationService
                 var identity = store.Identities.FirstOrDefault(i => i.Id == identityId);
                 if (identity is null)
                     return Result<ApplicationInstanceDependency>.Failure($"Identity with ID '{identityId}' not found.", ErrorType.Validation);
-                // Validate identity belongs to the same instance or is shared (no owner)
+                // Identity ownership rule: An identity can be used by a dependency if:
+                // 1. The identity has no owner (OwnerInstanceId is null) - making it a shared/global identity usable by any instance
+                // 2. The identity is owned by the same instance that's creating the dependency
                 if (identity.OwnerInstanceId is not null && identity.OwnerInstanceId != instanceId)
                     return Result<ApplicationInstanceDependency>.Failure($"Identity with ID '{identityId}' is owned by a different instance.", ErrorType.Validation);
                 break;

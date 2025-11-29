@@ -263,7 +263,10 @@ public sealed class JsonFuseStore : IFuseStore
             var application = JsonSerializer.Deserialize<Application>(appElement.GetRawText(), Json);
             if (application is null) continue;
 
-            // Check if any dependencies need migration (missing authKind field)
+            // Migration: Dependencies created before authKind was added will have authKind=None (default).
+            // If a dependency has an accountId set, it was intentionally using account-based auth,
+            // so we migrate it to AuthKind=Account to preserve the intended behavior.
+            // Note: This assumes that any dependency with a non-null accountId was using account auth.
             var needsMigration = false;
             var migratedInstances = new List<ApplicationInstance>();
 
