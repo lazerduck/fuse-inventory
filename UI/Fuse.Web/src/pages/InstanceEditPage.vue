@@ -200,6 +200,7 @@
                 map-options
                 clearable
                 :options="accountOptions"
+                :hint="accountOptions.length === 0 ? 'No accounts available for this target' : undefined"
               />
               <q-select
                 v-if="dependencyForm.authKind === 'Identity'"
@@ -433,8 +434,22 @@ const accountLookup = computed<Record<string, string>>(() => {
   return map
 })
 
+// Filter accounts to only show those with matching target (same targetKind and targetId as the dependency)
+const filteredAccounts = computed(() => {
+  const targetKind = dependencyForm.targetKind
+  const targetId = dependencyForm.targetId
+  return (accountsQuery.data.value ?? []).filter((account) => {
+    if (!account.id) return false
+    // Account must target the same resource as the dependency
+    return account.targetKind === targetKind && account.targetId === targetId
+  })
+})
+
 const accountOptions = computed<SelectOption<string>[]>(() =>
-  Object.entries(accountLookup.value).map(([value, label]) => ({ label, value }))
+  filteredAccounts.value.map((account) => ({
+    label: formatAccountLabel(account),
+    value: account.id!
+  }))
 )
 
 const identityLookup = computed<Record<string, string>>(() => {
@@ -496,6 +511,26 @@ watch(
   ],
   () => {
     ensureDependencyTarget()
+  }
+)
+
+// Watch for targetKind or targetId changes and clear account if it's no longer valid
+watch(
+  () => [dependencyForm.targetKind, dependencyForm.targetId],
+  () => {
+    // If auth kind is Account, clear the account when target changes
+    if (dependencyForm.authKind === DependencyAuthKind.Account) {
+      // Check if current account is still valid for the new target
+      const currentAccountId = dependencyForm.accountId
+      if (currentAccountId) {
+        const isAccountStillValid = filteredAccounts.value.some(
+          (account) => account.id === currentAccountId
+        )
+        if (!isAccountStillValid) {
+          dependencyForm.accountId = null
+        }
+      }
+    }
   }
 )
 
@@ -704,7 +739,11 @@ function ensureDependencyAccount() {
   if (!dependencyForm.accountId) {
     return
   }
-  if (!accountLookup.value[dependencyForm.accountId]) {
+  // Check if current account is still valid for the current target
+  const isValid = filteredAccounts.value.some(
+    (account) => account.id === dependencyForm.accountId
+  )
+  if (!isValid) {
     dependencyForm.accountId = null
   }
 }
