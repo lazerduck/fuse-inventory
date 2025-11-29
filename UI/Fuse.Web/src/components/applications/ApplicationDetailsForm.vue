@@ -12,17 +12,7 @@
           <q-input v-model="form.owner" label="Owner" dense outlined />
           <q-input v-model="form.framework" label="Framework" dense outlined />
           <q-input v-model="form.repositoryUri" label="Repository URI" dense outlined />
-          <q-select
-            v-model="form.tagIds"
-            label="Tags"
-            dense
-            outlined
-            use-chips
-            multiple
-            emit-value
-            map-options
-            :options="tagOptions"
-          />
+          <TagSelect v-model="form.tagIds" />
           <q-input
             v-model="form.description"
             type="textarea"
@@ -56,7 +46,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
 import type { Application } from '../../api/client'
-import { useTags } from '../../composables/useTags'
+import TagSelect from '../tags/TagSelect.vue'
 
 interface ApplicationFormModel {
   name: string
@@ -87,9 +77,6 @@ const props = withDefaults(defineProps<Props>(), {
   showDelete: true
 })
 const emit = defineEmits<Emits>()
-
-const tagsStore = useTags()
-const tagOptions = tagsStore.options
 
 const form = reactive<ApplicationFormModel>({
   name: '',
