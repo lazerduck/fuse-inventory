@@ -103,9 +103,14 @@
             {{ resolveDependencyTargetName(props.row) }}
           </q-td>
         </template>
-        <template #body-cell-account="props">
+        <template #body-cell-authKind="props">
           <q-td :props="props">
-            {{ resolveDependencyAccountName(props.row.accountId) }}
+            <q-badge :label="props.row.authKind ?? 'None'" outline />
+          </q-td>
+        </template>
+        <template #body-cell-credential="props">
+          <q-td :props="props">
+            {{ resolveDependencyCredentialName(props.row) }}
           </q-td>
         </template>
         <template #body-cell-actions="props">
@@ -177,6 +182,16 @@
                 :step="1"
               />
               <q-select
+                v-model="dependencyForm.authKind"
+                label="Auth Kind"
+                dense
+                outlined
+                emit-value
+                map-options
+                :options="authKindOptions"
+              />
+              <q-select
+                v-if="dependencyForm.authKind === 'Account'"
                 v-model="dependencyForm.accountId"
                 label="Account"
                 dense
@@ -185,6 +200,18 @@
                 map-options
                 clearable
                 :options="accountOptions"
+              />
+              <q-select
+                v-if="dependencyForm.authKind === 'Identity'"
+                v-model="dependencyForm.identityId"
+                label="Identity"
+                dense
+                outlined
+                emit-value
+                map-options
+                clearable
+                :options="identityOptions"
+                :hint="availableIdentities.length === 0 ? 'No identities available for this instance' : undefined"
               />
               <q-checkbox
                 v-model="environmentLocked"
@@ -220,6 +247,7 @@ import {
   Account,
   ApplicationInstanceDependency,
   CreateApplicationDependency,
+  DependencyAuthKind,
   TargetKind,
   UpdateApplicationDependency,
   UpdateApplicationInstance
@@ -242,7 +270,9 @@ interface DependencyForm {
   targetKind: TargetKind
   targetId: string | null
   port: number | null
+  authKind: DependencyAuthKind
   accountId: string | null
+  identityId: string | null
 }
 
 const route = useRoute()
@@ -289,6 +319,11 @@ const errorMessage = computed(() => {
 const accountsQuery = useQuery({
   queryKey: ['accounts'],
   queryFn: () => client.accountAll()
+})
+
+const identitiesQuery = useQuery({
+  queryKey: ['identities'],
+  queryFn: () => client.identityAll()
 })
 
 const environmentsStore = useEnvironments()
@@ -402,6 +437,43 @@ const accountOptions = computed<SelectOption<string>[]>(() =>
   Object.entries(accountLookup.value).map(([value, label]) => ({ label, value }))
 )
 
+const identityLookup = computed<Record<string, string>>(() => {
+  const map: Record<string, string> = {}
+  for (const identity of identitiesQuery.data.value ?? []) {
+    if (identity.id) {
+      map[identity.id] = identity.name ?? identity.id
+    }
+  }
+  return map
+})
+
+// Filter identities that are owned by this instance or have no owner
+const availableIdentities = computed(() => {
+  const currentInstanceId = instanceId.value
+  return (identitiesQuery.data.value ?? []).filter((identity) => {
+    // Include if no owner (shared identity)
+    if (!identity.ownerInstanceId) return true
+    // Include if owned by this instance
+    if (identity.ownerInstanceId === currentInstanceId) return true
+    return false
+  })
+})
+
+const identityOptions = computed<SelectOption<string>[]>(() =>
+  availableIdentities.value
+    .filter((identity) => !!identity.id)
+    .map((identity) => ({
+      label: identity.name ?? identity.id!,
+      value: identity.id!
+    }))
+)
+
+const authKindOptions: SelectOption<DependencyAuthKind>[] = [
+  { label: 'None', value: DependencyAuthKind.None },
+  { label: 'Account', value: DependencyAuthKind.Account },
+  { label: 'Identity', value: DependencyAuthKind.Identity }
+]
+
 const dependencyTargetOptions = computed<SelectOption<string>[]>(() =>
   getDependencyTargetOptions(dependencyForm.targetKind)
 )
@@ -410,7 +482,8 @@ const dependencyColumns: QTableColumn<ApplicationInstanceDependency>[] = [
   { name: 'target', label: 'Target', field: 'targetId', align: 'left' },
   { name: 'targetKind', label: 'Kind', field: 'targetKind', align: 'left' },
   { name: 'port', label: 'Port', field: 'port', align: 'left' },
-  { name: 'account', label: 'Account', field: 'accountId', align: 'left' },
+  { name: 'authKind', label: 'Auth', field: 'authKind', align: 'left' },
+  { name: 'credential', label: 'Credential', field: (row) => row.accountId || row.identityId, align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 
@@ -430,12 +503,35 @@ watch(accountsQuery.data, () => {
   ensureDependencyAccount()
 })
 
+watch(identitiesQuery.data, () => {
+  ensureDependencyIdentity()
+})
+
+watch(
+  () => dependencyForm.authKind,
+  (newKind) => {
+    // Clear account/identity when switching auth kind
+    if (newKind === DependencyAuthKind.None) {
+      dependencyForm.accountId = null
+      dependencyForm.identityId = null
+    } else if (newKind === DependencyAuthKind.Account) {
+      dependencyForm.identityId = null
+      ensureDependencyAccount()
+    } else if (newKind === DependencyAuthKind.Identity) {
+      dependencyForm.accountId = null
+      ensureDependencyIdentity()
+    }
+  }
+)
+
 function getEmptyDependencyForm(): DependencyForm {
   return {
     targetKind: TargetKind.DataStore,
     targetId: null,
     port: null,
-    accountId: null
+    authKind: DependencyAuthKind.None,
+    accountId: null,
+    identityId: null
   }
 }
 
@@ -454,7 +550,9 @@ function openDependencyDialog(dependency?: ApplicationInstanceDependency) {
       targetKind: dependency.targetKind ?? TargetKind.DataStore,
       targetId: dependency.targetId ?? null,
       port: dependency.port ?? null,
-      accountId: dependency.accountId ?? null
+      authKind: dependency.authKind ?? DependencyAuthKind.None,
+      accountId: dependency.accountId ?? null,
+      identityId: dependency.identityId ?? null
     })
   } else {
     editingDependency.value = null
@@ -557,7 +655,9 @@ function submitDependency() {
     targetKind: dependencyForm.targetKind,
     targetId: dependencyForm.targetId,
     port: dependencyForm.port ?? undefined,
-    accountId: dependencyForm.accountId ?? undefined
+    authKind: dependencyForm.authKind,
+    accountId: dependencyForm.accountId ?? undefined,
+    identityId: dependencyForm.identityId ?? undefined
   }
 
   if (editingDependency.value?.id) {
@@ -606,6 +706,15 @@ function ensureDependencyAccount() {
   }
   if (!accountLookup.value[dependencyForm.accountId]) {
     dependencyForm.accountId = null
+  }
+}
+
+function ensureDependencyIdentity() {
+  if (!dependencyForm.identityId) {
+    return
+  }
+  if (!identityLookup.value[dependencyForm.identityId]) {
+    dependencyForm.identityId = null
   }
 }
 
@@ -687,9 +796,14 @@ function resolveDependencyTargetName(dependency: ApplicationInstanceDependency) 
   return targetLabel(dependency.targetKind, dependency.targetId ?? null)
 }
 
-function resolveDependencyAccountName(accountId?: string | null) {
-  if (!accountId) return '—'
-  return accountLookup.value[accountId] ?? accountId
+function resolveDependencyCredentialName(dependency: ApplicationInstanceDependency) {
+  if (dependency.authKind === DependencyAuthKind.Account && dependency.accountId) {
+    return accountLookup.value[dependency.accountId] ?? dependency.accountId
+  }
+  if (dependency.authKind === DependencyAuthKind.Identity && dependency.identityId) {
+    return identityLookup.value[dependency.identityId] ?? dependency.identityId
+  }
+  return '—'
 }
 </script>
 
