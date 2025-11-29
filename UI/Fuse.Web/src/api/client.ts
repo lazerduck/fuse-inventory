@@ -274,6 +274,50 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    identityAll(signal?: AbortSignal): Promise<Identity[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @return OK
+     */
+    identityGET(id: string, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @return No Content
+     */
+    identityDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
+
+    /**
+     * @return No Content
+     */
+    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
 
     /**
@@ -2968,6 +3012,430 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     protected processExternalResourceDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    identityAll(signal?: AbortSignal): Promise<Identity[]> {
+        let url_ = this.baseUrl + "/api/Identity";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIdentityAll(_response);
+        });
+    }
+
+    protected processIdentityAll(response: Response): Promise<Identity[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Identity.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Identity[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
+        let url_ = this.baseUrl + "/api/Identity";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIdentityPOST(_response);
+        });
+    }
+
+    protected processIdentityPOST(response: Response): Promise<Identity> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = Identity.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Identity>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    identityGET(id: string, signal?: AbortSignal): Promise<Identity> {
+        let url_ = this.baseUrl + "/api/Identity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIdentityGET(_response);
+        });
+    }
+
+    protected processIdentityGET(response: Response): Promise<Identity> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Identity.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Identity>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
+        let url_ = this.baseUrl + "/api/Identity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIdentityPUT(_response);
+        });
+    }
+
+    protected processIdentityPUT(response: Response): Promise<Identity> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Identity.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Identity>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    identityDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Identity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIdentityDELETE(_response);
+        });
+    }
+
+    protected processIdentityDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
+        let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment";
+        if (identityId === undefined || identityId === null)
+            throw new globalThis.Error("The parameter 'identityId' must be defined.");
+        url_ = url_.replace("{identityId}", encodeURIComponent("" + identityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssignmentPOST(_response);
+        });
+    }
+
+    protected processAssignmentPOST(response: Response): Promise<IdentityAssignment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = IdentityAssignment.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<IdentityAssignment>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
+        let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
+        if (identityId === undefined || identityId === null)
+            throw new globalThis.Error("The parameter 'identityId' must be defined.");
+        url_ = url_.replace("{identityId}", encodeURIComponent("" + identityId));
+        if (assignmentId === undefined || assignmentId === null)
+            throw new globalThis.Error("The parameter 'assignmentId' must be defined.");
+        url_ = url_.replace("{assignmentId}", encodeURIComponent("" + assignmentId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssignmentPUT(_response);
+        });
+    }
+
+    protected processAssignmentPUT(response: Response): Promise<IdentityAssignment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = IdentityAssignment.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<IdentityAssignment>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
+        if (identityId === undefined || identityId === null)
+            throw new globalThis.Error("The parameter 'identityId' must be defined.");
+        url_ = url_.replace("{identityId}", encodeURIComponent("" + identityId));
+        if (assignmentId === undefined || assignmentId === null)
+            throw new globalThis.Error("The parameter 'assignmentId' must be defined.");
+        url_ = url_.replace("{assignmentId}", encodeURIComponent("" + assignmentId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssignmentDELETE(_response);
+        });
+    }
+
+    protected processAssignmentDELETE(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 204) {
@@ -5721,7 +6189,9 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 
     constructor(data?: IApplicationInstanceDependency) {
         if (data) {
@@ -5738,7 +6208,9 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.port = _data["Port"];
+            this.authKind = _data["AuthKind"];
             this.accountId = _data["AccountId"];
+            this.identityId = _data["IdentityId"];
         }
     }
 
@@ -5755,7 +6227,9 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["Port"] = this.port;
+        data["AuthKind"] = this.authKind;
         data["AccountId"] = this.accountId;
+        data["IdentityId"] = this.identityId;
         return data;
     }
 }
@@ -5765,7 +6239,9 @@ export interface IApplicationInstanceDependency {
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 }
 
 export class ApplicationPipeline implements IApplicationPipeline {
@@ -6536,7 +7012,9 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 
     constructor(data?: ICreateApplicationDependency) {
         if (data) {
@@ -6554,7 +7032,9 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.port = _data["Port"];
+            this.authKind = _data["AuthKind"];
             this.accountId = _data["AccountId"];
+            this.identityId = _data["IdentityId"];
         }
     }
 
@@ -6572,7 +7052,9 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["Port"] = this.port;
+        data["AuthKind"] = this.authKind;
         data["AccountId"] = this.accountId;
+        data["IdentityId"] = this.identityId;
         return data;
     }
 }
@@ -6583,7 +7065,9 @@ export interface ICreateApplicationDependency {
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 }
 
 export class CreateApplicationInstance implements ICreateApplicationInstance {
@@ -6888,6 +7372,130 @@ export interface ICreateExternalResource {
     description?: string | undefined;
     resourceUri?: string | undefined;
     tagIds?: string[] | undefined;
+}
+
+export class CreateIdentity implements ICreateIdentity {
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: ICreateIdentity) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.kind = _data["Kind"];
+            this.notes = _data["Notes"];
+            this.ownerInstanceId = _data["OwnerInstanceId"];
+            if (Array.isArray(_data["Assignments"])) {
+                this.assignments = [] as any;
+                for (let item of _data["Assignments"])
+                    this.assignments!.push(IdentityAssignment.fromJS(item));
+            }
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CreateIdentity {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateIdentity();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Kind"] = this.kind;
+        data["Notes"] = this.notes;
+        data["OwnerInstanceId"] = this.ownerInstanceId;
+        if (Array.isArray(this.assignments)) {
+            data["Assignments"] = [];
+            for (let item of this.assignments)
+                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICreateIdentity {
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class CreateIdentityAssignment implements ICreateIdentityAssignment {
+    identityId?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: ICreateIdentityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.identityId = _data["IdentityId"];
+            this.targetKind = _data["TargetKind"];
+            this.targetId = _data["TargetId"];
+            this.role = _data["Role"];
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): CreateIdentityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateIdentityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["IdentityId"] = this.identityId;
+        data["TargetKind"] = this.targetKind;
+        data["TargetId"] = this.targetId;
+        data["Role"] = this.role;
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface ICreateIdentityAssignment {
+    identityId?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
 }
 
 export class CreateKumaIntegration implements ICreateKumaIntegration {
@@ -7442,6 +8050,12 @@ export interface IDataStore {
     updatedAt?: Date;
 }
 
+export enum DependencyAuthKind {
+    None = "None",
+    Account = "Account",
+    Identity = "Identity",
+}
+
 export class DriftResolutionOperation implements IDriftResolutionOperation {
     operationType?: string | undefined;
     database?: string | undefined;
@@ -7740,6 +8354,149 @@ export interface IHealthStatusResponse {
     status?: MonitorStatus;
     monitorName?: string | undefined;
     lastChecked?: Date;
+}
+
+export class Identity implements IIdentity {
+    id?: string;
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IIdentity) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.kind = _data["Kind"];
+            this.notes = _data["Notes"];
+            this.ownerInstanceId = _data["OwnerInstanceId"];
+            if (Array.isArray(_data["Assignments"])) {
+                this.assignments = [] as any;
+                for (let item of _data["Assignments"])
+                    this.assignments!.push(IdentityAssignment.fromJS(item));
+            }
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): Identity {
+        data = typeof data === 'object' ? data : {};
+        let result = new Identity();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Kind"] = this.kind;
+        data["Notes"] = this.notes;
+        data["OwnerInstanceId"] = this.ownerInstanceId;
+        if (Array.isArray(this.assignments)) {
+            data["Assignments"] = [];
+            for (let item of this.assignments)
+                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IIdentity {
+    id?: string;
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export class IdentityAssignment implements IIdentityAssignment {
+    id?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IIdentityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.targetKind = _data["TargetKind"];
+            this.targetId = _data["TargetId"];
+            this.role = _data["Role"];
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): IdentityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new IdentityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["TargetKind"] = this.targetKind;
+        data["TargetId"] = this.targetId;
+        data["Role"] = this.role;
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IIdentityAssignment {
+    id?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
+}
+
+export enum IdentityKind {
+    AzureManagedIdentity = "AzureManagedIdentity",
+    KubernetesServiceAccount = "KubernetesServiceAccount",
+    AwsIamRole = "AwsIamRole",
+    Custom = "Custom",
 }
 
 export class KumaIntegrationResponse implements IKumaIntegrationResponse {
@@ -9652,7 +10409,9 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 
     constructor(data?: IUpdateApplicationDependency) {
         if (data) {
@@ -9671,7 +10430,9 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
             this.targetId = _data["TargetId"];
             this.targetKind = _data["TargetKind"];
             this.port = _data["Port"];
+            this.authKind = _data["AuthKind"];
             this.accountId = _data["AccountId"];
+            this.identityId = _data["IdentityId"];
         }
     }
 
@@ -9690,7 +10451,9 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
         data["TargetId"] = this.targetId;
         data["TargetKind"] = this.targetKind;
         data["Port"] = this.port;
+        data["AuthKind"] = this.authKind;
         data["AccountId"] = this.accountId;
+        data["IdentityId"] = this.identityId;
         return data;
     }
 }
@@ -9702,7 +10465,9 @@ export interface IUpdateApplicationDependency {
     targetId?: string;
     targetKind?: TargetKind;
     port?: number | undefined;
+    authKind?: DependencyAuthKind;
     accountId?: string | undefined;
+    identityId?: string | undefined;
 }
 
 export class UpdateApplicationInstance implements IUpdateApplicationInstance {
@@ -10027,6 +10792,138 @@ export interface IUpdateExternalResource {
     description?: string | undefined;
     resourceUri?: string | undefined;
     tagIds?: string[] | undefined;
+}
+
+export class UpdateIdentity implements IUpdateIdentity {
+    id?: string;
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdateIdentity) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.kind = _data["Kind"];
+            this.notes = _data["Notes"];
+            this.ownerInstanceId = _data["OwnerInstanceId"];
+            if (Array.isArray(_data["Assignments"])) {
+                this.assignments = [] as any;
+                for (let item of _data["Assignments"])
+                    this.assignments!.push(IdentityAssignment.fromJS(item));
+            }
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateIdentity {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateIdentity();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Kind"] = this.kind;
+        data["Notes"] = this.notes;
+        data["OwnerInstanceId"] = this.ownerInstanceId;
+        if (Array.isArray(this.assignments)) {
+            data["Assignments"] = [];
+            for (let item of this.assignments)
+                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdateIdentity {
+    id?: string;
+    name?: string | undefined;
+    kind?: IdentityKind;
+    notes?: string | undefined;
+    ownerInstanceId?: string | undefined;
+    assignments?: IdentityAssignment[] | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class UpdateIdentityAssignment implements IUpdateIdentityAssignment {
+    identityId?: string;
+    assignmentId?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IUpdateIdentityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.identityId = _data["IdentityId"];
+            this.assignmentId = _data["AssignmentId"];
+            this.targetKind = _data["TargetKind"];
+            this.targetId = _data["TargetId"];
+            this.role = _data["Role"];
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): UpdateIdentityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateIdentityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["IdentityId"] = this.identityId;
+        data["AssignmentId"] = this.assignmentId;
+        data["TargetKind"] = this.targetKind;
+        data["TargetId"] = this.targetId;
+        data["Role"] = this.role;
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IUpdateIdentityAssignment {
+    identityId?: string;
+    assignmentId?: string;
+    targetKind?: TargetKind;
+    targetId?: string;
+    role?: string | undefined;
+    notes?: string | undefined;
 }
 
 export class UpdateKumaIntegration implements IUpdateKumaIntegration {
