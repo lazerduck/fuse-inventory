@@ -16,6 +16,7 @@ public static class FuseCodeModule
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IAccountSqlInspector, AccountSqlInspector>();
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();

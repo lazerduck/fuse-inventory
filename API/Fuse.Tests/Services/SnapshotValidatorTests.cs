@@ -29,6 +29,7 @@ public class SnapshotValidatorTests
             platforms,
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             tags,
             envs,
             new List<KumaIntegration>(),
@@ -62,8 +63,8 @@ public class SnapshotValidatorTests
 
         var instDeps = new List<ApplicationInstanceDependency>
         {
-            new ApplicationInstanceDependency(Guid.NewGuid(), dsId, TargetKind.DataStore, null, null),
-            new ApplicationInstanceDependency(Guid.NewGuid(), extId, TargetKind.External, null, null)
+            new ApplicationInstanceDependency(Guid.NewGuid(), dsId, TargetKind.DataStore, null, DependencyAuthKind.None, null, null),
+            new ApplicationInstanceDependency(Guid.NewGuid(), extId, TargetKind.External, null, DependencyAuthKind.None, null, null)
         };
         var instances = new List<ApplicationInstance>
         {
@@ -80,7 +81,7 @@ public class SnapshotValidatorTests
 
         var security = new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>());
 
-    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), new List<SqlIntegration>(), security);
+    var snapshot = new Snapshot(apps, dataStores, platforms, externals, accounts, new List<Identity>(), tags, envs, new List<KumaIntegration>(), new List<SecretProvider>(), new List<SqlIntegration>(), security);
 
         var errors = SnapshotValidator.Validate(snapshot);
         Assert.Empty(errors);
@@ -97,6 +98,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource> { new ExternalResource(erId, "ext", null, new Uri("https://ext"), new HashSet<Guid> { missingTag }, DateTime.UtcNow, DateTime.UtcNow) },
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -118,6 +120,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -139,6 +142,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -160,6 +164,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account> { account },
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -180,7 +185,7 @@ public class SnapshotValidatorTests
         var missingAppId = Guid.NewGuid();
 
         var inst = new ApplicationInstance(instId, envId, null, new Uri("https://svc"), null, null, null,
-            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingAppId, TargetKind.Application, null, null) },
+            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingAppId, TargetKind.Application, null, DependencyAuthKind.None, null, null) },
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
@@ -189,6 +194,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -210,7 +216,7 @@ public class SnapshotValidatorTests
         var missingDsId = Guid.NewGuid();
 
         var inst = new ApplicationInstance(instId, envId, null, new Uri("https://svc"), null, null, null,
-            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingDsId, TargetKind.DataStore, null, null) },
+            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingDsId, TargetKind.DataStore, null, DependencyAuthKind.None, null, null) },
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
@@ -219,6 +225,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo> { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -240,7 +247,7 @@ public class SnapshotValidatorTests
         var missingExtId = Guid.NewGuid();
 
         var inst = new ApplicationInstance(instId, envId, null, new Uri("https://svc"), null, null, null,
-            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingExtId, TargetKind.External, null, null) },
+            new List<ApplicationInstanceDependency>{ new ApplicationInstanceDependency(Guid.NewGuid(), missingExtId, TargetKind.External, null, DependencyAuthKind.None, null, null) },
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
@@ -249,6 +256,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -275,6 +283,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -303,6 +312,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -333,6 +343,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -363,6 +374,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -389,6 +401,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),
@@ -416,6 +429,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             new List<Tag>(),
             new List<EnvironmentInfo>{ new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
             new List<KumaIntegration>(),
@@ -447,6 +461,7 @@ public class SnapshotValidatorTests
             platforms,
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             tags,
             envs,
             new List<KumaIntegration>(),
@@ -473,6 +488,7 @@ public class SnapshotValidatorTests
             new List<Platform>(),
             new List<ExternalResource>(),
             new List<Account>(),
+            new List<Identity>(),
             tags,
             new List<EnvironmentInfo>(),
             new List<KumaIntegration>(),

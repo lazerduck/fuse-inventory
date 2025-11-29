@@ -34,6 +34,7 @@ public class DataStoreServiceTests
             Platforms: (platforms ?? Array.Empty<Platform>()).ToArray(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: Array.Empty<Account>(),
+            Identities: Array.Empty<Identity>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),

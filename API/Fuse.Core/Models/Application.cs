@@ -45,5 +45,7 @@ public record ApplicationInstanceDependency
     Guid TargetId,
     TargetKind TargetKind,
     int? Port,
-    Guid? AccountId
+    DependencyAuthKind AuthKind,
+    Guid? AccountId,
+    Guid? IdentityId
 );

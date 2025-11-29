@@ -397,6 +397,7 @@ public class JsonFuseStoreTests : IDisposable
             Platforms: Array.Empty<Platform>(),
             ExternalResources: new[] { externalResource },
             Accounts: new[] { account },
+            Identities: Array.Empty<Identity>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),

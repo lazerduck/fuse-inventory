@@ -62,6 +62,7 @@ public class ConfigService : IConfigService
             Platforms = snapshot.Platforms.ToList(),
             ExternalResources = snapshot.ExternalResources.ToList(),
             Accounts = snapshot.Accounts.ToList(),
+            Identities = snapshot.Identities.ToList(),
             Tags = snapshot.Tags.ToList(),
             Environments = snapshot.Environments.ToList(),
             KumaIntegrations = snapshot.KumaIntegrations.ToList()
@@ -170,7 +171,8 @@ public class ConfigService : IConfigService
                     UpdatedAt: DateTime.UtcNow
                 )
             },
-            Accounts = new List<Account>()
+            Accounts = new List<Account>(),
+            Identities = new List<Identity>()
         };
 
         var result = format switch
@@ -211,6 +213,7 @@ public class ConfigService : IConfigService
             var existingPlatforms = current.Platforms.ToDictionary(s => s.Id);
             var existingExternalResources = current.ExternalResources.ToDictionary(e => e.Id);
             var existingAccounts = current.Accounts.ToDictionary(a => a.Id);
+            var existingIdentities = current.Identities.ToDictionary(i => i.Id);
             var existingTags = current.Tags.ToDictionary(t => t.Id);
             var existingEnvironments = current.Environments.ToDictionary(e => e.Id);
             var existingKumaIntegrations = current.KumaIntegrations.ToDictionary(k => k.Id);
@@ -241,6 +244,11 @@ public class ConfigService : IConfigService
                 existingAccounts[account.Id] = account;
             }
 
+            foreach (var identity in imported.Identities)
+            {
+                existingIdentities[identity.Id] = identity;
+            }
+
             foreach (var tag in imported.Tags)
             {
                 existingTags[tag.Id] = tag;
@@ -257,6 +265,7 @@ public class ConfigService : IConfigService
                 Platforms: existingPlatforms.Values.ToList(),
                 ExternalResources: existingExternalResources.Values.ToList(),
                 Accounts: existingAccounts.Values.ToList(),
+                Identities: existingIdentities.Values.ToList(),
                 Tags: existingTags.Values.ToList(),
                 Environments: existingEnvironments.Values.ToList(),
                 KumaIntegrations: existingKumaIntegrations.Values.ToList(),
@@ -293,6 +302,7 @@ public class ConfigSnapshot
     public List<Platform> Platforms { get; set; } = new();
     public List<ExternalResource> ExternalResources { get; set; } = new();
     public List<Account> Accounts { get; set; } = new();
+    public List<Identity> Identities { get; set; } = new();
     public List<Tag> Tags { get; set; } = new();
     public List<EnvironmentInfo> Environments { get; set; } = new();
     public List<KumaIntegration> KumaIntegrations { get; set; } = new();

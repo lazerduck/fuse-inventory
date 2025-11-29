@@ -38,6 +38,7 @@ public class AccountServiceTests
             Platforms: Array.Empty<Platform>(),
             ExternalResources: (res ?? Array.Empty<ExternalResource>()).ToArray(),
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
+            Identities: Array.Empty<Identity>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),

@@ -102,7 +102,7 @@ public class ApplicationServiceTests
         var otherAppInst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null,
             new List<ApplicationInstanceDependency>
             {
-                new ApplicationInstanceDependency(Guid.NewGuid(), otherInstDepTarget, TargetKind.Application, 1234, null)
+                new ApplicationInstanceDependency(Guid.NewGuid(), otherInstDepTarget, TargetKind.Application, 1234, DependencyAuthKind.None, null, null)
             }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var other = new Application(Guid.NewGuid(), "Other", null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { otherAppInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-2));
@@ -203,7 +203,7 @@ public class ApplicationServiceTests
         var app1Inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var app1 = new Application(Guid.NewGuid(), "A1", null, null, null, null, null, null, new HashSet<Guid>(), new[] { app1Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
-        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), app1Inst.Id, TargetKind.Application, 8080, null);
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), app1Inst.Id, TargetKind.Application, 8080, DependencyAuthKind.None, null, null);
         var app2Inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var app2 = new Application(Guid.NewGuid(), "A2", null, null, null, null, null, null, new HashSet<Guid>(), new[] { app2Inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
@@ -289,33 +289,33 @@ public class ApplicationServiceTests
         var inst = app.Instances.Single();
 
         // Non-existent target
-        var badTarget = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, Guid.NewGuid(), TargetKind.DataStore, 1000, null));
+        var badTarget = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, Guid.NewGuid(), TargetKind.DataStore, 1000, DependencyAuthKind.None, null, null));
     Assert.False(badTarget.IsSuccess);
     Assert.Equal(ErrorType.Validation, badTarget.ErrorType);
 
         // Port out of range
-        var badPort = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 0, null));
+        var badPort = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 0, DependencyAuthKind.None, null, null));
     Assert.False(badPort.IsSuccess);
     Assert.Equal(ErrorType.Validation, badPort.ErrorType);
 
         // Account missing
-        var badAcct = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, Guid.NewGuid()));
+        var badAcct = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, Guid.NewGuid(), null));
     Assert.False(badAcct.IsSuccess);
     Assert.Equal(ErrorType.Validation, badAcct.ErrorType);
 
         // Valid for DataStore and External
-        var okDs = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, acct.Id));
+        var okDs = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, acct.Id, null));
     Assert.True(okDs.IsSuccess);
-        var okExt = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ext.Id, TargetKind.External, null, null));
+        var okExt = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ext.Id, TargetKind.External, null, DependencyAuthKind.None, null, null));
     Assert.True(okExt.IsSuccess);
 
         // Update validations
         var depToUpdate = okDs.Value!;
-        var updBadPort = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 70000, acct.Id));
+        var updBadPort = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 70000, DependencyAuthKind.Account, acct.Id, null));
     Assert.False(updBadPort.IsSuccess);
     Assert.Equal(ErrorType.Validation, updBadPort.ErrorType);
 
-        var updOk = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 2345, acct.Id));
+        var updOk = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, depToUpdate.Id, ds.Id, TargetKind.DataStore, 2345, DependencyAuthKind.Account, acct.Id, null));
     Assert.True(updOk.IsSuccess);
     Assert.Equal(2345, updOk.Value!.Port);
     }
@@ -336,6 +336,7 @@ public class ApplicationServiceTests
             Platforms: (platforms ?? Array.Empty<Platform>()).ToArray(),
             ExternalResources: (resources ?? Array.Empty<ExternalResource>()).ToArray(),
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
+            Identities: Array.Empty<Identity>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
@@ -527,11 +528,11 @@ public class ApplicationServiceTests
     Assert.True(instCreate.IsSuccess);
         var instId = instCreate.Value!.Id;
 
-        var depCreate = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, instId, appTarget.Id, TargetKind.Application, 8080, null));
+        var depCreate = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, instId, appTarget.Id, TargetKind.Application, 8080, DependencyAuthKind.None, null, null));
     Assert.True(depCreate.IsSuccess);
         var dep = depCreate.Value!;
 
-        var depUpdate = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, instId, dep.Id, appTarget.Id, TargetKind.Application, 9090, null));
+        var depUpdate = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, instId, dep.Id, appTarget.Id, TargetKind.Application, 9090, DependencyAuthKind.None, null, null));
     Assert.True(depUpdate.IsSuccess);
 
         var depDelete = await service.DeleteDependencyAsync(new DeleteApplicationDependency(app.Id, instId, dep.Id));

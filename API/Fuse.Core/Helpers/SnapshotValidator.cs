@@ -26,6 +26,11 @@ public static class SnapshotValidator
         var apps = s.Applications.ToDictionary(x => x.Id);
         var dataStores = s.DataStores.ToDictionary(x => x.Id);
         var externals = s.ExternalResources.ToDictionary(x => x.Id);
+        var identities = s.Identities.ToDictionary(x => x.Id);
+        var accounts = s.Accounts.ToDictionary(x => x.Id);
+
+        // Helper to get all instance IDs
+        var allInstanceIds = apps.Values.SelectMany(a => a.Instances).Select(i => i.Id).ToHashSet();
 
         bool TargetExists(TargetKind kind, Guid id) => kind switch
         {
@@ -74,6 +79,12 @@ public static class SnapshotValidator
                 {
                     if (!TargetExists(dep.TargetKind, dep.TargetId))
                         errs.Add($"ApplicationInstance {inst.Id}: dependency {dep.TargetKind}/{dep.TargetId} not found");
+                    
+                    // Validate dependency auth references
+                    if (dep.AuthKind == DependencyAuthKind.Account && dep.AccountId is Guid aid && !accounts.ContainsKey(aid))
+                        errs.Add($"ApplicationInstance {inst.Id}: dependency account {aid} not found");
+                    if (dep.AuthKind == DependencyAuthKind.Identity && dep.IdentityId is Guid iid && !identities.ContainsKey(iid))
+                        errs.Add($"ApplicationInstance {inst.Id}: dependency identity {iid} not found");
                 }
             }
         }
@@ -84,6 +95,23 @@ public static class SnapshotValidator
             if (!TargetExists(acc.TargetKind, acc.TargetId))
                 errs.Add($"Account {acc.Id}: target {acc.TargetKind}/{acc.TargetId} not found");
             TagsMustExist(acc.TagIds, $"Account {acc.Id}");
+        }
+
+        // Identities
+        foreach (var identity in s.Identities)
+        {
+            // Validate owner instance exists (if specified)
+            if (identity.OwnerInstanceId is Guid ownerInstId && !allInstanceIds.Contains(ownerInstId))
+                errs.Add($"Identity {identity.Id}: owner instance {ownerInstId} not found");
+            
+            TagsMustExist(identity.TagIds, $"Identity {identity.Id}");
+
+            // Validate identity assignments
+            foreach (var assignment in identity.Assignments)
+            {
+                if (!TargetExists(assignment.TargetKind, assignment.TargetId))
+                    errs.Add($"Identity {identity.Id}: assignment target {assignment.TargetKind}/{assignment.TargetId} not found");
+            }
         }
 
         // ExternalResources

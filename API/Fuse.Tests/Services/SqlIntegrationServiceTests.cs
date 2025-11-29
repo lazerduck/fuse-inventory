@@ -20,6 +20,7 @@ public class SqlIntegrationServiceTests
             Platforms: Array.Empty<Platform>(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
+            Identities: Array.Empty<Identity>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
