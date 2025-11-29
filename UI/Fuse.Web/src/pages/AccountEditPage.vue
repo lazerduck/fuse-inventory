@@ -36,7 +36,6 @@
           :target-kind-options="targetKindOptions"
           :target-options="targetOptions"
           :auth-kind-options="authKindOptions"
-          :tag-options="tagOptions"
         />
       </q-card-section>
 
@@ -296,7 +295,6 @@ import type {
 } from '../components/accounts/types'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
-import { useTags } from '../composables/useTags'
 import { useApplications } from '../composables/useApplications'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
@@ -319,7 +317,6 @@ const router = useRouter()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
-const tagsStore = useTags()
 const applicationsQuery = useApplications()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
@@ -411,7 +408,6 @@ const databaseOptions = computed(() => {
 const isDatabasesLoading = computed(() => databasesQuery.isLoading.value || databasesQuery.isFetching.value)
 const hasSqlIntegration = computed(() => !!currentSqlIntegrationId.value)
 
-const tagOptions = computed<TargetOption[]>(() => tagsStore.options.value)
 const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({ label: value, value }))
 const authKindOptions: SelectOption<AuthKind>[] = Object.values(AuthKind).map((value) => ({ label: value, value }))
 const privilegeOptions = Object.values(Privilege).map((value) => ({ label: value, value }))

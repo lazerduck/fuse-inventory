@@ -34,17 +34,7 @@
           <q-input v-model="form.baseUri" label="Base URI" dense outlined />
           <q-input v-model="form.healthUri" label="Health URI" dense outlined />
           <q-input v-model="form.openApiUri" label="OpenAPI URI" dense outlined />
-          <q-select
-            v-model="form.tagIds"
-            label="Tags"
-            dense
-            outlined
-            use-chips
-            multiple
-            emit-value
-            map-options
-            :options="tagOptions"
-          />
+          <TagSelect v-model="form.tagIds" />
         </div>
 
         <slot />
@@ -63,7 +53,7 @@ import { computed, onMounted, reactive, watch } from 'vue'
 import type { ApplicationInstance } from '../../api/client'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
-import { useTags } from '../../composables/useTags'
+import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
 
@@ -97,11 +87,9 @@ const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
-const tagsStore = useTags()
 
 const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
-const tagOptions = tagsStore.options
 
 const form = reactive<ApplicationInstanceFormModel>({
   environmentId: null,

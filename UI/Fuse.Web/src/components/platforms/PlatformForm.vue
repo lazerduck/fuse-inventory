@@ -23,17 +23,7 @@
           />
           <q-input v-model="form.ipAddress" label="IP Address" dense outlined />
           <q-input v-model="form.notes" label="Notes" type="textarea" dense outlined />
-          <q-select
-            v-model="form.tagIds"
-            label="Tags"
-            dense
-            outlined
-            use-chips
-            multiple
-            emit-value
-            map-options
-            :options="tagOptions"
-          />
+          <TagSelect v-model="form.tagIds" />
         </div>
       </q-card-section>
       <q-separator />
@@ -47,8 +37,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, onMounted, watch } from 'vue'
-import { useTags } from '../../composables/useTags'
 import { PlatformKind, type Platform } from '../../api/client'
+import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
 
@@ -79,10 +69,6 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
 const emit = defineEmits<Emits>()
-
-const tagsStore = useTags()
-
-const tagOptions = tagsStore.options
 
 const kindOptions = Object.values(PlatformKind)
   .map(value => ({ label: value, value: value as PlatformKind }))
