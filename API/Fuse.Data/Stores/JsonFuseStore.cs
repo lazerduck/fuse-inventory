@@ -41,11 +41,12 @@ public sealed class JsonFuseStore : IFuseStore
         try
         {
             _cache = new Snapshot(
-                Applications: await ReadAsync<Application>("applications.json", ct),
+                Applications: await ReadApplicationsWithMigrationAsync("applications.json", ct),
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
                 Platforms: await ReadAsync<Platform>("platforms.json", ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
                 Accounts: await ReadAccountsWithMigrationAsync("accounts.json", ct),
+                Identities: await ReadAsync<Identity>("identities.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
                 KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
@@ -131,6 +132,7 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("platforms.json", snapshot.Platforms, ct);
             await WriteAsync("externalresources.json", snapshot.ExternalResources, ct);
             await WriteAsync("accounts.json", snapshot.Accounts, ct);
+            await WriteAsync("identities.json", snapshot.Identities, ct);
             await WriteAsync("tags.json", snapshot.Tags, ct);
             await WriteAsync("environments.json", snapshot.Environments, ct);
             await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
@@ -244,5 +246,70 @@ public sealed class JsonFuseStore : IFuseStore
         }
 
         return accounts;
+    }
+
+    private async Task<IReadOnlyList<Application>> ReadApplicationsWithMigrationAsync(string file, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return Array.Empty<Application>();
+
+        await using var fs = File.OpenRead(path);
+        using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
+
+        var applications = new List<Application>();
+        
+        foreach (var appElement in doc.RootElement.EnumerateArray())
+        {
+            var application = JsonSerializer.Deserialize<Application>(appElement.GetRawText(), Json);
+            if (application is null) continue;
+
+            // Migration: Dependencies created before authKind was added will have authKind=None (default).
+            // If a dependency has an accountId set, it was intentionally using account-based auth,
+            // so we migrate it to AuthKind=Account to preserve the intended behavior.
+            // Note: This assumes that any dependency with a non-null accountId was using account auth.
+            var needsMigration = false;
+            var migratedInstances = new List<ApplicationInstance>();
+
+            foreach (var inst in application.Instances)
+            {
+                var migratedDeps = new List<ApplicationInstanceDependency>();
+                var instNeedsMigration = false;
+
+                foreach (var dep in inst.Dependencies)
+                {
+                    // If authKind is None but accountId is set, migrate to Account authKind
+                    if (dep.AuthKind == DependencyAuthKind.None && dep.AccountId is not null)
+                    {
+                        migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Account });
+                        instNeedsMigration = true;
+                    }
+                    else
+                    {
+                        migratedDeps.Add(dep);
+                    }
+                }
+
+                if (instNeedsMigration)
+                {
+                    needsMigration = true;
+                    migratedInstances.Add(inst with { Dependencies = migratedDeps, UpdatedAt = DateTime.UtcNow });
+                }
+                else
+                {
+                    migratedInstances.Add(inst);
+                }
+            }
+
+            if (needsMigration)
+            {
+                applications.Add(application with { Instances = migratedInstances, UpdatedAt = DateTime.UtcNow });
+            }
+            else
+            {
+                applications.Add(application);
+            }
+        }
+
+        return applications;
     }
 }

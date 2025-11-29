@@ -32,6 +32,7 @@ public class ExternalResourceServiceTests
             Platforms: Array.Empty<Platform>(),
             ExternalResources: (res ?? Array.Empty<ExternalResource>()).ToArray(),
             Accounts: Array.Empty<Account>(),
+            Identities: Array.Empty<Identity>(),
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),

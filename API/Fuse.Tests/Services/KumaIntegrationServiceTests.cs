@@ -23,6 +23,7 @@ public class KumaIntegrationServiceTests
             Platforms: (platforms ?? Array.Empty<Platform>()).ToArray(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: (accounts ?? Array.Empty<Account>()).ToArray(),
+            Identities: Array.Empty<Identity>(),
             Tags: Array.Empty<Tag>(),
             Environments: (environments ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: (integrations ?? Array.Empty<KumaIntegration>()).ToArray(),

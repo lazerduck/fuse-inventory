@@ -24,6 +24,7 @@ public class ConfigServiceTests
             Platforms: platforms ?? Array.Empty<Platform>(),
             ExternalResources: externalResources ?? Array.Empty<ExternalResource>(),
             Accounts: accounts ?? Array.Empty<Account>(),
+            Identities: Array.Empty<Identity>(),
             Tags: tags ?? Array.Empty<Tag>(),
             Environments: environments ?? Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),

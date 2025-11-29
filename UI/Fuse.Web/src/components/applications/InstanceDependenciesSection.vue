@@ -23,9 +23,14 @@
             {{ resolveTargetName(props.row.__source) }}
           </q-td>
         </template>
-        <template #body-cell-account="props">
+        <template #body-cell-authKind="props">
           <q-td :props="props">
-            {{ resolveAccountName(props.row.accountId) }}
+            <q-badge :label="props.row.authKind ?? 'None'" outline />
+          </q-td>
+        </template>
+        <template #body-cell-credential="cellProps">
+          <q-td :props="cellProps">
+            {{ resolveCredentialName(cellProps.row.__source) }}
           </q-td>
         </template>
         <template #body-cell-actions="props">
@@ -72,7 +77,9 @@ interface DependencyRow {
   targetId?: string
   targetKind?: TargetKind
   port?: number
+  authKind?: string
   accountId?: string
+  identityId?: string
 }
 
 const props = withDefaults(
@@ -80,7 +87,7 @@ const props = withDefaults(
     dependencies: readonly ApplicationInstanceDependency[]
     disableActions?: boolean
     resolveTargetName: (dependency: ApplicationInstanceDependency) => string
-    resolveAccountName: (accountId?: string | null) => string
+    resolveCredentialName: (dependency: ApplicationInstanceDependency) => string
   }>(),
   {
     dependencies: () => [],
@@ -98,7 +105,8 @@ const columns: QTableColumn<DependencyRow>[] = [
   { name: 'target', label: 'Target', field: 'targetId', align: 'left' },
   { name: 'targetKind', label: 'Kind', field: 'targetKind', align: 'left' },
   { name: 'port', label: 'Port', field: 'port', align: 'left' },
-  { name: 'account', label: 'Account', field: 'accountId', align: 'left' },
+  { name: 'authKind', label: 'Auth', field: 'authKind', align: 'left' },
+  { name: 'credential', label: 'Credential', field: (row) => row.accountId || row.__source.identityId, align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
 

@@ -40,6 +40,21 @@ const router = createRouter({
       component: () => import('./pages/AccountEditPage.vue')
     },
     {
+      path: '/identities',
+      name: 'identities',
+      component: () => import('./pages/IdentitiesPage.vue')
+    },
+    {
+      path: '/identities/create',
+      name: 'identityCreate',
+      component: () => import('./pages/IdentityEditPage.vue')
+    },
+    {
+      path: '/identities/:id/edit',
+      name: 'identityEdit',
+      component: () => import('./pages/IdentityEditPage.vue')
+    },
+    {
       path: '/data-stores',
       name: 'dataStores',
       component: () => import('./pages/DataStoresPage.vue')

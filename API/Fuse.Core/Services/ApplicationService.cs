@@ -418,13 +418,15 @@ public class ApplicationService : IApplicationService
         if (!TargetExists(store, command.TargetKind, command.TargetId))
             return Result<ApplicationInstanceDependency>.Failure($"Target {command.TargetKind}/{command.TargetId} not found.", ErrorType.Validation);
 
-        if (command.AccountId is Guid aid && !store.Accounts.Any(a => a.Id == aid))
-            return Result<ApplicationInstanceDependency>.Failure($"Account with ID '{aid}' not found.", ErrorType.Validation);
+        // Validate auth references based on authKind
+        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id);
+        if (authValidation is not null)
+            return authValidation;
 
         if (command.Port is int p && (p < 1 || p > 65535))
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
-        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), command.TargetId, command.TargetKind, command.Port, command.AccountId);
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId);
         var updatedInst = inst with { Dependencies = inst.Dependencies.Append(dep).ToList(), UpdatedAt = DateTime.UtcNow };
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
@@ -446,12 +448,16 @@ public class ApplicationService : IApplicationService
 
         if (!TargetExists(store, command.TargetKind, command.TargetId))
             return Result<ApplicationInstanceDependency>.Failure($"Target {command.TargetKind}/{command.TargetId} not found.", ErrorType.Validation);
-        if (command.AccountId is Guid aid && !store.Accounts.Any(a => a.Id == aid))
-            return Result<ApplicationInstanceDependency>.Failure($"Account with ID '{aid}' not found.", ErrorType.Validation);
+
+        // Validate auth references based on authKind
+        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id);
+        if (authValidation is not null)
+            return authValidation;
+
         if (command.Port is int p && (p < 1 || p > 65535))
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
-        var updatedDep = new ApplicationInstanceDependency(command.DependencyId, command.TargetId, command.TargetKind, command.Port, command.AccountId);
+        var updatedDep = new ApplicationInstanceDependency(command.DependencyId, command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId);
         var updatedInst = inst with { Dependencies = inst.Dependencies.Select(d => d.Id == dep.Id ? updatedDep : d).ToList(), UpdatedAt = DateTime.UtcNow };
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
@@ -474,6 +480,39 @@ public class ApplicationService : IApplicationService
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
         return Result.Success();
+    }
+
+    private static Result<ApplicationInstanceDependency>? ValidateDependencyAuth(Snapshot store, DependencyAuthKind authKind, Guid? accountId, Guid? identityId, Guid instanceId)
+    {
+        switch (authKind)
+        {
+            case DependencyAuthKind.Account:
+                if (accountId is null)
+                    return Result<ApplicationInstanceDependency>.Failure("AccountId is required when AuthKind is Account.", ErrorType.Validation);
+                if (!store.Accounts.Any(a => a.Id == accountId))
+                    return Result<ApplicationInstanceDependency>.Failure($"Account with ID '{accountId}' not found.", ErrorType.Validation);
+                break;
+
+            case DependencyAuthKind.Identity:
+                if (identityId is null)
+                    return Result<ApplicationInstanceDependency>.Failure("IdentityId is required when AuthKind is Identity.", ErrorType.Validation);
+                var identity = store.Identities.FirstOrDefault(i => i.Id == identityId);
+                if (identity is null)
+                    return Result<ApplicationInstanceDependency>.Failure($"Identity with ID '{identityId}' not found.", ErrorType.Validation);
+                // Identity ownership rule: An identity can be used by a dependency if:
+                // 1. The identity has no owner (OwnerInstanceId is null) - making it a shared/global identity usable by any instance
+                // 2. The identity is owned by the same instance that's creating the dependency
+                if (identity.OwnerInstanceId is not null && identity.OwnerInstanceId != instanceId)
+                    return Result<ApplicationInstanceDependency>.Failure($"Identity with ID '{identityId}' is owned by a different instance.", ErrorType.Validation);
+                break;
+
+            case DependencyAuthKind.None:
+            default:
+                // No validation needed for None
+                break;
+        }
+
+        return null;
     }
 
     private static bool TargetExists(Snapshot s, TargetKind kind, Guid id) => kind switch

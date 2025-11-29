@@ -85,7 +85,9 @@ public record CreateApplicationDependency(
     Guid TargetId,
     TargetKind TargetKind,
     int? Port,
-    Guid? AccountId
+    DependencyAuthKind AuthKind,
+    Guid? AccountId,
+    Guid? IdentityId
 );
 
 public record UpdateApplicationDependency(
@@ -95,7 +97,9 @@ public record UpdateApplicationDependency(
     Guid TargetId,
     TargetKind TargetKind,
     int? Port,
-    Guid? AccountId
+    DependencyAuthKind AuthKind,
+    Guid? AccountId,
+    Guid? IdentityId
 );
 
 public record DeleteApplicationDependency(

@@ -85,6 +85,16 @@
             </q-item-section>
           </q-item>
 
+          <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
+            data-tour-id="nav-identities">
+            <q-item-section avatar>
+              <q-icon name="badge" />
+            </q-item-section>
+            <q-item-section>
+              Identities
+            </q-item-section>
+          </q-item>
+
           <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
             data-tour-id="nav-data-stores">
             <q-item-section avatar>

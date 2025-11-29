@@ -18,6 +18,7 @@ public class TagServiceTests
             Platforms: Array.Empty<Platform>(),
             ExternalResources: Array.Empty<ExternalResource>(),
             Accounts: Array.Empty<Account>(),
+            Identities: Array.Empty<Identity>(),
             Tags: tags,
             Environments: Array.Empty<EnvironmentInfo>(),
             SecretProviders: Array.Empty<SecretProvider>(),
