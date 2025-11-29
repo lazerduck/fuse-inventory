@@ -150,6 +150,7 @@ import { computed } from 'vue'
 import type { ApplicationInstance } from '../../api/client'
 import { useHealthCheck } from '../../composables/useHealthCheck'
 import { MonitorStatus } from '../../types/health'
+import { DEFAULT_APPLICATION_ICON } from '../../constants/applicationIcons'
 
 const props = defineProps<{
   instance: ApplicationInstance
@@ -161,7 +162,7 @@ const props = defineProps<{
   dependencyFormatter: (dependency: any) => string
 }>()
 
-const displayIcon = computed(() => props.applicationIcon || 'precision_manufacturing')
+const displayIcon = computed(() => props.applicationIcon || DEFAULT_APPLICATION_ICON)
 
 const MAX_VISIBLE_DEPENDENCIES = 6
 

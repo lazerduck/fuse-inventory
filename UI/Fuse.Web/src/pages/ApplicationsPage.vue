@@ -121,7 +121,7 @@
                 clearable
               >
                 <template #prepend>
-                  <q-icon :name="createForm.icon || 'precision_manufacturing'" />
+                  <q-icon :name="createForm.icon || DEFAULT_APPLICATION_ICON" />
                 </template>
                 <template #option="scope">
                   <q-item v-bind="scope.itemProps">
@@ -190,6 +190,7 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
+import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
 
 interface ApplicationForm {
   name: string
@@ -211,33 +212,7 @@ const fuseStore = useFuseStore()
 const pagination = { rowsPerPage: 10 }
 const filter = ref('')
 
-const iconOptions = [
-  { label: 'Robot Arm (Default)', value: 'precision_manufacturing' },
-  { label: 'Web Application', value: 'web' },
-  { label: 'API', value: 'api' },
-  { label: 'Cloud', value: 'cloud' },
-  { label: 'Database', value: 'storage' },
-  { label: 'Mobile App', value: 'smartphone' },
-  { label: 'Desktop App', value: 'computer' },
-  { label: 'Terminal', value: 'terminal' },
-  { label: 'Dashboard', value: 'dashboard' },
-  { label: 'Analytics', value: 'analytics' },
-  { label: 'Code', value: 'code' },
-  { label: 'Settings', value: 'settings' },
-  { label: 'Security', value: 'security' },
-  { label: 'Shopping Cart', value: 'shopping_cart' },
-  { label: 'Payment', value: 'payment' },
-  { label: 'Email', value: 'email' },
-  { label: 'Message', value: 'message' },
-  { label: 'Notifications', value: 'notifications' },
-  { label: 'Schedule', value: 'schedule' },
-  { label: 'Sync', value: 'sync' },
-  { label: 'Build', value: 'build' },
-  { label: 'Memory', value: 'memory' },
-  { label: 'Hub', value: 'hub' },
-  { label: 'Integration', value: 'integration_instructions' },
-  { label: 'Rocket', value: 'rocket_launch' }
-]
+const iconOptions = APPLICATION_ICON_OPTIONS
 
 const { data: applicationsData, isLoading, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],

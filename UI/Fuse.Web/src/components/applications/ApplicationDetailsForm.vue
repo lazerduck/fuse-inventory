@@ -23,7 +23,7 @@
             clearable
           >
             <template #prepend>
-              <q-icon :name="form.icon || 'precision_manufacturing'" />
+              <q-icon :name="form.icon || DEFAULT_APPLICATION_ICON" />
             </template>
             <template #option="scope">
               <q-item v-bind="scope.itemProps">
@@ -71,6 +71,7 @@
 import { computed, onMounted, reactive, watch } from 'vue'
 import type { Application } from '../../api/client'
 import TagSelect from '../tags/TagSelect.vue'
+import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../../constants/applicationIcons'
 
 interface ApplicationFormModel {
   name: string
@@ -103,33 +104,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
-const iconOptions = [
-  { label: 'Robot Arm (Default)', value: 'precision_manufacturing' },
-  { label: 'Web Application', value: 'web' },
-  { label: 'API', value: 'api' },
-  { label: 'Cloud', value: 'cloud' },
-  { label: 'Database', value: 'storage' },
-  { label: 'Mobile App', value: 'smartphone' },
-  { label: 'Desktop App', value: 'computer' },
-  { label: 'Terminal', value: 'terminal' },
-  { label: 'Dashboard', value: 'dashboard' },
-  { label: 'Analytics', value: 'analytics' },
-  { label: 'Code', value: 'code' },
-  { label: 'Settings', value: 'settings' },
-  { label: 'Security', value: 'security' },
-  { label: 'Shopping Cart', value: 'shopping_cart' },
-  { label: 'Payment', value: 'payment' },
-  { label: 'Email', value: 'email' },
-  { label: 'Message', value: 'message' },
-  { label: 'Notifications', value: 'notifications' },
-  { label: 'Schedule', value: 'schedule' },
-  { label: 'Sync', value: 'sync' },
-  { label: 'Build', value: 'build' },
-  { label: 'Memory', value: 'memory' },
-  { label: 'Hub', value: 'hub' },
-  { label: 'Integration', value: 'integration_instructions' },
-  { label: 'Rocket', value: 'rocket_launch' }
-]
+const iconOptions = APPLICATION_ICON_OPTIONS
 
 const form = reactive<ApplicationFormModel>({
   name: '',
