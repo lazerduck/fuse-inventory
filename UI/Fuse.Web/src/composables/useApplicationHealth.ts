@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useApplications } from './useApplications'
 import { useKumaIntegrations } from './useKumaIntegrations'
@@ -12,7 +12,13 @@ export interface ApplicationHealthStats {
   hasKumaIntegration: boolean
 }
 
-export function useApplicationHealth() {
+export interface UseApplicationHealthOptions {
+  environmentIds?: Ref<string[]>
+  searchText?: Ref<string>
+  includeInstances?: Ref<boolean>
+}
+
+export function useApplicationHealth(options?: UseApplicationHealthOptions) {
   const applicationsQuery = useApplications()
   const kumaIntegrationsQuery = useKumaIntegrations()
 
@@ -22,16 +28,34 @@ export function useApplicationHealth() {
     return integrations.length > 0
   })
 
-  // Get health status for all application instances
+  // Get health status for application instances, optionally filtered by environment
   const healthStatsQuery = useQuery({
-    queryKey: ['applicationHealthStats'],
+    queryKey: computed(() => ['applicationHealthStats', options?.environmentIds?.value ?? [], options?.searchText?.value ?? '', options?.includeInstances?.value ?? true]),
     queryFn: async (): Promise<ApplicationHealthStats> => {
       const applications = applicationsQuery.data.value ?? []
+      const filterEnvIds = options?.environmentIds?.value ?? []
+      const searchText = (options?.searchText?.value ?? '').toLowerCase().trim()
+      const includeInstances = options?.includeInstances?.value ?? true
+      
+      // Filter applications by search text first
+      const filteredApps = searchText 
+        ? applications.filter(app => (app.name ?? '').toLowerCase().includes(searchText))
+        : applications
+      
+      // If instances are not included in the filter, don't show health stats
+      if (!includeInstances) {
+        return {
+          total: 0,
+          healthy: 0,
+          unhealthy: 0,
+          hasKumaIntegration: hasKumaIntegration.value
+        }
+      }
       
       // If no Kuma integration, return basic stats
       if (!hasKumaIntegration.value) {
         return {
-          total: applications.length,
+          total: filteredApps.length,
           healthy: 0,
           unhealthy: 0,
           hasKumaIntegration: false
@@ -42,10 +66,15 @@ export function useApplicationHealth() {
       let unhealthyCount = 0
       
       // Check each application to see if it has any instances with health status
-      for (const app of applications) {
-        const instances = app.instances ?? []
+      for (const app of filteredApps) {
+        let instances = app.instances ?? []
         
-        // Skip applications with no instances
+        // Filter instances by environment if filter is provided
+        if (filterEnvIds.length > 0) {
+          instances = instances.filter(inst => inst.environmentId && filterEnvIds.includes(inst.environmentId))
+        }
+        
+        // Skip applications with no matching instances
         if (instances.length === 0) continue
         
         let appHasHealthyInstance = false
@@ -84,7 +113,7 @@ export function useApplicationHealth() {
       }
       
       return {
-        total: applications.length,
+        total: filteredApps.length,
         healthy: healthyCount,
         unhealthy: unhealthyCount,
         hasKumaIntegration: true

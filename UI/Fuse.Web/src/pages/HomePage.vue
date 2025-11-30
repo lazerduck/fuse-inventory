@@ -192,6 +192,12 @@ const ALL_ITEM_TYPES: string[] = ['instance', 'datastore', 'external']
 const selectedItemTypes = ref<string[]>([...ALL_ITEM_TYPES])
 const searchText = ref<string>('')
 
+// Computed ref for whether instances are included in the item type filter
+const includeInstances = computed(() => {
+  const types = selectedItemTypes.value
+  return types.length === 0 || types.includes('instance')
+})
+
 const onboardingStore = useOnboardingStore()
 const { startTour } = useOnboardingTour()
 
@@ -205,7 +211,11 @@ const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()
 const tagsQuery = useTags()
-const applicationHealthQuery = useApplicationHealth()
+const applicationHealthQuery = useApplicationHealth({ 
+  environmentIds: selectedEnvironments, 
+  searchText: searchText,
+  includeInstances: includeInstances
+})
 
 const isLoading = computed(() => 
   applicationsQuery.isLoading.value || 
