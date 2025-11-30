@@ -1,15 +1,18 @@
 <template>
-  <ReadonlyPlaceholder
-    icon="layers"
-    entity-type="Instance"
-    :entity-id="id"
-  />
+  <ReadOnlyShell
+    :title="`Instance: ${id}`"
+    :higher="[]"
+    :lower="[]"
+  >
+    <ReadOnlyPlaceholderContent icon="layers" :entity-id="id" />
+  </ReadOnlyShell>
 </template>
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-import ReadonlyPlaceholder from '../../components/readonly/ReadonlyPlaceholder.vue'
+import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'
+import ReadOnlyPlaceholderContent from '../../components/readonly/ReadOnlyPlaceholderContent.vue'
 
 const route = useRoute()
 const id = computed(() => route.params.id as string)
