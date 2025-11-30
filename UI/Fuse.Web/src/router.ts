@@ -118,6 +118,47 @@ const router = createRouter({
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')
+    },
+    // Read-only documentation mode routes
+    {
+      path: '/view',
+      name: 'viewHome',
+      component: () => import('./pages/readonly/ViewHome.vue')
+    },
+    {
+      path: '/view/app/:id',
+      name: 'viewApp',
+      component: () => import('./pages/readonly/AppView.vue')
+    },
+    {
+      path: '/view/instance/:id',
+      name: 'viewInstance',
+      component: () => import('./pages/readonly/InstanceView.vue')
+    },
+    {
+      path: '/view/datastore/:id',
+      name: 'viewDatastore',
+      component: () => import('./pages/readonly/DatastoreView.vue')
+    },
+    {
+      path: '/view/dependency/:id',
+      name: 'viewDependency',
+      component: () => import('./pages/readonly/DependencyView.vue')
+    },
+    {
+      path: '/view/account/:id',
+      name: 'viewAccount',
+      component: () => import('./pages/readonly/AccountView.vue')
+    },
+    {
+      path: '/view/identity/:id',
+      name: 'viewIdentity',
+      component: () => import('./pages/readonly/IdentityView.vue')
+    },
+    {
+      path: '/view/external/:id',
+      name: 'viewExternal',
+      component: () => import('./pages/readonly/ExternalView.vue')
     }
   ]
 })
