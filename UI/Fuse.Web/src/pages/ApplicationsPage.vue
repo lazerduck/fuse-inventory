@@ -111,6 +111,30 @@
               <q-input v-model="createForm.framework" label="Framework" dense outlined />
               <q-input v-model="createForm.repositoryUri" label="Repository URI" dense outlined />
               <q-select
+                v-model="createForm.icon"
+                :options="iconOptions"
+                label="Icon"
+                dense
+                outlined
+                emit-value
+                map-options
+                clearable
+              >
+                <template #prepend>
+                  <q-icon :name="createForm.icon || DEFAULT_APPLICATION_ICON" />
+                </template>
+                <template #option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section avatar>
+                      <q-icon :name="scope.opt.value" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+              <q-select
                 v-model="createForm.tagIds"
                 label="Tags"
                 dense
@@ -166,6 +190,7 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
+import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
 
 interface ApplicationForm {
   name: string
@@ -175,6 +200,7 @@ interface ApplicationForm {
   notes: string
   framework: string
   repositoryUri: string
+  icon: string
   tagIds: string[]
 }
 
@@ -185,6 +211,8 @@ const fuseStore = useFuseStore()
 
 const pagination = { rowsPerPage: 10 }
 const filter = ref('')
+
+const iconOptions = APPLICATION_ICON_OPTIONS
 
 const { data: applicationsData, isLoading, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],
@@ -224,6 +252,7 @@ function getEmptyApplicationForm(): ApplicationForm {
     notes: '',
     framework: '',
     repositoryUri: '',
+    icon: '',
     tagIds: []
   }
 }
@@ -284,6 +313,7 @@ function submitCreate() {
     notes: createForm.notes || undefined,
     framework: createForm.framework || undefined,
     repositoryUri: createForm.repositoryUri || undefined,
+    icon: createForm.icon || undefined,
     tagIds: createForm.tagIds.length ? [...createForm.tagIds] : undefined
   })
   createApplicationMutation.mutate(payload)

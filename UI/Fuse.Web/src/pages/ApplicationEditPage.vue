@@ -302,6 +302,7 @@ function handleSubmitApplication(model: {
   notes: string
   framework: string
   repositoryUri: string
+  icon: string
   tagIds: string[]
 }) {
   if (!application.value?.id) return
@@ -313,6 +314,7 @@ function handleSubmitApplication(model: {
     notes: model.notes || undefined,
     framework: model.framework || undefined,
     repositoryUri: model.repositoryUri || undefined,
+    icon: model.icon || undefined,
     tagIds: model.tagIds.length ? [...model.tagIds] : undefined
   })
   updateApplicationMutation.mutate({ id: application.value.id, payload })

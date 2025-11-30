@@ -5993,6 +5993,7 @@ export class Application implements IApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
     instances?: ApplicationInstance[] | undefined;
     pipelines?: ApplicationPipeline[] | undefined;
@@ -6018,6 +6019,7 @@ export class Application implements IApplication {
             this.notes = _data["Notes"];
             this.framework = _data["Framework"];
             this.repositoryUri = _data["RepositoryUri"];
+            this.icon = _data["Icon"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["TagIds"])
@@ -6055,6 +6057,7 @@ export class Application implements IApplication {
         data["Notes"] = this.notes;
         data["Framework"] = this.framework;
         data["RepositoryUri"] = this.repositoryUri;
+        data["Icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
             for (let item of this.tagIds)
@@ -6085,6 +6088,7 @@ export interface IApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
     instances?: ApplicationInstance[] | undefined;
     pipelines?: ApplicationPipeline[] | undefined;
@@ -6942,6 +6946,7 @@ export class CreateApplication implements ICreateApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
 
     constructor(data?: ICreateApplication) {
@@ -6962,6 +6967,7 @@ export class CreateApplication implements ICreateApplication {
             this.notes = _data["Notes"];
             this.framework = _data["Framework"];
             this.repositoryUri = _data["RepositoryUri"];
+            this.icon = _data["Icon"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["TagIds"])
@@ -6986,6 +6992,7 @@ export class CreateApplication implements ICreateApplication {
         data["Notes"] = this.notes;
         data["Framework"] = this.framework;
         data["RepositoryUri"] = this.repositoryUri;
+        data["Icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
             for (let item of this.tagIds)
@@ -7003,6 +7010,7 @@ export interface ICreateApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
 }
 
@@ -10335,6 +10343,7 @@ export class UpdateApplication implements IUpdateApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
 
     constructor(data?: IUpdateApplication) {
@@ -10356,6 +10365,7 @@ export class UpdateApplication implements IUpdateApplication {
             this.notes = _data["Notes"];
             this.framework = _data["Framework"];
             this.repositoryUri = _data["RepositoryUri"];
+            this.icon = _data["Icon"];
             if (Array.isArray(_data["TagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["TagIds"])
@@ -10381,6 +10391,7 @@ export class UpdateApplication implements IUpdateApplication {
         data["Notes"] = this.notes;
         data["Framework"] = this.framework;
         data["RepositoryUri"] = this.repositoryUri;
+        data["Icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
             data["TagIds"] = [];
             for (let item of this.tagIds)
@@ -10399,6 +10410,7 @@ export interface IUpdateApplication {
     notes?: string | undefined;
     framework?: string | undefined;
     repositoryUri?: string | undefined;
+    icon?: string | undefined;
     tagIds?: string[] | undefined;
 }
 

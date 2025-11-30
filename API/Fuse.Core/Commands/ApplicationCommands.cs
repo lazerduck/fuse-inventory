@@ -11,6 +11,7 @@ public record CreateApplication(
     string? Notes,
     string? Framework,
     Uri? RepositoryUri,
+    string? Icon = null,
     HashSet<Guid>? TagIds = null
 );
 
@@ -23,6 +24,7 @@ public record UpdateApplication(
     string? Notes,
     string? Framework,
     Uri? RepositoryUri,
+    string? Icon = null,
     HashSet<Guid>? TagIds = null
 );
 

@@ -96,7 +96,7 @@ public class IdentityServiceTests
         var envId = Guid.NewGuid();
         var instId = Guid.NewGuid();
         var inst = new ApplicationInstance(instId, envId, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
         
         var snapshot = new Snapshot(
             Applications: new[] { app },
@@ -247,7 +247,7 @@ public class IdentityServiceTests
         var instId = Guid.NewGuid();
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), dsId, TargetKind.DataStore, null, DependencyAuthKind.Identity, null, identityId);
         var inst = new ApplicationInstance(instId, envId, null, null, null, null, null, new[] { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
             Applications: new[] { app },
