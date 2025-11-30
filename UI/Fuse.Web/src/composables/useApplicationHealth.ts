@@ -52,7 +52,7 @@ export function useApplicationHealth(options?: UseApplicationHealthOptions) {
         
         // Filter instances by environment if filter is provided
         if (filterEnvIds.length > 0) {
-          instances = instances.filter(inst => filterEnvIds.includes(inst.environmentId ?? ''))
+          instances = instances.filter(inst => inst.environmentId && filterEnvIds.includes(inst.environmentId))
         }
         
         // Skip applications with no matching instances
