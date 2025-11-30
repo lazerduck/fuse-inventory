@@ -70,7 +70,7 @@ public class SnapshotValidatorTests
         {
             new ApplicationInstance(instId, envId, platformId, new Uri("https://app"), null, null, "1.0", instDeps, new HashSet<Guid>{ tagId }, DateTime.UtcNow, DateTime.UtcNow)
         };
-        var apps = new List<Application> { new Application(appId, "app", "1.0", null, null, null, null, null, new HashSet<Guid>{ tagId }, instances, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) };
+        var apps = new List<Application> { new Application(appId, "app", "1.0", null, null, null, null, null, null, new HashSet<Guid>{ tagId }, instances, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) };
 
         var accounts = new List<Account>
         {
@@ -189,7 +189,7 @@ public class SnapshotValidatorTests
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
-            new List<Application> { new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
+            new List<Application> { new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
             new List<Platform>(),
             new List<ExternalResource>(),
@@ -220,7 +220,7 @@ public class SnapshotValidatorTests
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
-            new List<Application> { new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
+            new List<Application> { new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance> { inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
             new List<Platform>(),
             new List<ExternalResource>(),
@@ -251,7 +251,7 @@ public class SnapshotValidatorTests
             new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var snapshot = new Snapshot(
-            new List<Application>{ new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance>{ inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
+            new List<Application>{ new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(), new List<ApplicationInstance>{ inst }, new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow) },
             new List<DataStore>(),
             new List<Platform>(),
             new List<ExternalResource>(),
@@ -277,7 +277,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>
             {
-                new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>{ Guid.NewGuid() }, new List<ApplicationInstance>(), new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
+                new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>{ Guid.NewGuid() }, new List<ApplicationInstance>(), new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
             new List<DataStore>(),
             new List<Platform>(),
@@ -304,7 +304,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>
             {
-                new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(),
+                new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(),
                     new List<ApplicationInstance>{ new ApplicationInstance(instId, Guid.NewGuid(), null, new Uri("https://example.com"), null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
@@ -335,7 +335,7 @@ public class SnapshotValidatorTests
         var snapshot = new Snapshot(
             new List<Application>
             {
-                new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(),
+                new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(),
                     new List<ApplicationInstance>{ new ApplicationInstance(instId, envId, missingPlatformId, new Uri("https://example.com"), null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
@@ -366,7 +366,7 @@ public class SnapshotValidatorTests
     var snapshot = new Snapshot(
             new List<Application>
             {
-                new Application(appId, "app", null, null, null, null, null, null, new HashSet<Guid>(),
+                new Application(appId, "app", null, null, null, null, null, null, null, new HashSet<Guid>(),
                     new List<ApplicationInstance>{ new ApplicationInstance(instId, envId, null, new Uri("https://example.com"), null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>{ missingTag }, DateTime.UtcNow, DateTime.UtcNow) },
                     new List<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow)
             },
