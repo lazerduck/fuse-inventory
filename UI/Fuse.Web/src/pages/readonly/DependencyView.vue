@@ -311,8 +311,9 @@ const lowerContext = computed<LowerItem[]>(() => {
 
   // Target
   const targetId = dependency.value?.targetId
-  if (targetId) {
-    let targetType: 'datastore' | 'external' | 'instance' = 'datastore'
+  const route = targetRoute.value
+  if (targetId && route) {
+    let targetType: 'datastore' | 'external' | 'instance'
     switch (dependency.value?.targetKind) {
       case TargetKind.DataStore:
         targetType = 'datastore'
@@ -323,18 +324,17 @@ const lowerContext = computed<LowerItem[]>(() => {
       case TargetKind.Application:
         targetType = 'instance'
         break
+      default:
+        targetType = 'datastore'
     }
 
-    const route = targetRoute.value
-    if (route) {
-      items.push({
-        id: targetId,
-        type: targetType,
-        name: targetName.value,
-        route,
-        subtitle: targetTypeLabel.value
-      })
-    }
+    items.push({
+      id: targetId,
+      type: targetType,
+      name: targetName.value,
+      route,
+      subtitle: targetTypeLabel.value
+    })
   }
 
   // Auth entity
