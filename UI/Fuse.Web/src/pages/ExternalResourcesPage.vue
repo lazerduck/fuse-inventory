@@ -49,12 +49,11 @@
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
+              <TagChip
                 v-for="tagId in props.row.tagIds"
                 :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
+                :label="tagInfoLookup[tagId]?.name ?? tagId"
+                :color="tagInfoLookup[tagId]?.color"
               />
             </div>
             <span v-else class="text-grey">—</span>
@@ -112,6 +111,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import ExternalResourceForm from '../components/externalResources/ExternalResourceForm.vue'
+import TagChip from '../components/tags/TagChip.vue'
 
 interface ExternalResourceFormModel {
   name: string
@@ -136,7 +136,7 @@ const { data, isLoading, error } = useQuery({
 const resources = computed(() => data.value ?? [])
 const resourceError = computed(() => (error.value ? getErrorMessage(error.value) : null))
 
-const tagLookup = tagsStore.lookup
+const tagInfoLookup = tagsStore.tagInfoLookup
 
 const columns: QTableColumn<ExternalResource>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },

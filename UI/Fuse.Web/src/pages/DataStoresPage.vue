@@ -61,12 +61,11 @@
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
+              <TagChip
                 v-for="tagId in props.row.tagIds"
                 :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
+                :label="tagInfoLookup[tagId]?.name ?? tagId"
+                :color="tagInfoLookup[tagId]?.color"
               />
             </div>
             <span v-else class="text-grey">—</span>
@@ -127,6 +126,7 @@ import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import DataStoreForm from '../components/dataStore/DataStoreForm.vue'
 import { useDataStores } from '../composables/useDataStores'
+import TagChip from '../components/tags/TagChip.vue'
 
 interface DataStoreFormModel {
   name: string
@@ -154,7 +154,7 @@ const dataStoreError = computed(() => (error.value ? getErrorMessage(error.value
 
 const environmentLookup = environmentsStore.lookup
 const platformLookup = platformsStore.lookup
-const tagLookup = tagsStore.lookup
+const tagInfoLookup = tagsStore.tagInfoLookup
 
 const columns: QTableColumn<DataStore>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },

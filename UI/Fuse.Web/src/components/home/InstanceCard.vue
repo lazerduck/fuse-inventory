@@ -82,16 +82,13 @@
       </div>
 
       <div v-if="instance.tagIds?.length" class="instance-tags">
-        <q-chip
+        <TagChip
           v-for="tagId in instance.tagIds"
           :key="tagId"
-          dense
-          outline
-          color="grey-7"
+          :label="tagInfoLookup[tagId]?.name ?? tagId"
+          :color="tagInfoLookup[tagId]?.color"
           size="xs"
-        >
-          {{ tagLookup[tagId] ?? tagId }}
-        </q-chip>
+        />
       </div>
 
       <div v-if="instance.dependencies?.length" class="instance-dependencies">
@@ -116,15 +113,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ApplicationInstance } from '../../api/client'
+import type { TagInfo } from '../../composables/useTags'
 import { useHealthCheck } from '../../composables/useHealthCheck'
 import { MonitorStatus } from '../../types/health'
+import TagChip from '../tags/TagChip.vue'
 
 const props = defineProps<{
   instance: ApplicationInstance
   applicationId: string
   environmentLookup: Record<string, string>
   platformLookup: Record<string, string>
-  tagLookup: Record<string, string>
+  tagInfoLookup: Record<string, TagInfo>
   dependencyFormatter: (dependency: any) => string
 }>()
 

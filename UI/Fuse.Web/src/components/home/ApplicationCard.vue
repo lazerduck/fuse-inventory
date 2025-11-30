@@ -74,16 +74,12 @@
           <div class="detail-item">
             <p class="detail-label">Tags</p>
             <div v-if="application.tagIds?.length" class="tag-list">
-              <q-chip
+              <TagChip
                 v-for="tagId in application.tagIds"
                 :key="tagId"
-                dense
-                outline
-                color="grey-8"
-                size="sm"
-              >
-                {{ tagLookup[tagId] ?? tagId }}
-              </q-chip>
+                :label="tagInfoLookup[tagId]?.name ?? tagId"
+                :color="tagInfoLookup[tagId]?.color"
+              />
             </div>
             <span v-else class="text-grey-6">No tags</span>
           </div>
@@ -102,7 +98,7 @@
               :application-id="application.id ?? ''"
               :environment-lookup="environmentLookup"
               :platform-lookup="platformLookup"
-              :tag-lookup="tagLookup"
+              :tag-info-lookup="tagInfoLookup"
               :dependency-formatter="formatDependencyLabel"
             />
           </div>
@@ -119,13 +115,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Application } from '../../api/client'
+import type { TagInfo } from '../../composables/useTags'
 import InstanceCard from './InstanceCard.vue'
+import TagChip from '../tags/TagChip.vue'
 
 defineProps<{
   application: Application
   environmentLookup: Record<string, string>
   platformLookup: Record<string, string>
-  tagLookup: Record<string, string>
+  tagInfoLookup: Record<string, TagInfo>
   formatDependencyLabel: (dependency: any) => string
 }>()
 

@@ -36,12 +36,11 @@
       <template #body-cell-tags="props">
         <q-td :props="props">
           <div v-if="props.row.tagIds?.length" class="tag-list">
-            <q-badge
+            <TagChip
               v-for="tagId in props.row.tagIds"
               :key="tagId"
-              outline
-              color="primary"
-              :label="tagLookup[tagId] ?? tagId"
+              :label="tagInfoLookup[tagId]?.name ?? tagId"
+              :color="tagInfoLookup[tagId]?.color"
             />
           </div>
           <span v-else class="text-grey">—</span>
@@ -86,12 +85,14 @@
 import { computed, ref } from 'vue'
 import type { QTableColumn } from 'quasar'
 import type { Identity, IdentityKind } from '../../api/client'
+import type { TagInfo } from '../../composables/useTags'
+import TagChip from '../tags/TagChip.vue'
 
 interface Props {
   identities: Identity[]
   loading: boolean
   pagination: { rowsPerPage: number }
-  tagLookup: Record<string, string | undefined>
+  tagInfoLookup: Record<string, TagInfo>
   ownerInstanceResolver: (identity: Identity) => string
   canModify: boolean
 }
