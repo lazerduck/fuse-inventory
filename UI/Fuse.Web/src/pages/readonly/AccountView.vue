@@ -268,11 +268,11 @@ const targetIcon = computed(() => {
   }
 })
 
-const targetName = computed(() => {
-  const targetId = account.value?.targetId
+// Resolve target name from targetKind and targetId
+function resolveTargetName(targetKind: TargetKind | undefined, targetId: string | undefined): string {
   if (!targetId) return 'Unknown'
 
-  switch (account.value?.targetKind) {
+  switch (targetKind) {
     case TargetKind.DataStore: {
       const store = dataStoresData.value?.find((ds) => ds.id === targetId)
       return store?.name ?? targetId
@@ -297,6 +297,10 @@ const targetName = computed(() => {
     default:
       return targetId
   }
+}
+
+const targetName = computed(() => {
+  return resolveTargetName(account.value?.targetKind, account.value?.targetId)
 })
 
 const targetRoute = computed(() => {
@@ -438,36 +442,6 @@ const higherContext = computed<HigherItem[]>(() => {
     subtitle: `${usage.appName} → ${usage.instanceName}`
   }))
 })
-
-// Resolve target name for dependency display
-function resolveTargetName(targetKind: TargetKind | undefined, targetId: string | undefined): string {
-  if (!targetId) return 'Unknown'
-
-  switch (targetKind) {
-    case TargetKind.Application: {
-      if (!applicationsData.value) return targetId
-      for (const app of applicationsData.value) {
-        const inst = app.instances?.find((i) => i.id === targetId)
-        if (inst) {
-          const appName = app.name ?? 'App'
-          const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
-          return `${appName} — ${envName}`
-        }
-      }
-      return targetId
-    }
-    case TargetKind.DataStore: {
-      const store = dataStoresData.value?.find((ds) => ds.id === targetId)
-      return store?.name ?? targetId
-    }
-    case TargetKind.External: {
-      const ext = externalResourcesData.value?.find((er) => er.id === targetId)
-      return ext?.name ?? targetId
-    }
-    default:
-      return targetId
-  }
-}
 
 // Lower context: Target (single item)
 const lowerContext = computed<LowerItem[]>(() => {
