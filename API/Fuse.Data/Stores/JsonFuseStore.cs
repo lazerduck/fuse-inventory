@@ -264,9 +264,9 @@ public sealed class JsonFuseStore : IFuseStore
             if (application is null) continue;
 
             // Migration: Dependencies created before authKind was added will have authKind=None (default).
-            // If a dependency has an accountId set, it was intentionally using account-based auth,
-            // so we migrate it to AuthKind=Account to preserve the intended behavior.
-            // Note: This assumes that any dependency with a non-null accountId was using account auth.
+            // If a dependency has an accountId or identityId set but authKind is None, we need to migrate
+            // to the appropriate authKind to preserve the intended behavior.
+            // Note: authKind=None is valid for dependencies that don't require authentication.
             var needsMigration = false;
             var migratedInstances = new List<ApplicationInstance>();
 
@@ -277,11 +277,26 @@ public sealed class JsonFuseStore : IFuseStore
 
                 foreach (var dep in inst.Dependencies)
                 {
-                    // If authKind is None but accountId is set, migrate to Account authKind
-                    if (dep.AuthKind == DependencyAuthKind.None && dep.AccountId is not null)
+                    // Only migrate if authKind is None but a credential is set
+                    if (dep.AuthKind == DependencyAuthKind.None)
                     {
-                        migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Account });
-                        instNeedsMigration = true;
+                        if (dep.IdentityId is not null)
+                        {
+                            // Has identityId, migrate to Identity authKind
+                            migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Identity });
+                            instNeedsMigration = true;
+                        }
+                        else if (dep.AccountId is not null)
+                        {
+                            // Has accountId, migrate to Account authKind
+                            migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Account });
+                            instNeedsMigration = true;
+                        }
+                        else
+                        {
+                            // No credentials set, keep authKind=None (valid state)
+                            migratedDeps.Add(dep);
+                        }
                     }
                     else
                     {

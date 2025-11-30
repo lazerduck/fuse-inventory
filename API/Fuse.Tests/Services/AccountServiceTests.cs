@@ -580,4 +580,55 @@ public class AccountServiceTests
         Assert.Equal(account.Id, depAfter.AccountId);
         Assert.Equal(DependencyAuthKind.Account, depAfter.AuthKind);
     }
+
+    [Fact]
+    public async Task LoadAsync_KeepsAuthKindNoneWhenNoCredentialSet()
+    {
+        var envId = Guid.NewGuid();
+        var ds1 = new DataStore(Guid.NewGuid(), "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        // Create a dependency with AuthKind.None and no credentials (valid state)
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.None, null, null);
+        var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(ds: new[] { ds1 }, apps: new[] { app });
+
+        // LoadAsync is called by NewStore, but let's reload to verify no migration happens
+        await store.LoadAsync();
+
+        var migratedApp = store.Current!.Applications.Single();
+        var migratedDep = migratedApp.Instances.Single().Dependencies.Single();
+
+        // Verify AuthKind remains None
+        Assert.Equal(DependencyAuthKind.None, migratedDep.AuthKind);
+        Assert.Null(migratedDep.AccountId);
+        Assert.Null(migratedDep.IdentityId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotMigrateWhenAuthKindAlreadySet()
+    {
+        var envId = Guid.NewGuid();
+        var ds1 = new DataStore(Guid.NewGuid(), "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "secret", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        // Create a dependency with AuthKind already set to Account
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, account.Id, null);
+        var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(accounts: new[] { account }, ds: new[] { ds1 }, apps: new[] { app });
+
+        var originalUpdatedAt = app.UpdatedAt;
+        await store.LoadAsync();
+
+        var migratedApp = store.Current!.Applications.Single();
+        var migratedDep = migratedApp.Instances.Single().Dependencies.Single();
+
+        // Verify no migration occurred (AuthKind and UpdatedAt unchanged)
+        Assert.Equal(DependencyAuthKind.Account, migratedDep.AuthKind);
+        Assert.Equal(account.Id, migratedDep.AccountId);
+        Assert.Equal(originalUpdatedAt, migratedApp.UpdatedAt);
+    }
 }
