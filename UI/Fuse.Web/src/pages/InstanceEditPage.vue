@@ -610,6 +610,7 @@ function closeDependencyDialog() {
   isDependencyDialogOpen.value = false
   editingDependency.value = null
   resetDependencyForm()
+  addAnotherDependency.value = false
 }
 
 const createDependencyMutation = useMutation({

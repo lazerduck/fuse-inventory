@@ -255,6 +255,7 @@ const application = computed(() =>
 const applicationName = computed(() => application.value?.name ?? 'Edit Application')
 
 // Sort applications by name for consistent navigation order
+// Note: Vue computed properties are cached, so this sort only re-runs when applicationsData changes
 const sortedApplications = computed(() => {
   const apps = applicationsData.value ?? []
   return [...apps].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
