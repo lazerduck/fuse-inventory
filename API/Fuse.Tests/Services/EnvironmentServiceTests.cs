@@ -226,6 +226,7 @@ public class EnvironmentServiceTests
             null,
             null,
             null,
+            null,
             new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(),
             Array.Empty<ApplicationPipeline>(),
@@ -299,6 +300,7 @@ public class EnvironmentServiceTests
             null,
             null,
             null,
+            null,
             new HashSet<Guid>(),
             new[] { existingInstance },
             Array.Empty<ApplicationPipeline>(),
@@ -356,6 +358,7 @@ public class EnvironmentServiceTests
             null,
             null,
             null,
+            null,
             new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(),
             Array.Empty<ApplicationPipeline>(),
@@ -401,11 +404,11 @@ public class EnvironmentServiceTests
         var env3 = new EnvironmentInfo(Guid.NewGuid(), "test", null, new HashSet<Guid>(), false); // Not auto-create
 
         var app1 = new Application(
-            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, null, new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
         );
         var app2 = new Application(
-            Guid.NewGuid(), "app2", null, null, null, null, null, null, new HashSet<Guid>(),
+            Guid.NewGuid(), "app2", null, null, null, null, null, null, null, new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
         );
 
@@ -448,7 +451,7 @@ public class EnvironmentServiceTests
         var env2 = new EnvironmentInfo(Guid.NewGuid(), "prod", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
 
         var app = new Application(
-            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, null, new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
         );
 
@@ -485,11 +488,11 @@ public class EnvironmentServiceTests
         var env = new EnvironmentInfo(Guid.NewGuid(), "dev", null, new HashSet<Guid>(), true, "https://{appname}.{env}.com");
 
         var app1 = new Application(
-            Guid.NewGuid(), "app1", null, null, null, null, null, null, new HashSet<Guid>(),
+            Guid.NewGuid(), "app1", null, null, null, null, null, null, null, new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
         );
         var app2 = new Application(
-            Guid.NewGuid(), "app2", null, null, null, null, null, null, new HashSet<Guid>(),
+            Guid.NewGuid(), "app2", null, null, null, null, null, null, null, new HashSet<Guid>(),
             Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow
         );
 
@@ -554,6 +557,7 @@ public class EnvironmentServiceTests
         var app = new Application(
             Guid.NewGuid(),
             "myapp",
+            null,
             null,
             null,
             null,
@@ -628,6 +632,7 @@ public class EnvironmentServiceTests
         var app = new Application(
             Guid.NewGuid(),
             "myapp",
+            null,
             null,
             null,
             null,

@@ -50,6 +50,7 @@ public class ApplicationService : IApplicationService
             Notes: command.Notes,
             Framework: command.Framework,
             RepositoryUri: command.RepositoryUri,
+            Icon: command.Icon,
             TagIds: tagIds,
             Instances: Array.Empty<ApplicationInstance>(),
             Pipelines: Array.Empty<ApplicationPipeline>(),
@@ -108,6 +109,7 @@ public class ApplicationService : IApplicationService
             Notes = command.Notes,
             Framework = command.Framework,
             RepositoryUri = command.RepositoryUri,
+            Icon = command.Icon,
             TagIds = tagIds,
             UpdatedAt = DateTime.UtcNow
         };

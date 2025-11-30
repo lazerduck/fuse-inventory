@@ -12,6 +12,30 @@
           <q-input v-model="form.owner" label="Owner" dense outlined />
           <q-input v-model="form.framework" label="Framework" dense outlined />
           <q-input v-model="form.repositoryUri" label="Repository URI" dense outlined />
+          <q-select
+            v-model="form.icon"
+            :options="iconOptions"
+            label="Icon"
+            dense
+            outlined
+            emit-value
+            map-options
+            clearable
+          >
+            <template #prepend>
+              <q-icon :name="form.icon || DEFAULT_APPLICATION_ICON" />
+            </template>
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-icon :name="scope.opt.value" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
           <TagSelect v-model="form.tagIds" />
           <q-input
             v-model="form.description"
@@ -47,6 +71,7 @@
 import { computed, onMounted, reactive, watch } from 'vue'
 import type { Application } from '../../api/client'
 import TagSelect from '../tags/TagSelect.vue'
+import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../../constants/applicationIcons'
 
 interface ApplicationFormModel {
   name: string
@@ -56,6 +81,7 @@ interface ApplicationFormModel {
   notes: string
   framework: string
   repositoryUri: string
+  icon: string
   tagIds: string[]
 }
 
@@ -78,6 +104,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
+const iconOptions = APPLICATION_ICON_OPTIONS
+
 const form = reactive<ApplicationFormModel>({
   name: '',
   version: '',
@@ -86,6 +114,7 @@ const form = reactive<ApplicationFormModel>({
   notes: '',
   framework: '',
   repositoryUri: '',
+  icon: '',
   tagIds: []
 })
 
@@ -100,6 +129,7 @@ function applyInitial(value?: Partial<Application> | null) {
     form.notes = ''
     form.framework = ''
     form.repositoryUri = ''
+    form.icon = ''
     form.tagIds = []
     return
   }
@@ -110,6 +140,7 @@ function applyInitial(value?: Partial<Application> | null) {
   form.notes = value.notes ?? ''
   form.framework = value.framework ?? ''
   form.repositoryUri = value.repositoryUri ?? ''
+  form.icon = value.icon ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
 }
 

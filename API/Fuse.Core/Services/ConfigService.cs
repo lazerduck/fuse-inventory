@@ -104,6 +104,7 @@ public class ConfigService : IConfigService
                     Notes: "Additional notes",
                     Framework: ".NET 8",
                     RepositoryUri: new Uri("https://github.com/org/repo"),
+                    Icon: null,
                     TagIds: new HashSet<Guid>(),
                     Instances: Array.Empty<ApplicationInstance>(),
                     Pipelines: Array.Empty<ApplicationPipeline>(),

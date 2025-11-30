@@ -135,6 +135,7 @@
             :instance="item.data.instance"
             :application-id="item.data.applicationId"
             :application-name="item.data.applicationName"
+            :application-icon="item.data.applicationIcon"
             :environment-name="item.data.environmentName"
             :platform-name="item.data.platformName"
             :dependency-formatter="formatDependencyLabel"
@@ -348,6 +349,7 @@ const filteredInventoryItems = computed(() => {
             instance,
             applicationId: app.id ?? '',
             applicationName: appName,
+            applicationIcon: app.icon ?? undefined,
             environmentName: envName,
             platformName: platformLookup.value[instance.platformId ?? ''] ?? 'Unknown'
           }
