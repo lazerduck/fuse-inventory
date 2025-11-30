@@ -274,6 +274,7 @@ import {
   AzureKeyVaultBinding,
   CreateAccount,
   CreateAccountGrant,
+  DependencyAuthKind,
   Grant,
   Privilege,
   RotateSecret,
@@ -719,12 +720,35 @@ function handleCancel() {
   router.push('/accounts')
 }
 
-function handleSave() {
-  if (form.value.secret.providerId && !form.value.secret.secretName) {
-    Notify.create({ type: 'warning', message: 'Select a secret name before saving.' })
-    return
+// Check if account's target has changed and count affected dependencies
+function getAffectedDependencyCount(): number {
+  if (!account.value || !accountId.value) return 0
+  
+  const originalTargetId = account.value.targetId
+  const originalTargetKind = account.value.targetKind
+  const newTargetId = form.value.targetId
+  const newTargetKind = form.value.targetKind
+
+  // If target hasn't changed, no dependencies will be affected
+  if (originalTargetId === newTargetId && originalTargetKind === newTargetKind) {
+    return 0
   }
 
+  // Count dependencies that use this account
+  let count = 0
+  for (const app of applicationsQuery.data.value ?? []) {
+    for (const inst of app.instances ?? []) {
+      for (const dep of inst.dependencies ?? []) {
+        if (dep.authKind === DependencyAuthKind.Account && dep.accountId === accountId.value) {
+          count++
+        }
+      }
+    }
+  }
+  return count
+}
+
+function performSave() {
   if (isEditMode.value && accountId.value) {
     const payload = Object.assign(new UpdateAccount(), {
       targetKind: form.value.targetKind,
@@ -749,6 +773,28 @@ function handleSave() {
       tagIds: form.value.tagIds.length ? [...form.value.tagIds] : undefined
     })
     createMutation.mutate(payload)
+  }
+}
+
+function handleSave() {
+  if (form.value.secret.providerId && !form.value.secret.secretName) {
+    Notify.create({ type: 'warning', message: 'Select a secret name before saving.' })
+    return
+  }
+
+  // Check if changing target would affect dependencies
+  const affectedCount = getAffectedDependencyCount()
+  if (affectedCount > 0) {
+    Dialog.create({
+      title: 'Target Change Warning',
+      message: `Changing this account's target will remove it from ${affectedCount} ${affectedCount === 1 ? 'dependency' : 'dependencies'}. The affected dependencies will have their account reference cleared. Are you sure you want to continue?`,
+      cancel: true,
+      persistent: true
+    }).onOk(() => {
+      performSave()
+    })
+  } else {
+    performSave()
   }
 }
 

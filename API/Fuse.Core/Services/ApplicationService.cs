@@ -421,7 +421,7 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationInstanceDependency>.Failure($"Target {command.TargetKind}/{command.TargetId} not found.", ErrorType.Validation);
 
         // Validate auth references based on authKind
-        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id);
+        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id, command.TargetKind, command.TargetId);
         if (authValidation is not null)
             return authValidation;
 
@@ -452,7 +452,7 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationInstanceDependency>.Failure($"Target {command.TargetKind}/{command.TargetId} not found.", ErrorType.Validation);
 
         // Validate auth references based on authKind
-        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id);
+        var authValidation = ValidateDependencyAuth(store, command.AuthKind, command.AccountId, command.IdentityId, inst.Id, command.TargetKind, command.TargetId);
         if (authValidation is not null)
             return authValidation;
 
@@ -484,15 +484,19 @@ public class ApplicationService : IApplicationService
         return Result.Success();
     }
 
-    private static Result<ApplicationInstanceDependency>? ValidateDependencyAuth(Snapshot store, DependencyAuthKind authKind, Guid? accountId, Guid? identityId, Guid instanceId)
+    private static Result<ApplicationInstanceDependency>? ValidateDependencyAuth(Snapshot store, DependencyAuthKind authKind, Guid? accountId, Guid? identityId, Guid instanceId, TargetKind dependencyTargetKind, Guid dependencyTargetId)
     {
         switch (authKind)
         {
             case DependencyAuthKind.Account:
                 if (accountId is null)
                     return Result<ApplicationInstanceDependency>.Failure("AccountId is required when AuthKind is Account.", ErrorType.Validation);
-                if (!store.Accounts.Any(a => a.Id == accountId))
+                var account = store.Accounts.FirstOrDefault(a => a.Id == accountId);
+                if (account is null)
                     return Result<ApplicationInstanceDependency>.Failure($"Account with ID '{accountId}' not found.", ErrorType.Validation);
+                // Validate that the account's target matches the dependency's target
+                if (account.TargetKind != dependencyTargetKind || account.TargetId != dependencyTargetId)
+                    return Result<ApplicationInstanceDependency>.Failure($"Account must target the same resource as the dependency. Account targets {account.TargetKind}/{account.TargetId}, but dependency targets {dependencyTargetKind}/{dependencyTargetId}.", ErrorType.Validation);
                 break;
 
             case DependencyAuthKind.Identity:

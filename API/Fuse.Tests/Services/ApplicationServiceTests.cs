@@ -319,6 +319,79 @@ public class ApplicationServiceTests
     Assert.True(updOk.IsSuccess);
     Assert.Equal(2345, updOk.Value!.Port);
     }
+
+    [Fact]
+    public async Task Dependency_AccountMustTargetSameResource()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var ds1 = new DataStore(Guid.NewGuid(), "DS1", null, "sql", env.Id, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var ds2 = new DataStore(Guid.NewGuid(), "DS2", null, "sql", env.Id, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var ext = new ExternalResource(Guid.NewGuid(), "X", null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        
+        // Account targeting ds1
+        var acctForDs1 = new Account(
+            Id: Guid.NewGuid(),
+            TargetId: ds1.Id,
+            TargetKind: TargetKind.DataStore,
+            AuthKind: AuthKind.ApiKey,
+            SecretBinding: new SecretBinding(SecretBindingKind.PlainReference, "secret:ref", null),
+            UserName: null,
+            Parameters: null,
+            Grants: new List<Grant>(),
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow
+        );
+        
+        // Account targeting external resource
+        var acctForExt = new Account(
+            Id: Guid.NewGuid(),
+            TargetId: ext.Id,
+            TargetKind: TargetKind.External,
+            AuthKind: AuthKind.ApiKey,
+            SecretBinding: new SecretBinding(SecretBindingKind.PlainReference, "secret:ref", null),
+            UserName: null,
+            Parameters: null,
+            Grants: new List<Grant>(),
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow
+        );
+
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(),
+            new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
+            Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, dataStores: new[] { ds1, ds2 }, resources: new[] { ext }, accounts: new[] { acctForDs1, acctForExt });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store));
+        var inst = app.Instances.Single();
+
+        // Creating dependency to ds1 with account targeting ds1 should succeed
+        var okDep = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, acctForDs1.Id, null));
+        Assert.True(okDep.IsSuccess);
+
+        // Creating dependency to ds2 with account targeting ds1 should fail (account target mismatch)
+        var badTargetId = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds2.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, acctForDs1.Id, null));
+        Assert.False(badTargetId.IsSuccess);
+        Assert.Equal(ErrorType.Validation, badTargetId.ErrorType);
+        Assert.Contains("must target the same resource", badTargetId.Error);
+
+        // Creating dependency to ext with account targeting ds1 should fail (different target kind)
+        var badTargetKind = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ext.Id, TargetKind.External, 443, DependencyAuthKind.Account, acctForDs1.Id, null));
+        Assert.False(badTargetKind.IsSuccess);
+        Assert.Equal(ErrorType.Validation, badTargetKind.ErrorType);
+        Assert.Contains("must target the same resource", badTargetKind.Error);
+
+        // Creating dependency to ext with account targeting ext should succeed
+        var okExtDep = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ext.Id, TargetKind.External, 443, DependencyAuthKind.Account, acctForExt.Id, null));
+        Assert.True(okExtDep.IsSuccess);
+
+        // Update dependency target to ds2 while keeping account for ds1 should fail
+        var updBadTarget = await service.UpdateDependencyAsync(new UpdateApplicationDependency(app.Id, inst.Id, okDep.Value!.Id, ds2.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, acctForDs1.Id, null));
+        Assert.False(updBadTarget.IsSuccess);
+        Assert.Equal(ErrorType.Validation, updBadTarget.ErrorType);
+        Assert.Contains("must target the same resource", updBadTarget.Error);
+    }
     
 
     private static InMemoryFuseStore NewStore(
