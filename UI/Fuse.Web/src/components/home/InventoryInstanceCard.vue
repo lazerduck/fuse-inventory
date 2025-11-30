@@ -2,7 +2,13 @@
   <q-card flat bordered class="inventory-instance-card column">
     <q-card-section>
       <div class="row items-start q-gutter-sm">
-        <q-avatar size="36px" rounded color="primary" text-color="white" class="q-pa-xs">
+        <q-avatar
+          size="36px"
+          rounded
+          color="primary"
+          text-color="white"
+          class="avatar-icon"
+        >
           <q-icon :name="displayIcon" size="20px" />
         </q-avatar>
         <div class="col" style="min-width: 0">
@@ -254,5 +260,13 @@ const healthStatusLabel = computed(() => {
 .inventory-instance-card:hover {
   box-shadow: var(--fuse-shadow-2);
   transform: translateY(-2px);
+}
+
+.avatar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
 }
 </style>
