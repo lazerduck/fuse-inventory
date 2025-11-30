@@ -34,7 +34,7 @@ const chipColor = computed(() => {
     case TagColor.Blue:
       return 'blue-6'
     case TagColor.Yellow:
-      return 'yellow-8'
+      return 'yellow-7'
     case TagColor.Purple:
       return 'purple-5'
     case TagColor.Orange:
