@@ -512,7 +512,7 @@ public class AccountServiceTests
         // Create a dependency that references the account
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, account.Id, null);
         var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(accounts: new[] { account }, ds: new[] { ds1, ds2 }, apps: new[] { app });
         var service = CreateService(store);
@@ -561,7 +561,7 @@ public class AccountServiceTests
         // Create a dependency that references the account
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, account.Id, null);
         var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(accounts: new[] { account }, ds: new[] { ds1 }, apps: new[] { app });
         var service = CreateService(store);
@@ -590,7 +590,7 @@ public class AccountServiceTests
         // Create a dependency with AuthKind.None and no credentials (valid state)
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.None, null, null);
         var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(ds: new[] { ds1 }, apps: new[] { app });
 
@@ -616,7 +616,7 @@ public class AccountServiceTests
         // Create a dependency with AuthKind already set to Account
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, account.Id, null);
         var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(accounts: new[] { account }, ds: new[] { ds1 }, apps: new[] { app });
 

@@ -358,7 +358,7 @@ public class ApplicationServiceTests
             UpdatedAt: DateTime.UtcNow
         );
 
-        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, new HashSet<Guid>(),
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(),
             new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
             Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
 
