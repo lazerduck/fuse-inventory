@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useApplications } from './useApplications'
 import { useKumaIntegrations } from './useKumaIntegrations'
@@ -12,7 +12,11 @@ export interface ApplicationHealthStats {
   hasKumaIntegration: boolean
 }
 
-export function useApplicationHealth() {
+export interface UseApplicationHealthOptions {
+  environmentIds?: Ref<string[]>
+}
+
+export function useApplicationHealth(options?: UseApplicationHealthOptions) {
   const applicationsQuery = useApplications()
   const kumaIntegrationsQuery = useKumaIntegrations()
 
@@ -22,11 +26,12 @@ export function useApplicationHealth() {
     return integrations.length > 0
   })
 
-  // Get health status for all application instances
+  // Get health status for application instances, optionally filtered by environment
   const healthStatsQuery = useQuery({
-    queryKey: ['applicationHealthStats'],
+    queryKey: computed(() => ['applicationHealthStats', options?.environmentIds?.value ?? []]),
     queryFn: async (): Promise<ApplicationHealthStats> => {
       const applications = applicationsQuery.data.value ?? []
+      const filterEnvIds = options?.environmentIds?.value ?? []
       
       // If no Kuma integration, return basic stats
       if (!hasKumaIntegration.value) {
@@ -43,9 +48,14 @@ export function useApplicationHealth() {
       
       // Check each application to see if it has any instances with health status
       for (const app of applications) {
-        const instances = app.instances ?? []
+        let instances = app.instances ?? []
         
-        // Skip applications with no instances
+        // Filter instances by environment if filter is provided
+        if (filterEnvIds.length > 0) {
+          instances = instances.filter(inst => filterEnvIds.includes(inst.environmentId ?? ''))
+        }
+        
+        // Skip applications with no matching instances
         if (instances.length === 0) continue
         
         let appHasHealthyInstance = false

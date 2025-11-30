@@ -204,7 +204,7 @@ const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()
 const tagsQuery = useTags()
-const applicationHealthQuery = useApplicationHealth()
+const applicationHealthQuery = useApplicationHealth({ environmentIds: selectedEnvironments })
 
 const isLoading = computed(() => 
   applicationsQuery.isLoading.value || 
