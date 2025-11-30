@@ -94,7 +94,7 @@
             v-for="identity in ownedIdentities"
             :key="identity.id"
             clickable
-            @click="navigateToIdentity(identity.id!)"
+            @click="identity.id && navigateToIdentity(identity.id)"
           >
             <q-item-section avatar>
               <q-icon name="badge" color="primary" />
@@ -223,7 +223,9 @@ const hasUrls = computed(() =>
 // Identities owned by this instance
 const ownedIdentities = computed(() => {
   if (!identitiesData.value || !id.value) return []
-  return identitiesData.value.filter((identity) => identity.ownerInstanceId === id.value)
+  return identitiesData.value.filter((identity) => 
+    identity.id && identity.ownerInstanceId === id.value
+  )
 })
 
 // Resolved tags with name and color
