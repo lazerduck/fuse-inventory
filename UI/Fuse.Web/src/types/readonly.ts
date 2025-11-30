@@ -14,6 +14,7 @@ export type EntityType =
   | 'identity'
   | 'datastore'
   | 'external'
+  | 'environment'
 
 /**
  * Configuration for entity type display.
@@ -33,7 +34,8 @@ export const entityTypeConfig: Record<EntityType, EntityTypeConfig> = {
   account: { label: 'Account', icon: 'vpn_key' },
   identity: { label: 'Identity', icon: 'badge' },
   datastore: { label: 'Data Store', icon: 'storage' },
-  external: { label: 'External Resource', icon: 'hub' }
+  external: { label: 'External Resource', icon: 'hub' },
+  environment: { label: 'Environment', icon: 'cloud' }
 }
 
 /**
@@ -43,7 +45,7 @@ export interface HigherItem {
   id: string
   name: string
   type: EntityType
-  route: string
+  route?: string
   subtitle?: string
 }
 
@@ -54,7 +56,7 @@ export interface LowerItem {
   id: string
   name: string
   type: EntityType
-  route: string
+  route?: string
   subtitle?: string
 }
 

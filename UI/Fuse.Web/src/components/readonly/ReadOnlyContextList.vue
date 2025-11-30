@@ -15,10 +15,11 @@
       <q-item
         v-for="item in items"
         :key="item.id"
-        clickable
-        v-ripple
+        :clickable="!!item.route"
+        v-ripple="!!item.route"
         @click="handleItemClick(item)"
         class="context-item"
+        :class="{ 'non-clickable': !item.route }"
       >
         <q-item-section avatar>
           <q-icon :name="getIconForEntityType(item.type)" color="primary" />
@@ -27,7 +28,7 @@
           <q-item-label>{{ item.name }}</q-item-label>
           <q-item-label v-if="item.subtitle" caption>{{ item.subtitle }}</q-item-label>
         </q-item-section>
-        <q-item-section side>
+        <q-item-section v-if="item.route" side>
           <q-icon name="chevron_right" color="grey-6" />
         </q-item-section>
       </q-item>
@@ -59,7 +60,9 @@ withDefaults(
 const router = useRouter()
 
 function handleItemClick(item: ContextItem) {
-  router.push(item.route)
+  if (item.route) {
+    router.push(item.route)
+  }
 }
 </script>
 
@@ -113,7 +116,11 @@ function handleItemClick(item: ContextItem) {
   transition: background-color 0.15s ease;
 }
 
-.context-item:hover {
+.context-item:hover:not(.non-clickable) {
   background-color: var(--fuse-hover-bg);
+}
+
+.context-item.non-clickable {
+  cursor: default;
 }
 </style>
