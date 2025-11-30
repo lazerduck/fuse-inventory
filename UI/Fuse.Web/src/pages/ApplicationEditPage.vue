@@ -8,6 +8,28 @@
           <p class="subtitle">Edit application details, instances, and pipelines.</p>
         </div>
       </div>
+      <div class="application-nav-buttons">
+        <q-btn
+          flat
+          round
+          dense
+          icon="chevron_left"
+          :disable="!previousApplication"
+          @click="navigateToPreviousApplication"
+        >
+          <q-tooltip v-if="previousApplication">{{ previousApplication.name }}</q-tooltip>
+        </q-btn>
+        <q-btn
+          flat
+          round
+          dense
+          icon="chevron_right"
+          :disable="!nextApplication"
+          @click="navigateToNextApplication"
+        >
+          <q-tooltip v-if="nextApplication">{{ nextApplication.name }}</q-tooltip>
+        </q-btn>
+      </div>
     </div>
 
     <q-banner v-if="applicationError" dense class="bg-red-1 text-negative q-mb-md">
@@ -232,6 +254,29 @@ const application = computed(() =>
 
 const applicationName = computed(() => application.value?.name ?? 'Edit Application')
 
+// Sort applications by name for consistent navigation order
+// Note: Vue computed properties are cached, so this sort only re-runs when applicationsData changes
+const sortedApplications = computed(() => {
+  const apps = applicationsData.value ?? []
+  return [...apps].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+})
+
+const currentApplicationIndex = computed(() => {
+  return sortedApplications.value.findIndex((app) => app.id === applicationId.value)
+})
+
+const previousApplication = computed(() => {
+  const idx = currentApplicationIndex.value
+  if (idx <= 0) return null
+  return sortedApplications.value[idx - 1]
+})
+
+const nextApplication = computed(() => {
+  const idx = currentApplicationIndex.value
+  if (idx < 0 || idx >= sortedApplications.value.length - 1) return null
+  return sortedApplications.value[idx + 1]
+})
+
 const applicationError = computed(() => {
   if (applicationsErrorRef.value) {
     return getErrorMessage(applicationsErrorRef.value)
@@ -269,6 +314,18 @@ const pipelineColumns: QTableColumn<ApplicationPipeline>[] = [
 
 function navigateBack() {
   router.push({ name: 'applications' })
+}
+
+function navigateToPreviousApplication() {
+  if (previousApplication.value?.id) {
+    router.push({ name: 'applicationEdit', params: { id: previousApplication.value.id } })
+  }
+}
+
+function navigateToNextApplication() {
+  if (nextApplication.value?.id) {
+    router.push({ name: 'applicationEdit', params: { id: nextApplication.value.id } })
+  }
 }
 
 const updateApplicationMutation = useMutation({
@@ -510,5 +567,11 @@ function confirmPipelineDelete(pipeline: ApplicationPipeline) {
 .form-dialog {
   min-width: 500px;
   max-width: 700px;
+}
+
+.application-nav-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 </style>

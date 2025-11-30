@@ -223,6 +223,13 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
+            <q-checkbox
+              v-if="!editingDependency"
+              v-model="addAnotherDependency"
+              label="Add another"
+              dense
+              class="q-mr-auto"
+            />
             <q-btn flat label="Cancel" @click="closeDependencyDialog" />
             <q-btn
               color="primary"
@@ -418,6 +425,7 @@ var environmentLocked = ref(true)
 const isDependencyDialogOpen = ref(false)
 const editingDependency = ref<ApplicationInstanceDependency | null>(null)
 const dependencyForm = reactive<DependencyForm>(getEmptyDependencyForm())
+const addAnotherDependency = ref(false)
 
 const dependencyTargetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).map((value) => ({
   label: value,
@@ -602,6 +610,7 @@ function closeDependencyDialog() {
   isDependencyDialogOpen.value = false
   editingDependency.value = null
   resetDependencyForm()
+  addAnotherDependency.value = false
 }
 
 const createDependencyMutation = useMutation({
@@ -617,7 +626,13 @@ const createDependencyMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     Notify.create({ type: 'positive', message: 'Dependency added' })
-    closeDependencyDialog()
+    if (addAnotherDependency.value) {
+      // Reset form but keep dialog open for adding another dependency
+      resetDependencyForm()
+      ensureDependencyTarget()
+    } else {
+      closeDependencyDialog()
+    }
   },
   onError: (error) => {
     Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to add dependency') })
