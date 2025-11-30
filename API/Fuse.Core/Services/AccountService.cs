@@ -87,7 +87,53 @@ public class AccountService : IAccountService
             UpdatedAt = DateTime.UtcNow
         };
 
-        await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        // Check if the account's target changed
+        var targetChanged = existing.TargetId != command.TargetId || existing.TargetKind != command.TargetKind;
+
+        await _fuseStore.UpdateAsync(s =>
+        {
+            var updatedAccounts = s.Accounts.Select(x => x.Id == command.Id ? updated : x).ToList();
+            
+            // If target changed, clear account references from dependencies that use this account
+            if (targetChanged)
+            {
+                var updatedApps = s.Applications.Select(app =>
+                {
+                    var instancesModified = false;
+                    var updatedInstances = app.Instances.Select(inst =>
+                    {
+                        var depsModified = false;
+                        var updatedDeps = inst.Dependencies.Select(dep =>
+                        {
+                            if (dep.AccountId == command.Id && dep.AuthKind == DependencyAuthKind.Account)
+                            {
+                                depsModified = true;
+                                // Clear account and reset auth kind to None
+                                return dep with { AccountId = null, AuthKind = DependencyAuthKind.None };
+                            }
+                            return dep;
+                        }).ToList();
+
+                        if (depsModified)
+                        {
+                            instancesModified = true;
+                            return inst with { Dependencies = updatedDeps, UpdatedAt = DateTime.UtcNow };
+                        }
+                        return inst;
+                    }).ToList();
+
+                    if (instancesModified)
+                    {
+                        return app with { Instances = updatedInstances, UpdatedAt = DateTime.UtcNow };
+                    }
+                    return app;
+                }).ToList();
+
+                return s with { Accounts = updatedAccounts, Applications = updatedApps };
+            }
+            
+            return s with { Accounts = updatedAccounts };
+        });
         return Result<Account>.Success(updated);
     }
 

@@ -420,6 +420,512 @@ public class JsonFuseStoreTests : IDisposable
         Assert.Equal("my-secret", reloadedAccount.SecretBinding.AzureKeyVault.SecretName);
     }
 
+    [Fact]
+    public async Task LoadAsync_MigratesAuthKindNoneWithAccountIdToAccount()
+    {
+        // Arrange - Create a dependency with AuthKind.None but AccountId set
+        var appId = Guid.NewGuid();
+        var instanceId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var depId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+
+        var applicationsJson = $$"""
+        [
+            {
+                "id": "{{appId}}",
+                "name": "Test App",
+                "version": null,
+                "description": null,
+                "owner": null,
+                "notes": null,
+                "framework": null,
+                "repositoryUri": null,
+                "tagIds": [],
+                "instances": [
+                    {
+                        "id": "{{instanceId}}",
+                        "environmentId": "{{envId}}",
+                        "platformId": null,
+                        "baseUri": null,
+                        "healthUri": null,
+                        "openApiUri": null,
+                        "version": null,
+                        "dependencies": [
+                            {
+                                "id": "{{depId}}",
+                                "targetId": "{{targetId}}",
+                                "targetKind": "DataStore",
+                                "port": 1433,
+                                "authKind": "None",
+                                "accountId": "{{accountId}}",
+                                "identityId": null
+                            }
+                        ],
+                        "tagIds": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "pipelines": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+
+        var applicationsPath = Path.Combine(_testDataDirectory, "applications.json");
+        await File.WriteAllTextAsync(applicationsPath, applicationsJson);
+
+        // Create environment
+        var environmentsJson = $$"""
+        [
+            {
+                "id": "{{envId}}",
+                "name": "Test Env",
+                "description": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "environments.json"), environmentsJson);
+
+        // Create datastore
+        var datastoresJson = $$"""
+        [
+            {
+                "id": "{{targetId}}",
+                "name": "Test DataStore",
+                "description": null,
+                "kind": "sql",
+                "environmentId": "{{envId}}",
+                "platformId": null,
+                "connectionString": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "datastores.json"), datastoresJson);
+
+        // Create account
+        var accountsJson = $$"""
+        [
+            {
+                "id": "{{accountId}}",
+                "targetId": "{{targetId}}",
+                "targetKind": "DataStore",
+                "authKind": "ApiKey",
+                "secretBinding": {
+                    "kind": "PlainReference",
+                    "plainReference": "secret",
+                    "azureKeyVault": null
+                },
+                "userName": null,
+                "parameters": null,
+                "grants": [],
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "accounts.json"), accountsJson);
+
+        await CreateMinimalDataFiles();
+
+        var options = new JsonFuseStoreOptions { DataDirectory = _testDataDirectory };
+        var store = new JsonFuseStore(options);
+
+        // Act
+        var snapshot = await store.LoadAsync();
+
+        // Assert
+        var app = snapshot.Applications.Single();
+        var instance = app.Instances.Single();
+        var dependency = instance.Dependencies.Single();
+
+        Assert.Equal(DependencyAuthKind.Account, dependency.AuthKind);
+        Assert.Equal(accountId, dependency.AccountId);
+        Assert.Null(dependency.IdentityId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MigratesAuthKindNoneWithIdentityIdToIdentity()
+    {
+        // Arrange - Create a dependency with AuthKind.None but IdentityId set
+        var appId = Guid.NewGuid();
+        var instanceId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var depId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+        var identityId = Guid.NewGuid();
+
+        var applicationsJson = $$"""
+        [
+            {
+                "id": "{{appId}}",
+                "name": "Test App",
+                "version": null,
+                "description": null,
+                "owner": null,
+                "notes": null,
+                "framework": null,
+                "repositoryUri": null,
+                "tagIds": [],
+                "instances": [
+                    {
+                        "id": "{{instanceId}}",
+                        "environmentId": "{{envId}}",
+                        "platformId": null,
+                        "baseUri": null,
+                        "healthUri": null,
+                        "openApiUri": null,
+                        "version": null,
+                        "dependencies": [
+                            {
+                                "id": "{{depId}}",
+                                "targetId": "{{targetId}}",
+                                "targetKind": "DataStore",
+                                "port": 1433,
+                                "authKind": "None",
+                                "accountId": null,
+                                "identityId": "{{identityId}}"
+                            }
+                        ],
+                        "tagIds": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "pipelines": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+
+        var applicationsPath = Path.Combine(_testDataDirectory, "applications.json");
+        await File.WriteAllTextAsync(applicationsPath, applicationsJson);
+
+        // Create environment
+        var environmentsJson = $$"""
+        [
+            {
+                "id": "{{envId}}",
+                "name": "Test Env",
+                "description": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "environments.json"), environmentsJson);
+
+        // Create datastore
+        var datastoresJson = $$"""
+        [
+            {
+                "id": "{{targetId}}",
+                "name": "Test DataStore",
+                "description": null,
+                "kind": "sql",
+                "environmentId": "{{envId}}",
+                "platformId": null,
+                "connectionString": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "datastores.json"), datastoresJson);
+
+        // Create identity
+        var identitiesJson = $$"""
+        [
+            {
+                "id": "{{identityId}}",
+                "name": "Test Identity",
+                "kind": "AzureManagedIdentity",
+                "notes": null,
+                "ownerInstanceId": null,
+                "assignments": [],
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "identities.json"), identitiesJson);
+
+        await CreateMinimalDataFiles();
+
+        var options = new JsonFuseStoreOptions { DataDirectory = _testDataDirectory };
+        var store = new JsonFuseStore(options);
+
+        // Act
+        var snapshot = await store.LoadAsync();
+
+        // Assert
+        var app = snapshot.Applications.Single();
+        var instance = app.Instances.Single();
+        var dependency = instance.Dependencies.Single();
+
+        Assert.Equal(DependencyAuthKind.Identity, dependency.AuthKind);
+        Assert.Null(dependency.AccountId);
+        Assert.Equal(identityId, dependency.IdentityId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_KeepsAuthKindNoneWhenNoCredentialSet()
+    {
+        // Arrange - Create a dependency with AuthKind.None and no credentials
+        var appId = Guid.NewGuid();
+        var instanceId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var depId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+
+        var applicationsJson = $$"""
+        [
+            {
+                "id": "{{appId}}",
+                "name": "Test App",
+                "version": null,
+                "description": null,
+                "owner": null,
+                "notes": null,
+                "framework": null,
+                "repositoryUri": null,
+                "tagIds": [],
+                "instances": [
+                    {
+                        "id": "{{instanceId}}",
+                        "environmentId": "{{envId}}",
+                        "platformId": null,
+                        "baseUri": null,
+                        "healthUri": null,
+                        "openApiUri": null,
+                        "version": null,
+                        "dependencies": [
+                            {
+                                "id": "{{depId}}",
+                                "targetId": "{{targetId}}",
+                                "targetKind": "DataStore",
+                                "port": 1433,
+                                "authKind": "None",
+                                "accountId": null,
+                                "identityId": null
+                            }
+                        ],
+                        "tagIds": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "pipelines": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+
+        var applicationsPath = Path.Combine(_testDataDirectory, "applications.json");
+        await File.WriteAllTextAsync(applicationsPath, applicationsJson);
+
+        // Create environment
+        var environmentsJson = $$"""
+        [
+            {
+                "id": "{{envId}}",
+                "name": "Test Env",
+                "description": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "environments.json"), environmentsJson);
+
+        // Create datastore
+        var datastoresJson = $$"""
+        [
+            {
+                "id": "{{targetId}}",
+                "name": "Test DataStore",
+                "description": null,
+                "kind": "sql",
+                "environmentId": "{{envId}}",
+                "platformId": null,
+                "connectionString": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "datastores.json"), datastoresJson);
+
+        await CreateMinimalDataFiles();
+
+        var options = new JsonFuseStoreOptions { DataDirectory = _testDataDirectory };
+        var store = new JsonFuseStore(options);
+
+        // Act
+        var snapshot = await store.LoadAsync();
+
+        // Assert
+        var app = snapshot.Applications.Single();
+        var instance = app.Instances.Single();
+        var dependency = instance.Dependencies.Single();
+
+        // Should remain None since no credentials are set
+        Assert.Equal(DependencyAuthKind.None, dependency.AuthKind);
+        Assert.Null(dependency.AccountId);
+        Assert.Null(dependency.IdentityId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotMigrateWhenAuthKindAlreadySet()
+    {
+        // Arrange - Create a dependency with AuthKind already set to Account
+        var appId = Guid.NewGuid();
+        var instanceId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var depId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+
+        var applicationsJson = $$"""
+        [
+            {
+                "id": "{{appId}}",
+                "name": "Test App",
+                "version": null,
+                "description": null,
+                "owner": null,
+                "notes": null,
+                "framework": null,
+                "repositoryUri": null,
+                "tagIds": [],
+                "instances": [
+                    {
+                        "id": "{{instanceId}}",
+                        "environmentId": "{{envId}}",
+                        "platformId": null,
+                        "baseUri": null,
+                        "healthUri": null,
+                        "openApiUri": null,
+                        "version": null,
+                        "dependencies": [
+                            {
+                                "id": "{{depId}}",
+                                "targetId": "{{targetId}}",
+                                "targetKind": "DataStore",
+                                "port": 1433,
+                                "authKind": "Account",
+                                "accountId": "{{accountId}}",
+                                "identityId": null
+                            }
+                        ],
+                        "tagIds": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "pipelines": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+
+        var applicationsPath = Path.Combine(_testDataDirectory, "applications.json");
+        await File.WriteAllTextAsync(applicationsPath, applicationsJson);
+
+        // Create environment
+        var environmentsJson = $$"""
+        [
+            {
+                "id": "{{envId}}",
+                "name": "Test Env",
+                "description": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "environments.json"), environmentsJson);
+
+        // Create datastore
+        var datastoresJson = $$"""
+        [
+            {
+                "id": "{{targetId}}",
+                "name": "Test DataStore",
+                "description": null,
+                "kind": "sql",
+                "environmentId": "{{envId}}",
+                "platformId": null,
+                "connectionString": null,
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "datastores.json"), datastoresJson);
+
+        // Create account
+        var accountsJson = $$"""
+        [
+            {
+                "id": "{{accountId}}",
+                "targetId": "{{targetId}}",
+                "targetKind": "DataStore",
+                "authKind": "ApiKey",
+                "secretBinding": {
+                    "kind": "PlainReference",
+                    "plainReference": "secret",
+                    "azureKeyVault": null
+                },
+                "userName": null,
+                "parameters": null,
+                "grants": [],
+                "tagIds": [],
+                "createdAt": "2024-01-01T00:00:00Z",
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "accounts.json"), accountsJson);
+
+        await CreateMinimalDataFiles();
+
+        var options = new JsonFuseStoreOptions { DataDirectory = _testDataDirectory };
+        var store = new JsonFuseStore(options);
+
+        // Act
+        var snapshot = await store.LoadAsync();
+
+        // Assert - Should remain unchanged
+        var app = snapshot.Applications.Single();
+        var instance = app.Instances.Single();
+        var dependency = instance.Dependencies.Single();
+
+        Assert.Equal(DependencyAuthKind.Account, dependency.AuthKind);
+        Assert.Equal(accountId, dependency.AccountId);
+        Assert.Null(dependency.IdentityId);
+    }
+
     private async Task CreateMinimalDataFiles()
     {
         // Create empty JSON arrays for required files that don't already exist
@@ -431,10 +937,12 @@ public class JsonFuseStoreTests : IDisposable
             "datastores.json",
             "platforms.json",
             "externalresources.json",
+            "identities.json",
             "tags.json",
             "environments.json",
             "kumaintegrations.json",
-            "secretproviders.json"
+            "secretproviders.json",
+            "sqlintegrations.json"
         };
 
         foreach (var file in filesToCreate)
