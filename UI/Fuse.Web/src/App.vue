@@ -147,6 +147,16 @@
 
           <q-separator class="q-my-md" />
 
+          <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
+            data-tour-id="nav-view">
+            <q-item-section avatar>
+              <q-icon name="menu_book" />
+            </q-item-section>
+            <q-item-section>
+              Documentation Mode
+            </q-item-section>
+          </q-item>
+
           <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
             data-tour-id="nav-tags">
             <q-item-section avatar>
