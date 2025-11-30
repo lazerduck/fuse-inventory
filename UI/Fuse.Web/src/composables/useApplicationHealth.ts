@@ -14,6 +14,8 @@ export interface ApplicationHealthStats {
 
 export interface UseApplicationHealthOptions {
   environmentIds?: Ref<string[]>
+  searchText?: Ref<string>
+  includeInstances?: Ref<boolean>
 }
 
 export function useApplicationHealth(options?: UseApplicationHealthOptions) {
@@ -28,15 +30,32 @@ export function useApplicationHealth(options?: UseApplicationHealthOptions) {
 
   // Get health status for application instances, optionally filtered by environment
   const healthStatsQuery = useQuery({
-    queryKey: computed(() => ['applicationHealthStats', options?.environmentIds?.value ?? []]),
+    queryKey: computed(() => ['applicationHealthStats', options?.environmentIds?.value ?? [], options?.searchText?.value ?? '', options?.includeInstances?.value ?? true]),
     queryFn: async (): Promise<ApplicationHealthStats> => {
       const applications = applicationsQuery.data.value ?? []
       const filterEnvIds = options?.environmentIds?.value ?? []
+      const searchText = (options?.searchText?.value ?? '').toLowerCase().trim()
+      const includeInstances = options?.includeInstances?.value ?? true
+      
+      // Filter applications by search text first
+      const filteredApps = searchText 
+        ? applications.filter(app => (app.name ?? '').toLowerCase().includes(searchText))
+        : applications
+      
+      // If instances are not included in the filter, don't show health stats
+      if (!includeInstances) {
+        return {
+          total: 0,
+          healthy: 0,
+          unhealthy: 0,
+          hasKumaIntegration: hasKumaIntegration.value
+        }
+      }
       
       // If no Kuma integration, return basic stats
       if (!hasKumaIntegration.value) {
         return {
-          total: applications.length,
+          total: filteredApps.length,
           healthy: 0,
           unhealthy: 0,
           hasKumaIntegration: false
@@ -47,7 +66,7 @@ export function useApplicationHealth(options?: UseApplicationHealthOptions) {
       let unhealthyCount = 0
       
       // Check each application to see if it has any instances with health status
-      for (const app of applications) {
+      for (const app of filteredApps) {
         let instances = app.instances ?? []
         
         // Filter instances by environment if filter is provided
@@ -94,7 +113,7 @@ export function useApplicationHealth(options?: UseApplicationHealthOptions) {
       }
       
       return {
-        total: applications.length,
+        total: filteredApps.length,
         healthy: healthyCount,
         unhealthy: unhealthyCount,
         hasKumaIntegration: true
