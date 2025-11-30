@@ -27,7 +27,7 @@
       :accounts="accounts"
       :loading="isLoading"
       :pagination="pagination"
-      :tag-lookup="tagLookup"
+      :tag-info-lookup="tagInfoLookup"
       :target-resolver="resolveTargetName"
       :can-modify="fuseStore.canModify"
       @edit="(account) => router.push(`/accounts/${account.id}/edit`)"
@@ -71,7 +71,7 @@ const { data, isLoading, error } = useQuery({
 const accounts = computed(() => data.value ?? [])
 const accountError = computed(() => (error.value ? getErrorMessage(error.value) : null))
 
-const tagLookup = tagsStore.lookup
+const tagInfoLookup = tagsStore.tagInfoLookup
 
 const deleteMutation = useMutation({
   mutationFn: (id: string) => client.accountDELETE(id),

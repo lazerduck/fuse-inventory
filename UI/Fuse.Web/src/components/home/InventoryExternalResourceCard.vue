@@ -52,16 +52,13 @@
 
     <q-card-section v-if="externalResource.tagIds?.length" class="q-pt-none">
       <div class="row q-gutter-xs">
-        <q-chip
+        <TagChip
           v-for="tagId in externalResource.tagIds"
           :key="tagId"
-          dense
-          outline
-          color="grey-7"
+          :label="tagInfoLookup[tagId]?.name ?? tagId"
+          :color="tagInfoLookup[tagId]?.color"
           size="xs"
-        >
-          {{ tagLookup[tagId] ?? tagId }}
-        </q-chip>
+        />
       </div>
     </q-card-section>
 
@@ -86,10 +83,12 @@
 
 <script setup lang="ts">
 import type { ExternalResource } from '../../api/client'
+import type { TagInfo } from '../../composables/useTags'
+import TagChip from '../tags/TagChip.vue'
 
 defineProps<{
   externalResource: ExternalResource
-  tagLookup: Record<string, string>
+  tagInfoLookup: Record<string, TagInfo>
 }>()
 </script>
 

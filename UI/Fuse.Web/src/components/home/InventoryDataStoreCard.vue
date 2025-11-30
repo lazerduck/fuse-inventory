@@ -55,16 +55,13 @@
 
     <q-card-section v-if="dataStore.tagIds?.length" class="q-pt-none">
       <div class="row q-gutter-xs">
-        <q-chip
+        <TagChip
           v-for="tagId in dataStore.tagIds"
           :key="tagId"
-          dense
-          outline
-          color="grey-7"
+          :label="tagInfoLookup[tagId]?.name ?? tagId"
+          :color="tagInfoLookup[tagId]?.color"
           size="xs"
-        >
-          {{ tagLookup[tagId] ?? tagId }}
-        </q-chip>
+        />
       </div>
     </q-card-section>
 
@@ -89,12 +86,14 @@
 
 <script setup lang="ts">
 import type { DataStore } from '../../api/client'
+import type { TagInfo } from '../../composables/useTags'
+import TagChip from '../tags/TagChip.vue'
 
 defineProps<{
   dataStore: DataStore
   environmentName: string
   platformName: string
-  tagLookup: Record<string, string>
+  tagInfoLookup: Record<string, TagInfo>
 }>()
 </script>
 

@@ -59,12 +59,11 @@
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
+              <TagChip
                 v-for="tagId in props.row.tagIds"
                 :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
+                :label="tagInfoLookup[tagId]?.name ?? tagId"
+                :color="tagInfoLookup[tagId]?.color"
               />
             </div>
             <span v-else class="text-grey">—</span>
@@ -123,6 +122,7 @@ import { useEnvironments } from '../composables/useEnvironments'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import PlatformForm, { type PlatformFormModel } from '../components/platforms/PlatformForm.vue'
+import TagChip from '../components/tags/TagChip.vue'
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
@@ -142,7 +142,7 @@ const platforms = computed(() => data.value ?? [])
 const platformError = computed(() => (error.value ? getErrorMessage(error.value) : null))
 
 const environmentLookup = environmentsStore.lookup
-const tagLookup = tagsStore.lookup
+const tagInfoLookup = tagsStore.tagInfoLookup
 
 const columns: QTableColumn<Platform>[] = [
   { name: 'name', label: 'Name', field: 'displayName', align: 'left', sortable: true },

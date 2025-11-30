@@ -51,12 +51,11 @@
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
+              <TagChip
                 v-for="tagId in props.row.tagIds"
                 :key="tagId"
-                outline
-                color="primary"
-                :label="tagLookup[tagId] ?? tagId"
+                :label="tagInfoLookup[tagId]?.name ?? tagId"
+                :color="tagInfoLookup[tagId]?.color"
               />
             </div>
             <span v-else class="text-grey">—</span>
@@ -191,6 +190,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
+import TagChip from '../components/tags/TagChip.vue'
 
 interface ApplicationForm {
   name: string
@@ -228,7 +228,7 @@ const applicationsError = computed(() =>
 const tagsStore = useTags()
 
 const tagOptions = tagsStore.options
-const tagLookup = tagsStore.lookup
+const tagInfoLookup = tagsStore.tagInfoLookup
 
 const columns: QTableColumn<Application>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },

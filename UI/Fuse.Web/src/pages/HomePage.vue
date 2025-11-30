@@ -145,12 +145,12 @@
             :data-store="item.data.dataStore"
             :environment-name="item.data.environmentName"
             :platform-name="item.data.platformName"
-            :tag-lookup="tagLookup"
+            :tag-info-lookup="tagInfoLookup"
           />
           <InventoryExternalResourceCard
             v-else-if="item.type === 'external'"
             :external-resource="item.data.externalResource"
-            :tag-lookup="tagLookup"
+            :tag-info-lookup="tagInfoLookup"
           />
         </template>
 
@@ -269,9 +269,7 @@ const dataStoreLookup = computed<Record<string, string>>(() =>
   makeLookup(dataStoresQuery.data.value, (s: any) => s.id, (s: any) => s.name, 'Data store')
 )
 
-const tagLookup = computed<Record<string, string>>(() =>
-  makeLookup(tagsQuery.data.value, (t: any) => t.id, (t: any) => t.name ?? t.id, 'Tag')
-)
+const tagInfoLookup = tagsQuery.tagInfoLookup
 
 const applicationLookup = computed<Record<string, string>>(() =>
   makeLookup(applicationsQuery.data.value, (a: any) => a.id, (a: any) => a.name, 'Application')

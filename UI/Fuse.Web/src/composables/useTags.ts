@@ -1,6 +1,12 @@
 import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
+import type { TagColor } from '../api/client'
+
+export interface TagInfo {
+  name: string
+  color: TagColor | undefined
+}
 
 export function useTags() {
   const client = useFuseClient()
@@ -26,9 +32,23 @@ export function useTags() {
     return map
   })
 
+  const tagInfoLookup = computed<Record<string, TagInfo>>(() => {
+    const map: Record<string, TagInfo> = {}
+    for (const tag of query.data.value ?? []) {
+      if (tag.id) {
+        map[tag.id] = {
+          name: tag.name ?? tag.id,
+          color: tag.color
+        }
+      }
+    }
+    return map
+  })
+
   return {
     ...query,
     options,
-    lookup
+    lookup,
+    tagInfoLookup
   }
 }

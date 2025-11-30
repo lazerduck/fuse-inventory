@@ -5,7 +5,7 @@
       <q-btn flat round dense icon="close" @click="emit('cancel')" />
     </q-card-section>
     <q-separator />
-    <q-form @submit.prevent="handleSubmit">
+    <q-form ref="formRef" @submit.prevent="handleSubmit" novalidate>
       <q-card-section>
         <div class="form-grid">
           <q-input
@@ -13,7 +13,6 @@
             label="Name*"
             dense
             outlined
-            required
             :rules="[val => !!val || 'Data store name is required']"
           />
           <q-select
@@ -24,8 +23,8 @@
             use-input
             hide-dropdown-icon
             new-value-mode="add"
+            clearable
             :options="kindOptions"
-            required
             :rules="[val => !!val || 'Data store kind is required']"
             @new-value="onNewKind"
           />
@@ -37,7 +36,6 @@
             emit-value
             map-options
             :options="environmentOptions"
-            required
             :rules="[val => !!val || 'Data store environment is required']"
           />
           <q-select
@@ -129,6 +127,8 @@ const form = reactive<DataStoreFormModel>({
   tagIds: []
 })
 
+const formRef = ref<any>(null)
+
 const isCreate = computed(() => props.mode === 'create')
 const title = computed(() => (isCreate.value ? 'Create Data Store' : 'Edit Data Store'))
 const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
@@ -172,6 +172,11 @@ function onNewKind(val: string, done: (item?: any, mode?: 'add' | 'add-unique' |
 }
 
 function handleSubmit() {
+  if (formRef.value && typeof formRef.value.validate === 'function') {
+    const valid = formRef.value.validate()
+    if (!valid) return
+  }
+
   emit('submit', { ...form })
 }
 </script>
