@@ -678,4 +678,71 @@ public class AccountSqlInspector : IAccountSqlInspector
             return (false, Array.Empty<string>(), $"Unexpected error: {ex.Message}");
         }
     }
+
+    /// <inheritdoc />
+    public async Task<(bool IsSuccessful, IReadOnlyList<SqlPrincipalPermissions> Principals, string? ErrorMessage)> GetAllPrincipalsAsync(
+        SqlIntegration sqlIntegration,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sqlIntegration.ConnectionString))
+        {
+            return (false, Array.Empty<SqlPrincipalPermissions>(), "SQL integration has no connection string configured.");
+        }
+
+        try
+        {
+            string sanitizedConnectionString;
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(sqlIntegration.ConnectionString);
+                sanitizedConnectionString = builder.ConnectionString;
+            }
+            catch (ArgumentException ex)
+            {
+                return (false, Array.Empty<SqlPrincipalPermissions>(), $"Invalid connection string: {ex.Message}");
+            }
+
+            await using var connection = new SqlConnection(sanitizedConnectionString);
+            await connection.OpenAsync(ct);
+
+            // Get all server logins (excluding system accounts)
+            const string loginQuery = @"
+                SELECT name 
+                FROM sys.server_principals 
+                WHERE type IN ('S', 'U', 'G', 'E', 'X')
+                  AND name NOT LIKE '##%'
+                  AND name NOT LIKE 'NT %'
+                  AND name NOT IN ('sa', 'public', 'guest')
+                ORDER BY name";
+
+            var principalNames = new List<string>();
+            await using (var command = new SqlCommand(loginQuery, connection))
+            await using (var reader = await command.ExecuteReaderAsync(ct))
+            {
+                while (await reader.ReadAsync(ct))
+                {
+                    var name = reader.GetString(0);
+                    principalNames.Add(name);
+                }
+            }
+
+            // For each principal, get their permissions
+            var principals = new List<SqlPrincipalPermissions>();
+            foreach (var principalName in principalNames)
+            {
+                var grants = await GetPrincipalGrantsAsync(connection, principalName, ct);
+                principals.Add(new SqlPrincipalPermissions(principalName, true, grants));
+            }
+
+            return (true, principals, null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, Array.Empty<SqlPrincipalPermissions>(), $"SQL error: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (false, Array.Empty<SqlPrincipalPermissions>(), $"Unexpected error: {ex.Message}");
+        }
+    }
 }

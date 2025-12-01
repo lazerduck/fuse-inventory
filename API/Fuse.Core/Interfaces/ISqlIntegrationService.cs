@@ -14,6 +14,8 @@ public interface ISqlIntegrationService
     Task<Result<SqlConnectionTestResult>> TestConnectionAsync(TestSqlConnection command, CancellationToken ct = default);
     Task<Result<SqlIntegrationPermissionsOverviewResponse>> GetPermissionsOverviewAsync(Guid integrationId, CancellationToken ct = default);
     Task<Result<ResolveDriftResponse>> ResolveDriftAsync(ResolveDrift command, string userName, Guid? userId, CancellationToken ct = default);
+    Task<Result<ImportPermissionsResponse>> ImportPermissionsAsync(ImportPermissions command, string userName, Guid? userId, CancellationToken ct = default);
+    Task<Result<ImportOrphanPrincipalResponse>> ImportOrphanPrincipalAsync(ImportOrphanPrincipal command, string userName, Guid? userId, CancellationToken ct = default);
     Task<Result<CreateSqlAccountResponse>> CreateSqlAccountAsync(CreateSqlAccount command, string userName, Guid? userId, CancellationToken ct = default);
     Task<Result<BulkResolveResponse>> BulkResolveAsync(BulkResolve command, string userName, Guid? userId, CancellationToken ct = default);
     Task<Result<SqlDatabasesResponse>> GetDatabasesAsync(Guid integrationId, CancellationToken ct = default);

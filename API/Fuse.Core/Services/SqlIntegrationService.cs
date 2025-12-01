@@ -232,6 +232,12 @@ public class SqlIntegrationService : ISqlIntegrationService
             .Where(a => a.TargetKind == TargetKind.DataStore && a.TargetId == integration.DataStoreId)
             .ToList();
 
+        // Get the set of principal names managed by Fuse
+        var managedPrincipalNames = associatedAccounts
+            .Where(a => !string.IsNullOrWhiteSpace(a.UserName))
+            .Select(a => a.UserName!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var accountStatuses = new List<SqlAccountPermissionsStatus>();
 
         foreach (var account in associatedAccounts)
@@ -297,6 +303,24 @@ public class SqlIntegrationService : ISqlIntegrationService
                 ErrorMessage: null));
         }
 
+        // Detect orphan principals (SQL principals not managed by any Fuse account)
+        var orphanPrincipals = new List<SqlOrphanPrincipal>();
+        var (allPrincipalsSuccess, allPrincipals, allPrincipalsError) = await _sqlInspector.GetAllPrincipalsAsync(integration, ct);
+        
+        if (allPrincipalsSuccess && allPrincipals is not null)
+        {
+            foreach (var principal in allPrincipals)
+            {
+                if (!string.IsNullOrWhiteSpace(principal.PrincipalName) && 
+                    !managedPrincipalNames.Contains(principal.PrincipalName))
+                {
+                    orphanPrincipals.Add(new SqlOrphanPrincipal(
+                        principal.PrincipalName,
+                        principal.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
+                }
+            }
+        }
+
         // Calculate summary
         var summary = new SqlPermissionsOverviewSummary(
             TotalAccounts: accountStatuses.Count,
@@ -304,7 +328,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             DriftCount: accountStatuses.Count(s => s.Status == SyncStatus.DriftDetected),
             MissingPrincipalCount: accountStatuses.Count(s => s.Status == SyncStatus.MissingPrincipal),
             ErrorCount: accountStatuses.Count(s => s.Status == SyncStatus.Error),
-            OrphanPrincipalCount: 0 // Orphan detection is not implemented in this version
+            OrphanPrincipalCount: orphanPrincipals.Count
         );
 
         return Result<SqlIntegrationPermissionsOverviewResponse>.Success(
@@ -312,7 +336,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 IntegrationId: integration.Id,
                 IntegrationName: integration.Name,
                 Accounts: accountStatuses,
-                OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(), // Orphan detection is future work
+                OrphanPrincipals: orphanPrincipals,
                 Summary: summary,
                 ErrorMessage: null));
     }
@@ -577,6 +601,277 @@ public class SqlIntegrationService : ISqlIntegrationService
             Operations: operationsList,
             UpdatedStatus: updatedStatus,
             ErrorMessage: applyError));
+    }
+
+    public async Task<Result<ImportPermissionsResponse>> ImportPermissionsAsync(ImportPermissions command, string userName, Guid? userId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == command.IntegrationId);
+        if (integration is null)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                $"SQL integration {command.IntegrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has Read permission
+        if ((integration.Permissions & SqlPermissions.Read) == 0)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                "SQL integration does not have Read permission to inspect accounts.",
+                ErrorType.Validation);
+        }
+
+        // Find the account
+        var account = snapshot.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+        if (account is null)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                $"Account {command.AccountId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Verify account is associated with this integration's DataStore
+        if (account.TargetKind != TargetKind.DataStore || account.TargetId != integration.DataStoreId)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                "Account is not associated with this SQL integration's DataStore.",
+                ErrorType.Validation);
+        }
+
+        // Check if account has a username
+        var principalName = account.UserName;
+        if (string.IsNullOrWhiteSpace(principalName))
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                "Account has no username configured for SQL principal mapping.",
+                ErrorType.Validation);
+        }
+
+        // Get current SQL permissions
+        var (inspectSuccess, actualPermissions, inspectError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, principalName, ct);
+
+        if (!inspectSuccess || actualPermissions is null)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                inspectError ?? "Failed to retrieve SQL permissions.",
+                ErrorType.ServerError);
+        }
+
+        // Check if principal exists
+        if (!actualPermissions.Exists)
+        {
+            return Result<ImportPermissionsResponse>.Failure(
+                "SQL principal does not exist. Cannot import permissions from a non-existent principal.",
+                ErrorType.Validation);
+        }
+
+        // Convert actual SQL grants to Fuse grants
+        var importedGrants = actualPermissions.Grants
+            .Where(g => g.Privileges.Count > 0)
+            .Select(g => new Grant(
+                Id: Guid.NewGuid(),
+                Database: g.Database,
+                Schema: g.Schema,
+                Privileges: new HashSet<Privilege>(g.Privileges)
+            ))
+            .ToList();
+
+        // Update the account with imported grants
+        var updatedAccount = account with
+        {
+            Grants = importedGrants,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _store.UpdateAsync(s => s with
+        {
+            Accounts = s.Accounts.Select(a => a.Id == account.Id ? updatedAccount : a).ToList()
+        }, ct);
+
+        // Re-fetch and calculate updated status
+        var (recheckSuccess, recheckPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, principalName, ct);
+
+        SqlAccountPermissionsStatus? updatedStatus = null;
+        if (recheckSuccess && recheckPermissions is not null)
+        {
+            var updatedComparisons = BuildPermissionComparisons(importedGrants, recheckPermissions);
+            var hasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
+
+            updatedStatus = new SqlAccountPermissionsStatus(
+                AccountId: account.Id,
+                AccountName: GetAccountDisplayName(updatedAccount, snapshot),
+                PrincipalName: principalName,
+                Status: hasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync,
+                PermissionComparisons: updatedComparisons,
+                ErrorMessage: null);
+        }
+
+        // Log the import to audit
+        var auditDetails = new
+        {
+            IntegrationId = integration.Id,
+            IntegrationName = integration.Name,
+            AccountId = account.Id,
+            PrincipalName = principalName,
+            ImportedGrantsCount = importedGrants.Count,
+            ImportedGrants = importedGrants.Select(g => new
+            {
+                g.Database,
+                g.Schema,
+                Privileges = g.Privileges.Select(p => p.ToString()).ToList()
+            }).ToList()
+        };
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SqlPermissionsImported,
+            AuditArea.SqlIntegration,
+            userName,
+            userId,
+            account.Id,
+            auditDetails);
+
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<ImportPermissionsResponse>.Success(new ImportPermissionsResponse(
+            AccountId: account.Id,
+            PrincipalName: principalName,
+            Success: true,
+            ImportedGrants: importedGrants,
+            UpdatedStatus: updatedStatus,
+            ErrorMessage: null));
+    }
+
+    public async Task<Result<ImportOrphanPrincipalResponse>> ImportOrphanPrincipalAsync(ImportOrphanPrincipal command, string userName, Guid? userId, CancellationToken ct = default)
+    {
+        var snapshot = await _store.GetAsync(ct);
+
+        // Find the integration
+        var integration = snapshot.SqlIntegrations.FirstOrDefault(s => s.Id == command.IntegrationId);
+        if (integration is null)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                $"SQL integration {command.IntegrationId} not found.",
+                ErrorType.NotFound);
+        }
+
+        // Check if the integration has Read permission
+        if ((integration.Permissions & SqlPermissions.Read) == 0)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                "SQL integration does not have Read permission to inspect accounts.",
+                ErrorType.Validation);
+        }
+
+        // Check that principal name is valid
+        if (string.IsNullOrWhiteSpace(command.PrincipalName))
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                "Principal name is required.",
+                ErrorType.Validation);
+        }
+
+        // Verify that the principal exists in SQL
+        var (inspectSuccess, actualPermissions, inspectError) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            integration, command.PrincipalName, ct);
+
+        if (!inspectSuccess || actualPermissions is null)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                inspectError ?? "Failed to retrieve SQL permissions.",
+                ErrorType.ServerError);
+        }
+
+        if (!actualPermissions.Exists)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                $"SQL principal '{command.PrincipalName}' does not exist.",
+                ErrorType.NotFound);
+        }
+
+        // Verify principal is not already managed by a Fuse account
+        var existingAccount = snapshot.Accounts.FirstOrDefault(a => 
+            a.TargetKind == TargetKind.DataStore && 
+            a.TargetId == integration.DataStoreId &&
+            string.Equals(a.UserName, command.PrincipalName, StringComparison.OrdinalIgnoreCase));
+
+        if (existingAccount is not null)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(
+                $"Principal '{command.PrincipalName}' is already managed by account '{existingAccount.Id}'.",
+                ErrorType.Conflict);
+        }
+
+        // Convert actual SQL grants to Fuse grants
+        var importedGrants = actualPermissions.Grants
+            .Where(g => g.Privileges.Count > 0)
+            .Select(g => new Grant(
+                Id: Guid.NewGuid(),
+                Database: g.Database,
+                Schema: g.Schema,
+                Privileges: new HashSet<Privilege>(g.Privileges)
+            ))
+            .ToList();
+
+        // Create the new account
+        var now = DateTime.UtcNow;
+        var newAccount = new Account(
+            Id: Guid.NewGuid(),
+            TargetId: integration.DataStoreId,
+            TargetKind: TargetKind.DataStore,
+            AuthKind: command.AuthKind,
+            SecretBinding: command.SecretBinding,
+            UserName: command.PrincipalName,
+            Parameters: null,
+            Grants: importedGrants,
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: now,
+            UpdatedAt: now
+        );
+
+        await _store.UpdateAsync(s => s with
+        {
+            Accounts = s.Accounts.Append(newAccount).ToList()
+        }, ct);
+
+        // Log the import to audit
+        var auditDetails = new
+        {
+            IntegrationId = integration.Id,
+            IntegrationName = integration.Name,
+            AccountId = newAccount.Id,
+            PrincipalName = command.PrincipalName,
+            AuthKind = command.AuthKind.ToString(),
+            SecretBindingKind = command.SecretBinding.Kind.ToString(),
+            ImportedGrantsCount = importedGrants.Count,
+            ImportedGrants = importedGrants.Select(g => new
+            {
+                g.Database,
+                g.Schema,
+                Privileges = g.Privileges.Select(p => p.ToString()).ToList()
+            }).ToList()
+        };
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.SqlOrphanPrincipalImported,
+            AuditArea.SqlIntegration,
+            userName,
+            userId,
+            newAccount.Id,
+            auditDetails);
+
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<ImportOrphanPrincipalResponse>.Success(new ImportOrphanPrincipalResponse(
+            AccountId: newAccount.Id,
+            PrincipalName: command.PrincipalName,
+            Success: true,
+            ImportedGrants: importedGrants,
+            ErrorMessage: null));
     }
 
     private static bool HasSecretProviderBinding(Account account)

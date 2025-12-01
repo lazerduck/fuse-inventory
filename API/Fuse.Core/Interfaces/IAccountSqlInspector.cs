@@ -77,4 +77,14 @@ public interface IAccountSqlInspector
     Task<(bool IsSuccessful, IReadOnlyList<string> Databases, string? ErrorMessage)> GetDatabasesAsync(
         SqlIntegration sqlIntegration,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists all SQL server logins and their permissions.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of all principals and their permissions.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<SqlPrincipalPermissions> Principals, string? ErrorMessage)> GetAllPrincipalsAsync(
+        SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
 }

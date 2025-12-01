@@ -176,3 +176,26 @@ public record BulkResolveResponse(
     IReadOnlyList<BulkResolveAccountResult> Results,
     string? ErrorMessage
 );
+
+/// <summary>
+/// Response DTO for importing actual SQL permissions into Fuse account.
+/// </summary>
+public record ImportPermissionsResponse(
+    Guid AccountId,
+    string? PrincipalName,
+    bool Success,
+    IReadOnlyList<Grant> ImportedGrants,
+    SqlAccountPermissionsStatus? UpdatedStatus,
+    string? ErrorMessage
+);
+
+/// <summary>
+/// Response DTO for importing an orphan SQL principal as a new Fuse account.
+/// </summary>
+public record ImportOrphanPrincipalResponse(
+    Guid AccountId,
+    string PrincipalName,
+    bool Success,
+    IReadOnlyList<Grant> ImportedGrants,
+    string? ErrorMessage
+);

@@ -1374,4 +1374,357 @@ public class SqlIntegrationServiceTests
         mockSecretService.Verify(s => s.RevealSecretAsync(It.IsAny<RevealSecret>(), It.IsAny<string>(), It.IsAny<Guid?>()), Times.Once);
         mockAuditService.Verify(a => a.LogAsync(It.Is<AuditLog>(l => l.Action == AuditAction.SqlIntegrationBulkResolved), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task ImportPermissionsAsync_ReturnsNotFoundForMissingIntegration()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(Guid.NewGuid(), Guid.NewGuid()), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ImportPermissionsAsync_ReturnsErrorWhenNoReadPermission()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Write, DateTime.UtcNow, DateTime.UtcNow); // No Read permission
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        var service = CreateService(store);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("Read permission", result.Error!);
+    }
+
+    [Fact]
+    public async Task ImportPermissionsAsync_ReturnsNotFoundForMissingAccount()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
+        var service = CreateService(store);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(intId, Guid.NewGuid()), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ImportPermissionsAsync_ReturnsErrorWhenPrincipalDoesNotExist()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null));
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(intId, accountId), "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("does not exist", result.Error!);
+    }
+
+    [Fact]
+    public async Task ImportPermissionsAsync_ImportsPermissionsSuccessfully()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "testuser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "OldDB", null, new HashSet<Privilege> { Privilege.Delete }) }, // Old grants
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert }),
+                new SqlActualGrant("TestDB2", "dbo", new HashSet<Privilege> { Privilege.Execute })
+            }), null));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(intId, accountId), "testUser", Guid.NewGuid());
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.Equal(2, result.Value.ImportedGrants.Count);
+        Assert.Contains(result.Value.ImportedGrants, g => g.Database == "TestDB" && g.Privileges.Contains(Privilege.Select));
+        Assert.Contains(result.Value.ImportedGrants, g => g.Database == "TestDB2" && g.Schema == "dbo" && g.Privileges.Contains(Privilege.Execute));
+        
+        // Verify audit log was created
+        mockAuditService.Verify(a => a.LogAsync(It.Is<AuditLog>(l => l.Action == AuditAction.SqlPermissionsImported), It.IsAny<CancellationToken>()), Times.Once);
+        
+        // Verify the account was updated in the store
+        var updatedAccount = (await store.GetAsync()).Accounts.First(a => a.Id == accountId);
+        Assert.Equal(2, updatedAccount.Grants.Count);
+    }
+
+    [Fact]
+    public async Task ImportOrphanPrincipalAsync_ReturnsNotFoundForMissingIntegration()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var command = new ImportOrphanPrincipal(
+            Guid.NewGuid(),
+            "orphanuser",
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null)
+        );
+        var result = await service.ImportOrphanPrincipalAsync(command, "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ImportOrphanPrincipalAsync_ReturnsErrorWhenPrincipalDoesNotExist()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "orphanuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("orphanuser", false, Array.Empty<SqlActualGrant>()), null));
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var command = new ImportOrphanPrincipal(
+            intId,
+            "orphanuser",
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null)
+        );
+        var result = await service.ImportOrphanPrincipalAsync(command, "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ImportOrphanPrincipalAsync_ReturnsConflictWhenPrincipalAlreadyManaged()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        // Already managed account
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "existinguser",
+            null,
+            new List<Grant>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "existinguser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("existinguser", true, Array.Empty<SqlActualGrant>()), null));
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var command = new ImportOrphanPrincipal(
+            intId,
+            "existinguser",
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null)
+        );
+        var result = await service.ImportOrphanPrincipalAsync(command, "testUser", null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Contains("already managed", result.Error!);
+    }
+
+    [Fact]
+    public async Task ImportOrphanPrincipalAsync_ImportsOrphanSuccessfully()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "orphanuser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("orphanuser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert })
+            }), null));
+        
+        var mockAuditService = new Mock<IAuditService>();
+        var service = CreateService(store, inspector: mockInspector.Object, auditService: mockAuditService.Object);
+
+        var command = new ImportOrphanPrincipal(
+            intId,
+            "orphanuser",
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null)
+        );
+        var result = await service.ImportOrphanPrincipalAsync(command, "testUser", Guid.NewGuid());
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.Success);
+        Assert.Equal("orphanuser", result.Value.PrincipalName);
+        Assert.Single(result.Value.ImportedGrants);
+        Assert.Contains(result.Value.ImportedGrants, g => g.Database == "TestDB" && g.Privileges.Contains(Privilege.Select));
+        
+        // Verify audit log was created
+        mockAuditService.Verify(a => a.LogAsync(It.Is<AuditLog>(l => l.Action == AuditAction.SqlOrphanPrincipalImported), It.IsAny<CancellationToken>()), Times.Once);
+        
+        // Verify the account was created in the store
+        var createdAccount = (await store.GetAsync()).Accounts.FirstOrDefault(a => a.UserName == "orphanuser");
+        Assert.NotNull(createdAccount);
+        Assert.Equal(dsId, createdAccount.TargetId);
+        Assert.Equal(TargetKind.DataStore, createdAccount.TargetKind);
+        Assert.Equal(AuthKind.UserPassword, createdAccount.AuthKind);
+        Assert.Single(createdAccount.Grants);
+    }
+
+    [Fact]
+    public async Task GetPermissionsOverviewAsync_DetectsOrphanPrincipals()
+    {
+        var dsId = Guid.NewGuid();
+        var intId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            accountId,
+            dsId,
+            TargetKind.DataStore,
+            AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "secret", null),
+            "manageduser",
+            null,
+            new List<Grant> { new Grant(Guid.NewGuid(), "TestDB", null, new HashSet<Privilege> { Privilege.Select }) },
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        
+        var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
+        
+        var mockInspector = new Mock<IAccountSqlInspector>();
+        mockInspector
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "manageduser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("manageduser", true, new List<SqlActualGrant>
+            {
+                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+            }), null));
+        mockInspector
+            .Setup(i => i.GetAllPrincipalsAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new List<SqlPrincipalPermissions>
+            {
+                new SqlPrincipalPermissions("manageduser", true, new List<SqlActualGrant>
+                {
+                    new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+                }),
+                new SqlPrincipalPermissions("orphanuser1", true, new List<SqlActualGrant>
+                {
+                    new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Insert, Privilege.Update })
+                }),
+                new SqlPrincipalPermissions("orphanuser2", true, new List<SqlActualGrant>
+                {
+                    new SqlActualGrant("OtherDB", null, new HashSet<Privilege> { Privilege.Execute })
+                })
+            }, null));
+        
+        var service = CreateService(store, inspector: mockInspector.Object);
+
+        var result = await service.GetPermissionsOverviewAsync(intId);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value.OrphanPrincipals.Count);
+        Assert.Contains(result.Value.OrphanPrincipals, o => o.PrincipalName == "orphanuser1");
+        Assert.Contains(result.Value.OrphanPrincipals, o => o.PrincipalName == "orphanuser2");
+        Assert.Equal(2, result.Value.Summary.OrphanPrincipalCount);
+    }
 }
