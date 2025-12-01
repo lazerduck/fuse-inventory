@@ -371,12 +371,14 @@ const lowerContext = computed<LowerItem[]>(() => {
           if (dep.authKind === DependencyAuthKind.Identity && dep.identityId === id.value && dep.id) {
             const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
             const targetDisplayName = resolveTargetName(dep.targetKind, dep.targetId)
+            const appName = app.name ?? 'App'
+            const instanceName = `${appName} — ${envName}`
             items.push({
               id: dep.id,
               type: 'dependency',
               name: targetDisplayName,
               route: `/view/dependency/${dep.id}`,
-              subtitle: `${app.name ?? 'App'} → ${app.name ?? 'App'} — ${envName}`
+              subtitle: `${appName} → ${instanceName}`
             })
           }
         }
