@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,7 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
 {
     private readonly ILogger<SqlPermissionsCacheService> _logger;
     private readonly IFuseStore _store;
-    private readonly IAccountSqlInspector _sqlInspector;
+    private readonly IServiceProvider _serviceProvider;
 
     private readonly ConcurrentDictionary<Guid, CachedSqlPermissionsOverview> _integrationCache = new();
     private readonly ConcurrentDictionary<Guid, CachedAccountSqlStatus> _accountCache = new();
@@ -26,11 +27,11 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
     public SqlPermissionsCacheService(
         ILogger<SqlPermissionsCacheService> logger,
         IFuseStore store,
-        IAccountSqlInspector sqlInspector)
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _store = store;
-        _sqlInspector = sqlInspector;
+        _serviceProvider = serviceProvider;
     }
 
     public CachedSqlPermissionsOverview? GetCachedOverview(Guid integrationId)
@@ -148,7 +149,7 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to refresh SQL status for account {AccountId}", accountId);
+            _logger.LogWarning(ex, "Failed to refresh SQL status for account with the fuse Id {AccountId}", accountId);
         }
 
         return null;
@@ -263,7 +264,9 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
             }
 
             // Query SQL for actual permissions
-            var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
+            using var scope = _serviceProvider.CreateScope();
+            var sqlInspector = scope.ServiceProvider.GetRequiredService<IAccountSqlInspector>();
+            var (isSuccessful, actualPermissions, errorMessage) = await sqlInspector.GetPrincipalPermissionsAsync(
                 integration, principalName, ct);
 
             if (!isSuccessful || actualPermissions is null)
@@ -310,7 +313,9 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
 
         // Detect orphan principals (SQL principals not managed by any Fuse account)
         var orphanPrincipals = new List<SqlOrphanPrincipal>();
-        var (allPrincipalsSuccess, allPrincipals, _) = await _sqlInspector.GetAllPrincipalsAsync(integration, ct);
+        using var scope2 = _serviceProvider.CreateScope();
+        var sqlInspector2 = scope2.ServiceProvider.GetRequiredService<IAccountSqlInspector>();
+        var (allPrincipalsSuccess, allPrincipals, _) = await sqlInspector2.GetAllPrincipalsAsync(integration, ct);
         
         if (allPrincipalsSuccess && allPrincipals is not null)
         {
@@ -381,7 +386,9 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
         }
 
         // Query SQL for actual permissions
-        var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
+        using var scope = _serviceProvider.CreateScope();
+        var sqlInspector = scope.ServiceProvider.GetRequiredService<IAccountSqlInspector>();
+        var (isSuccessful, actualPermissions, errorMessage) = await sqlInspector.GetPrincipalPermissionsAsync(
             integration, principalName, ct);
 
         if (!isSuccessful || actualPermissions is null)
