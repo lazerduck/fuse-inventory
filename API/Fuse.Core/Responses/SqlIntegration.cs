@@ -23,3 +23,21 @@ public record SqlDatabasesResponse
 (
     IReadOnlyList<string> Databases
 );
+
+/// <summary>
+/// Response wrapper for cached permissions overview that includes caching metadata.
+/// </summary>
+public record CachedPermissionsOverviewResponse(
+    SqlIntegrationPermissionsOverviewResponse Overview,
+    DateTime? CachedAt,
+    bool IsCached
+);
+
+/// <summary>
+/// Response wrapper for cached account SQL status that includes caching metadata.
+/// </summary>
+public record CachedAccountSqlStatusResponse(
+    AccountSqlStatusResponse Status,
+    DateTime? CachedAt,
+    bool IsCached
+);

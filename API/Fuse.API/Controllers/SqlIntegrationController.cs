@@ -12,10 +12,12 @@ namespace Fuse.API.Controllers
     public class SqlIntegrationController : ControllerBase
     {
         private readonly ISqlIntegrationService _service;
+        private readonly ISqlPermissionsCache _cache;
 
-        public SqlIntegrationController(ISqlIntegrationService service)
+        public SqlIntegrationController(ISqlIntegrationService service, ISqlPermissionsCache cache)
         {
             _service = service;
+            _cache = cache;
         }
 
         [HttpGet]
@@ -32,10 +34,18 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("{id}/permissions-overview")]
-        [ProducesResponseType(200, Type = typeof(SqlIntegrationPermissionsOverviewResponse))]
+        [ProducesResponseType(200, Type = typeof(CachedPermissionsOverviewResponse))]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<SqlIntegrationPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
+        public async Task<ActionResult<CachedPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
         {
+            // Try to return cached data first
+            var cached = _cache.GetCachedOverview(id);
+            if (cached is not null)
+            {
+                return Ok(new CachedPermissionsOverviewResponse(cached.Overview, cached.CachedAt, IsCached: true));
+            }
+
+            // Fall back to fresh data if no cache available
             var result = await _service.GetPermissionsOverviewAsync(id, ct);
             if (!result.IsSuccess)
             {
@@ -45,7 +55,20 @@ namespace Fuse.API.Controllers
                     _ => BadRequest(new { error = result.Error })
                 };
             }
-            return Ok(result.Value);
+            return Ok(new CachedPermissionsOverviewResponse(result.Value!, CachedAt: null, IsCached: false));
+        }
+
+        [HttpPost("{id}/permissions-overview/refresh")]
+        [ProducesResponseType(200, Type = typeof(CachedPermissionsOverviewResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<CachedPermissionsOverviewResponse>> RefreshPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
+        {
+            var refreshed = await _cache.RefreshIntegrationAsync(id, ct);
+            if (refreshed is null)
+            {
+                return NotFound(new { error = $"SQL integration '{id}' not found or refresh failed." });
+            }
+            return Ok(new CachedPermissionsOverviewResponse(refreshed.Overview, refreshed.CachedAt, IsCached: true));
         }
 
         [HttpPost("{id}/accounts/{accountId}/resolve")]

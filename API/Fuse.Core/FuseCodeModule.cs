@@ -37,5 +37,10 @@ public static class FuseCodeModule
         // Register SQL Integration services
         services.AddScoped<ISqlIntegrationService, SqlIntegrationService>();
         services.AddScoped<ISqlConnectionValidator, SqlConnectionValidator>();
+
+        // Register SQL Permissions Cache service as both hosted service and singleton for cache queries
+        services.AddSingleton<SqlPermissionsCacheService>();
+        services.AddHostedService(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
+        services.AddSingleton<ISqlPermissionsCache>(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
     }
 }

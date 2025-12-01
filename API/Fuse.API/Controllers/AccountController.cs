@@ -12,10 +12,12 @@ namespace Fuse.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly ISqlPermissionsCache _cache;
 
-        public AccountController(IAccountService accountService)
+        public AccountController(IAccountService accountService, ISqlPermissionsCache cache)
         {
             _accountService = accountService;
+            _cache = cache;
         }
 
         [HttpGet]
@@ -35,10 +37,18 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("{id}/sql-status")]
-        [ProducesResponseType(200, Type = typeof(AccountSqlStatusResponse))]
+        [ProducesResponseType(200, Type = typeof(CachedAccountSqlStatusResponse))]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<AccountSqlStatusResponse>> GetAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
+        public async Task<ActionResult<CachedAccountSqlStatusResponse>> GetAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
         {
+            // Try to return cached data first
+            var cached = _cache.GetCachedAccountStatus(id);
+            if (cached is not null)
+            {
+                return Ok(new CachedAccountSqlStatusResponse(cached.Status, cached.CachedAt, IsCached: true));
+            }
+
+            // Fall back to fresh data if no cache available
             var result = await _accountService.GetAccountSqlStatusAsync(id, ct);
             if (!result.IsSuccess)
             {
@@ -49,7 +59,20 @@ namespace Fuse.API.Controllers
                 };
             }
 
-            return Ok(result.Value);
+            return Ok(new CachedAccountSqlStatusResponse(result.Value!, CachedAt: null, IsCached: false));
+        }
+
+        [HttpPost("{id}/sql-status/refresh")]
+        [ProducesResponseType(200, Type = typeof(CachedAccountSqlStatusResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<CachedAccountSqlStatusResponse>> RefreshAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
+        {
+            var refreshed = await _cache.RefreshAccountAsync(id, ct);
+            if (refreshed is null)
+            {
+                return NotFound(new { error = $"Account '{id}' not found or refresh failed." });
+            }
+            return Ok(new CachedAccountSqlStatusResponse(refreshed.Status, refreshed.CachedAt, IsCached: true));
         }
 
         [HttpPost]
