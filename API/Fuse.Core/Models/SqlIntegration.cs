@@ -6,6 +6,7 @@ public record SqlIntegration
     string Name,
     Guid DataStoreId,
     string ConnectionString,
+    Guid? AccountId,
     SqlPermissions Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt

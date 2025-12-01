@@ -131,12 +131,25 @@
           >
             <template #body-cell-accountName="props">
               <q-td :props="props">
-                <router-link 
-                  :to="{ name: 'accountEdit', params: { id: props.row.accountId } }"
-                  class="account-link"
-                >
-                  {{ props.row.accountName ?? '—' }}
-                </router-link>
+                <div class="row items-center no-wrap">
+                  <router-link 
+                    :to="{ name: 'accountEdit', params: { id: props.row.accountId } }"
+                    class="account-link"
+                  >
+                    {{ props.row.accountName ?? '—' }}
+                  </router-link>
+                  <q-badge 
+                    v-if="isIntegrationAccount(props.row.accountId)" 
+                    color="blue" 
+                    label="Integration Account" 
+                    class="q-ml-sm"
+                  >
+                    <q-tooltip>
+                      This account is used by the SQL integration for authentication. 
+                      Modifying this account may affect the integration's ability to connect.
+                    </q-tooltip>
+                  </q-badge>
+                </div>
               </q-td>
             </template>
             <template #body-cell-status="props">
@@ -959,6 +972,18 @@ const hasCreatePermission = computed(() => {
   const permStr = String(integration.permissions)
   return permStr.includes('Create')
 })
+
+// Get the account ID used by this integration (if using account-based auth)
+const integrationAccountId = computed(() => {
+  const integration = sqlIntegrations.value?.find(i => i.id === integrationId.value)
+  return integration?.accountId ?? null
+})
+
+// Check if an account is the integration's own account
+function isIntegrationAccount(accountId: string | undefined): boolean {
+  if (!accountId || !integrationAccountId.value) return false
+  return accountId === integrationAccountId.value
+}
 
 // Check if user can resolve drift based on security level
 // Level None: anyone can resolve

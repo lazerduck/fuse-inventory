@@ -133,7 +133,9 @@ const router = useRouter()
 interface SqlIntegrationFormModel {
   name: string
   dataStoreId: string
-  connectionString: string
+  connectionString?: string
+  accountId?: string
+  manualPassword?: string
 }
 
 const client = useFuseClient()
@@ -231,14 +233,18 @@ function handleFormSubmit(values: SqlIntegrationFormModel) {
     const payload = Object.assign(new UpdateSqlIntegration(), {
       name: values.name || undefined,
       dataStoreId: values.dataStoreId || undefined,
-      connectionString: values.connectionString || undefined
+      connectionString: values.connectionString || undefined,
+      accountId: values.accountId || undefined,
+      manualPassword: values.manualPassword || undefined
     })
     updateMutation.mutate({ id: selectedIntegration.value.id, payload })
   } else {
     const payload = Object.assign(new CreateSqlIntegration(), {
       name: values.name || undefined,
       dataStoreId: values.dataStoreId || undefined,
-      connectionString: values.connectionString || undefined
+      connectionString: values.connectionString || undefined,
+      accountId: values.accountId || undefined,
+      manualPassword: values.manualPassword || undefined
     })
     createMutation.mutate(payload)
   }

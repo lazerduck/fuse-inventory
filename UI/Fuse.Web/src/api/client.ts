@@ -7,579 +7,7 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
-export interface IFuseApiClient {
-
-    /**
-     * @return OK
-     */
-    accountAll(signal?: AbortSignal): Promise<Account[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account>;
-
-    /**
-     * @return OK
-     */
-    accountGET(id: string, signal?: AbortSignal): Promise<Account>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account>;
-
-    /**
-     * @return No Content
-     */
-    accountDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
-
-    /**
-     * @return OK
-     */
-    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
-
-    /**
-     * @return No Content
-     */
-    grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    applicationAll(signal?: AbortSignal): Promise<Application[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application>;
-
-    /**
-     * @return OK
-     */
-    applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application>;
-
-    /**
-     * @return No Content
-     */
-    applicationDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
-
-    /**
-     * @return No Content
-     */
-    instancesDELETE(appId: string, instanceId: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
-
-    /**
-     * @return No Content
-     */
-    pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
-
-    /**
-     * @return No Content
-     */
-    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param startTime (optional) 
-     * @param endTime (optional) 
-     * @param action (optional) 
-     * @param area (optional) 
-     * @param userName (optional) 
-     * @param entityId (optional) 
-     * @param searchText (optional) 
-     * @param page (optional) 
-     * @param pageSize (optional) 
-     * @return OK
-     */
-    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult>;
-
-    /**
-     * @return OK
-     */
-    audit2(id: string, signal?: AbortSignal): Promise<AuditLog>;
-
-    /**
-     * @return OK
-     */
-    actions(signal?: AbortSignal): Promise<string[]>;
-
-    /**
-     * @return OK
-     */
-    areas(signal?: AbortSignal): Promise<string[]>;
-
-    /**
-     * @param format (optional) 
-     * @return OK
-     */
-    export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
-
-    /**
-     * @param format (optional) 
-     * @return OK
-     */
-    template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
-
-    /**
-     * @param format (optional) 
-     * @param file (optional) 
-     * @return OK
-     */
-    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    dataStoreAll(signal?: AbortSignal): Promise<DataStore[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
-
-    /**
-     * @return OK
-     */
-    dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
-
-    /**
-     * @return No Content
-     */
-    dataStoreDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
-
-    /**
-     * @return No Content
-     */
-    environmentDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
-
-    /**
-     * @return OK
-     */
-    externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
-
-    /**
-     * @return OK
-     */
-    externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
-
-    /**
-     * @return No Content
-     */
-    externalResourceDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    identityAll(signal?: AbortSignal): Promise<Identity[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
-
-    /**
-     * @return OK
-     */
-    identityGET(id: string, signal?: AbortSignal): Promise<Identity>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
-
-    /**
-     * @return No Content
-     */
-    identityDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
-
-    /**
-     * @return No Content
-     */
-    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
-
-    /**
-     * @return OK
-     */
-    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
-
-    /**
-     * @return No Content
-     */
-    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    platformAll(signal?: AbortSignal): Promise<Platform[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
-
-    /**
-     * @return OK
-     */
-    platformGET(id: string, signal?: AbortSignal): Promise<Platform>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
-
-    /**
-     * @return No Content
-     */
-    platformDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
-
-    /**
-     * @return OK
-     */
-    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
-
-    /**
-     * @return No Content
-     */
-    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param version (optional) 
-     * @return OK
-     */
-    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse>;
-
-    /**
-     * @return OK
-     */
-    state(signal?: AbortSignal): Promise<SecurityStateResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo>;
-
-    /**
-     * @return OK
-     */
-    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession>;
-
-    /**
-     * @param body (optional) 
-     * @return No Content
-     */
-    logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse>;
-
-    /**
-     * @return No Content
-     */
-    accountsDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
-
-    /**
-     * @return OK
-     */
-    sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
-
-    /**
-     * @return No Content
-     */
-    sqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
-
-    /**
-     * @return OK
-     */
-    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
-
-    /**
-     * @return OK
-     */
-    resolve(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse>;
-
-    /**
-     * @return OK
-     */
-    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult>;
-
-    /**
-     * @return OK
-     */
-    databases(id: string, signal?: AbortSignal): Promise<SqlDatabasesResponse>;
-
-    /**
-     * @return OK
-     */
-    tagAll(signal?: AbortSignal): Promise<Tag[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag>;
-
-    /**
-     * @return OK
-     */
-    tagGET(id: string, signal?: AbortSignal): Promise<Tag>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag>;
-
-    /**
-     * @return No Content
-     */
-    tagDELETE(id: string, signal?: AbortSignal): Promise<void>;
-}
-
-export class FuseApiClient implements IFuseApiClient {
+export class FuseApiClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -592,13 +20,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    accountAll(signal?: AbortSignal): Promise<Account[]> {
+    accountAll(): Promise<Account[]> {
         let url_ = this.baseUrl + "/api/Account";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -638,7 +65,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account> {
+    accountPOST(body: CreateAccount | undefined): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -647,7 +74,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -687,7 +113,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    accountGET(id: string, signal?: AbortSignal): Promise<Account> {
+    accountGET(id: string): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -696,7 +122,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -736,7 +161,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account> {
+    accountPUT(id: string, body: UpdateAccount | undefined): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -748,7 +173,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -795,7 +219,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    accountDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    accountDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -804,7 +228,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -839,7 +262,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
+    sqlStatus(id: string): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -848,7 +271,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -887,7 +309,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
+    refresh(id: string): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status/refresh";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -896,7 +318,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -943,7 +364,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
+    grantPOST(accountId: string, body: CreateAccountGrant | undefined): Promise<Grant> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -955,7 +376,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1003,7 +423,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
+    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined): Promise<Grant> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant/{grantId}";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -1018,7 +438,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1065,7 +484,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void> {
+    grantDELETE(accountId: string, grantId: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant/{grantId}";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -1077,7 +496,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -1112,13 +530,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    applicationAll(signal?: AbortSignal): Promise<Application[]> {
+    applicationAll(): Promise<Application[]> {
         let url_ = this.baseUrl + "/api/Application";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1158,7 +575,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application> {
+    applicationPOST(body: CreateApplication | undefined): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1167,7 +584,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1214,7 +630,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    applicationGET(id: string, signal?: AbortSignal): Promise<Application> {
+    applicationGET(id: string): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1223,7 +639,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1263,7 +678,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application> {
+    applicationPUT(id: string, body: UpdateApplication | undefined): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1275,7 +690,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1329,7 +743,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    applicationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    applicationDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1338,7 +752,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -1374,7 +787,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
+    instancesPOST(appId: string, body: CreateApplicationInstance | undefined): Promise<ApplicationInstance> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1386,7 +799,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1434,7 +846,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
+    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined): Promise<ApplicationInstance> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1449,7 +861,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1496,7 +907,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    instancesDELETE(appId: string, instanceId: string, signal?: AbortSignal): Promise<void> {
+    instancesDELETE(appId: string, instanceId: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1508,7 +919,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -1543,7 +953,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse> {
+    health(appId: string, instanceId: string): Promise<HealthStatusResponse> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/health";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1555,7 +965,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1595,7 +1004,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
+    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined): Promise<ApplicationPipeline> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1607,7 +1016,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1662,7 +1070,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
+    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined): Promise<ApplicationPipeline> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines/{pipelineId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1677,7 +1085,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1731,7 +1138,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void> {
+    pipelinesDELETE(appId: string, pipelineId: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines/{pipelineId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1743,7 +1150,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -1779,7 +1185,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
+    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined): Promise<ApplicationInstanceDependency> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1794,7 +1200,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1842,7 +1247,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
+    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined): Promise<ApplicationInstanceDependency> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies/{dependencyId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1860,7 +1265,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1907,7 +1311,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void> {
+    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies/{dependencyId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1922,7 +1326,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -1966,7 +1369,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult> {
+    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined): Promise<AuditLogResult> {
         let url_ = this.baseUrl + "/api/Audit?";
         if (startTime === null)
             throw new globalThis.Error("The parameter 'startTime' cannot be null.");
@@ -2008,7 +1411,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2040,7 +1442,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    audit2(id: string, signal?: AbortSignal): Promise<AuditLog> {
+    audit2(id: string): Promise<AuditLog> {
         let url_ = this.baseUrl + "/api/Audit/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2049,7 +1451,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2088,13 +1489,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    actions(signal?: AbortSignal): Promise<string[]> {
+    actions(): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Audit/actions";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2133,13 +1533,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    areas(signal?: AbortSignal): Promise<string[]> {
+    areas(): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Audit/areas";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2179,7 +1578,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param format (optional) 
      * @return OK
      */
-    export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
+    export(format: string | undefined): Promise<FileResponse> {
         let url_ = this.baseUrl + "/api/Config/export?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -2189,7 +1588,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2233,7 +1631,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param format (optional) 
      * @return OK
      */
-    template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
+    template(format: string | undefined): Promise<FileResponse> {
         let url_ = this.baseUrl + "/api/Config/template?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -2243,7 +1641,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2288,7 +1685,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param file (optional) 
      * @return OK
      */
-    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
+    import(format: string | undefined, file: FileParameter | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/Config/import?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -2305,7 +1702,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
             }
         };
@@ -2340,13 +1736,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    dataStoreAll(signal?: AbortSignal): Promise<DataStore[]> {
+    dataStoreAll(): Promise<DataStore[]> {
         let url_ = this.baseUrl + "/api/DataStore";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2386,7 +1781,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
+    dataStorePOST(body: CreateDataStore | undefined): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2395,7 +1790,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2442,7 +1836,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore> {
+    dataStoreGET(id: string): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2451,7 +1845,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2491,7 +1884,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
+    dataStorePUT(id: string, body: UpdateDataStore | undefined): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2503,7 +1896,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2557,7 +1949,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    dataStoreDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    dataStoreDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2566,7 +1958,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -2601,13 +1992,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]> {
+    environmentAll(): Promise<EnvironmentInfo[]> {
         let url_ = this.baseUrl + "/api/Environment";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2647,7 +2037,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
+    environmentPOST(body: CreateEnvironment | undefined): Promise<EnvironmentInfo> {
         let url_ = this.baseUrl + "/api/Environment";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2656,7 +2046,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2704,7 +2093,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
+    environmentPUT(id: string, body: UpdateEnvironment | undefined): Promise<EnvironmentInfo> {
         let url_ = this.baseUrl + "/api/Environment/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2716,7 +2105,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2756,7 +2144,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    environmentDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    environmentDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Environment/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2765,7 +2153,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -2801,7 +2188,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
+    applyAutomation(body: ApplyEnvironmentAutomation | undefined): Promise<number> {
         let url_ = this.baseUrl + "/api/Environment/apply-automation";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2810,7 +2197,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2851,13 +2237,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]> {
+    externalResourceAll(): Promise<ExternalResource[]> {
         let url_ = this.baseUrl + "/api/ExternalResource";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2897,7 +2282,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
+    externalResourcePOST(body: CreateExternalResource | undefined): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2906,7 +2291,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2953,7 +2337,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource> {
+    externalResourceGET(id: string): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2962,7 +2346,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3002,7 +2385,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
+    externalResourcePUT(id: string, body: UpdateExternalResource | undefined): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3014,7 +2397,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3068,7 +2450,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    externalResourceDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    externalResourceDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3077,7 +2459,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -3112,13 +2493,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    identityAll(signal?: AbortSignal): Promise<Identity[]> {
+    identityAll(): Promise<Identity[]> {
         let url_ = this.baseUrl + "/api/Identity";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3158,7 +2538,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
+    identityPOST(body: CreateIdentity | undefined): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3167,7 +2547,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3207,7 +2586,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    identityGET(id: string, signal?: AbortSignal): Promise<Identity> {
+    identityGET(id: string): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3216,7 +2595,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3256,7 +2634,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
+    identityPUT(id: string, body: UpdateIdentity | undefined): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3268,7 +2646,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3315,7 +2692,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    identityDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    identityDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3324,7 +2701,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -3367,7 +2743,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
+    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined): Promise<IdentityAssignment> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -3379,7 +2755,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3427,7 +2802,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
+    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined): Promise<IdentityAssignment> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -3442,7 +2817,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3489,7 +2863,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void> {
+    assignmentDELETE(identityId: string, assignmentId: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -3501,7 +2875,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -3536,13 +2909,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]> {
+    kumaIntegrationAll(): Promise<KumaIntegrationResponse[]> {
         let url_ = this.baseUrl + "/api/KumaIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3582,7 +2954,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+    kumaIntegrationPOST(body: CreateKumaIntegration | undefined): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3591,7 +2963,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3631,7 +3002,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+    kumaIntegrationGET(id: string): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3640,7 +3011,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3680,7 +3050,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
+    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3692,7 +3062,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3739,7 +3108,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    kumaIntegrationDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3748,7 +3117,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -3783,13 +3151,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    platformAll(signal?: AbortSignal): Promise<Platform[]> {
+    platformAll(): Promise<Platform[]> {
         let url_ = this.baseUrl + "/api/Platform";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3829,7 +3196,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
+    platformPOST(body: CreatePlatform | undefined): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3838,7 +3205,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3885,7 +3251,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    platformGET(id: string, signal?: AbortSignal): Promise<Platform> {
+    platformGET(id: string): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3894,7 +3260,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3934,7 +3299,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
+    platformPUT(id: string, body: UpdatePlatform | undefined): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3946,7 +3311,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4000,7 +3364,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    platformDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    platformDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4009,7 +3373,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -4044,13 +3407,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
+    secretProviderAll(): Promise<SecretProviderResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4090,7 +3452,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
+    secretProviderPOST(body: CreateSecretProvider | undefined): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4099,7 +3461,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4139,7 +3500,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse> {
+    secretProviderGET(id: string): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4148,7 +3509,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4188,7 +3548,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
+    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4200,7 +3560,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4247,7 +3606,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    secretProviderDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4256,7 +3615,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -4299,7 +3657,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void> {
+    testConnection(body: TestSecretProviderConnection | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/test-connection";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4308,7 +3666,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -4344,7 +3701,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]> {
+    secretsAll(providerId: string): Promise<SecretMetadataResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -4353,7 +3710,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4407,7 +3763,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void> {
+    secrets(providerId: string, body: CreateSecret | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -4419,7 +3775,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -4463,7 +3818,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void> {
+    rotate(providerId: string, secretName: string, body: RotateSecret | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/rotate";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -4478,7 +3833,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -4522,7 +3876,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param version (optional) 
      * @return OK
      */
-    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse> {
+    reveal(providerId: string, secretName: string, version: string | undefined): Promise<SecretValueResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/reveal?";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -4538,7 +3892,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4591,13 +3944,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    state(signal?: AbortSignal): Promise<SecurityStateResponse> {
+    state(): Promise<SecurityStateResponse> {
         let url_ = this.baseUrl + "/api/Security/state";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4630,7 +3982,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings> {
+    settings(body: UpdateSecuritySettings | undefined): Promise<SecuritySettings> {
         let url_ = this.baseUrl + "/api/Security/settings";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4639,7 +3991,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4694,7 +4045,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo> {
+    accountsPOST(body: CreateSecurityUser | undefined): Promise<SecurityUserInfo> {
         let url_ = this.baseUrl + "/api/Security/accounts";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4703,7 +4054,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4757,13 +4107,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]> {
+    accountsAll(): Promise<SecurityUserResponse[]> {
         let url_ = this.baseUrl + "/api/Security/accounts";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4803,7 +4152,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession> {
+    login(body: LoginSecurityUser | undefined): Promise<LoginSession> {
         let url_ = this.baseUrl + "/api/Security/login";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4812,7 +4161,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4860,7 +4208,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return No Content
      */
-    logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void> {
+    logout(body: LogoutSecurityUser | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/Security/logout";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4869,7 +4217,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -4906,7 +4253,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse> {
+    accountsPATCH(id: string, body: UpdateUser | undefined): Promise<SecurityUserResponse> {
         let url_ = this.baseUrl + "/api/Security/accounts/{Id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4918,7 +4265,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PATCH",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4965,7 +4311,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    accountsDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    accountsDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Security/accounts/{Id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4974,7 +4320,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -5016,13 +4361,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]> {
+    sqlIntegrationAll(): Promise<SqlIntegrationResponse[]> {
         let url_ = this.baseUrl + "/api/SqlIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5062,7 +4406,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
+    sqlIntegrationPOST(body: CreateSqlIntegration | undefined): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5071,7 +4415,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5125,7 +4468,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
+    sqlIntegrationGET(id: string): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5134,7 +4477,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5174,7 +4516,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
+    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5186,7 +4528,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5240,7 +4581,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    sqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    sqlIntegrationDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5249,7 +4590,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -5284,7 +4624,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
+    permissionsOverview(id: string): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5293,7 +4633,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5332,7 +4671,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
+    refresh2(id: string): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview/refresh";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5341,7 +4680,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5380,7 +4718,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    resolve(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse> {
+    resolve(id: string, accountId: string): Promise<ResolveDriftResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/resolve";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5392,7 +4730,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5438,7 +4775,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse> {
+    import2(id: string, accountId: string): Promise<ImportPermissionsResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/import";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5450,7 +4787,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5497,7 +4833,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
+    import3(id: string, body: ImportOrphanPrincipalRequest | undefined): Promise<ImportOrphanPrincipalResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/orphan-principals/import";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5509,7 +4845,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5564,7 +4899,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse> {
+    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined): Promise<CreateSqlAccountResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/create";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5579,7 +4914,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5634,7 +4968,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse> {
+    bulkResolve(id: string, body: BulkResolveRequest | undefined): Promise<BulkResolveResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/bulk-resolve";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5646,7 +4980,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5694,7 +5027,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult> {
+    testConnection2(body: TestSqlConnection | undefined): Promise<SqlConnectionTestResult> {
         let url_ = this.baseUrl + "/api/SqlIntegration/test-connection";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5703,7 +5036,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5743,7 +5075,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    databases(id: string, signal?: AbortSignal): Promise<SqlDatabasesResponse> {
+    databases(id: string): Promise<SqlDatabasesResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/databases";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5752,7 +5084,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5798,13 +5129,12 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    tagAll(signal?: AbortSignal): Promise<Tag[]> {
+    tagAll(): Promise<Tag[]> {
         let url_ = this.baseUrl + "/api/Tag";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5844,7 +5174,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag> {
+    tagPOST(body: CreateTag | undefined): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5853,7 +5183,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5900,7 +5229,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    tagGET(id: string, signal?: AbortSignal): Promise<Tag> {
+    tagGET(id: string): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5909,7 +5238,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
-            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5949,7 +5277,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag> {
+    tagPUT(id: string, body: UpdateTag | undefined): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5961,7 +5289,6 @@ export class FuseApiClient implements IFuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
-            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6015,7 +5342,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return No Content
      */
-    tagDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    tagDELETE(id: string): Promise<void> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -6024,7 +5351,6 @@ export class FuseApiClient implements IFuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
-            signal,
             headers: {
             }
         };
@@ -8233,6 +7559,8 @@ export class CreateSqlIntegration implements ICreateSqlIntegration {
     name?: string | undefined;
     dataStoreId?: string;
     connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
 
     constructor(data?: ICreateSqlIntegration) {
         if (data) {
@@ -8248,6 +7576,8 @@ export class CreateSqlIntegration implements ICreateSqlIntegration {
             this.name = _data["Name"];
             this.dataStoreId = _data["DataStoreId"];
             this.connectionString = _data["ConnectionString"];
+            this.accountId = _data["AccountId"];
+            this.manualPassword = _data["ManualPassword"];
         }
     }
 
@@ -8263,6 +7593,8 @@ export class CreateSqlIntegration implements ICreateSqlIntegration {
         data["Name"] = this.name;
         data["DataStoreId"] = this.dataStoreId;
         data["ConnectionString"] = this.connectionString;
+        data["AccountId"] = this.accountId;
+        data["ManualPassword"] = this.manualPassword;
         return data;
     }
 }
@@ -8271,6 +7603,8 @@ export interface ICreateSqlIntegration {
     name?: string | undefined;
     dataStoreId?: string;
     connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
 }
 
 export class CreateTag implements ICreateTag {
@@ -10281,6 +9615,7 @@ export class SqlIntegrationResponse implements ISqlIntegrationResponse {
     id?: string;
     name?: string | undefined;
     dataStoreId?: string;
+    accountId?: string | undefined;
     permissions?: SqlPermissions;
     createdAt?: Date;
     updatedAt?: Date;
@@ -10299,6 +9634,7 @@ export class SqlIntegrationResponse implements ISqlIntegrationResponse {
             this.id = _data["Id"];
             this.name = _data["Name"];
             this.dataStoreId = _data["DataStoreId"];
+            this.accountId = _data["AccountId"];
             this.permissions = _data["Permissions"];
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
@@ -10317,6 +9653,7 @@ export class SqlIntegrationResponse implements ISqlIntegrationResponse {
         data["Id"] = this.id;
         data["Name"] = this.name;
         data["DataStoreId"] = this.dataStoreId;
+        data["AccountId"] = this.accountId;
         data["Permissions"] = this.permissions;
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
@@ -10328,6 +9665,7 @@ export interface ISqlIntegrationResponse {
     id?: string;
     name?: string | undefined;
     dataStoreId?: string;
+    accountId?: string | undefined;
     permissions?: SqlPermissions;
     createdAt?: Date;
     updatedAt?: Date;
@@ -11686,6 +11024,8 @@ export class UpdateSqlIntegration implements IUpdateSqlIntegration {
     name?: string | undefined;
     dataStoreId?: string;
     connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
 
     constructor(data?: IUpdateSqlIntegration) {
         if (data) {
@@ -11702,6 +11042,8 @@ export class UpdateSqlIntegration implements IUpdateSqlIntegration {
             this.name = _data["Name"];
             this.dataStoreId = _data["DataStoreId"];
             this.connectionString = _data["ConnectionString"];
+            this.accountId = _data["AccountId"];
+            this.manualPassword = _data["ManualPassword"];
         }
     }
 
@@ -11718,6 +11060,8 @@ export class UpdateSqlIntegration implements IUpdateSqlIntegration {
         data["Name"] = this.name;
         data["DataStoreId"] = this.dataStoreId;
         data["ConnectionString"] = this.connectionString;
+        data["AccountId"] = this.accountId;
+        data["ManualPassword"] = this.manualPassword;
         return data;
     }
 }
@@ -11727,6 +11071,8 @@ export interface IUpdateSqlIntegration {
     name?: string | undefined;
     dataStoreId?: string;
     connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
 }
 
 export class UpdateTag implements IUpdateTag {

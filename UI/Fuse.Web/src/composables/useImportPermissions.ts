@@ -8,7 +8,7 @@ export function useImportPermissions() {
 
   const mutation = useMutation({
     mutationFn: (params: { integrationId: string; accountId: string }): Promise<ImportPermissionsResponse> =>
-      client.importAccountPermissions(params.integrationId, params.accountId),
+      client.import2(params.integrationId, params.accountId),
     onSuccess: (_data, variables) => {
       // Invalidate the permissions overview to refresh the data
       queryClient.invalidateQueries({

@@ -42,7 +42,7 @@ public class AccountSqlInspectorMoreTests : IAsyncLifetime
 
         var integration = new SqlIntegration(
             Guid.NewGuid(), "RW", Guid.NewGuid(),
-            _fixture.MasterConnectionString, SqlPermissions.Read,
+            _fixture.MasterConnectionString, null, SqlPermissions.Read,
             DateTime.UtcNow, DateTime.UtcNow);
 
         var (ok, perms, err) = await _inspector.GetPrincipalPermissionsAsync(integration, user);
@@ -60,7 +60,7 @@ public class AccountSqlInspectorMoreTests : IAsyncLifetime
     {
         var integration = new SqlIntegration(
             Guid.NewGuid(), "NX", Guid.NewGuid(),
-            _fixture.MasterConnectionString, SqlPermissions.Read,
+            _fixture.MasterConnectionString, null, SqlPermissions.Read,
             DateTime.UtcNow, DateTime.UtcNow);
 
         var (ok, perms, err) = await _inspector.GetPrincipalPermissionsAsync(integration, $"nope_{Guid.NewGuid():N}");
@@ -92,7 +92,7 @@ public class AccountSqlInspectorMoreTests : IAsyncLifetime
 
         var integration = new SqlIntegration(
             Guid.NewGuid(), "Multi", Guid.NewGuid(),
-            _fixture.MasterConnectionString, SqlPermissions.Read,
+            _fixture.MasterConnectionString, null, SqlPermissions.Read,
             DateTime.UtcNow, DateTime.UtcNow);
 
         var (ok, perms, err) = await _inspector.GetPrincipalPermissionsAsync(integration, user);

@@ -7,6 +7,7 @@ public record SqlIntegrationResponse
     Guid Id,
     string Name,
     Guid DataStoreId,
+    Guid? AccountId,
     SqlPermissions Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt
