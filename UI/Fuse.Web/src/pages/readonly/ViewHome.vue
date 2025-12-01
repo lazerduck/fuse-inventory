@@ -14,7 +14,7 @@
         v-model="searchQuery"
         :is-loading="isLoading"
         :show-search-button="true"
-        placeholder="Search applications, instances, accounts, data stores..."
+        placeholder="Search applications, instances, platforms, accounts, data stores..."
         @search="handleSearch"
         @clear="handleClear"
       />

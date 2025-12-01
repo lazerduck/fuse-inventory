@@ -5,6 +5,7 @@ import { useIdentities } from './useIdentities'
 import { useDataStores } from './useDataStores'
 import { useExternalResources } from './useExternalResources'
 import { useEnvironments } from './useEnvironments'
+import { usePlatforms } from './usePlatforms'
 
 export type SearchResultType = 
   | 'app' 
@@ -14,6 +15,7 @@ export type SearchResultType =
   | 'identity' 
   | 'datastore' 
   | 'external'
+  | 'platform'
 
 export interface SearchResult {
   id: string
@@ -37,7 +39,8 @@ const typeConfig: Record<SearchResultType, { label: string; icon: string }> = {
   account: { label: 'Accounts', icon: 'vpn_key' },
   identity: { label: 'Identities', icon: 'badge' },
   datastore: { label: 'Data Stores', icon: 'storage' },
-  external: { label: 'External Resources', icon: 'hub' }
+  external: { label: 'External Resources', icon: 'hub' },
+  platform: { label: 'Platforms', icon: 'computer' }
 }
 
 function fuzzyMatch(text: string, query: string): boolean {
@@ -60,6 +63,7 @@ export function useReadonlySearch() {
   const dataStoresQuery = useDataStores()
   const externalResourcesQuery = useExternalResources()
   const environmentsQuery = useEnvironments()
+  const platformsQuery = usePlatforms()
 
   const isLoading = computed(() => 
     applicationsQuery.isLoading.value ||
@@ -67,7 +71,8 @@ export function useReadonlySearch() {
     identitiesQuery.isLoading.value ||
     dataStoresQuery.isLoading.value ||
     externalResourcesQuery.isLoading.value ||
-    environmentsQuery.isLoading.value
+    environmentsQuery.isLoading.value ||
+    platformsQuery.isLoading.value
   )
 
   const environmentLookup = computed<Record<string, string>>(() => {
@@ -202,6 +207,23 @@ export function useReadonlySearch() {
       }
     }
 
+    // Search platforms
+    const platforms = platformsQuery.data.value ?? []
+    for (const platform of platforms) {
+      if (!platform.id) continue
+      
+      const platformName = platform.displayName ?? platform.dnsName ?? ''
+      if (fuzzyMatch(platformName, query) || fuzzyMatch(platform.notes ?? '', query)) {
+        results.push({
+          id: platform.id,
+          type: 'platform',
+          name: platformName || 'Unnamed Platform',
+          subtitle: platform.kind ?? undefined,
+          route: `/view/platform/${platform.id}`
+        })
+      }
+    }
+
     return results
   })
 
@@ -217,7 +239,7 @@ export function useReadonlySearch() {
     }
 
     // Order by type
-    const typeOrder: SearchResultType[] = ['app', 'instance', 'datastore', 'external', 'account', 'identity', 'dependency']
+    const typeOrder: SearchResultType[] = ['app', 'instance', 'platform', 'datastore', 'external', 'account', 'identity', 'dependency']
     
     for (const type of typeOrder) {
       const results = resultsByType.get(type)
