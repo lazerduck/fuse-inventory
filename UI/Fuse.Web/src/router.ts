@@ -159,6 +159,11 @@ const router = createRouter({
       path: '/view/external/:id',
       name: 'viewExternal',
       component: () => import('./pages/readonly/ExternalView.vue')
+    },
+    {
+      path: '/view/platform/:id',
+      name: 'viewPlatform',
+      component: () => import('./pages/readonly/PlatformView.vue')
     }
   ]
 })
