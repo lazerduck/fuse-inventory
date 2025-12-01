@@ -39,7 +39,12 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    sqlStatus(id: string, signal?: AbortSignal): Promise<AccountSqlStatusResponse>;
+    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
+
+    /**
+     * @return OK
+     */
+    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
 
     /**
      * @param body (optional) 
@@ -500,7 +505,12 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    permissionsOverview(id: string, signal?: AbortSignal): Promise<SqlIntegrationPermissionsOverviewResponse>;
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
+
+    /**
+     * @return OK
+     */
+    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
 
     /**
      * @return OK
@@ -510,13 +520,13 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    importAccountPermissions(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
+    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    importOrphanPrincipal(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
+    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
 
     /**
      * @param body (optional) 
@@ -829,7 +839,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    sqlStatus(id: string, signal?: AbortSignal): Promise<AccountSqlStatusResponse> {
+    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -849,14 +859,14 @@ export class FuseApiClient implements IFuseApiClient {
         });
     }
 
-    protected processSqlStatus(response: Response): Promise<AccountSqlStatusResponse> {
+    protected processSqlStatus(response: Response): Promise<CachedAccountSqlStatusResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = AccountSqlStatusResponse.fromJS(resultData200);
+            result200 = CachedAccountSqlStatusResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status === 404) {
@@ -871,7 +881,62 @@ export class FuseApiClient implements IFuseApiClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<AccountSqlStatusResponse>(null as any);
+        return Promise.resolve<CachedAccountSqlStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
+        let url_ = this.baseUrl + "/api/Account/{id}/sql-status/refresh";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRefresh(_response);
+        });
+    }
+
+    protected processRefresh(response: Response): Promise<CachedAccountSqlStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CachedAccountSqlStatusResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CachedAccountSqlStatusResponse>(null as any);
     }
 
     /**
@@ -5219,7 +5284,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    permissionsOverview(id: string, signal?: AbortSignal): Promise<SqlIntegrationPermissionsOverviewResponse> {
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5239,14 +5304,14 @@ export class FuseApiClient implements IFuseApiClient {
         });
     }
 
-    protected processPermissionsOverview(response: Response): Promise<SqlIntegrationPermissionsOverviewResponse> {
+    protected processPermissionsOverview(response: Response): Promise<CachedPermissionsOverviewResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = SqlIntegrationPermissionsOverviewResponse.fromJS(resultData200);
+            result200 = CachedPermissionsOverviewResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status === 404) {
@@ -5261,7 +5326,55 @@ export class FuseApiClient implements IFuseApiClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<SqlIntegrationPermissionsOverviewResponse>(null as any);
+        return Promise.resolve<CachedPermissionsOverviewResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview/refresh";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRefresh2(_response);
+        });
+    }
+
+    protected processRefresh2(response: Response): Promise<CachedPermissionsOverviewResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CachedPermissionsOverviewResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CachedPermissionsOverviewResponse>(null as any);
     }
 
     /**
@@ -5320,6 +5433,131 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<ResolveDriftResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/import";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        if (accountId === undefined || accountId === null)
+            throw new globalThis.Error("The parameter 'accountId' must be defined.");
+        url_ = url_.replace("{accountId}", encodeURIComponent("" + accountId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processImport2(_response);
+        });
+    }
+
+    protected processImport2(response: Response): Promise<ImportPermissionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ImportPermissionsResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ImportPermissionsResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
+        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/orphan-principals/import";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processImport3(_response);
+        });
+    }
+
+    protected processImport3(response: Response): Promise<ImportOrphanPrincipalResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ImportOrphanPrincipalResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ImportOrphanPrincipalResponse>(null as any);
     }
 
     /**
@@ -5390,131 +5628,6 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<CreateSqlAccountResponse>(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    importAccountPermissions(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse> {
-        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/import";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        if (accountId === undefined || accountId === null)
-            throw new globalThis.Error("The parameter 'accountId' must be defined.");
-        url_ = url_.replace("{accountId}", encodeURIComponent("" + accountId));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "POST",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processImportAccountPermissions(_response);
-        });
-    }
-
-    protected processImportAccountPermissions(response: Response): Promise<ImportPermissionsResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ImportPermissionsResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ImportPermissionsResponse>(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    importOrphanPrincipal(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
-        let url_ = this.baseUrl + "/api/SqlIntegration/{id}/orphan-principals/import";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processImportOrphanPrincipal(_response);
-        });
-    }
-
-    protected processImportOrphanPrincipal(response: Response): Promise<ImportOrphanPrincipalResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ImportOrphanPrincipalResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            let result409: any = null;
-            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result409 = ProblemDetails.fromJS(resultData409);
-            return throwException("Conflict", status, _responseText, _headers, result409);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ImportOrphanPrincipalResponse>(null as any);
     }
 
     /**
@@ -6517,6 +6630,8 @@ export enum AuditAction {
     SqlIntegrationDriftResolved = "SqlIntegrationDriftResolved",
     SqlAccountCreated = "SqlAccountCreated",
     SqlIntegrationBulkResolved = "SqlIntegrationBulkResolved",
+    SqlPermissionsImported = "SqlPermissionsImported",
+    SqlOrphanPrincipalImported = "SqlOrphanPrincipalImported",
 }
 
 export enum AuditArea {
@@ -6874,174 +6989,6 @@ export interface IBulkResolveResponse {
     errorMessage?: string | undefined;
 }
 
-export class ImportPermissionsResponse implements IImportPermissionsResponse {
-    accountId?: string;
-    principalName?: string | undefined;
-    success?: boolean;
-    importedGrants?: Grant[] | undefined;
-    updatedStatus?: SqlAccountPermissionsStatus | undefined;
-    errorMessage?: string | undefined;
-
-    constructor(data?: IImportPermissionsResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            if (Array.isArray(_data["ImportedGrants"])) {
-                this.importedGrants = [] as any;
-                for (let item of _data["ImportedGrants"])
-                    this.importedGrants!.push(Grant.fromJS(item));
-            }
-            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
-            this.errorMessage = _data["ErrorMessage"];
-        }
-    }
-
-    static fromJS(data: any): ImportPermissionsResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportPermissionsResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
-        if (Array.isArray(this.importedGrants)) {
-            data["ImportedGrants"] = [];
-            for (let item of this.importedGrants)
-                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
-        }
-        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
-        data["ErrorMessage"] = this.errorMessage;
-        return data;
-    }
-}
-
-export interface IImportPermissionsResponse {
-    accountId?: string;
-    principalName?: string | undefined;
-    success?: boolean;
-    importedGrants?: Grant[] | undefined;
-    updatedStatus?: SqlAccountPermissionsStatus | undefined;
-    errorMessage?: string | undefined;
-}
-
-export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResponse {
-    accountId?: string;
-    principalName?: string;
-    success?: boolean;
-    importedGrants?: Grant[] | undefined;
-    errorMessage?: string | undefined;
-
-    constructor(data?: IImportOrphanPrincipalResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            if (Array.isArray(_data["ImportedGrants"])) {
-                this.importedGrants = [] as any;
-                for (let item of _data["ImportedGrants"])
-                    this.importedGrants!.push(Grant.fromJS(item));
-            }
-            this.errorMessage = _data["ErrorMessage"];
-        }
-    }
-
-    static fromJS(data: any): ImportOrphanPrincipalResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportOrphanPrincipalResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
-        if (Array.isArray(this.importedGrants)) {
-            data["ImportedGrants"] = [];
-            for (let item of this.importedGrants)
-                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
-        }
-        data["ErrorMessage"] = this.errorMessage;
-        return data;
-    }
-}
-
-export interface IImportOrphanPrincipalResponse {
-    accountId?: string;
-    principalName?: string;
-    success?: boolean;
-    importedGrants?: Grant[] | undefined;
-    errorMessage?: string | undefined;
-}
-
-export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalRequest {
-    principalName?: string;
-    authKind?: AuthKind;
-    secretBinding?: SecretBinding;
-
-    constructor(data?: IImportOrphanPrincipalRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.principalName = _data["PrincipalName"];
-            this.authKind = _data["AuthKind"];
-            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): ImportOrphanPrincipalRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportOrphanPrincipalRequest();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["PrincipalName"] = this.principalName;
-        data["AuthKind"] = this.authKind;
-        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
-        return data;
-    }
-}
-
-export interface IImportOrphanPrincipalRequest {
-    principalName?: string;
-    authKind?: AuthKind;
-    secretBinding?: SecretBinding;
-}
-
 export class BulkResolveSummary implements IBulkResolveSummary {
     totalProcessed?: number;
     accountsCreated?: number;
@@ -7092,6 +7039,94 @@ export interface IBulkResolveSummary {
     driftsResolved?: number;
     skipped?: number;
     failed?: number;
+}
+
+export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusResponse {
+    status?: AccountSqlStatusResponse;
+    cachedAt?: Date | undefined;
+    isCached?: boolean;
+
+    constructor(data?: ICachedAccountSqlStatusResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.status = _data["Status"] ? AccountSqlStatusResponse.fromJS(_data["Status"]) : undefined as any;
+            this.cachedAt = _data["CachedAt"] ? new Date(_data["CachedAt"].toString()) : undefined as any;
+            this.isCached = _data["IsCached"];
+        }
+    }
+
+    static fromJS(data: any): CachedAccountSqlStatusResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CachedAccountSqlStatusResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Status"] = this.status ? this.status.toJSON() : undefined as any;
+        data["CachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
+        data["IsCached"] = this.isCached;
+        return data;
+    }
+}
+
+export interface ICachedAccountSqlStatusResponse {
+    status?: AccountSqlStatusResponse;
+    cachedAt?: Date | undefined;
+    isCached?: boolean;
+}
+
+export class CachedPermissionsOverviewResponse implements ICachedPermissionsOverviewResponse {
+    overview?: SqlIntegrationPermissionsOverviewResponse;
+    cachedAt?: Date | undefined;
+    isCached?: boolean;
+
+    constructor(data?: ICachedPermissionsOverviewResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.overview = _data["Overview"] ? SqlIntegrationPermissionsOverviewResponse.fromJS(_data["Overview"]) : undefined as any;
+            this.cachedAt = _data["CachedAt"] ? new Date(_data["CachedAt"].toString()) : undefined as any;
+            this.isCached = _data["IsCached"];
+        }
+    }
+
+    static fromJS(data: any): CachedPermissionsOverviewResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CachedPermissionsOverviewResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Overview"] = this.overview ? this.overview.toJSON() : undefined as any;
+        data["CachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
+        data["IsCached"] = this.isCached;
+        return data;
+    }
+}
+
+export interface ICachedPermissionsOverviewResponse {
+    overview?: SqlIntegrationPermissionsOverviewResponse;
+    cachedAt?: Date | undefined;
+    isCached?: boolean;
 }
 
 export class CreateAccount implements ICreateAccount {
@@ -8809,6 +8844,174 @@ export enum IdentityKind {
     KubernetesServiceAccount = "KubernetesServiceAccount",
     AwsIamRole = "AwsIamRole",
     Custom = "Custom",
+}
+
+export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalRequest {
+    principalName?: string | undefined;
+    authKind?: AuthKind;
+    secretBinding?: SecretBinding;
+
+    constructor(data?: IImportOrphanPrincipalRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.principalName = _data["PrincipalName"];
+            this.authKind = _data["AuthKind"];
+            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ImportOrphanPrincipalRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportOrphanPrincipalRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["PrincipalName"] = this.principalName;
+        data["AuthKind"] = this.authKind;
+        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IImportOrphanPrincipalRequest {
+    principalName?: string | undefined;
+    authKind?: AuthKind;
+    secretBinding?: SecretBinding;
+}
+
+export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    importedGrants?: Grant[] | undefined;
+    errorMessage?: string | undefined;
+
+    constructor(data?: IImportOrphanPrincipalResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accountId = _data["AccountId"];
+            this.principalName = _data["PrincipalName"];
+            this.success = _data["Success"];
+            if (Array.isArray(_data["ImportedGrants"])) {
+                this.importedGrants = [] as any;
+                for (let item of _data["ImportedGrants"])
+                    this.importedGrants!.push(Grant.fromJS(item));
+            }
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): ImportOrphanPrincipalResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportOrphanPrincipalResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["AccountId"] = this.accountId;
+        data["PrincipalName"] = this.principalName;
+        data["Success"] = this.success;
+        if (Array.isArray(this.importedGrants)) {
+            data["ImportedGrants"] = [];
+            for (let item of this.importedGrants)
+                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface IImportOrphanPrincipalResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    importedGrants?: Grant[] | undefined;
+    errorMessage?: string | undefined;
+}
+
+export class ImportPermissionsResponse implements IImportPermissionsResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    importedGrants?: Grant[] | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
+    errorMessage?: string | undefined;
+
+    constructor(data?: IImportPermissionsResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.accountId = _data["AccountId"];
+            this.principalName = _data["PrincipalName"];
+            this.success = _data["Success"];
+            if (Array.isArray(_data["ImportedGrants"])) {
+                this.importedGrants = [] as any;
+                for (let item of _data["ImportedGrants"])
+                    this.importedGrants!.push(Grant.fromJS(item));
+            }
+            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
+            this.errorMessage = _data["ErrorMessage"];
+        }
+    }
+
+    static fromJS(data: any): ImportPermissionsResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportPermissionsResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["AccountId"] = this.accountId;
+        data["PrincipalName"] = this.principalName;
+        data["Success"] = this.success;
+        if (Array.isArray(this.importedGrants)) {
+            data["ImportedGrants"] = [];
+            for (let item of this.importedGrants)
+                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["ErrorMessage"] = this.errorMessage;
+        return data;
+    }
+}
+
+export interface IImportPermissionsResponse {
+    accountId?: string;
+    principalName?: string | undefined;
+    success?: boolean;
+    importedGrants?: Grant[] | undefined;
+    updatedStatus?: SqlAccountPermissionsStatus;
+    errorMessage?: string | undefined;
 }
 
 export class KumaIntegrationResponse implements IKumaIntegrationResponse {

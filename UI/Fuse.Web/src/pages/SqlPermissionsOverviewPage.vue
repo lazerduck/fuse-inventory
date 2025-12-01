@@ -10,7 +10,7 @@
             icon="arrow_back" 
             @click="router.push({ name: 'sqlIntegrations' })"
           />
-          <h1>{{ data?.integrationName ?? 'SQL Permissions Overview' }}</h1>
+          <h1>{{ data?.overview?.integrationName ?? 'SQL Permissions Overview' }}</h1>
         </div>
         <p class="subtitle">Permission drift dashboard for accounts associated with this SQL integration.</p>
       </div>
@@ -44,11 +44,11 @@
     <!-- Data Display -->
     <template v-else-if="data">
       <!-- Error Message from integration -->
-      <q-banner v-if="data.errorMessage" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      <q-banner v-if="data.overview?.errorMessage" dense class="bg-orange-1 text-orange-9 q-mb-md">
         <template #avatar>
           <q-icon name="warning" color="orange" />
         </template>
-        {{ data.errorMessage }}
+        {{ data.overview.errorMessage }}
       </q-banner>
 
       <!-- Summary Section -->
@@ -56,27 +56,27 @@
         <q-card flat bordered class="summary-card">
           <q-card-section class="row q-gutter-md">
             <div class="summary-item">
-              <div class="summary-value">{{ data.summary?.totalAccounts ?? 0 }}</div>
+              <div class="summary-value">{{ data.overview?.summary?.totalAccounts ?? 0 }}</div>
               <div class="summary-label">Total Accounts</div>
             </div>
             <q-separator vertical />
             <div class="summary-item status-in-sync">
-              <div class="summary-value">{{ data.summary?.inSyncCount ?? 0 }}</div>
+              <div class="summary-value">{{ data.overview?.summary?.inSyncCount ?? 0 }}</div>
               <div class="summary-label">In Sync</div>
             </div>
             <q-separator vertical />
             <div class="summary-item status-drift">
-              <div class="summary-value">{{ data.summary?.driftCount ?? 0 }}</div>
+              <div class="summary-value">{{ data.overview?.summary?.driftCount ?? 0 }}</div>
               <div class="summary-label">Drift Detected</div>
             </div>
             <q-separator vertical />
             <div class="summary-item status-missing">
-              <div class="summary-value">{{ data.summary?.missingPrincipalCount ?? 0 }}</div>
+              <div class="summary-value">{{ data.overview?.summary?.missingPrincipalCount ?? 0 }}</div>
               <div class="summary-label">Missing Principal</div>
             </div>
             <q-separator vertical />
             <div class="summary-item status-error">
-              <div class="summary-value">{{ data.summary?.errorCount ?? 0 }}</div>
+              <div class="summary-value">{{ data.overview?.summary?.errorCount ?? 0 }}</div>
               <div class="summary-label">Errors</div>
             </div>
           </q-card-section>
@@ -235,7 +235,7 @@
       </q-card>
 
       <!-- Orphan Principals Table (if any) -->
-      <q-card v-if="data.orphanPrincipals?.length" class="content-card q-mt-md">
+      <q-card v-if="data.overview?.orphanPrincipals?.length" class="content-card q-mt-md">
         <q-card-section>
           <div class="text-h6 q-mb-sm">
             <q-icon name="help_outline" class="q-mr-sm" />
@@ -247,7 +247,7 @@
           <q-table
             flat
             bordered
-            :rows="data.orphanPrincipals"
+            :rows="data.overview?.orphanPrincipals ?? []"
             :columns="orphanColumns"
             row-key="principalName"
             :pagination="{ rowsPerPage: 10 }"
@@ -983,8 +983,8 @@ const hasResolvableAccounts = computed(() => {
 
 // Count of accounts with missing principals that can be resolved (have Secret Provider)
 const resolvableMissingCount = computed(() => {
-  if (!data.value?.accounts) return 0
-  return data.value.accounts.filter(a => 
+  if (!data.value?.overview?.accounts) return 0
+  return data.value.overview.accounts.filter(a => 
     a.status === SyncStatus.MissingPrincipal && 
     a.accountId && 
     hasSecretProvider(a.accountId)
@@ -993,13 +993,13 @@ const resolvableMissingCount = computed(() => {
 
 // Count of accounts with drift detected
 const resolvableDriftCount = computed(() => {
-  return data.value?.summary?.driftCount ?? 0
+  return data.value?.overview?.summary?.driftCount ?? 0
 })
 
 // Count of accounts that will be skipped (missing principals without Secret Provider)
 const skippedAccountsCount = computed(() => {
-  if (!data.value?.accounts) return 0
-  return data.value.accounts.filter(a => 
+  if (!data.value?.overview?.accounts) return 0
+  return data.value.overview.accounts.filter(a => 
     a.status === SyncStatus.MissingPrincipal && 
     a.accountId && 
     !hasSecretProvider(a.accountId)
@@ -1032,7 +1032,7 @@ const filterOptions = [
 ]
 
 const filteredAccounts = computed(() => {
-  const accounts = data.value?.accounts ?? []
+  const accounts = data.value?.overview?.accounts ?? []
   if (statusFilter.value === 'all') {
     return accounts
   }

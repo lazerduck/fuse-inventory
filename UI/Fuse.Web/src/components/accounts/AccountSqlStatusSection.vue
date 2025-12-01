@@ -47,25 +47,25 @@
             <q-icon :name="statusIcon" size="sm" :color="statusColor" />
             <div>
               <div class="text-weight-medium">{{ statusLabel }}</div>
-              <div class="text-caption">{{ data.statusSummary }}</div>
+              <div class="text-caption">{{ data.status?.statusSummary }}</div>
             </div>
           </div>
           <q-badge 
-            v-if="data.sqlIntegrationName" 
+            v-if="data.status?.sqlIntegrationName" 
             outline 
             color="primary" 
             class="q-mt-sm"
           >
-            {{ data.sqlIntegrationName }}
+            {{ data.status.sqlIntegrationName }}
           </q-badge>
         </div>
 
         <!-- Error Message from SQL inspection -->
-        <q-banner v-if="data.errorMessage" dense class="bg-orange-1 text-orange-9 q-mt-md">
+        <q-banner v-if="data.status?.errorMessage" dense class="bg-orange-1 text-orange-9 q-mt-md">
           <template #avatar>
             <q-icon name="warning" color="orange" />
           </template>
-          {{ data.errorMessage }}
+          {{ data.status.errorMessage }}
         </q-banner>
 
         <!-- Permission Comparison Table -->
@@ -166,8 +166,8 @@ const { data, isLoading, isFetching, error, refetch } = useAccountSqlStatus(
 )
 
 const statusLabel = computed(() => {
-  if (!data.value) return 'Unknown'
-  switch (data.value.status) {
+  if (!data.value?.status) return 'Unknown'
+  switch (data.value.status.status) {
     case SyncStatus.InSync:
       return 'In Sync'
     case SyncStatus.DriftDetected:
@@ -184,8 +184,8 @@ const statusLabel = computed(() => {
 })
 
 const statusIcon = computed(() => {
-  if (!data.value) return 'help'
-  switch (data.value.status) {
+  if (!data.value?.status) return 'help'
+  switch (data.value.status.status) {
     case SyncStatus.InSync:
       return 'check_circle'
     case SyncStatus.DriftDetected:
@@ -202,8 +202,8 @@ const statusIcon = computed(() => {
 })
 
 const statusColor = computed(() => {
-  if (!data.value) return 'grey'
-  switch (data.value.status) {
+  if (!data.value?.status) return 'grey'
+  switch (data.value.status.status) {
     case SyncStatus.InSync:
       return 'positive'
     case SyncStatus.DriftDetected:
@@ -220,8 +220,8 @@ const statusColor = computed(() => {
 })
 
 const statusClass = computed(() => {
-  if (!data.value) return 'status-na'
-  switch (data.value.status) {
+  if (!data.value?.status) return 'status-na'
+  switch (data.value.status.status) {
     case SyncStatus.InSync:
       return 'status-in-sync'
     case SyncStatus.DriftDetected:
@@ -238,7 +238,7 @@ const statusClass = computed(() => {
 })
 
 const hasComparisons = computed(() => {
-  return data.value?.permissionComparisons && data.value.permissionComparisons.length > 0
+  return data.value?.status?.permissionComparisons && data.value.status.permissionComparisons.length > 0
 })
 
 const columns: QTableColumn<ComparisonRow>[] = [
@@ -250,8 +250,8 @@ const columns: QTableColumn<ComparisonRow>[] = [
 ]
 
 const comparisonRows = computed<ComparisonRow[]>(() => {
-  if (!data.value?.permissionComparisons) return []
-  return data.value.permissionComparisons.map((comp: SqlPermissionComparison, index: number) => ({
+  if (!data.value?.status?.permissionComparisons) return []
+  return data.value.status.permissionComparisons.map((comp: SqlPermissionComparison, index: number) => ({
     key: `perm-${index}-${comp.database ?? ''}-${comp.schema ?? ''}`,
     database: comp.database ?? '—',
     schema: comp.schema ?? '—',
