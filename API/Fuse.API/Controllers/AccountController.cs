@@ -65,12 +65,20 @@ namespace Fuse.API.Controllers
         [HttpPost("{id}/sql-status/refresh")]
         [ProducesResponseType(200, Type = typeof(CachedAccountSqlStatusResponse))]
         [ProducesResponseType(404)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<CachedAccountSqlStatusResponse>> RefreshAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
         {
+            // Check if account exists first
+            var account = await _accountService.GetAccountByIdAsync(id);
+            if (account is null)
+            {
+                return NotFound(new { error = $"Account with ID '{id}' not found." });
+            }
+
             var refreshed = await _cache.RefreshAccountAsync(id, ct);
             if (refreshed is null)
             {
-                return NotFound(new { error = $"Account '{id}' not found or refresh failed." });
+                return BadRequest(new { error = "Failed to refresh SQL status. Check server logs for details." });
             }
             return Ok(new CachedAccountSqlStatusResponse(refreshed.Status, refreshed.CachedAt, IsCached: true));
         }

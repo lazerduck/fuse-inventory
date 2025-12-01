@@ -63,10 +63,17 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> RefreshPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
         {
+            // Check if integration exists first
+            var integration = await _service.GetSqlIntegrationByIdAsync(id);
+            if (integration is null)
+            {
+                return NotFound(new { error = $"SQL integration '{id}' not found." });
+            }
+
             var refreshed = await _cache.RefreshIntegrationAsync(id, ct);
             if (refreshed is null)
             {
-                return NotFound(new { error = $"SQL integration '{id}' not found or refresh failed." });
+                return BadRequest(new { error = "Failed to refresh permissions. Check server logs for details." });
             }
             return Ok(new CachedPermissionsOverviewResponse(refreshed.Overview, refreshed.CachedAt, IsCached: true));
         }
