@@ -68,6 +68,48 @@ namespace Fuse.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPost("{id}/accounts/{accountId}/import")]
+        [ProducesResponseType(200, Type = typeof(ImportPermissionsResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<ImportPermissionsResponse>> ImportPermissions([FromRoute] Guid id, [FromRoute] Guid accountId, CancellationToken ct)
+        {
+            var command = new ImportPermissions(id, accountId);
+            var (userName, userId) = GetUserInfo();
+            var result = await _service.ImportPermissionsAsync(command, userName, userId, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/orphan-principals/import")]
+        [ProducesResponseType(200, Type = typeof(ImportOrphanPrincipalResponse))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
+        public async Task<ActionResult<ImportOrphanPrincipalResponse>> ImportOrphanPrincipal([FromRoute] Guid id, [FromBody] ImportOrphanPrincipalRequest request, CancellationToken ct)
+        {
+            var command = new ImportOrphanPrincipal(id, request.PrincipalName, request.AuthKind, request.SecretBinding);
+            var (userName, userId) = GetUserInfo();
+            var result = await _service.ImportOrphanPrincipalAsync(command, userName, userId, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost("{id}/accounts/{accountId}/create")]
         [ProducesResponseType(200, Type = typeof(CreateSqlAccountResponse))]
         [ProducesResponseType(400)]

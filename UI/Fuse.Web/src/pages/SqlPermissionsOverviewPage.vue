@@ -194,7 +194,19 @@
                   :loading="isResolvingAccount === props.row.accountId"
                   @click="openResolveDialog(props.row)"
                 >
-                  <q-tooltip>Resolve permission drift</q-tooltip>
+                  <q-tooltip>Apply Fuse configuration to SQL</q-tooltip>
+                </q-btn>
+                <q-btn 
+                  v-if="props.row.status === SyncStatus.DriftDetected && canResolve"
+                  flat 
+                  dense 
+                  size="sm"
+                  color="secondary"
+                  label="Import"
+                  :loading="isImportingAccount === props.row.accountId"
+                  @click="openImportDialog(props.row)"
+                >
+                  <q-tooltip>Import SQL permissions to Fuse</q-tooltip>
                 </q-btn>
                 <q-btn 
                   flat 
@@ -227,10 +239,10 @@
         <q-card-section>
           <div class="text-h6 q-mb-sm">
             <q-icon name="help_outline" class="q-mr-sm" />
-            Orphan Principals
+            Unmanaged SQL Accounts
           </div>
           <div class="text-caption text-grey-7 q-mb-md">
-            SQL principals found that are not mapped to any Fuse account.
+            SQL principals found that are not managed by any Fuse account. Import them to start managing their permissions.
           </div>
           <q-table
             flat
@@ -254,6 +266,22 @@
                   </template>
                 </div>
                 <span v-else class="text-grey">—</span>
+              </q-td>
+            </template>
+            <template #body-cell-actions="props">
+              <q-td :props="props" class="text-right">
+                <q-btn 
+                  v-if="canResolve"
+                  flat 
+                  dense 
+                  size="sm"
+                  color="primary"
+                  label="Import"
+                  :loading="isImportingOrphan === props.row.principalName"
+                  @click="openImportOrphanDialog(props.row)"
+                >
+                  <q-tooltip>Create Fuse account from SQL principal</q-tooltip>
+                </q-btn>
               </q-td>
             </template>
             <template #no-data>
@@ -639,6 +667,212 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Import Permissions Confirmation Dialog -->
+    <q-dialog v-model="showImportDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon name="download" color="secondary" size="2em" class="q-mr-sm" />
+          <span class="text-h6">Import Permissions from SQL</span>
+        </q-card-section>
+
+        <q-card-section>
+          <p v-if="importSelectedAccount">
+            Replace <strong>{{ importSelectedAccount.principalName }}</strong>'s 
+            Fuse configuration with actual SQL permissions?
+          </p>
+          <q-banner dense class="bg-orange-1 text-orange-9 q-mt-md">
+            <template #avatar>
+              <q-icon name="warning" color="orange" />
+            </template>
+            This will overwrite the current permission configuration in Fuse with
+            the actual permissions found in SQL Server.
+          </q-banner>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey" v-close-popup :disable="isImporting" />
+          <q-btn 
+            flat 
+            label="Import from SQL" 
+            color="secondary" 
+            :loading="isImporting"
+            @click="handleImportPermissions" 
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Import Permissions Result Dialog -->
+    <q-dialog v-model="showImportResultDialog">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon 
+            :name="importResult?.success ? 'check_circle' : 'error'" 
+            :color="importResult?.success ? 'positive' : 'negative'" 
+            size="2em" 
+            class="q-mr-sm" 
+          />
+          <span class="text-h6">
+            {{ importResult?.success ? 'Permissions Imported' : 'Import Failed' }}
+          </span>
+        </q-card-section>
+
+        <q-card-section v-if="importResult">
+          <div v-if="importResult.success && importResult.importedGrants?.length" class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Imported {{ importResult.importedGrants.length }} grant(s):</div>
+            <div v-for="grant in importResult.importedGrants" :key="grant.id" class="text-caption q-mb-xs">
+              <q-icon name="check" color="positive" size="xs" />
+              {{ grant.database ?? 'default' }}{{ grant.schema ? `.${grant.schema}` : '' }}: 
+              {{ Array.from(grant.privileges || []).join(', ') }}
+            </div>
+          </div>
+          <div v-if="importResult.errorMessage" class="text-negative">
+            {{ importResult.errorMessage }}
+          </div>
+          <div v-if="importResult.updatedStatus" class="q-mt-md">
+            <span class="text-subtitle2">Updated status: </span>
+            <q-badge 
+              :color="getStatusColor(importResult.updatedStatus.status)"
+              :label="getStatusLabel(importResult.updatedStatus.status)"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Import Orphan Principal Dialog -->
+    <q-dialog v-model="showImportOrphanDialog" persistent>
+      <q-card style="min-width: 450px">
+        <q-card-section class="row items-center">
+          <q-icon name="person_add" color="primary" size="2em" class="q-mr-sm" />
+          <span class="text-h6">Import SQL Account</span>
+        </q-card-section>
+
+        <q-card-section>
+          <p v-if="importSelectedOrphan">
+            Create a Fuse account for SQL principal 
+            <strong>{{ importSelectedOrphan.principalName }}</strong>?
+          </p>
+          
+          <div class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Authentication Type</div>
+            <q-select
+              v-model="orphanAuthKind"
+              :options="[
+                { label: 'User/Password', value: AuthKind.UserPassword },
+                { label: 'API Key', value: AuthKind.ApiKey },
+                { label: 'Certificate', value: AuthKind.Certificate },
+                { label: 'No Authentication', value: AuthKind.None }
+              ]"
+              emit-value
+              map-options
+              outlined
+              dense
+            />
+          </div>
+          
+          <div class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Secret Binding</div>
+            <q-select
+              v-model="orphanSecretBindingKind"
+              :options="[
+                { label: 'None', value: SecretBindingKind.None },
+                { label: 'Plain Reference', value: SecretBindingKind.PlainReference }
+              ]"
+              emit-value
+              map-options
+              outlined
+              dense
+            />
+            
+            <q-input
+              v-if="orphanSecretBindingKind === SecretBindingKind.PlainReference"
+              v-model="orphanPlainReference"
+              label="Secret Reference"
+              outlined
+              dense
+              class="q-mt-sm"
+              hint="Reference to where the secret is stored"
+            />
+          </div>
+
+          <div v-if="importSelectedOrphan?.actualPermissions?.length" class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Permissions to import:</div>
+            <div class="tag-list">
+              <template v-for="grant in importSelectedOrphan.actualPermissions" :key="grant.database">
+                <q-badge
+                  v-for="priv in grant.privileges"
+                  :key="`${grant.database}-${priv}`"
+                  outline
+                  color="secondary"
+                  :label="`${grant.database ?? 'default'}:${priv}`"
+                />
+              </template>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey" v-close-popup :disable="isImportingOrphanMutation" />
+          <q-btn 
+            flat 
+            label="Import Account" 
+            color="primary" 
+            :loading="isImportingOrphanMutation"
+            @click="handleImportOrphan" 
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Import Orphan Result Dialog -->
+    <q-dialog v-model="showImportOrphanResultDialog">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon 
+            :name="importOrphanResult?.success ? 'check_circle' : 'error'" 
+            :color="importOrphanResult?.success ? 'positive' : 'negative'" 
+            size="2em" 
+            class="q-mr-sm" 
+          />
+          <span class="text-h6">
+            {{ importOrphanResult?.success ? 'Account Imported' : 'Import Failed' }}
+          </span>
+        </q-card-section>
+
+        <q-card-section v-if="importOrphanResult">
+          <div v-if="importOrphanResult.success" class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">
+              Account created for <strong>{{ importOrphanResult.principalName }}</strong>
+            </div>
+            <div v-if="importOrphanResult.importedGrants?.length" class="q-mt-sm">
+              <div class="text-caption text-grey-7 q-mb-xs">Imported {{ importOrphanResult.importedGrants.length }} grant(s)</div>
+            </div>
+            <q-btn
+              flat
+              dense
+              color="primary"
+              label="View Account"
+              icon="visibility"
+              class="q-mt-sm"
+              @click="router.push({ name: 'accountEdit', params: { id: importOrphanResult.accountId } })"
+            />
+          </div>
+          <div v-if="importOrphanResult.errorMessage" class="text-negative">
+            {{ importOrphanResult.errorMessage }}
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -650,10 +884,12 @@ import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverv
 import { useResolveDrift } from '../composables/useResolveDrift'
 import { useCreateSqlAccount } from '../composables/useCreateSqlAccount'
 import { useBulkResolve } from '../composables/useBulkResolve'
+import { useImportPermissions } from '../composables/useImportPermissions'
+import { useImportOrphanPrincipal } from '../composables/useImportOrphanPrincipal'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useAccounts } from '../composables/useAccounts'
 import { useFuseStore } from '../stores/FuseStore'
-import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, BulkResolveResponse, PasswordSource, PasswordSourceUsed, BulkPasswordSource, SecretBindingKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal, type BulkResolveAccountResult } from '../api/client'
+import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, BulkResolveResponse, ImportPermissionsResponse, ImportOrphanPrincipalResponse, ImportOrphanPrincipalRequest, PasswordSource, PasswordSourceUsed, BulkPasswordSource, SecretBindingKind, SecretBinding, AuthKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal, type BulkResolveAccountResult } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -666,6 +902,8 @@ const { data: accounts } = useAccounts()
 const { mutateAsync: resolveDrift, isPending: isResolving } = useResolveDrift()
 const { mutateAsync: createSqlAccount, isPending: isCreating } = useCreateSqlAccount()
 const { mutateAsync: bulkResolve, isPending: isBulkResolving } = useBulkResolve()
+const { mutateAsync: importPermissions, isPending: isImporting } = useImportPermissions()
+const { mutateAsync: importOrphan, isPending: isImportingOrphanMutation } = useImportOrphanPrincipal()
 
 // Resolve drift dialog state
 const showResolveDialog = ref(false)
@@ -682,6 +920,23 @@ const createAccountResult = ref<CreateSqlAccountResponse | null>(null)
 const isCreatingAccount = ref<string | null>(null)
 const selectedPasswordSource = ref<PasswordSource>(PasswordSource.Manual)
 const manualPassword = ref('')
+
+// Import permissions dialog state
+const showImportDialog = ref(false)
+const showImportResultDialog = ref(false)
+const importSelectedAccount = ref<SqlAccountPermissionsStatus | null>(null)
+const importResult = ref<ImportPermissionsResponse | null>(null)
+const isImportingAccount = ref<string | null>(null)
+
+// Import orphan principal dialog state
+const showImportOrphanDialog = ref(false)
+const showImportOrphanResultDialog = ref(false)
+const importSelectedOrphan = ref<SqlOrphanPrincipal | null>(null)
+const importOrphanResult = ref<ImportOrphanPrincipalResponse | null>(null)
+const isImportingOrphan = ref<string | null>(null)
+const orphanAuthKind = ref<AuthKind>(AuthKind.UserPassword)
+const orphanSecretBindingKind = ref<SecretBindingKind>(SecretBindingKind.None)
+const orphanPlainReference = ref('')
 
 // Bulk resolve dialog state
 const showBulkResolveDialog = ref(false)
@@ -794,7 +1049,8 @@ const accountColumns: QTableColumn<SqlAccountPermissionsStatus>[] = [
 
 const orphanColumns: QTableColumn<SqlOrphanPrincipal>[] = [
   { name: 'principalName', label: 'Principal Name', field: 'principalName', align: 'left', sortable: true },
-  { name: 'permissions', label: 'Actual Permissions', field: (row) => row.principalName, align: 'left' }
+  { name: 'permissions', label: 'Actual Permissions', field: (row) => row.principalName, align: 'left' },
+  { name: 'actions', label: '', field: (row) => row.principalName, align: 'right' }
 ]
 
 function getStatusColor(status?: SyncStatus): string {
@@ -1016,6 +1272,110 @@ async function handleBulkResolve() {
     
     showBulkResolveDialog.value = false
     showBulkResolveResultDialog.value = true
+  }
+}
+
+// Import permissions functions
+function openImportDialog(account: SqlAccountPermissionsStatus) {
+  importSelectedAccount.value = account
+  showImportDialog.value = true
+}
+
+async function handleImportPermissions() {
+  if (!importSelectedAccount.value?.accountId) return
+  
+  isImportingAccount.value = importSelectedAccount.value.accountId
+  
+  try {
+    const result = await importPermissions({
+      integrationId: integrationId.value,
+      accountId: importSelectedAccount.value.accountId
+    })
+    
+    importResult.value = result
+    showImportDialog.value = false
+    showImportResultDialog.value = true
+    
+    // Refetch the permissions overview
+    await refetch()
+  } catch (err: any) {
+    const errorResponse = new ImportPermissionsResponse()
+    errorResponse.accountId = importSelectedAccount.value.accountId
+    errorResponse.principalName = importSelectedAccount.value.principalName
+    errorResponse.success = false
+    errorResponse.importedGrants = []
+    
+    if (err?.status === 401) {
+      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to import permissions.'
+    } else {
+      errorResponse.errorMessage = err?.message || 'An error occurred while importing permissions.'
+    }
+    
+    importResult.value = errorResponse
+    showImportDialog.value = false
+    showImportResultDialog.value = true
+  } finally {
+    isImportingAccount.value = null
+  }
+}
+
+// Import orphan principal functions
+function openImportOrphanDialog(orphan: SqlOrphanPrincipal) {
+  importSelectedOrphan.value = orphan
+  orphanAuthKind.value = AuthKind.UserPassword
+  orphanSecretBindingKind.value = SecretBindingKind.None
+  orphanPlainReference.value = ''
+  showImportOrphanDialog.value = true
+}
+
+async function handleImportOrphan() {
+  if (!importSelectedOrphan.value?.principalName) return
+  
+  isImportingOrphan.value = importSelectedOrphan.value.principalName
+  
+  try {
+    const secretBinding = new SecretBinding()
+    secretBinding.kind = orphanSecretBindingKind.value
+    if (orphanSecretBindingKind.value === SecretBindingKind.PlainReference) {
+      secretBinding.plainReference = orphanPlainReference.value
+    }
+    
+    const request = new ImportOrphanPrincipalRequest()
+    request.principalName = importSelectedOrphan.value.principalName
+    request.authKind = orphanAuthKind.value
+    request.secretBinding = secretBinding
+    
+    const result = await importOrphan({
+      integrationId: integrationId.value,
+      request
+    })
+    
+    importOrphanResult.value = result
+    showImportOrphanDialog.value = false
+    showImportOrphanResultDialog.value = true
+    
+    // Refetch the permissions overview
+    await refetch()
+  } catch (err: any) {
+    const errorResponse = new ImportOrphanPrincipalResponse()
+    errorResponse.accountId = ''
+    errorResponse.principalName = importSelectedOrphan.value.principalName
+    errorResponse.success = false
+    errorResponse.importedGrants = []
+    
+    if (err?.status === 401) {
+      errorResponse.errorMessage = 'Authentication required. Please log in as an admin to import accounts.'
+    } else if (err?.status === 409) {
+      errorResponse.errorMessage = 'This principal is already managed by a Fuse account.'
+    } else {
+      errorResponse.errorMessage = err?.message || 'An error occurred while importing the account.'
+    }
+    
+    importOrphanResult.value = errorResponse
+    showImportOrphanDialog.value = false
+    showImportOrphanResultDialog.value = true
+  } finally {
+    isImportingOrphan.value = null
   }
 }
 </script>

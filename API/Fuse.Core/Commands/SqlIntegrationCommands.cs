@@ -27,6 +27,34 @@ public record ResolveDrift(
 );
 
 /// <summary>
+/// Command to import actual SQL permissions into Fuse account grants.
+/// Instead of updating SQL to match Fuse, this updates Fuse to match SQL.
+/// </summary>
+public record ImportPermissions(
+    Guid IntegrationId,
+    Guid AccountId
+);
+
+/// <summary>
+/// Command to create a Fuse account from an orphan SQL principal.
+/// </summary>
+public record ImportOrphanPrincipal(
+    Guid IntegrationId,
+    string PrincipalName,
+    AuthKind AuthKind,
+    SecretBinding SecretBinding
+);
+
+/// <summary>
+/// Request body for importing an orphan SQL principal.
+/// </summary>
+public record ImportOrphanPrincipalRequest(
+    string PrincipalName,
+    AuthKind AuthKind,
+    SecretBinding SecretBinding
+);
+
+/// <summary>
 /// Specifies how the password is obtained for SQL account creation.
 /// </summary>
 public enum PasswordSource
