@@ -15,6 +15,7 @@ export type EntityType =
   | 'datastore'
   | 'external'
   | 'environment'
+  | 'platform'
 
 /**
  * Configuration for entity type display.
@@ -35,7 +36,8 @@ export const entityTypeConfig: Record<EntityType, EntityTypeConfig> = {
   identity: { label: 'Identity', icon: 'badge' },
   datastore: { label: 'Data Store', icon: 'storage' },
   external: { label: 'External Resource', icon: 'hub' },
-  environment: { label: 'Environment', icon: 'cloud' }
+  environment: { label: 'Environment', icon: 'cloud' },
+  platform: { label: 'Platform', icon: 'computer' }
 }
 
 /**

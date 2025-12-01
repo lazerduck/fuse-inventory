@@ -68,7 +68,15 @@
           <q-icon name="computer" size="20px" />
           Platform
         </h3>
-        <p class="section-value">{{ platformName }}</p>
+        <router-link
+          v-if="instance.platformId"
+          :to="`/view/platform/${instance.platformId}`"
+          class="platform-link"
+        >
+          {{ platformName }}
+          <q-icon name="chevron_right" size="16px" />
+        </router-link>
+        <p v-else class="section-value">{{ platformName }}</p>
       </section>
 
       <!-- Version -->
@@ -501,5 +509,18 @@ function navigateToIdentity(identityId: string) {
 
 .tag-badge {
   font-size: 0.8rem;
+}
+
+.platform-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--q-primary);
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.platform-link:hover {
+  text-decoration: underline;
 }
 </style>
