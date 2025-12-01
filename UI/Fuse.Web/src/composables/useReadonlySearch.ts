@@ -85,6 +85,57 @@ export function useReadonlySearch() {
     return map
   })
 
+  // Lookup maps for resolving dependency target names
+  const dataStoreLookup = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    for (const store of dataStoresQuery.data.value ?? []) {
+      if (store.id) {
+        map[store.id] = store.name ?? 'Unknown Data Store'
+      }
+    }
+    return map
+  })
+
+  const externalResourceLookup = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    for (const resource of externalResourcesQuery.data.value ?? []) {
+      if (resource.id) {
+        map[resource.id] = resource.name ?? 'Unknown External Resource'
+      }
+    }
+    return map
+  })
+
+  const instanceLookup = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    for (const app of applicationsQuery.data.value ?? []) {
+      for (const instance of app.instances ?? []) {
+        if (instance.id) {
+          const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
+          map[instance.id] = `${app.name ?? 'App'} — ${envName}`
+        }
+      }
+    }
+    return map
+  })
+
+  // Helper function to resolve dependency target name based on targetKind
+  function resolveDependencyTargetName(targetId: string | undefined, targetKind: string | undefined): string {
+    if (!targetId) return 'Unknown'
+    
+    switch (targetKind) {
+      case 'Application':
+        // Note: When targetKind is 'Application', targetId actually refers to an instance ID
+        return instanceLookup.value[targetId] ?? 'Unknown Instance'
+      case 'DataStore':
+        return dataStoreLookup.value[targetId] ?? 'Unknown Data Store'
+      case 'External':
+        return externalResourceLookup.value[targetId] ?? 'Unknown External Resource'
+      default:
+        return 'Unknown'
+    }
+  }
+
   const searchResults = computed<SearchResult[]>(() => {
     const query = searchQuery.value.trim()
     if (!query) return []
@@ -127,13 +178,15 @@ export function useReadonlySearch() {
         for (const dep of instance.dependencies ?? []) {
           if (!dep.id) continue
           
-          const depName = `Dependency in ${instanceName}`
-          if (fuzzyMatch(app.name ?? '', query) || fuzzyMatch(envName, query)) {
+          const targetName = resolveDependencyTargetName(dep.targetId, dep.targetKind)
+          const depName = `${app.name ?? 'App'} → ${targetName}`
+          const depSubtitle = `${dep.targetKind ?? 'Dependency'} in ${envName}`
+          if (fuzzyMatch(app.name ?? '', query) || fuzzyMatch(envName, query) || fuzzyMatch(targetName, query)) {
             results.push({
               id: dep.id,
               type: 'dependency',
               name: depName,
-              subtitle: dep.targetKind ?? undefined,
+              subtitle: depSubtitle,
               route: `/view/dependency/${dep.id}`
             })
           }
