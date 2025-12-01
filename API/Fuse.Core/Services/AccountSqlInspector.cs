@@ -377,6 +377,12 @@ public class AccountSqlInspector : IAccountSqlInspector
                         (''db_datawriter'', ''INSERT''),
                         (''db_datawriter'', ''UPDATE''),
                         (''db_datawriter'', ''DELETE''),
+                        (''db_owner'', ''SELECT''),
+                        (''db_owner'', ''INSERT''),
+                        (''db_owner'', ''UPDATE''),
+                        (''db_owner'', ''DELETE''),
+                        (''db_owner'', ''EXECUTE''),
+                        (''db_owner'', ''ALTER''),
                         (''db_owner'', ''CONTROL''),
                         (''db_ddladmin'', ''ALTER''),
                         (''db_executor'', ''EXECUTE'')
