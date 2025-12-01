@@ -149,6 +149,7 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
         }
         catch (Exception ex)
         {
+            // The accountId is an internal Fuse identifier and does not contain sensitive information.
             _logger.LogWarning(ex, "Failed to refresh SQL status for account with the fuse Id {AccountId}", accountId);
         }
 
