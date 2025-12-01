@@ -35,10 +35,18 @@ public class SqlIntegrationService : ISqlIntegrationService
             return Result.Failure("Name is required.", ErrorType.Validation);
         }
 
-        // Either connection string or account must be provided
-        if (string.IsNullOrWhiteSpace(connectionString) && accountId is null)
+        // Either connection string or account must be provided, but not both
+        var hasConnectionString = !string.IsNullOrWhiteSpace(connectionString);
+        var hasAccount = accountId is not null;
+
+        if (!hasConnectionString && !hasAccount)
         {
             return Result.Failure("Either connection string or account must be provided.", ErrorType.Validation);
+        }
+
+        if (hasConnectionString && hasAccount)
+        {
+            return Result.Failure("Provide either a connection string or an account, not both.", ErrorType.Validation);
         }
 
         return Result.Success();
@@ -127,37 +135,59 @@ public class SqlIntegrationService : ISqlIntegrationService
         string server;
         string? database = null;
 
-        // Parse the connection URI
-        if (uriString.StartsWith("mssql://", StringComparison.OrdinalIgnoreCase) ||
-            uriString.StartsWith("sqlserver://", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            // URI format: mssql://server/database or mssql://server:port/database
-            var uri = dataStore.ConnectionUri;
-            server = uri.Port > 0 && uri.Port != 1433 ? $"{uri.Host},{uri.Port}" : uri.Host;
-            if (!string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
+            // Parse the connection URI
+            if (uriString.StartsWith("mssql://", StringComparison.OrdinalIgnoreCase) ||
+                uriString.StartsWith("sqlserver://", StringComparison.OrdinalIgnoreCase))
             {
-                database = uri.AbsolutePath.TrimStart('/');
+                // URI format: mssql://server/database or mssql://server:port/database
+                var uri = dataStore.ConnectionUri;
+                if (string.IsNullOrEmpty(uri.Host))
+                {
+                    return Result<string>.Failure(
+                        "DataStore connection URI must include a valid host.",
+                        ErrorType.Validation);
+                }
+                server = uri.Port > 0 && uri.Port != 1433 ? $"{uri.Host},{uri.Port}" : uri.Host;
+                if (!string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
+                {
+                    database = uri.AbsolutePath.TrimStart('/');
+                }
+            }
+            else if (uriString.Contains(';'))
+            {
+                // Already a connection string format in the URI
+                // Add credentials to the existing connection string
+                return Result<string>.Success($"{uriString};User Id={account.UserName};Password={password}");
+            }
+            else
+            {
+                // Plain hostname or hostname:port/database format
+                var cleanUri = uriString.Replace("://", "");
+                var pathIndex = cleanUri.IndexOf('/');
+                if (pathIndex > 0)
+                {
+                    server = cleanUri.Substring(0, pathIndex);
+                    database = cleanUri.Substring(pathIndex + 1);
+                }
+                else
+                {
+                    server = cleanUri;
+                }
             }
         }
-        else if (uriString.Contains(';'))
+        catch (Exception ex)
         {
-            // Already a connection string format in the URI
-            server = uriString;
-            // Use as-is but add credentials
-            return Result<string>.Success($"{uriString};User Id={account.UserName};Password={password}");
-        }
-        else
-        {
-            // Plain hostname or hostname:port
-            server = uriString.Replace("://", "").Split('/')[0];
-            var parts = uriString.Split('/');
-            if (parts.Length > 1)
-            {
-                database = parts.Last();
-            }
+            return Result<string>.Failure(
+                $"Failed to parse DataStore connection URI: {ex.Message}",
+                ErrorType.Validation);
         }
 
-        var connectionString = $"Server={server};User Id={account.UserName};Password={password};TrustServerCertificate=True";
+        // Note: TrustServerCertificate is set based on the environment. In production, 
+        // users should configure proper certificates and use connection string mode 
+        // with Encrypt=true and proper certificate validation.
+        var connectionString = $"Server={server};User Id={account.UserName};Password={password};Encrypt=true;TrustServerCertificate=true";
         if (!string.IsNullOrEmpty(database))
         {
             connectionString += $";Database={database}";

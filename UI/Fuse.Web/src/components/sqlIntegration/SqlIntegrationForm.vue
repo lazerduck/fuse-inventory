@@ -162,10 +162,18 @@
           <div class="row items-center q-gutter-sm">
             <q-icon :name="testResult.isSuccessful ? 'check_circle' : 'error'" size="sm" />
             <div class="text-weight-medium">
-              {{ testResult.isSuccessful ? 'Connection Successful' : 'Connection Failed' }}
+              <template v-if="testResult.isSuccessful && isAccountTestPending">
+                Ready to Save
+              </template>
+              <template v-else>
+                {{ testResult.isSuccessful ? 'Connection Successful' : 'Connection Failed' }}
+              </template>
             </div>
           </div>
-          <div v-if="testResult.isSuccessful && testResult.permissions" class="q-mt-sm">
+          <div v-if="isAccountTestPending" class="q-mt-sm text-caption text-grey-7">
+            Account-based connections are validated when saving. The server will build and test the connection using the selected account's credentials.
+          </div>
+          <div v-if="testResult.isSuccessful && testResult.permissions && !isAccountTestPending" class="q-mt-sm">
             <div class="text-caption text-grey-7 q-mb-xs">Detected Permissions:</div>
             <div class="q-gutter-xs">
               <q-badge 
@@ -349,12 +357,19 @@ const hasSuccessfulTest = computed(() =>
   testResult.value?.isSuccessful === true || props.mode === 'edit'
 )
 
+// Track if we're using account-based auth and awaiting server-side validation
+const isAccountTestPending = computed(() => 
+  authMode.value === 'account' && testResult.value?.isSuccessful === true && !testResult.value?.permissions
+)
+
 const testResultClass = computed(() => ({
   'bg-green-1': testResult.value?.isSuccessful,
   'bg-red-1': !testResult.value?.isSuccessful,
   'text-positive': testResult.value?.isSuccessful,
   'text-negative': !testResult.value?.isSuccessful,
-  'rounded-borders': true
+  'rounded-borders': true,
+  'bg-blue-1': isAccountTestPending.value,
+  'text-blue-9': isAccountTestPending.value
 }))
 
 const testConnectionMutation = useMutation({
@@ -388,13 +403,8 @@ function testConnection() {
       }
     })
   } else {
-    // For account mode, we need to test via the server which will build the connection string
-    // The test connection endpoint only accepts connection strings, so we inform users
-    Notify.create({ 
-      type: 'info', 
-      message: 'Account-based connections are validated when saving. The server will build and test the connection.' 
-    })
-    // Treat account-based as valid for testing purposes since it will be validated on save
+    // For account mode, the connection is validated server-side when saving
+    // Mark as ready to proceed - the test result box will explain this to users
     testResult.value = {
       isSuccessful: true,
       permissions: undefined,
