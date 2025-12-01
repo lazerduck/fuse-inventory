@@ -81,16 +81,6 @@ export function useReadonlySearch() {
   })
 
   // Lookup maps for resolving dependency target names
-  const applicationLookup = computed<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const app of applicationsQuery.data.value ?? []) {
-      if (app.id) {
-        map[app.id] = app.name ?? 'Unknown Application'
-      }
-    }
-    return map
-  })
-
   const dataStoreLookup = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {}
     for (const store of dataStoresQuery.data.value ?? []) {
@@ -111,13 +101,27 @@ export function useReadonlySearch() {
     return map
   })
 
+  const instanceLookup = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    for (const app of applicationsQuery.data.value ?? []) {
+      for (const instance of app.instances ?? []) {
+        if (instance.id) {
+          const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
+          map[instance.id] = `${app.name ?? 'App'} — ${envName}`
+        }
+      }
+    }
+    return map
+  })
+
   // Helper function to resolve dependency target name based on targetKind
   function resolveDependencyTargetName(targetId: string | undefined, targetKind: string | undefined): string {
     if (!targetId) return 'Unknown'
     
     switch (targetKind) {
       case 'Application':
-        return applicationLookup.value[targetId] ?? 'Unknown Application'
+        // Note: When targetKind is 'Application', targetId actually refers to an instance ID
+        return instanceLookup.value[targetId] ?? 'Unknown Instance'
       case 'DataStore':
         return dataStoreLookup.value[targetId] ?? 'Unknown Data Store'
       case 'External':
