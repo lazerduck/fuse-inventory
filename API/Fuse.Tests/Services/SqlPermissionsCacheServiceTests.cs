@@ -3,6 +3,7 @@ using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -38,10 +39,25 @@ public class SqlPermissionsCacheServiceTests
         IAccountSqlInspector? inspector = null)
     {
         var mockLogger = new Mock<ILogger<SqlPermissionsCacheService>>();
+        
+        // Create a mock service provider that returns the inspector
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockServiceScope = new Mock<IServiceScope>();
+        var mockServiceScopeFactory = new Mock<IServiceScopeFactory>();
+        
+        mockServiceScope.Setup(s => s.ServiceProvider).Returns(mockServiceProvider.Object);
+        mockServiceScopeFactory.Setup(f => f.CreateScope()).Returns(mockServiceScope.Object);
+        mockServiceProvider
+            .Setup(sp => sp.GetService(typeof(IServiceScopeFactory)))
+            .Returns(mockServiceScopeFactory.Object);
+        mockServiceProvider
+            .Setup(sp => sp.GetService(typeof(IAccountSqlInspector)))
+            .Returns(inspector ?? Mock.Of<IAccountSqlInspector>());
+        
         return new SqlPermissionsCacheService(
             mockLogger.Object,
             store,
-            inspector ?? Mock.Of<IAccountSqlInspector>());
+            mockServiceProvider.Object);
     }
 
     [Fact]
