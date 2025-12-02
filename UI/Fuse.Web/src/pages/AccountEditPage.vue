@@ -644,11 +644,8 @@ const updateMutation = useMutation({
 const createGrantMutation = useMutation({
   mutationFn: ({ accountId, payload }: { accountId: string; payload: CreateAccountGrant }) =>
     client.grantPOST(accountId, payload),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['accounts'] })
-    queryClient.invalidateQueries({ queryKey: ['account', accountId.value] })
-    Notify.create({ type: 'positive', message: 'Grant created' })
-    closeGrantDialog()
+  onSuccess: async () => {
+    await handleGrantMutationSuccess('Grant created', closeGrantDialog)
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create grant') })
@@ -658,11 +655,8 @@ const createGrantMutation = useMutation({
 const updateGrantMutation = useMutation({
   mutationFn: ({ accountId, grantId, payload }: { accountId: string; grantId: string; payload: UpdateAccountGrant }) =>
     client.grantPUT(accountId, grantId, payload),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['accounts'] })
-    queryClient.invalidateQueries({ queryKey: ['account', accountId.value] })
-    Notify.create({ type: 'positive', message: 'Grant updated' })
-    closeGrantDialog()
+  onSuccess: async () => {
+    await handleGrantMutationSuccess('Grant updated', closeGrantDialog)
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update grant') })
@@ -671,10 +665,8 @@ const updateGrantMutation = useMutation({
 
 const deleteGrantMutation = useMutation({
   mutationFn: ({ accountId, grantId }: { accountId: string; grantId: string }) => client.grantDELETE(accountId, grantId),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['accounts'] })
-    queryClient.invalidateQueries({ queryKey: ['account', accountId.value] })
-    Notify.create({ type: 'positive', message: 'Grant removed' })
+  onSuccess: async () => {
+    await handleGrantMutationSuccess('Grant removed')
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to delete grant') })
@@ -713,6 +705,69 @@ const grantMutationPending = computed(
 )
 
 const grantDialogLoading = computed(() => grantMutationPending.value)
+
+function getLinkedIntegrationIds(): string[] {
+  const ids = new Set<string>()
+  if (currentSqlIntegrationId.value) {
+    ids.add(currentSqlIntegrationId.value)
+  }
+
+  const existingTargetId =
+    account.value?.targetKind === TargetKind.DataStore ? account.value.targetId ?? null : null
+  if (existingTargetId) {
+    const integration = (sqlIntegrationsQuery.data.value ?? []).find(
+      (si) => si.dataStoreId === existingTargetId
+    )
+    if (integration?.id) {
+      ids.add(integration.id)
+    }
+  }
+
+  return Array.from(ids)
+}
+
+async function markSqlQueriesStale() {
+  const invalidations: Promise<unknown>[] = []
+  if (accountId.value) {
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: ['account-sql-status', accountId.value] })
+    )
+  }
+  for (const integrationId of getLinkedIntegrationIds()) {
+    invalidations.push(
+      queryClient.invalidateQueries({ queryKey: ['sql-permissions-overview', integrationId] })
+    )
+  }
+  if (invalidations.length) {
+    await Promise.all(invalidations)
+  }
+}
+
+async function refreshAccountSqlStatusCache() {
+  if (!accountId.value) return
+  try {
+    await client.refresh(accountId.value)
+  } catch (err) {
+    console.warn('Failed to refresh SQL status for account', accountId.value, err)
+  } finally {
+    await markSqlQueriesStale()
+  }
+}
+
+async function handleGrantMutationSuccess(message: string, afterSuccess?: () => void) {
+  const baseInvalidations: Promise<unknown>[] = [
+    queryClient.invalidateQueries({ queryKey: ['accounts'] })
+  ]
+  if (accountId.value) {
+    baseInvalidations.push(
+      queryClient.invalidateQueries({ queryKey: ['account', accountId.value] })
+    )
+  }
+  await Promise.all(baseInvalidations)
+  await refreshAccountSqlStatusCache()
+  Notify.create({ type: 'positive', message })
+  afterSuccess?.()
+}
 
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
