@@ -49,9 +49,10 @@ public class AccountServiceTests
         return new InMemoryFuseStore(snapshot);
     }
 
-    private static AccountService CreateService(InMemoryFuseStore store, IAccountSqlInspector? sqlInspector = null)
+    private static AccountService CreateService(InMemoryFuseStore store, IAccountSqlInspector? sqlInspector = null, ISqlPermissionsCache? sqlCache = null)
     {
         sqlInspector ??= Mock.Of<IAccountSqlInspector>();
+        sqlCache ??= Mock.Of<ISqlPermissionsCache>();
         return new AccountService(store, new TagLookupService(store), sqlInspector);
     }
 

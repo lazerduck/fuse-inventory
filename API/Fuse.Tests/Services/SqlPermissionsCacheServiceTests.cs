@@ -5,6 +5,7 @@ using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using Xunit;
 
@@ -36,28 +37,36 @@ public class SqlPermissionsCacheServiceTests
 
     private static SqlPermissionsCacheService CreateService(
         InMemoryFuseStore store,
-        IAccountSqlInspector? inspector = null)
+        ISqlPermissionsInspector? inspector = null)
     {
         var mockLogger = new Mock<ILogger<SqlPermissionsCacheService>>();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
         
         // Create a mock service provider that returns the inspector
-        var mockServiceProvider = new Mock<IServiceProvider>();
+        var mockScopedServiceProvider = new Mock<IServiceProvider>();
         var mockServiceScope = new Mock<IServiceScope>();
         var mockServiceScopeFactory = new Mock<IServiceScopeFactory>();
+        var mockServiceProvider = new Mock<IServiceProvider>();
         
-        mockServiceScope.Setup(s => s.ServiceProvider).Returns(mockServiceProvider.Object);
+        // Scoped provider returns the inspector
+        mockScopedServiceProvider
+            .Setup(sp => sp.GetService(typeof(ISqlPermissionsInspector)))
+            .Returns(inspector ?? Mock.Of<ISqlPermissionsInspector>());
+        
+        // Scope returns the scoped provider
+        mockServiceScope.Setup(s => s.ServiceProvider).Returns(mockScopedServiceProvider.Object);
         mockServiceScopeFactory.Setup(f => f.CreateScope()).Returns(mockServiceScope.Object);
+        
+        // Root provider returns the scope factory
         mockServiceProvider
             .Setup(sp => sp.GetService(typeof(IServiceScopeFactory)))
             .Returns(mockServiceScopeFactory.Object);
-        mockServiceProvider
-            .Setup(sp => sp.GetService(typeof(IAccountSqlInspector)))
-            .Returns(inspector ?? Mock.Of<IAccountSqlInspector>());
         
         return new SqlPermissionsCacheService(
             mockLogger.Object,
             store,
-            mockServiceProvider.Object);
+            mockServiceProvider.Object,
+            memoryCache);
     }
 
     [Fact]
@@ -130,22 +139,27 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
-            {
-                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
-            }), null));
-        mockInspector
-            .Setup(i => i.GetAllPrincipalsAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new List<SqlPrincipalPermissions>
-            {
-                new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
+            .Setup(i => i.GetOverviewAsync(It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SqlIntegrationPermissionsOverviewResponse(
+                IntegrationId: intId,
+                IntegrationName: "SQL1",
+                Accounts: new[]
                 {
-                    new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
-                })
-            }, null));
+                    new SqlAccountPermissionsStatus(
+                        AccountId: accountId,
+                        AccountName: "testuser @ DS1",
+                        PrincipalName: "testuser",
+                        Status: SyncStatus.InSync,
+                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                        ErrorMessage: null
+                    )
+                },
+                OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(),
+                Summary: new SqlPermissionsOverviewSummary(1, 1, 0, 0, 0, 0),
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
@@ -194,16 +208,27 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
-            {
-                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
-            }), null));
-        mockInspector
-            .Setup(i => i.GetAllPrincipalsAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new List<SqlPrincipalPermissions>(), null));
+            .Setup(i => i.GetOverviewAsync(It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SqlIntegrationPermissionsOverviewResponse(
+                IntegrationId: intId,
+                IntegrationName: "SQL1",
+                Accounts: new[]
+                {
+                    new SqlAccountPermissionsStatus(
+                        AccountId: accountId,
+                        AccountName: "testuser @ DS1",
+                        PrincipalName: "testuser",
+                        Status: SyncStatus.InSync,
+                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                        ErrorMessage: null
+                    )
+                },
+                OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(),
+                Summary: new SqlPermissionsOverviewSummary(1, 1, 0, 0, 0, 0),
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
@@ -342,13 +367,18 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
-            {
-                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
-            }), null));
+            .Setup(i => i.GetAccountStatusAsync(It.IsAny<Account>(), It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: intId,
+                SqlIntegrationName: "SQL1",
+                Status: SyncStatus.InSync,
+                StatusSummary: "Permissions are in sync.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
@@ -396,13 +426,27 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", true, new List<SqlActualGrant>
-            {
-                new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select }) // Only has Select
-            }), null));
+            .Setup(i => i.GetAccountStatusAsync(It.IsAny<Account>(), It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: intId,
+                SqlIntegrationName: "SQL1",
+                Status: SyncStatus.DriftDetected,
+                StatusSummary: "Permission drift detected between configured and actual grants.",
+                PermissionComparisons: new[]
+                {
+                    new SqlPermissionComparison(
+                        Database: "TestDB",
+                        Schema: null,
+                        ConfiguredPrivileges: new HashSet<Privilege> { Privilege.Select, Privilege.Insert },
+                        ActualPrivileges: new HashSet<Privilege> { Privilege.Select },
+                        MissingPrivileges: new HashSet<Privilege> { Privilege.Insert },
+                        ExtraPrivileges: new HashSet<Privilege>())
+                },
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
@@ -442,10 +486,18 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("testuser", false, Array.Empty<SqlActualGrant>()), null));
+            .Setup(i => i.GetAccountStatusAsync(It.IsAny<Account>(), It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountSqlStatusResponse(
+                AccountId: accountId,
+                SqlIntegrationId: intId,
+                SqlIntegrationName: "SQL1",
+                Status: SyncStatus.MissingPrincipal,
+                StatusSummary: "SQL principal 'testuser' does not exist.",
+                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
@@ -499,7 +551,20 @@ public class SqlPermissionsCacheServiceTests
         var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.None, DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
-        var service = CreateService(store);
+        
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
+        mockInspector
+            .Setup(i => i.GetOverviewAsync(It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SqlIntegrationPermissionsOverviewResponse(
+                IntegrationId: intId,
+                IntegrationName: "SQL1",
+                Accounts: Array.Empty<SqlAccountPermissionsStatus>(),
+                OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(),
+                Summary: new SqlPermissionsOverviewSummary(0, 0, 0, 0, 0, 0),
+                ErrorMessage: "SQL integration does not have Read permission to inspect accounts."
+            ));
+        
+        var service = CreateService(store, mockInspector.Object);
 
         // Act
         var result = await service.RefreshIntegrationAsync(intId);
@@ -535,20 +600,33 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
-        var mockInspector = new Mock<IAccountSqlInspector>();
+        var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "manageduser", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("manageduser", true, Array.Empty<SqlActualGrant>()), null));
-        mockInspector
-            .Setup(i => i.GetAllPrincipalsAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new List<SqlPrincipalPermissions>
-            {
-                new SqlPrincipalPermissions("manageduser", true, Array.Empty<SqlActualGrant>()),
-                new SqlPrincipalPermissions("orphanuser", true, new List<SqlActualGrant>
+            .Setup(i => i.GetOverviewAsync(It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SqlIntegrationPermissionsOverviewResponse(
+                IntegrationId: intId,
+                IntegrationName: "SQL1",
+                Accounts: new[]
                 {
-                    new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
-                })
-            }, null));
+                    new SqlAccountPermissionsStatus(
+                        AccountId: accountId,
+                        AccountName: "manageduser @ DS1",
+                        PrincipalName: "manageduser",
+                        Status: SyncStatus.InSync,
+                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                        ErrorMessage: null
+                    )
+                },
+                OrphanPrincipals: new[]
+                {
+                    new SqlOrphanPrincipal("orphanuser", new[]
+                    {
+                        new SqlActualGrant("TestDB", null, new HashSet<Privilege> { Privilege.Select })
+                    })
+                },
+                Summary: new SqlPermissionsOverviewSummary(1, 1, 0, 0, 0, 1),
+                ErrorMessage: null
+            ));
         
         var service = CreateService(store, mockInspector.Object);
 
