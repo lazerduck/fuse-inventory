@@ -8,7 +8,7 @@ export function useImportOrphanPrincipal() {
 
   const mutation = useMutation({
     mutationFn: (params: { integrationId: string; request: ImportOrphanPrincipalRequest }): Promise<ImportOrphanPrincipalResponse> =>
-      client.importOrphanPrincipal(params.integrationId, params.request),
+      client.import3(params.integrationId, params.request),
     onSuccess: (_data, variables) => {
       // Invalidate the permissions overview to refresh the data
       queryClient.invalidateQueries({
