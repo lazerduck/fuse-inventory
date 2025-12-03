@@ -43,7 +43,7 @@ public class AccountSqlInspectorSmokeTests : IAsyncLifetime
         // Use master/admin connection for inspection to allow cross-db querying
         var integration = new SqlIntegration(
             Guid.NewGuid(), "Smoke", Guid.NewGuid(),
-            _fixture.MasterConnectionString, SqlPermissions.Read,
+            _fixture.MasterConnectionString, null, SqlPermissions.Read,
             DateTime.UtcNow, DateTime.UtcNow);
 
         var (ok, perms, err) = await _inspector.GetPrincipalPermissionsAsync(integration, user);

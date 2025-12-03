@@ -376,7 +376,7 @@ public class AccountServiceTests
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.None, new SecretBinding(SecretBindingKind.None, null, null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
         var service = CreateService(store);
@@ -394,7 +394,7 @@ public class AccountServiceTests
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
 
@@ -418,7 +418,7 @@ public class AccountServiceTests
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
 
@@ -442,7 +442,7 @@ public class AccountServiceTests
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
@@ -468,7 +468,7 @@ public class AccountServiceTests
         var dsId = Guid.NewGuid();
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) };
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });

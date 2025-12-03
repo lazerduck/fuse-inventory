@@ -28,16 +28,25 @@ public class SqlIntegrationService : ISqlIntegrationService
         _secretOperationService = secretOperationService;
     }
 
-    private static Result ValidateCoreFields(string name, string connectionString)
+    private static Result ValidateCoreFields(string name, string? connectionString, Guid? accountId)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             return Result.Failure("Name is required.", ErrorType.Validation);
         }
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        // Either connection string or account must be provided, but not both
+        var hasConnectionString = !string.IsNullOrWhiteSpace(connectionString);
+        var hasAccount = accountId is not null;
+
+        if (!hasConnectionString && !hasAccount)
         {
-            return Result.Failure("Connection string is required.", ErrorType.Validation);
+            return Result.Failure("Either connection string or account must be provided.", ErrorType.Validation);
+        }
+
+        if (hasConnectionString && hasAccount)
+        {
+            return Result.Failure("Provide either a connection string or an account, not both.", ErrorType.Validation);
         }
 
         return Result.Success();
@@ -49,6 +58,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 s.Id,
                 s.Name,
                 s.DataStoreId,
+                s.AccountId,
                 s.Permissions,
                 s.CreatedAt,
                 s.UpdatedAt
@@ -60,15 +70,137 @@ public class SqlIntegrationService : ISqlIntegrationService
                 s.Id,
                 s.Name,
                 s.DataStoreId,
+                s.AccountId,
                 s.Permissions,
                 s.CreatedAt,
                 s.UpdatedAt
             ))
             .FirstOrDefault(s => s.Id == id);
 
+    /// <summary>
+    /// Builds a connection string from an account's credentials and the datastore's connection URI.
+    /// </summary>
+    private async Task<Result<string>> BuildConnectionStringFromAccountAsync(
+        Account account,
+        DataStore dataStore,
+        string? manualPassword,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(account.UserName))
+        {
+            return Result<string>.Failure("Account must have a username to use for SQL authentication.", ErrorType.Validation);
+        }
+
+        // Get the password from either secret provider or manual entry
+        string password;
+        if (!string.IsNullOrWhiteSpace(manualPassword))
+        {
+            password = manualPassword;
+        }
+        else if (account.SecretBinding.Kind == SecretBindingKind.AzureKeyVault && account.SecretBinding.AzureKeyVault is not null)
+        {
+            var secretResult = await _secretOperationService.RevealSecretAsync(
+                new RevealSecret(
+                    account.SecretBinding.AzureKeyVault.ProviderId,
+                    account.SecretBinding.AzureKeyVault.SecretName,
+                    account.SecretBinding.AzureKeyVault.Version),
+                "System",
+                null);
+
+            if (!secretResult.IsSuccess || string.IsNullOrWhiteSpace(secretResult.Value))
+            {
+                return Result<string>.Failure(
+                    $"Failed to retrieve password from Secret Provider: {secretResult.Error ?? "Secret value is empty."}",
+                    ErrorType.ServerError);
+            }
+            password = secretResult.Value;
+        }
+        else
+        {
+            return Result<string>.Failure(
+                "Account must have either an Azure Key Vault secret binding or a manual password must be provided.",
+                ErrorType.Validation);
+        }
+
+        // Build connection string from datastore connection URI
+        if (dataStore.ConnectionUri is null)
+        {
+            return Result<string>.Failure(
+                "DataStore must have a connection URI to use account-based authentication.",
+                ErrorType.Validation);
+        }
+
+        var uriString = dataStore.ConnectionUri.ToString();
+        var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+
+        try
+        {
+            // Parse the connection URI
+            if (uriString.StartsWith("mssql://", StringComparison.OrdinalIgnoreCase) ||
+                uriString.StartsWith("sqlserver://", StringComparison.OrdinalIgnoreCase))
+            {
+                // URI format: mssql://server/database or mssql://server:port/database
+                var uri = dataStore.ConnectionUri;
+                if (string.IsNullOrEmpty(uri.Host))
+                {
+                    return Result<string>.Failure(
+                        "DataStore connection URI must include a valid host.",
+                        ErrorType.Validation);
+                }
+                
+                builder.DataSource = uri.Port > 0 && uri.Port != 1433 ? $"{uri.Host},{uri.Port}" : uri.Host;
+                
+                if (!string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
+                {
+                    builder.InitialCatalog = uri.AbsolutePath.TrimStart('/');
+                }
+            }
+            else if (uriString.Contains(';'))
+            {
+                // Already a connection string format in the URI
+                // Parse it and override credentials
+                builder.ConnectionString = uriString;
+            }
+            else
+            {
+                // Plain hostname or hostname:port/database format
+                var cleanUri = uriString.Replace("://", "");
+                var pathIndex = cleanUri.IndexOf('/');
+                
+                if (pathIndex > 0)
+                {
+                    builder.DataSource = cleanUri.Substring(0, pathIndex);
+                    builder.InitialCatalog = cleanUri.Substring(pathIndex + 1);
+                }
+                else
+                {
+                    builder.DataSource = cleanUri;
+                }
+            }
+
+            // Set authentication credentials
+            builder.UserID = account.UserName;
+            builder.Password = password;
+            
+            // Set encryption settings
+            // Note: TrustServerCertificate is set to true for development. In production, 
+            // users should configure proper certificates and set this to false.
+            builder.Encrypt = true;
+            builder.TrustServerCertificate = true;
+        }
+        catch (Exception ex)
+        {
+            return Result<string>.Failure(
+                $"Failed to parse DataStore connection URI: {ex.Message}",
+                ErrorType.Validation);
+        }
+
+        return Result<string>.Success(builder.ConnectionString);
+    }
+
     public async Task<Result<SqlIntegrationResponse>> CreateSqlIntegrationAsync(CreateSqlIntegration command, CancellationToken ct = default)
     {
-        var validation = ValidateCoreFields(command.Name, command.ConnectionString);
+        var validation = ValidateCoreFields(command.Name, command.ConnectionString, command.AccountId);
         if (!validation.IsSuccess)
         {
             return Result<SqlIntegrationResponse>.Failure(validation.Error!, validation.ErrorType!.Value);
@@ -77,15 +209,45 @@ public class SqlIntegrationService : ISqlIntegrationService
         var snapshot = await _store.GetAsync(ct);
 
         // Validate datastore exists
-        if (!snapshot.DataStores.Any(d => d.Id == command.DataStoreId))
+        var dataStore = snapshot.DataStores.FirstOrDefault(d => d.Id == command.DataStoreId);
+        if (dataStore is null)
             return Result<SqlIntegrationResponse>.Failure($"DataStore {command.DataStoreId} not found.", ErrorType.NotFound);
 
         // Check if datastore already has an SQL integration
         if (snapshot.SqlIntegrations.Any(s => s.DataStoreId == command.DataStoreId))
             return Result<SqlIntegrationResponse>.Failure($"DataStore {command.DataStoreId} already has an SQL integration.", ErrorType.Conflict);
 
+        string connectionString;
+        Guid? accountId = command.AccountId;
+
+        // Determine connection string based on mode
+        if (command.AccountId is not null)
+        {
+            // Account-based authentication
+            var account = snapshot.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+            if (account is null)
+                return Result<SqlIntegrationResponse>.Failure($"Account {command.AccountId} not found.", ErrorType.NotFound);
+
+            // Validate account targets the same datastore
+            if (account.TargetKind != TargetKind.DataStore || account.TargetId != command.DataStoreId)
+                return Result<SqlIntegrationResponse>.Failure(
+                    "Account must target the same DataStore as the SQL integration.",
+                    ErrorType.Validation);
+
+            var buildResult = await BuildConnectionStringFromAccountAsync(account, dataStore, command.ManualPassword, ct);
+            if (!buildResult.IsSuccess)
+                return Result<SqlIntegrationResponse>.Failure(buildResult.Error!, buildResult.ErrorType!.Value);
+
+            connectionString = buildResult.Value!;
+        }
+        else
+        {
+            // Direct connection string
+            connectionString = command.ConnectionString!;
+        }
+
         // Validate connection string and get permissions
-        var (isSuccessful, permissions, errorMessage) = await _validator.ValidateConnectionAsync(command.ConnectionString, ct);
+        var (isSuccessful, permissions, errorMessage) = await _validator.ValidateConnectionAsync(connectionString, ct);
         if (!isSuccessful)
             return Result<SqlIntegrationResponse>.Failure($"Connection validation failed: {errorMessage}", ErrorType.Validation);
 
@@ -94,7 +256,8 @@ public class SqlIntegrationService : ISqlIntegrationService
             Id: Guid.NewGuid(),
             Name: command.Name,
             DataStoreId: command.DataStoreId,
-            ConnectionString: command.ConnectionString,
+            ConnectionString: connectionString,
+            AccountId: accountId,
             Permissions: permissions,
             CreatedAt: now,
             UpdatedAt: now
@@ -110,6 +273,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             integration.Id,
             integration.Name,
             integration.DataStoreId,
+            integration.AccountId,
             integration.Permissions,
             integration.CreatedAt,
             integration.UpdatedAt));
@@ -122,26 +286,56 @@ public class SqlIntegrationService : ISqlIntegrationService
         if (existing is null)
             return Result<SqlIntegrationResponse>.Failure($"SQL integration {command.Id} not found.", ErrorType.NotFound);
 
-        var validation = ValidateCoreFields(command.Name, command.ConnectionString);
+        var validation = ValidateCoreFields(command.Name, command.ConnectionString, command.AccountId);
         if (!validation.IsSuccess)
         {
             return Result<SqlIntegrationResponse>.Failure(validation.Error!, validation.ErrorType!.Value);
         }
 
         // Validate datastore exists
-        if (!snapshot.DataStores.Any(d => d.Id == command.DataStoreId))
+        var dataStore = snapshot.DataStores.FirstOrDefault(d => d.Id == command.DataStoreId);
+        if (dataStore is null)
             return Result<SqlIntegrationResponse>.Failure($"DataStore {command.DataStoreId} not found.", ErrorType.NotFound);
 
         // Check if another SQL integration is already associated with the datastore
         if (snapshot.SqlIntegrations.Any(s => s.DataStoreId == command.DataStoreId && s.Id != command.Id))
             return Result<SqlIntegrationResponse>.Failure($"DataStore {command.DataStoreId} already has an SQL integration.", ErrorType.Conflict);
 
-        bool needsValidation = existing.ConnectionString != command.ConnectionString;
+        string connectionString;
+        Guid? accountId = command.AccountId;
+
+        // Determine connection string based on mode
+        if (command.AccountId is not null)
+        {
+            // Account-based authentication
+            var account = snapshot.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+            if (account is null)
+                return Result<SqlIntegrationResponse>.Failure($"Account {command.AccountId} not found.", ErrorType.NotFound);
+
+            // Validate account targets the same datastore
+            if (account.TargetKind != TargetKind.DataStore || account.TargetId != command.DataStoreId)
+                return Result<SqlIntegrationResponse>.Failure(
+                    "Account must target the same DataStore as the SQL integration.",
+                    ErrorType.Validation);
+
+            var buildResult = await BuildConnectionStringFromAccountAsync(account, dataStore, command.ManualPassword, ct);
+            if (!buildResult.IsSuccess)
+                return Result<SqlIntegrationResponse>.Failure(buildResult.Error!, buildResult.ErrorType!.Value);
+
+            connectionString = buildResult.Value!;
+        }
+        else
+        {
+            // Direct connection string
+            connectionString = command.ConnectionString!;
+        }
+
+        bool needsValidation = existing.ConnectionString != connectionString || existing.AccountId != accountId;
         SqlPermissions permissions = existing.Permissions;
 
         if (needsValidation)
         {
-            var (isSuccessful, newPermissions, errorMessage) = await _validator.ValidateConnectionAsync(command.ConnectionString, ct);
+            var (isSuccessful, newPermissions, errorMessage) = await _validator.ValidateConnectionAsync(connectionString, ct);
             if (!isSuccessful)
                 return Result<SqlIntegrationResponse>.Failure($"Connection validation failed: {errorMessage}", ErrorType.Validation);
             permissions = newPermissions;
@@ -151,7 +345,8 @@ public class SqlIntegrationService : ISqlIntegrationService
         {
             Name = command.Name,
             DataStoreId = command.DataStoreId,
-            ConnectionString = command.ConnectionString,
+            ConnectionString = connectionString,
+            AccountId = accountId,
             Permissions = permissions,
             UpdatedAt = DateTime.UtcNow
         };
@@ -165,6 +360,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             updated.Id,
             updated.Name,
             updated.DataStoreId,
+            updated.AccountId,
             updated.Permissions,
             updated.CreatedAt,
             updated.UpdatedAt));
@@ -185,10 +381,9 @@ public class SqlIntegrationService : ISqlIntegrationService
 
     public async Task<Result<SqlConnectionTestResult>> TestConnectionAsync(TestSqlConnection command, CancellationToken ct = default)
     {
-        var validation = ValidateCoreFields("test", command.ConnectionString);
-        if (!validation.IsSuccess)
+        if (string.IsNullOrWhiteSpace(command.ConnectionString))
         {
-            return Result<SqlConnectionTestResult>.Failure(validation.Error!, validation.ErrorType!.Value);
+            return Result<SqlConnectionTestResult>.Failure("Connection string is required.", ErrorType.Validation);
         }
 
         var (isSuccessful, permissions, errorMessage) = await _validator.ValidateConnectionAsync(command.ConnectionString, ct);

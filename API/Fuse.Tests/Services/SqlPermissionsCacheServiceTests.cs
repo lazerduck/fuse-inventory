@@ -119,7 +119,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,
@@ -188,7 +188,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,
@@ -347,7 +347,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,
@@ -406,7 +406,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,
@@ -466,7 +466,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,
@@ -548,7 +548,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         // Integration without Read permission
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.None, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.None, DateTime.UtcNow, DateTime.UtcNow);
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds });
         
@@ -583,7 +583,7 @@ public class SqlPermissionsCacheServiceTests
         var intId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var ds = new DataStore(dsId, "DS1", null, "sql", Guid.NewGuid(), null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
-        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
+        var integration = new SqlIntegration(intId, "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
         var account = new Account(
             accountId,
             dsId,

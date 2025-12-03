@@ -5,14 +5,18 @@ namespace Fuse.Core.Commands;
 public record CreateSqlIntegration(
     string Name,
     Guid DataStoreId,
-    string ConnectionString
+    string? ConnectionString,
+    Guid? AccountId,
+    string? ManualPassword
 );
 
 public record UpdateSqlIntegration(
     Guid Id,
     string Name,
     Guid DataStoreId,
-    string ConnectionString
+    string? ConnectionString,
+    Guid? AccountId,
+    string? ManualPassword
 );
 
 public record DeleteSqlIntegration(Guid Id);
