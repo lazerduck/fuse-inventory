@@ -3,3 +3,8 @@ bin/
 node_modules/
 dist/
 data/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/

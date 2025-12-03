@@ -139,6 +139,65 @@ Fuse-Inventory is under active development, but the core data model is stable an
 
 ---
 
+## 🧪 UI Testing
+
+Fuse-Inventory includes a Playwright-based UI test suite for automated end-to-end testing.
+
+### Running UI Tests Locally
+
+```bash
+# Navigate to the UI directory
+cd UI/Fuse.Web
+
+# Install dependencies
+npm ci
+
+# Install Playwright browsers (first time only)
+npx playwright install --with-deps chromium
+
+# Run tests (starts dev server automatically)
+npm run test:ui
+
+# Run tests with browser visible
+npm run test:ui:headed
+
+# Run tests in debug mode
+npm run test:ui:debug
+```
+
+### Test Coverage
+
+The UI test suite covers:
+
+- **Environments** — Create, edit, delete operations
+- **Applications** — Create, delete operations
+- **Platforms** — Create, edit, delete operations
+- **Data Stores** — Create, edit, delete operations
+- **Accounts** — Page navigation and form access
+- **Graph** — Page rendering and component visibility
+
+### Writing New Tests
+
+Tests are located in `UI/Fuse.Web/tests/ui/`. Use the helper functions in `tests/ui/helpers/` for common operations:
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { navigateTo, NavDestinations, waitForPageLoad } from './helpers';
+
+test('example test', async ({ page }) => {
+  await page.goto('/');
+  await waitForPageLoad(page);
+  await navigateTo(page, NavDestinations.environments);
+  // Your test assertions here
+});
+```
+
+### CI Integration
+
+UI tests run automatically on push and pull requests via GitHub Actions. Test results and screenshots (on failure) are uploaded as artifacts.
+
+---
+
 ## 🛣️ Roadmap
 
 * Additional Azure Key Vault tooling
