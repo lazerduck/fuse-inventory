@@ -13,13 +13,15 @@ import {
   waitForTableLoad,
   expectRowInTable,
   expectNoRowInTable,
-  generateTestName
+  generateTestName,
+  dismissInitialDialogs
 } from './helpers';
 
 test.describe('Applications', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
+    await dismissInitialDialogs(page);
     await navigateTo(page, NavDestinations.applications);
     await waitForTableLoad(page);
   });

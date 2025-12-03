@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { 
-  waitForPageLoad
+  waitForPageLoad,
+  dismissInitialDialogs
 } from './helpers';
 
 test.describe('Graph', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
+    await dismissInitialDialogs(page);
   });
 
   test('can view graph page', async ({ page }) => {
@@ -40,20 +42,10 @@ test.describe('Graph', () => {
   });
 
   test('can navigate to graph from sidebar', async ({ page }) => {
-    // Click on the Graph item in the sidebar
-    await page.click('[data-tour-id="nav-tags"]:last-of-type');
+    // The Graph link in the sidebar has an insights icon
+    // Find the sidebar item that contains "Graph" text
+    await page.click('text=Graph');
     await waitForPageLoad(page);
-    
-    // Verify we're on the graph page (either by URL or heading)
-    const heading = page.locator('h1:has-text("Graph")');
-    const isGraphPage = await heading.isVisible().catch(() => false);
-    
-    // The nav item uses the same data-tour-id as tags, so we might end up on tags page
-    // Let's navigate directly instead
-    if (!isGraphPage) {
-      await page.goto('/graph');
-      await waitForPageLoad(page);
-    }
     
     await expect(page.locator('h1:has-text("Graph")')).toBeVisible();
   });

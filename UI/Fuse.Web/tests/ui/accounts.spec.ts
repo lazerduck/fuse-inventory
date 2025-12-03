@@ -2,13 +2,15 @@ import { test, expect } from '@playwright/test';
 import { 
   navigateTo, 
   NavDestinations, 
-  waitForPageLoad
+  waitForPageLoad,
+  dismissInitialDialogs
 } from './helpers';
 
 test.describe('Accounts', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
+    await dismissInitialDialogs(page);
     await navigateTo(page, NavDestinations.accounts);
   });
 

@@ -14,13 +14,15 @@ import {
   waitForTableLoad,
   expectRowInTable,
   expectNoRowInTable,
-  generateTestName
+  generateTestName,
+  dismissInitialDialogs
 } from './helpers';
 
 test.describe('Environments', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
+    await dismissInitialDialogs(page);
     await navigateTo(page, NavDestinations.environments);
     await waitForTableLoad(page);
   });
@@ -46,8 +48,12 @@ test.describe('Environments', () => {
     // Submit the form
     await clickSave(page);
 
-    // Verify success
+    // Verify success and wait for dialog to close
     await expectSuccessNotification(page, 'created');
+    await expect(page.locator('.q-dialog .q-card')).not.toBeVisible({ timeout: 5000 });
+    
+    // Wait a bit for query to refetch
+    await page.waitForTimeout(500);
     await waitForTableLoad(page);
     await expectRowInTable(page, envName);
   });
@@ -62,7 +68,12 @@ test.describe('Environments', () => {
     await fillInput(page, 'Name', envName);
     await clickSave(page);
     await expectSuccessNotification(page, 'created');
+    await expect(page.locator('.q-dialog .q-card')).not.toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
     await waitForTableLoad(page);
+    
+    // Wait for the row to appear
+    await expectRowInTable(page, envName);
 
     // Now edit it
     await clickEditInRow(page, envName);
@@ -74,6 +85,8 @@ test.describe('Environments', () => {
 
     // Verify success
     await expectSuccessNotification(page, 'updated');
+    await expect(page.locator('.q-dialog .q-card')).not.toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
     await waitForTableLoad(page);
     
     // Verify the environment still exists
@@ -89,7 +102,12 @@ test.describe('Environments', () => {
     await fillInput(page, 'Name', envName);
     await clickSave(page);
     await expectSuccessNotification(page, 'created');
+    await expect(page.locator('.q-dialog .q-card')).not.toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
     await waitForTableLoad(page);
+    
+    // Wait for the row to appear
+    await expectRowInTable(page, envName);
 
     // Now delete it
     await clickDeleteInRow(page, envName);
@@ -98,6 +116,7 @@ test.describe('Environments', () => {
 
     // Verify success
     await expectSuccessNotification(page, 'deleted');
+    await page.waitForTimeout(500);
     await waitForTableLoad(page);
     
     // Verify it's gone

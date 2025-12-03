@@ -13,13 +13,15 @@ import {
   waitForTableLoad,
   expectRowInTable,
   expectNoRowInTable,
-  generateTestName
+  generateTestName,
+  dismissInitialDialogs
 } from './helpers';
 
 test.describe('Platforms', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
+    await dismissInitialDialogs(page);
     await navigateTo(page, NavDestinations.platforms);
     await waitForTableLoad(page);
   });
@@ -37,10 +39,10 @@ test.describe('Platforms', () => {
     // Wait for dialog to open
     await expect(page.locator('.q-dialog')).toBeVisible();
 
-    // Fill in the form - Platform uses displayName
-    await fillInput(page, 'Display Name', platformName);
+    // Fill in the form - Platform uses "Name*" label
+    await fillInput(page, 'Name', platformName);
     await fillInput(page, 'DNS Name', 'test.example.com');
-    await fillInput(page, 'IP', '192.168.1.1');
+    await fillInput(page, 'IP Address', '192.168.1.1');
 
     // Submit the form
     await clickSave(page);
@@ -57,7 +59,7 @@ test.describe('Platforms', () => {
     // First create a platform
     await clickCreateButton(page, 'Create Platform');
     await expect(page.locator('.q-dialog')).toBeVisible();
-    await fillInput(page, 'Display Name', platformName);
+    await fillInput(page, 'Name', platformName);
     await clickSave(page);
     await expectSuccessNotification(page, 'created');
     await waitForTableLoad(page);
@@ -67,7 +69,7 @@ test.describe('Platforms', () => {
     await expect(page.locator('.q-dialog')).toBeVisible();
 
     // Update the IP address
-    await fillInput(page, 'IP', '10.0.0.1');
+    await fillInput(page, 'IP Address', '10.0.0.1');
     await clickSave(page);
 
     // Verify success
@@ -84,7 +86,7 @@ test.describe('Platforms', () => {
     // First create a platform
     await clickCreateButton(page, 'Create Platform');
     await expect(page.locator('.q-dialog')).toBeVisible();
-    await fillInput(page, 'Display Name', platformName);
+    await fillInput(page, 'Name', platformName);
     await clickSave(page);
     await expectSuccessNotification(page, 'created');
     await waitForTableLoad(page);
