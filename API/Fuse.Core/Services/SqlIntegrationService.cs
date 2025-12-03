@@ -104,7 +104,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                     account.SecretBinding.AzureKeyVault.ProviderId,
                     account.SecretBinding.AzureKeyVault.SecretName,
                     account.SecretBinding.AzureKeyVault.Version),
-                "System",
+                "anonymous",
                 null);
 
             if (!secretResult.IsSuccess || string.IsNullOrWhiteSpace(secretResult.Value))

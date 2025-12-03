@@ -26,6 +26,7 @@ public class ConfigService : IConfigService
 {
     private readonly IFuseStore _store;
     private readonly IAuditService _auditService;
+    private readonly ICurrentUser _currentUser;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -46,10 +47,11 @@ public class ConfigService : IConfigService
         .WithObjectFactory(new RecordFriendlyObjectFactory())
         .Build();
 
-    public ConfigService(IFuseStore store, IAuditService auditService)
+    public ConfigService(IFuseStore store, IAuditService auditService, ICurrentUser currentUser)
     {
         _store = store;
         _auditService = auditService;
+        _currentUser = currentUser;
     }
 
     public async Task<string> ExportAsync(ConfigFormat format, CancellationToken ct = default)
@@ -79,8 +81,8 @@ public class ConfigService : IConfigService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ConfigExported,
             AuditArea.Config,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             null,
             new { Format = format.ToString(), ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count }
         );

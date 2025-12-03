@@ -11,13 +11,20 @@ public class ApplicationService : IApplicationService
     private readonly ITagService _tagService;
     private readonly IAuditService _auditService;
     private readonly IEnvironmentService _environmentService;
+    private readonly ICurrentUser _currentUser;
 
-    public ApplicationService(IFuseStore fuseStore, ITagService tagService, IAuditService auditService, IEnvironmentService environmentService)
+    public ApplicationService(
+        IFuseStore fuseStore,
+        ITagService tagService,
+        IAuditService auditService,
+        IEnvironmentService environmentService,
+        ICurrentUser currentUser)
     {
         _fuseStore = fuseStore;
         _tagService = tagService;
         _auditService = auditService;
         _environmentService = environmentService;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<Application>> GetApplicationsAsync() => (await _fuseStore.GetAsync()).Applications;
@@ -64,8 +71,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationCreated,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             app.Id,
             new { app.Id, app.Name, app.Version, app.Owner }
         );
@@ -120,8 +127,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationUpdated,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             updated.Id,
             new { updated.Id, updated.Name, updated.Version, updated.Owner }
         );
@@ -174,8 +181,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationDeleted,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             appToDelete.Id,
             new { appToDelete.Id, appToDelete.Name }
         );
@@ -230,8 +237,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationInstanceCreated,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             inst.Id,
             new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = inst.Id, inst.EnvironmentId }
         );
@@ -286,8 +293,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationInstanceUpdated,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             updatedInst.Id,
             new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = updatedInst.Id, updatedInst.EnvironmentId }
         );
@@ -343,8 +350,8 @@ public class ApplicationService : IApplicationService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.ApplicationInstanceDeleted,
             AuditArea.Application,
-            "System",
-            null,
+            _currentUser.UserName,
+            _currentUser.UserId,
             instance.Id,
             new { ApplicationId = app.Id, ApplicationName = app.Name, InstanceId = instance.Id, instance.EnvironmentId }
         );

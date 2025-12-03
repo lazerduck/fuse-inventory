@@ -235,7 +235,7 @@ public sealed class SecurityService : ISecurityService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.SecurityUserUpdated,
             AuditArea.Security,
-            "System", // RequestedBy should be passed in command for proper audit
+            "anonymous",
             null,
             user.Id,
             AuditHelper.SanitizeSecurityUser(updatedUser)
@@ -269,7 +269,7 @@ public sealed class SecurityService : ISecurityService
         var auditLog = AuditHelper.CreateLog(
             AuditAction.SecurityUserDeleted,
             AuditArea.Security,
-            "System", // RequestedBy should be passed in command for proper audit
+            "anonymous",
             null,
             user.Id,
             AuditHelper.SanitizeSecurityUser(user)

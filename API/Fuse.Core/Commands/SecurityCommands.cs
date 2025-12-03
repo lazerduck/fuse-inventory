@@ -17,6 +17,12 @@ public record LoginSecurityUser(string UserName, string Password);
 
 public record LogoutSecurityUser(string Token);
 
-public record DeleteUser(Guid Id);
+public record DeleteUser(Guid Id)
+{
+    public Guid? RequestedBy { get; init; }
+}
 
-public record UpdateUser(Guid Id, SecurityRole Role);
+public record UpdateUser(Guid Id, SecurityRole Role)
+{
+    public Guid? RequestedBy { get; init; }
+}

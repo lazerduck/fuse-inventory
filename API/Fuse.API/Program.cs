@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
@@ -31,6 +32,9 @@ builder.Services.AddCors(options =>
 
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
 var app = builder.Build();
 

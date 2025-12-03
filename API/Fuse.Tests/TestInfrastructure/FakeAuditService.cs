@@ -67,3 +67,10 @@ public class FakeAuditService : IAuditService
         return Task.CompletedTask;
     }
 }
+
+public sealed class FakeCurrentUser : ICurrentUser
+{
+    public string UserName => "test-user";
+    public Guid? UserId => Guid.Empty;
+    public bool IsAuthenticated => true;
+}
