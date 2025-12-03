@@ -22,7 +22,6 @@ export const NavDestinations = {
   environments: 'nav-environments',
   externalResources: 'nav-external-resources',
   tags: 'nav-tags',
-  graph: 'nav-tags', // Note: Graph uses nav-tags in the sidebar, but it has insights icon
   config: 'nav-config',
   security: 'nav-security',
   auditLogs: 'nav-audit-logs',
