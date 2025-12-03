@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:ui": "playwright test",
+    "test:ui:headed": "playwright test --headed",
+    "test:ui:debug": "playwright test --debug"
   },
   "dependencies": {
     "@quasar/extras": "^1.17.0",
@@ -23,6 +26,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@quasar/vite-plugin": "^1.10.0",
     "@types/cytoscape-fcose": "^2.2.5",
     "@types/node": "^24.6.0",
