@@ -1,9 +1,9 @@
-using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Responses;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Fuse.Core.Services;
 
@@ -12,17 +12,21 @@ public class KumaMetricsService : BackgroundService, IKumaHealthService
     private readonly ILogger<KumaMetricsService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IFuseStore _store;
-    private readonly ConcurrentDictionary<string, HealthStatusResponse> _healthCache = new();
+    private readonly IMemoryCache _cache;
     private readonly TimeSpan _updateInterval = TimeSpan.FromMinutes(1);
+    private readonly TimeSpan _ttl;
 
     public KumaMetricsService(
         ILogger<KumaMetricsService> logger,
         IHttpClientFactory httpClientFactory,
-        IFuseStore store)
+        IFuseStore store,
+        IMemoryCache cache)
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _store = store;
+        _cache = cache;
+        _ttl = TimeSpan.FromTicks(_updateInterval.Ticks * 2);
     }
 
     public HealthStatusResponse? GetHealthStatus(string monitorUrl)
@@ -32,7 +36,7 @@ public class KumaMetricsService : BackgroundService, IKumaHealthService
 
         // Normalize URL for comparison (remove trailing slashes, etc.)
         var normalizedUrl = NormalizeUrl(monitorUrl);
-        _healthCache.TryGetValue(normalizedUrl, out var status);
+        _cache.TryGetValue(GetHealthKey(normalizedUrl), out HealthStatusResponse? status);
         return status;
     }
 
@@ -162,7 +166,11 @@ public class KumaMetricsService : BackgroundService, IKumaHealthService
                     LastChecked: now
                 );
 
-                _healthCache.AddOrUpdate(normalizedUrl, healthStatus, (_, _) => healthStatus);
+                _cache.Set(GetHealthKey(normalizedUrl), healthStatus, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = _ttl,
+                    Priority = CacheItemPriority.Normal
+                });
                 
                 _logger.LogDebug("Cached health status for {Url}: {Status}", normalizedUrl, status);
             }
@@ -177,4 +185,6 @@ public class KumaMetricsService : BackgroundService, IKumaHealthService
         // Remove trailing slashes and normalize to lowercase for consistent comparison
         return url.TrimEnd('/').ToLowerInvariant();
     }
+
+    private static string GetHealthKey(string normalizedUrl) => $"kuma:health:{normalizedUrl}";
 }

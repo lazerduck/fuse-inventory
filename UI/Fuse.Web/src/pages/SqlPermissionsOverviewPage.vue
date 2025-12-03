@@ -891,6 +891,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
 import type { QTableColumn } from 'quasar'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
@@ -902,11 +903,14 @@ import { useImportOrphanPrincipal } from '../composables/useImportOrphanPrincipa
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useAccounts } from '../composables/useAccounts'
 import { useFuseStore } from '../stores/FuseStore'
+import { useFuseClient } from '../composables/useFuseClient'
 import { SyncStatus, SecurityLevel, ResolveDriftResponse, CreateSqlAccountResponse, BulkResolveResponse, ImportPermissionsResponse, ImportOrphanPrincipalResponse, ImportOrphanPrincipalRequest, PasswordSource, PasswordSourceUsed, BulkPasswordSource, SecretBindingKind, SecretBinding, AuthKind, type SqlAccountPermissionsStatus, type SqlOrphanPrincipal, type BulkResolveAccountResult } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
 const fuseStore = useFuseStore()
+const queryClient = useQueryClient()
+const client = useFuseClient()
 
 const integrationId = computed(() => route.params.id as string)
 const { data, isLoading, isFetching, error, refetch } = useSqlPermissionsOverview(integrationId)
@@ -955,6 +959,40 @@ const orphanPlainReference = ref('')
 const showBulkResolveDialog = ref(false)
 const showBulkResolveResultDialog = ref(false)
 const bulkResolveResult = ref<BulkResolveResponse | null>(null)
+
+function getUniqueAccountIds(ids: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(ids.filter((id): id is string => Boolean(id))))
+}
+
+async function refreshSqlOverviewCache(accountIds: Array<string | null | undefined> = []) {
+  const uniqueAccountIds = getUniqueAccountIds(accountIds)
+  if (uniqueAccountIds.length) {
+    await Promise.all(
+      uniqueAccountIds.map((id) =>
+        client
+          .refresh(id)
+          .catch((err) => console.warn('Failed to refresh SQL status for account', id, err))
+      )
+    )
+  }
+
+  const invalidations: Promise<unknown>[] = [
+    queryClient.invalidateQueries({ queryKey: ['sql-permissions-overview', integrationId.value] })
+  ]
+
+  if (uniqueAccountIds.length) {
+    invalidations.push(queryClient.invalidateQueries({ queryKey: ['accounts'] }))
+    for (const id of uniqueAccountIds) {
+      invalidations.push(
+        queryClient.invalidateQueries({ queryKey: ['account-sql-status', id] }),
+        queryClient.invalidateQueries({ queryKey: ['account', id] })
+      )
+    }
+  }
+
+  await Promise.all(invalidations)
+  await refetch()
+}
 
 // Check if integration has write permission
 // SqlPermissions is a flags enum serialized as comma-separated string (e.g., "Read, Write")
@@ -1136,21 +1174,23 @@ function openResolveDialog(account: SqlAccountPermissionsStatus) {
 async function handleResolveDrift() {
   if (!selectedAccount.value?.accountId) return
   
-  isResolvingAccount.value = selectedAccount.value.accountId
+  const accountId = selectedAccount.value.accountId
+  isResolvingAccount.value = accountId
   
   try {
     const result = await resolveDrift({
       integrationId: integrationId.value,
-      accountId: selectedAccount.value.accountId
+      accountId
     })
     
     resolveResult.value = result
     showResolveDialog.value = false
     showResultDialog.value = true
+    await refreshSqlOverviewCache([accountId])
   } catch (err: any) {
     // Create an error response object
     const errorResponse = new ResolveDriftResponse()
-    errorResponse.accountId = selectedAccount.value.accountId
+    errorResponse.accountId = accountId
     errorResponse.principalName = selectedAccount.value.principalName
     errorResponse.success = false
     errorResponse.operations = []
@@ -1199,12 +1239,13 @@ function openCreateAccountDialog(account: SqlAccountPermissionsStatus) {
 async function handleCreateAccount() {
   if (!createAccountSelectedAccount.value?.accountId) return
   
-  isCreatingAccount.value = createAccountSelectedAccount.value.accountId
+  const accountId = createAccountSelectedAccount.value.accountId
+  isCreatingAccount.value = accountId
   
   try {
     const result = await createSqlAccount({
       integrationId: integrationId.value,
-      accountId: createAccountSelectedAccount.value.accountId,
+      accountId,
       passwordSource: selectedPasswordSource.value,
       password: selectedPasswordSource.value === PasswordSource.SecretProvider ? undefined : manualPassword.value
     })
@@ -1216,8 +1257,7 @@ async function handleCreateAccount() {
     // Clear the password immediately after use
     manualPassword.value = ''
     
-    // Refetch the permissions overview
-    await refetch()
+    await refreshSqlOverviewCache([accountId])
   } catch (err: any) {
     // Create an error response object
     const errorResponse = new CreateSqlAccountResponse()
@@ -1279,9 +1319,9 @@ async function handleBulkResolve() {
     bulkResolveResult.value = result
     showBulkResolveDialog.value = false
     showBulkResolveResultDialog.value = true
-    
-    // Refetch the permissions overview
-    await refetch()
+
+    const affectedAccountIds = (result.results ?? []).map(r => r.accountId)
+    await refreshSqlOverviewCache(affectedAccountIds)
   } catch (err: any) {
     // Create an error response object using constructor pattern
     const errorMessage = err?.status === 401 
@@ -1320,9 +1360,8 @@ async function handleImportPermissions() {
     importResult.value = result
     showImportDialog.value = false
     showImportResultDialog.value = true
-    
-    // Refetch the permissions overview
-    await refetch()
+
+    await refreshSqlOverviewCache([importSelectedAccount.value.accountId])
   } catch (err: any) {
     const errorResponse = new ImportPermissionsResponse()
     errorResponse.accountId = importSelectedAccount.value.accountId
@@ -1378,9 +1417,8 @@ async function handleImportOrphan() {
     importOrphanResult.value = result
     showImportOrphanDialog.value = false
     showImportOrphanResultDialog.value = true
-    
-    // Refetch the permissions overview
-    await refetch()
+
+    await refreshSqlOverviewCache([result.accountId])
   } catch (err: any) {
     const errorResponse = new ImportOrphanPrincipalResponse()
     errorResponse.accountId = ''

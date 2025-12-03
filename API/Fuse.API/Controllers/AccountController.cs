@@ -42,6 +42,7 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<CachedAccountSqlStatusResponse>> GetAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
         {
             // Try to return cached data first
+            await _cache.RefreshAccountAsync(id, ct);
             var cached = _cache.GetCachedAccountStatus(id);
             if (cached is not null)
             {

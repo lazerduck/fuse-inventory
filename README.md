@@ -30,7 +30,19 @@ Fuse-Inventory can also integrate with:
 * **Azure Key Vault** so you can assign, create, update, and view secrets based on your permissions
 
 Fuse-Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
+
 It aims to bridge the gap between documentation, DevOps, and runtime state — keeping human knowledge aligned with live systems.
+
+---
+## Screenshots
+Overview Screen
+<img width="2877" height="1658" alt="Home" src="https://github.com/user-attachments/assets/27313b21-b623-4f7b-b802-bbccc802443b" />
+
+SQL integration
+<img width="2879" height="1640" alt="SQLIntegration" src="https://github.com/user-attachments/assets/dca56aba-0c30-474f-a3d9-1761939a131e" />
+
+Graph
+<img width="2879" height="1624" alt="Graph" src="https://github.com/user-attachments/assets/2c4d3baa-0d70-463a-a54f-07b2b20d6296" />
 
 ---
 

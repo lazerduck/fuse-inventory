@@ -3,6 +3,8 @@ using Fuse.Core.Responses;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Http;
 using Moq;
 using Moq.Protected;
 using System.Net;
@@ -38,7 +40,8 @@ public class KumaMetricsServiceTests
         var store = NewStore();
         var mockHttpClientFactory = new Mock<IHttpClientFactory>();
         var mockLogger = new Mock<ILogger<KumaMetricsService>>();
-        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store, memoryCache);
 
         // Act
         var result = service.GetHealthStatus("http://example.com/health");
@@ -54,7 +57,8 @@ public class KumaMetricsServiceTests
         var store = NewStore();
         var mockHttpClientFactory = new Mock<IHttpClientFactory>();
         var mockLogger = new Mock<ILogger<KumaMetricsService>>();
-        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store, memoryCache);
 
         // Act & Assert - URLs should be normalized (lowercase, no trailing slash)
         // Both should return null initially since cache is empty
@@ -110,7 +114,8 @@ monitor_status{monitor_id=""2"",monitor_name=""api"",monitor_type=""http"",monit
         mockHttpClientFactory.Setup(f => f.CreateClient("kuma-metrics")).Returns(httpClient);
 
         var mockLogger = new Mock<ILogger<KumaMetricsService>>();
-        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var service = new KumaMetricsService(mockLogger.Object, mockHttpClientFactory.Object, store, memoryCache);
 
         // Start service briefly to trigger metric fetch
         var cts = new CancellationTokenSource();

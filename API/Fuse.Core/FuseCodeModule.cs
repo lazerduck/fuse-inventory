@@ -8,6 +8,9 @@ public static class FuseCodeModule
 {
     public static void Register(IServiceCollection services)
     {
+        // Register memory cache for background services
+        services.AddMemoryCache();
+        
         services.AddScoped<IEnvironmentService, EnvironmentService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IPlatformService, PlatformService>();
@@ -15,6 +18,7 @@ public static class FuseCodeModule
         services.AddScoped<IExternalResourceService, ExternalResourceService>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IAccountSqlInspector, AccountSqlInspector>();
+        services.AddScoped<ISqlPermissionsInspector, SqlPermissionsInspector>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IConfigService, ConfigService>();

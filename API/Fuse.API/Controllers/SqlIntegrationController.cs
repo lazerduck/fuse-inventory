@@ -39,6 +39,7 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
         {
             // Try to return cached data first
+            await _cache.RefreshIntegrationAsync(id, ct);
             var cached = _cache.GetCachedOverview(id);
             if (cached is not null)
             {
