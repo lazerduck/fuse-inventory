@@ -123,7 +123,6 @@ public class SqlIntegrationService : ISqlIntegrationService
         }
 
         // Build connection string from datastore connection URI
-        // Expected format: server=hostname;database=dbname or just hostname
         if (dataStore.ConnectionUri is null)
         {
             return Result<string>.Failure(
@@ -132,8 +131,7 @@ public class SqlIntegrationService : ISqlIntegrationService
         }
 
         var uriString = dataStore.ConnectionUri.ToString();
-        string server;
-        string? database = null;
+        var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
 
         try
         {
@@ -149,33 +147,46 @@ public class SqlIntegrationService : ISqlIntegrationService
                         "DataStore connection URI must include a valid host.",
                         ErrorType.Validation);
                 }
-                server = uri.Port > 0 && uri.Port != 1433 ? $"{uri.Host},{uri.Port}" : uri.Host;
+                
+                builder.DataSource = uri.Port > 0 && uri.Port != 1433 ? $"{uri.Host},{uri.Port}" : uri.Host;
+                
                 if (!string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
                 {
-                    database = uri.AbsolutePath.TrimStart('/');
+                    builder.InitialCatalog = uri.AbsolutePath.TrimStart('/');
                 }
             }
             else if (uriString.Contains(';'))
             {
                 // Already a connection string format in the URI
-                // Add credentials to the existing connection string
-                return Result<string>.Success($"{uriString};User Id={account.UserName};Password={password}");
+                // Parse it and override credentials
+                builder.ConnectionString = uriString;
             }
             else
             {
                 // Plain hostname or hostname:port/database format
                 var cleanUri = uriString.Replace("://", "");
                 var pathIndex = cleanUri.IndexOf('/');
+                
                 if (pathIndex > 0)
                 {
-                    server = cleanUri.Substring(0, pathIndex);
-                    database = cleanUri.Substring(pathIndex + 1);
+                    builder.DataSource = cleanUri.Substring(0, pathIndex);
+                    builder.InitialCatalog = cleanUri.Substring(pathIndex + 1);
                 }
                 else
                 {
-                    server = cleanUri;
+                    builder.DataSource = cleanUri;
                 }
             }
+
+            // Set authentication credentials
+            builder.UserID = account.UserName;
+            builder.Password = password;
+            
+            // Set encryption settings
+            // Note: TrustServerCertificate is set to true for development. In production, 
+            // users should configure proper certificates and set this to false.
+            builder.Encrypt = true;
+            builder.TrustServerCertificate = true;
         }
         catch (Exception ex)
         {
@@ -184,16 +195,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.Validation);
         }
 
-        // Note: TrustServerCertificate is set based on the environment. In production, 
-        // users should configure proper certificates and use connection string mode 
-        // with Encrypt=true and proper certificate validation.
-        var connectionString = $"Server={server};User Id={account.UserName};Password={password};Encrypt=true;TrustServerCertificate=true";
-        if (!string.IsNullOrEmpty(database))
-        {
-            connectionString += $";Database={database}";
-        }
-
-        return Result<string>.Success(connectionString);
+        return Result<string>.Success(builder.ConnectionString);
     }
 
     public async Task<Result<SqlIntegrationResponse>> CreateSqlIntegrationAsync(CreateSqlIntegration command, CancellationToken ct = default)
