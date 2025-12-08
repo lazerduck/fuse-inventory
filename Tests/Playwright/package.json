@@ -12,6 +12,7 @@
     "docker:up": "docker compose -f docker-compose.test.yaml up --build -d",
     "docker:down": "docker compose -f docker-compose.test.yaml down",
     "docker:clean": "docker compose -f docker-compose.test.yaml down -v --remove-orphans && rm -rf test-data/*",
+    "reset": "npm run docker:clean && npm run docker:up",
     "pretest:ci": "npm run docker:up",
     "posttest:ci": "npm run docker:clean"
   },
