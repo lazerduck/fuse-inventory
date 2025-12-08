@@ -1,78 +1,73 @@
-import { test as baseTest, expect } from '@playwright/test';
+import { test as baseTest, expect, Page } from '@playwright/test';
+
+// Shared admin credentials - created once via API, used via UI
+const ADMIN_USERNAME = 'initialAdmin';
+const ADMIN_PASSWORD = 'InitialPassword123!';
 
 interface AuthFixtures {
-  authenticatedPage: void;
-  adminToken: string;
+  authenticatedPage: Page;
+  adminCredentials: { username: string; password: string };
 }
 
-const test = baseTest.extend<AuthFixtures>({
-  adminToken: async ({}, use) => {
-    const baseURL = 'http://localhost:8080';
-    const username = 'initialAdmin';
-    const password = 'InitialPassword123!';
+/**
+ * Helper to ensure admin account exists via API
+ * This runs once per worker to set up the initial admin account
+ */
+async function ensureAdminAccountExists() {
+  const baseURL = 'http://localhost:8080';
 
-    // Check security state to see if setup is needed
-    const stateResponse = await fetch(`${baseURL}/api/security/state`);
-    const state = await stateResponse.json();
+  // Check security state to see if setup is needed
+  const stateResponse = await fetch(`${baseURL}/api/security/state`);
+  const state = await stateResponse.json();
 
-    let token = '';
-
-    // If setup is required, create the initial admin account
-    if (state.RequiresSetup) {
-      const createResponse = await fetch(`${baseURL}/api/security/accounts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userName: username,
-          password: password,
-          role: 'Admin',
-        }),
-      });
-
-      if (!createResponse.ok) {
-        throw new Error(`Failed to create admin account: ${createResponse.statusText}`);
-      }
-    }
-
-    // Login to get the token
-    const loginResponse = await fetch(`${baseURL}/api/security/login`, {
+  // If setup is required, create the initial admin account
+  if (state.RequiresSetup) {
+    const createResponse = await fetch(`${baseURL}/api/security/accounts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userName: username,
-        password: password,
+        userName: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD,
+        role: 'Admin',
       }),
     });
 
-    if (!loginResponse.ok) {
-      throw new Error(`Failed to login: ${loginResponse.statusText}`);
+    if (!createResponse.ok) {
+      const error = await createResponse.text();
+      throw new Error(`Failed to create admin account: ${createResponse.statusText} - ${error}`);
     }
+  }
+}
 
-    const loginData = await loginResponse.json();
-    token = loginData.Token;
-
-    // Use the fixture
-    await use(token);
+const test = baseTest.extend<AuthFixtures>({
+  // Provide admin credentials to tests (without logging in)
+  adminCredentials: async ({}, use) => {
+    await ensureAdminAccountExists();
+    await use({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD });
   },
 
-  authenticatedPage: async ({ page, adminToken }, use) => {
-    // Set the auth token in local storage for authenticated requests
-    await page.goto('/'); // Navigate to app first
-    await page.evaluate((token) => {
-      localStorage.setItem('authToken', token);
-    }, adminToken);
+  // Pre-authenticated page - logs in via UI and provides authenticated page
+  authenticatedPage: async ({ page, adminCredentials }, use) => {
+    await ensureAdminAccountExists();
 
-    // Add auth header to all requests
-    await page.setExtraHTTPHeaders({
-      'Authorization': `Bearer ${adminToken}`,
-    });
+    // Navigate to login page
+    await page.goto('/login');
 
-    await use();
+    // Fill in login form
+    await page.fill('input[name="username"]', adminCredentials.username);
+    await page.fill('input[name="password"]', adminCredentials.password);
+
+    // Submit login form
+    await page.click('button[type="submit"]');
+
+    // Wait for navigation to complete (adjust selector based on your app)
+    await page.waitForURL(/\/(dashboard|home|\w+)/, { timeout: 10000 });
+
+    // Provide the authenticated page to the test
+    await use(page);
   },
 });
 
-export { test };
+export { test, ADMIN_USERNAME, ADMIN_PASSWORD };

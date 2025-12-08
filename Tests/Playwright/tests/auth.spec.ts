@@ -1,18 +1,32 @@
-import { test, expect } from '@playwright/test';
-import { test as authTest } from '../fixtures/auth';
+import { expect } from '@playwright/test';
+import { test, ADMIN_USERNAME } from '../fixtures/auth';
 
-authTest.describe('Authentication Setup', () => {
-  authTest('should create initial admin account on first setup', async ({ page, adminToken }) => {
-    expect(adminToken).toBeDefined();
-    expect(adminToken.length).toBeGreaterThan(0);
+test.describe('Authentication', () => {
+  test('should login successfully via UI', async ({ page, adminCredentials }) => {
+    // Navigate to the app
+    await page.goto('/');
+    
+    await page.getByRole('button', {name: /maybe later/i}).click();
+    // Click the auth button to open login dialog
+    const authBtn = page.getByTestId('auth-button');
+    await expect(authBtn.locator('.q-icon')).toHaveText('lock_open');
+    await authBtn.click();
+
+    await page.getByRole('textbox', { name: 'Username' }).fill(adminCredentials.username);;
+    await page.getByRole('textbox', { name: 'Password' }).fill(adminCredentials.password);
+
+    // Submit login
+    await page.click('button[type="submit"]');
+
+    // Verify successful login (adjust based on your app's behavior)
+    await expect(authBtn.locator('.q-icon')).toHaveText('lock');
   });
 
-  authTest('authenticated page should have auth token in headers', async ({ authenticatedPage, page, adminToken }) => {
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+  test('should be able to access protected API endpoints', async ({ authenticatedPage }) => {
+    // Make API call from the authenticated page context
+    const response = await authenticatedPage.request.get('/api/account');
     
-    // Verify we can access authenticated routes
-    const response = await page.request.get('/api/account');
-    expect(response.status()).toBeLessThan(400); // Should not be 401 Unauthorized
+    // Should not be unauthorized
+    expect(response.status()).toBe(200);
   });
 });

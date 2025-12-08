@@ -44,7 +44,7 @@
           </q-menu>
         </q-btn>
 
-        <q-btn dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
+        <q-btn data-testid="auth-button" dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
           <q-tooltip>{{ fuseStore.isLoggedIn ? `Logged in as ${fuseStore.userName}` : 'Login' }}</q-tooltip>
         </q-btn>
       </q-toolbar>
