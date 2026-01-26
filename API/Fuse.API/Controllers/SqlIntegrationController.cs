@@ -38,15 +38,14 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
         {
-            // Try to return cached data first
-            await _cache.RefreshIntegrationAsync(id, ct);
+            // Return cached data immediately when available (worker keeps it warm)
             var cached = _cache.GetCachedOverview(id);
             if (cached is not null)
             {
                 return Ok(new CachedPermissionsOverviewResponse(cached.Overview, cached.CachedAt, IsCached: true));
             }
 
-            // Fall back to fresh data if no cache available
+            // Cache miss: fall back to fresh data
             var result = await _service.GetPermissionsOverviewAsync(id, ct);
             if (!result.IsSuccess)
             {
