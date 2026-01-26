@@ -215,11 +215,35 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure($"Account with ID '{command.AccountId}' not found.", ErrorType.NotFound);
         }
 
+        // Validate that privileges are deduplicated
+        var privileges = new HashSet<Privilege>(command.Privileges);
+        if (privileges.Count == 0)
+        {
+            return Result<Grant>.Failure("Grant must include at least one privilege.", ErrorType.Validation);
+        }
+
+        // Check for duplicate database/schema combinations with other grants on the same account
+        var normalizeKey = (string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var newKey = (Database: normalizeKey(command.Database), Schema: normalizeKey(command.Schema));
+
+        var duplicateGrant = account.Grants.FirstOrDefault(g =>
+            normalizeKey(g.Database) == newKey.Database &&
+            normalizeKey(g.Schema) == newKey.Schema
+        );
+
+        if (duplicateGrant is not null)
+        {
+            return Result<Grant>.Failure(
+                $"A grant for database '{command.Database}' and schema '{command.Schema}' already exists on this account.",
+                ErrorType.Validation
+            );
+        }
+
         var grant = new Grant(
             Guid.NewGuid(),
             command.Database,
             command.Schema,
-            command.Privileges
+            privileges
         );
 
         await _fuseStore.UpdateAsync(s =>
@@ -259,11 +283,36 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure($"Grant with ID '{command.GrantId}' not found on Account '{command.AccountId}'.", ErrorType.NotFound);
         }
 
+        // Validate that privileges are deduplicated
+        var privileges = new HashSet<Privilege>(command.Privileges);
+        if (privileges.Count == 0)
+        {
+            return Result<Grant>.Failure("Grant must include at least one privilege.", ErrorType.Validation);
+        }
+
+        // Check for duplicate database/schema combinations with other grants on the same account
+        var normalizeKey = (string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var updatedKey = (Database: normalizeKey(command.Database), Schema: normalizeKey(command.Schema));
+
+        var duplicateGrant = account.Grants.FirstOrDefault(g =>
+            g.Id != command.GrantId &&
+            normalizeKey(g.Database) == updatedKey.Database &&
+            normalizeKey(g.Schema) == updatedKey.Schema
+        );
+
+        if (duplicateGrant is not null)
+        {
+            return Result<Grant>.Failure(
+                $"A grant for database '{command.Database}' and schema '{command.Schema}' already exists on this account.",
+                ErrorType.Validation
+            );
+        }
+
         var updatedGrant = existingGrant with
         {
             Database = command.Database,
             Schema = command.Schema,
-            Privileges = command.Privileges
+            Privileges = privileges
         };
 
         await _fuseStore.UpdateAsync(s =>
