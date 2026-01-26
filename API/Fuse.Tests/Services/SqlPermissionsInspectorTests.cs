@@ -103,15 +103,16 @@ public class SqlPermissionsInspectorTests
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         var mockInspector = new Mock<IAccountSqlInspector>();
         mockInspector
+            .Setup(i => i.GetAllPrincipalNamesAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new List<string> { "managed", "orphan" }, null));
+
+        mockInspector
             .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "managed", It.IsAny<CancellationToken>()))
             .ReturnsAsync((true, new SqlPrincipalPermissions("managed", true, new List<SqlActualGrant>()), null));
+
         mockInspector
-            .Setup(i => i.GetAllPrincipalsAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new List<SqlPrincipalPermissions>
-            {
-                new SqlPrincipalPermissions("managed", true, new List<SqlActualGrant>()),
-                new SqlPrincipalPermissions("orphan", true, new List<SqlActualGrant>())
-            }, null));
+            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "orphan", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions("orphan", true, new List<SqlActualGrant>()), null));
 
         var facade = new SqlPermissionsInspector(mockInspector.Object);
         var overview = await facade.GetOverviewAsync(integration, store.Current!, CancellationToken.None);
