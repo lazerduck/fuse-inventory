@@ -42,9 +42,12 @@ public class AccountServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-                SecretProviders: Array.Empty<SecretProvider>(),
-                SqlIntegrations: (sqlIntegrations ?? Array.Empty<SqlIntegration>()).ToArray(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: (sqlIntegrations ?? Array.Empty<SqlIntegration>()).ToArray(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }

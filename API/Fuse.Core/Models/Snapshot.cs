@@ -12,5 +12,8 @@ public record Snapshot(
     IReadOnlyList<KumaIntegration> KumaIntegrations,
     IReadOnlyList<SecretProvider> SecretProviders,
     IReadOnlyList<SqlIntegration> SqlIntegrations,
+    IReadOnlyList<Position> Positions,
+    IReadOnlyList<ResponsibilityType> ResponsibilityTypes,
+    IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
     SecurityState Security
 );
