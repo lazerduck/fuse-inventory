@@ -80,6 +80,16 @@ const router = createRouter({
       component: () => import('./pages/TagsPage.vue')
     },
     {
+      path: '/positions',
+      name: 'positions',
+      component: () => import('./pages/PositionsPage.vue')
+    },
+    {
+      path: '/responsibility-types',
+      name: 'responsibilityTypes',
+      component: () => import('./pages/ResponsibilityTypesPage.vue')
+    },
+    {
       path: '/security',
       name: 'security',
       component: () => import('./pages/Security.vue')
