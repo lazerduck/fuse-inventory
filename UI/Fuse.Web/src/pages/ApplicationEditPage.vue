@@ -342,13 +342,13 @@ const { data: positions = [] } = useQuery({
   queryFn: () => client.positionAll()
 })
 
-// Risks for this application
+// Risks for this application - pass computed ref for reactivity
 const { 
   risks, 
   risksLoading, 
   saveRisk, 
   deleteRisk 
-} = useRisksByTarget('Application', applicationId.value)
+} = useRisksByTarget('Application', applicationId)
 
 const instanceColumns: QTableColumn<ApplicationInstance>[] = [
   { name: 'environment', label: 'Environment', field: 'environmentId', align: 'left' },

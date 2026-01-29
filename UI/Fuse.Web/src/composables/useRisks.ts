@@ -1,10 +1,12 @@
+import { computed, Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useQuasar } from 'quasar'
-import { FuseApiClient, Risk, CreateRisk, UpdateRisk } from '../api/client'
-
-const client = new FuseApiClient()
+import { useFuseClient } from './useFuseClient'
+import { Risk, CreateRisk, UpdateRisk } from '../api/client'
 
 export function useRisks() {
+  const client = useFuseClient()
+  
   const { data: risks = [], isLoading: risksLoading } = useQuery({
     queryKey: ['risks'],
     queryFn: () => client.riskAll()
@@ -13,14 +15,18 @@ export function useRisks() {
   return { risks, risksLoading }
 }
 
-export function useRisksByTarget(targetType: string, targetId: string) {
+export function useRisksByTarget(targetType: string | Ref<string>, targetId: string | Ref<string>) {
+  const client = useFuseClient()
   const $q = useQuasar()
   const queryClient = useQueryClient()
 
+  const targetTypeValue = computed(() => typeof targetType === 'string' ? targetType : targetType.value)
+  const targetIdValue = computed(() => typeof targetId === 'string' ? targetId : targetId.value)
+
   const { data: risks = [], isLoading: risksLoading, refetch } = useQuery({
-    queryKey: ['risks', targetType, targetId],
-    queryFn: () => client.target(targetType, targetId),
-    enabled: !!targetType && !!targetId
+    queryKey: ['risks', targetTypeValue, targetIdValue],
+    queryFn: () => client.target(targetTypeValue.value, targetIdValue.value),
+    enabled: computed(() => !!targetTypeValue.value && !!targetIdValue.value)
   })
 
   const createRiskMutation = useMutation({
