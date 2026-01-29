@@ -157,7 +157,9 @@ public class AccountService : IAccountService
         // Validate target existence based on kind
         var targetExists = targetKind switch
         {
-            TargetKind.Application => store.Applications.Any(a => a.Id == targetId),
+            // Treat Application targets as Application Instance IDs; allow fallback to legacy app IDs for backward compatibility
+            TargetKind.Application => store.Applications.SelectMany(a => a.Instances).Any(i => i.Id == targetId)
+                || store.Applications.Any(a => a.Id == targetId),
             TargetKind.DataStore => store.DataStores.Any(d => d.Id == targetId),
             TargetKind.External => store.ExternalResources.Any(r => r.Id == targetId),
             _ => false
