@@ -94,7 +94,12 @@ public enum AuditAction
     // ResponsibilityAssignment actions
     ResponsibilityAssignmentCreated,
     ResponsibilityAssignmentUpdated,
-    ResponsibilityAssignmentDeleted
+    ResponsibilityAssignmentDeleted,
+    
+    // Risk actions
+    RiskCreated,
+    RiskUpdated,
+    RiskDeleted
 }
 
 /// <summary>
@@ -117,7 +122,8 @@ public enum AuditArea
     SqlIntegration,
     Position,
     ResponsibilityType,
-    ResponsibilityAssignment
+    ResponsibilityAssignment,
+    Risk
 }
 
 /// <summary>

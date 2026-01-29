@@ -277,6 +277,7 @@ public class ConfigService : IConfigService
                 Positions: current.Positions,
                 ResponsibilityTypes: current.ResponsibilityTypes,
                 ResponsibilityAssignments: current.ResponsibilityAssignments,
+                Risks: current.Risks,
                 Security: current.Security
             );
         }, ct);

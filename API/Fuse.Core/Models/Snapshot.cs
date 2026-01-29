@@ -15,5 +15,6 @@ public record Snapshot(
     IReadOnlyList<Position> Positions,
     IReadOnlyList<ResponsibilityType> ResponsibilityTypes,
     IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
+    IReadOnlyList<Risk> Risks,
     SecurityState Security
 );

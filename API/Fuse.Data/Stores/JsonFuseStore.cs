@@ -55,6 +55,7 @@ public sealed class JsonFuseStore : IFuseStore
                 Positions: await ReadAsync<Position>("positions.json", ct),
                 ResponsibilityTypes: await ReadAsync<ResponsibilityType>("responsibilitytypes.json", ct),
                 ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
+                Risks: await ReadAsync<Risk>("risks.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct)
             );
 
@@ -144,6 +145,7 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("positions.json", snapshot.Positions, ct);
             await WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct);
             await WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct);
+            await WriteAsync("risks.json", snapshot.Risks, ct);
             await WriteAsync("security.json", snapshot.Security, ct);
 
             _cache = snapshot; // swap the in-memory snapshot
