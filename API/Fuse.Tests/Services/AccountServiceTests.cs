@@ -92,6 +92,20 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task CreateAccount_ApplicationInstance_Success()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "Env", null, new HashSet<Guid>());
+        var instance = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app });
+        var service = CreateService(store);
+        var result = await service.CreateAccountAsync(new CreateAccount(instance.Id, TargetKind.Application, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetAccountsAsync());
+    Assert.Equal(instance.Id, result.Value!.TargetId);
+    }
+
+    [Fact]
     public async Task CreateAccount_SecretRequired_ForApiKey()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
