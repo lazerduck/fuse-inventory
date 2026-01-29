@@ -106,7 +106,7 @@ public class AccountServiceTests
     }
 
     [Fact]
-    public async Task CreateAccount_SecretRequired_ForApiKey()
+    public async Task CreateAccount_EmptyPlainReference_ReturnsValidation()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
@@ -114,6 +114,17 @@ public class AccountServiceTests
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CreateAccount_WithoutSecret_Success()
+    {
+        var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(res: new[] { res });
+        var service = CreateService(store);
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.None, null, null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetAccountsAsync());
     }
 
     [Fact]

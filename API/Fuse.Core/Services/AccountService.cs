@@ -174,13 +174,9 @@ public class AccountService : IAccountService
                 return Result<Account>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
         }
 
-        // Basic auth-specific validation
-        bool requiresSecret = authKind is AuthKind.UserPassword or AuthKind.ApiKey or AuthKind.BearerToken or AuthKind.OAuthClient or AuthKind.ManagedIdentity or AuthKind.Certificate;
-        if (requiresSecret)
+        // Validate secret binding if provided
+        if (secretBinding.Kind != SecretBindingKind.None)
         {
-            if (secretBinding.Kind == SecretBindingKind.None)
-                return Result<Account>.Failure("Secret binding is required for the selected AuthKind.", ErrorType.Validation);
-            
             if (secretBinding.Kind == SecretBindingKind.PlainReference && string.IsNullOrWhiteSpace(secretBinding.PlainReference))
                 return Result<Account>.Failure("Plain reference value is required.", ErrorType.Validation);
             
