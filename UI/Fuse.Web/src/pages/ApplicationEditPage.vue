@@ -41,6 +41,7 @@
       <q-tab name="instances" label="Instances" />
       <q-tab name="ownership" label="Ownership" />
       <q-tab name="pipelines" label="Pipelines" />
+      <q-tab name="risks" label="Risks" />
     </q-tabs>
 
     <q-tab-panels v-model="activeTab" animated>
@@ -197,6 +198,20 @@
           </q-table>
         </q-card>
       </q-tab-panel>
+
+      <q-tab-panel name="risks" class="q-pa-none">
+        <RisksSection
+          v-if="application"
+          :risks="risks ?? []"
+          :target-type="'Application'"
+          :target-id="application.id!"
+          :positions="positions ?? []"
+          :loading="risksLoading"
+          :disable-actions="!fuseStore.canModify"
+          @save="handleSaveRisk"
+          @delete="handleDeleteRisk"
+        />
+      </q-tab-panel>
     </q-tab-panels>
 
     <q-dialog v-model="isInstanceDialogOpen" persistent>
@@ -232,18 +247,21 @@ import {
   CreateApplicationInstance,
   CreateApplicationPipeline,
   UpdateApplication,
-  UpdateApplicationPipeline
+  UpdateApplicationPipeline,
+  Risk
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
+import { useRisksByTarget } from '../composables/useRisks'
 import { getErrorMessage } from '../utils/error'
 import ApplicationDetailsForm from '../components/applications/ApplicationDetailsForm.vue'
 import ApplicationInstanceForm from '../components/applications/ApplicationInstanceForm.vue'
 import ApplicationPipelineForm from '../components/applications/ApplicationPipelineForm.vue'
 import ResponsibilityAssignmentTable from '../components/responsibilityassignment/ResponsibilityAssignmentTable.vue'
+import RisksSection from '../components/risks/RisksSection.vue'
 
 interface ApplicationInstanceFormModel {
   environmentId: string | null
@@ -317,6 +335,20 @@ const platformsStore = usePlatforms()
 const tagLookup = tagsStore.lookup
 const environmentLookup = environmentsStore.lookup
 const platformLookup = platformsStore.lookup
+
+// Positions for risks
+const { data: positions = [] } = useQuery({
+  queryKey: ['positions'],
+  queryFn: () => client.positionAll()
+})
+
+// Risks for this application
+const { 
+  risks, 
+  risksLoading, 
+  saveRisk, 
+  deleteRisk 
+} = useRisksByTarget('Application', applicationId.value)
 
 const instanceColumns: QTableColumn<ApplicationInstance>[] = [
   { name: 'environment', label: 'Environment', field: 'environmentId', align: 'left' },
@@ -580,6 +612,15 @@ function confirmPipelineDelete(pipeline: ApplicationPipeline) {
   }).onOk(() => {
     deletePipelineMutation.mutate({ appId: application.value!.id!, pipelineId: pipeline.id! })
   })
+}
+
+// Risk management
+async function handleSaveRisk(risk: Partial<Risk>) {
+  await saveRisk(risk)
+}
+
+async function handleDeleteRisk(riskId: string) {
+  await deleteRisk(riskId)
 }
 </script>
 

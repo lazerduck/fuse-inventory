@@ -458,6 +458,38 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    riskAll(signal?: AbortSignal): Promise<Risk[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @return OK
+     */
+    riskGET(id: string, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @return No Content
+     */
+    riskDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    target(targetType: string, targetId: string, signal?: AbortSignal): Promise<Risk[]>;
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
 
     /**
@@ -4937,6 +4969,304 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    riskAll(signal?: AbortSignal): Promise<Risk[]> {
+        let url_ = this.baseUrl + "/api/Risk";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskAll(_response);
+        });
+    }
+
+    protected processRiskAll(response: Response): Promise<Risk[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Risk.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskPOST(_response);
+        });
+    }
+
+    protected processRiskPOST(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = Risk.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    riskGET(id: string, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskGET(_response);
+        });
+    }
+
+    protected processRiskGET(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Risk.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskPUT(_response);
+        });
+    }
+
+    protected processRiskPUT(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Risk.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    riskDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskDELETE(_response);
+        });
+    }
+
+    protected processRiskDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    target(targetType: string, targetId: string, signal?: AbortSignal): Promise<Risk[]> {
+        let url_ = this.baseUrl + "/api/Risk/target/{targetType}/{targetId}";
+        if (targetType === undefined || targetType === null)
+            throw new globalThis.Error("The parameter 'targetType' must be defined.");
+        url_ = url_.replace("{targetType}", encodeURIComponent("" + targetType));
+        if (targetId === undefined || targetId === null)
+            throw new globalThis.Error("The parameter 'targetId' must be defined.");
+        url_ = url_.replace("{targetId}", encodeURIComponent("" + targetId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processTarget(_response);
+        });
+    }
+
+    protected processTarget(response: Response): Promise<Risk[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Risk.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
@@ -7534,6 +7864,9 @@ export enum AuditAction {
     ResponsibilityAssignmentCreated = "ResponsibilityAssignmentCreated",
     ResponsibilityAssignmentUpdated = "ResponsibilityAssignmentUpdated",
     ResponsibilityAssignmentDeleted = "ResponsibilityAssignmentDeleted",
+    RiskCreated = "RiskCreated",
+    RiskUpdated = "RiskUpdated",
+    RiskDeleted = "RiskDeleted",
 }
 
 export enum AuditArea {
@@ -7553,6 +7886,7 @@ export enum AuditArea {
     Position = "Position",
     ResponsibilityType = "ResponsibilityType",
     ResponsibilityAssignment = "ResponsibilityAssignment",
+    Risk = "Risk",
 }
 
 export class AuditLog implements IAuditLog {
@@ -9032,6 +9366,102 @@ export class CreateResponsibilityType implements ICreateResponsibilityType {
 export interface ICreateResponsibilityType {
     name?: string | undefined;
     description?: string | undefined;
+}
+
+export class CreateRisk implements ICreateRisk {
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: ICreateRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): CreateRisk {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateRisk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface ICreateRisk {
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
 }
 
 export class CreateSecret implements ICreateSecret {
@@ -10707,6 +11137,134 @@ export interface IResponsibilityType {
     description?: string | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export class Risk implements IRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): Risk {
+        data = typeof data === 'object' ? data : {};
+        let result = new Risk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export enum RiskImpact {
+    Low = "Low",
+    Medium = "Medium",
+    High = "High",
+    Critical = "Critical",
+}
+
+export enum RiskLikelihood {
+    Low = "Low",
+    Medium = "Medium",
+    High = "High",
+}
+
+export enum RiskStatus {
+    Identified = "Identified",
+    Mitigated = "Mitigated",
+    Accepted = "Accepted",
+    Closed = "Closed",
 }
 
 export class RotateSecret implements IRotateSecret {
@@ -13009,6 +13567,106 @@ export interface IUpdateResponsibilityType {
     id?: string;
     name?: string | undefined;
     description?: string | undefined;
+}
+
+export class UpdateRisk implements IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IUpdateRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRisk {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRisk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
 }
 
 export class UpdateSecretProvider implements IUpdateSecretProvider {
