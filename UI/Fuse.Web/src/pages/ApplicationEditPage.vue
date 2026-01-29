@@ -36,149 +36,168 @@
       {{ applicationError }}
     </q-banner>
 
-    <ApplicationDetailsForm
-      :initial-value="application"
-      :loading="updateApplicationMutation.isPending.value"
-      @cancel="navigateBack"
-      @delete="confirmApplicationDelete"
-      @submit="handleSubmitApplication"
-    />
+    <q-tabs v-model="activeTab" class="text-primary q-mb-md" align="left" narrow-indicator>
+      <q-tab name="details" label="Details" />
+      <q-tab name="instances" label="Instances" />
+      <q-tab name="ownership" label="Ownership" />
+      <q-tab name="pipelines" label="Pipelines" />
+    </q-tabs>
 
-    <q-card class="content-card q-mb-md" data-tour-id="application-detail">
-      <q-card-section class="dialog-header">
-        <div>
-          <div class="text-h6">Application Instances</div>
-          <div class="text-caption text-grey-7">
-            Track deployments across environments and hosts.
-          </div>
-        </div>
-        <q-btn
-          color="primary"
-          label="Add Instance"
-          dense
-          icon="add"
-          :disable="!fuseStore.canModify"
-          @click="openInstanceDialog()"
-          data-tour-id="add-instance"
+    <q-tab-panels v-model="activeTab" animated>
+      <q-tab-panel name="details" class="q-pa-none">
+        <ApplicationDetailsForm
+          :initial-value="application"
+          :loading="updateApplicationMutation.isPending.value"
+          @cancel="navigateBack"
+          @delete="confirmApplicationDelete"
+          @submit="handleSubmitApplication"
         />
-      </q-card-section>
-      <q-separator />
-      <q-table
-        flat
-        bordered
-        dense
-        :rows="application?.instances ?? []"
-        :columns="instanceColumns"
-        row-key="id"
-        data-tour-id="application-instances-table"
-      >
-        <template #body-cell-environment="props">
-          <q-td :props="props">
-            {{ environmentLookup[props.row.environmentId ?? ''] ?? '—' }}
-          </q-td>
-        </template>
-        <template #body-cell-platform="props">
-          <q-td :props="props">
-            {{ platformLookup[props.row.platformId ?? ''] ?? '—' }}
-          </q-td>
-        </template>
-        <template #body-cell-tags="props">
-          <q-td :props="props">
-            <div v-if="props.row.tagIds?.length" class="tag-list">
-              <q-badge
-                v-for="tagId in props.row.tagIds"
-                :key="tagId"
-                outline
-                color="secondary"
-                :label="tagLookup[tagId] ?? tagId"
-              />
+      </q-tab-panel>
+
+      <q-tab-panel name="instances" class="q-pa-none">
+        <q-card class="content-card q-mb-md" data-tour-id="application-detail">
+          <q-card-section class="dialog-header">
+            <div>
+              <div class="text-h6">Application Instances</div>
+              <div class="text-caption text-grey-7">
+                Track deployments across environments and hosts.
+              </div>
             </div>
-            <span v-else class="text-grey">—</span>
-          </q-td>
-        </template>
-        <template #body-cell-actions="props">
-          <q-td :props="props" class="text-right">
             <q-btn
-              dense
-              flat
-              round
-              icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
-              @click="navigateToInstance(props.row)"
-            />
-            <q-btn
+              label="Add Instance"
               dense
-              flat
-              round
-              icon="delete"
-              color="negative"
-              class="q-ml-xs"
+              icon="add"
               :disable="!fuseStore.canModify"
-              @click="confirmInstanceDelete(props.row)"
+              @click="openInstanceDialog()"
+              data-tour-id="add-instance"
             />
-          </q-td>
-        </template>
-        <template #no-data>
-          <div class="q-pa-sm text-grey-7">No instances defined.</div>
-        </template>
-      </q-table>
-    </q-card>
+          </q-card-section>
+          <q-separator />
+          <q-table
+            flat
+            bordered
+            dense
+            :rows="application?.instances ?? []"
+            :columns="instanceColumns"
+            row-key="id"
+            data-tour-id="application-instances-table"
+          >
+            <template #body-cell-environment="props">
+              <q-td :props="props">
+                {{ environmentLookup[props.row.environmentId ?? ''] ?? '—' }}
+              </q-td>
+            </template>
+            <template #body-cell-platform="props">
+              <q-td :props="props">
+                {{ platformLookup[props.row.platformId ?? ''] ?? '—' }}
+              </q-td>
+            </template>
+            <template #body-cell-tags="props">
+              <q-td :props="props">
+                <div v-if="props.row.tagIds?.length" class="tag-list">
+                  <q-badge
+                    v-for="tagId in props.row.tagIds"
+                    :key="tagId"
+                    outline
+                    color="secondary"
+                    :label="tagLookup[tagId] ?? tagId"
+                  />
+                </div>
+                <span v-else class="text-grey">—</span>
+              </q-td>
+            </template>
+            <template #body-cell-actions="props">
+              <q-td :props="props" class="text-right">
+                <q-btn
+                  dense
+                  flat
+                  round
+                  icon="edit"
+                  color="primary"
+                  :disable="!fuseStore.canModify"
+                  @click="navigateToInstance(props.row)"
+                />
+                <q-btn
+                  dense
+                  flat
+                  round
+                  icon="delete"
+                  color="negative"
+                  class="q-ml-xs"
+                  :disable="!fuseStore.canModify"
+                  @click="confirmInstanceDelete(props.row)"
+                />
+              </q-td>
+            </template>
+            <template #no-data>
+              <div class="q-pa-sm text-grey-7">No instances defined.</div>
+            </template>
+          </q-table>
+        </q-card>
+      </q-tab-panel>
 
-    <q-card class="content-card">
-      <q-card-section class="dialog-header">
-        <div>
-          <div class="text-h6">Delivery Pipelines</div>
-          <div class="text-caption text-grey-7">
-            Document CI/CD workflows powering this application.
-          </div>
-        </div>
-        <q-btn 
-          color="primary" 
-          label="Add Pipeline" 
-          dense 
-          icon="add" 
-          :disable="!fuseStore.canModify"
-          @click="openPipelineDialog()" 
-        />
-      </q-card-section>
-      <q-separator />
-      <q-table
-        flat
-        bordered
-        dense
-        :rows="application?.pipelines ?? []"
-        :columns="pipelineColumns"
-        row-key="id"
-      >
-        <template #body-cell-actions="props">
-          <q-td :props="props" class="text-right">
-            <q-btn
-              dense
-              flat
-              round
-              icon="edit"
-              color="primary"
+      <q-tab-panel name="ownership" class="q-pa-none">
+        <ResponsibilityAssignmentTable :application-id="applicationId" />
+      </q-tab-panel>
+
+      <q-tab-panel name="pipelines" class="q-pa-none">
+        <q-card class="content-card">
+          <q-card-section class="dialog-header">
+            <div>
+              <div class="text-h6">Delivery Pipelines</div>
+              <div class="text-caption text-grey-7">
+                Document CI/CD workflows powering this application.
+              </div>
+            </div>
+            <q-btn 
+              color="primary" 
+              label="Add Pipeline" 
+              dense 
+              icon="add" 
               :disable="!fuseStore.canModify"
-              @click="openPipelineDialog(props.row)"
+              @click="openPipelineDialog()" 
             />
-            <q-btn
-              dense
-              flat
-              round
-              icon="delete"
-              color="negative"
-              class="q-ml-xs"
-              :disable="!fuseStore.canModify"
-              @click="confirmPipelineDelete(props.row)"
-            />
-          </q-td>
-        </template>
-        <template #no-data>
-          <div class="q-pa-sm text-grey-7">No pipelines documented.</div>
-        </template>
-      </q-table>
-    </q-card>
+          </q-card-section>
+          <q-separator />
+          <q-table
+            flat
+            bordered
+            dense
+            :rows="application?.pipelines ?? []"
+            :columns="pipelineColumns"
+            row-key="id"
+          >
+            <template #body-cell-actions="props">
+              <q-td :props="props" class="text-right">
+                <q-btn
+                  dense
+                  flat
+                  round
+                  icon="edit"
+                  color="primary"
+                  :disable="!fuseStore.canModify"
+                  @click="openPipelineDialog(props.row)"
+                />
+                <q-btn
+                  dense
+                  flat
+                  round
+                  icon="delete"
+                  color="negative"
+                  class="q-ml-xs"
+                  :disable="!fuseStore.canModify"
+                  @click="confirmPipelineDelete(props.row)"
+                />
+              </q-td>
+            </template>
+            <template #no-data>
+              <div class="q-pa-sm text-grey-7">No pipelines documented.</div>
+            </template>
+          </q-table>
+        </q-card>
+      </q-tab-panel>
+    </q-tab-panels>
 
     <q-dialog v-model="isInstanceDialogOpen" persistent>
       <ApplicationInstanceForm
@@ -224,6 +243,7 @@ import { getErrorMessage } from '../utils/error'
 import ApplicationDetailsForm from '../components/applications/ApplicationDetailsForm.vue'
 import ApplicationInstanceForm from '../components/applications/ApplicationInstanceForm.vue'
 import ApplicationPipelineForm from '../components/applications/ApplicationPipelineForm.vue'
+import ResponsibilityAssignmentTable from '../components/responsibilityassignment/ResponsibilityAssignmentTable.vue'
 
 interface ApplicationInstanceFormModel {
   environmentId: string | null
@@ -240,6 +260,8 @@ const router = useRouter()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
+
+const activeTab = ref('details')
 
 const applicationId = computed(() => route.params.id as string)
 

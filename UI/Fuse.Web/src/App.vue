@@ -65,171 +65,189 @@
 
           <q-separator class="q-my-md" />
 
-          <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
-            data-tour-id="nav-applications">
-            <q-item-section avatar>
-              <q-icon name="apps" />
-            </q-item-section>
-            <q-item-section>
-              Applications
-            </q-item-section>
-          </q-item>
+          <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
+              data-tour-id="nav-applications">
+              <q-item-section avatar>
+                <q-icon name="apps" />
+              </q-item-section>
+              <q-item-section>
+                Applications
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
-            data-tour-id="nav-accounts">
-            <q-item-section avatar>
-              <q-icon name="vpn_key" />
-            </q-item-section>
-            <q-item-section>
-              Accounts
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
+              data-tour-id="nav-accounts">
+              <q-item-section avatar>
+                <q-icon name="vpn_key" />
+              </q-item-section>
+              <q-item-section>
+                Accounts
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
-            data-tour-id="nav-identities">
-            <q-item-section avatar>
-              <q-icon name="badge" />
-            </q-item-section>
-            <q-item-section>
-              Identities
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
+              data-tour-id="nav-identities">
+              <q-item-section avatar>
+                <q-icon name="badge" />
+              </q-item-section>
+              <q-item-section>
+                Identities
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
-            data-tour-id="nav-data-stores">
-            <q-item-section avatar>
-              <q-icon name="storage" />
-            </q-item-section>
-            <q-item-section>
-              Data Stores
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
+              data-tour-id="nav-data-stores">
+              <q-item-section avatar>
+                <q-icon name="storage" />
+              </q-item-section>
+              <q-item-section>
+                Data Stores
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
-            data-tour-id="nav-platforms">
-            <q-item-section avatar>
-              <q-icon name="dns" />
-            </q-item-section>
-            <q-item-section>
-              Platforms
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
+              data-tour-id="nav-platforms">
+              <q-item-section avatar>
+                <q-icon name="dns" />
+              </q-item-section>
+              <q-item-section>
+                Platforms
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
-            data-tour-id="nav-environments">
-            <q-item-section avatar>
-              <q-icon name="cloud" />
-            </q-item-section>
-            <q-item-section>
-              Environments
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
+              data-tour-id="nav-environments">
+              <q-item-section avatar>
+                <q-icon name="cloud" />
+              </q-item-section>
+              <q-item-section>
+                Environments
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
-            data-tour-id="nav-external-resources">
-            <q-item-section avatar>
-              <q-icon name="link" />
-            </q-item-section>
-            <q-item-section>
-              External Resources
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
+              data-tour-id="nav-external-resources">
+              <q-item-section avatar>
+                <q-icon name="link" />
+              </q-item-section>
+              <q-item-section>
+                External Resources
+              </q-item-section>
+            </q-item>
+          </q-expansion-item>
 
-          <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
-            data-tour-id="nav-tags">
-            <q-item-section avatar>
-              <q-icon name="label" />
-            </q-item-section>
-            <q-item-section>
-              Tags
-            </q-item-section>
-          </q-item>
+          <q-expansion-item label="Classification" icon="category" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
+              data-tour-id="nav-tags">
+              <q-item-section avatar>
+                <q-icon name="label" />
+              </q-item-section>
+              <q-item-section>
+                Tags
+              </q-item-section>
+            </q-item>
 
-          <q-separator class="q-my-md" />
+            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="bg-primary text-white">
+              <q-item-section avatar>
+                <q-icon name="people" />
+              </q-item-section>
+              <q-item-section>Positions</q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
-            data-tour-id="nav-view">
-            <q-item-section avatar>
-              <q-icon name="menu_book" />
-            </q-item-section>
-            <q-item-section>
-              Documentation Mode
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="bg-primary text-white">
+              <q-item-section avatar>
+                <q-icon name="assignment_ind" />
+              </q-item-section>
+              <q-item-section>Responsibility Types</q-item-section>
+            </q-item>
+          </q-expansion-item>
 
-          <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
-            data-tour-id="nav-tags">
-            <q-item-section avatar>
-              <q-icon name="insights" />
-            </q-item-section>
-            <q-item-section>
-              Graph
-            </q-item-section>
-          </q-item>
+          <q-expansion-item label="Insights" icon="insights" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
+              data-tour-id="nav-view">
+              <q-item-section avatar>
+                <q-icon name="menu_book" />
+              </q-item-section>
+              <q-item-section>
+                Documentation Mode
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
-            data-tour-id="nav-config">
-            <q-item-section avatar>
-              <q-icon name="settings" />
-            </q-item-section>
-            <q-item-section>
-              Config
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
+              data-tour-id="nav-tags">
+              <q-item-section avatar>
+                <q-icon name="insights" />
+              </q-item-section>
+              <q-item-section>
+                Graph
+              </q-item-section>
+            </q-item>
+          </q-expansion-item>
 
-          <q-separator class="q-my-md" />
+          <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
+              data-tour-id="nav-kuma-integrations">
+              <q-item-section avatar>
+                <q-icon name="cloud_sync" />
+              </q-item-section>
+              <q-item-section>
+                Kuma Integrations
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
-            data-tour-id="nav-kuma-integrations">
-            <q-item-section avatar>
-              <q-icon name="cloud_sync" />
-            </q-item-section>
-            <q-item-section>
-              Kuma Integrations
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
+              data-tour-id="nav-secret-providers">
+              <q-item-section avatar>
+                <q-icon name="vpn_key" />
+              </q-item-section>
+              <q-item-section>
+                Secret Provider Integrations
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
-            data-tour-id="nav-secret-providers">
-            <q-item-section avatar>
-              <q-icon name="vpn_key" />
-            </q-item-section>
-            <q-item-section>
-              Secret Provider Integrations
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+              data-tour-id="nav-sql-integrations">
+              <q-item-section avatar>
+                <q-icon name="storage" />
+              </q-item-section>
+              <q-item-section>
+                SQL Integrations
+              </q-item-section>
+            </q-item>
+          </q-expansion-item>
 
-          <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
-            data-tour-id="nav-sql-integrations">
-            <q-item-section avatar>
-              <q-icon name="storage" />
-            </q-item-section>
-            <q-item-section>
-              SQL Integrations
-            </q-item-section>
-          </q-item>
+          <q-expansion-item label="Administration" icon="settings" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
+              data-tour-id="nav-config">
+              <q-item-section avatar>
+                <q-icon name="settings" />
+              </q-item-section>
+              <q-item-section>
+                Config
+              </q-item-section>
+            </q-item>
 
-          <q-separator class="q-my-md" />
+            <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
+              data-tour-id="nav-security">
+              <q-item-section avatar>
+                <q-icon name="security" />
+              </q-item-section>
+              <q-item-section>
+                Security
+              </q-item-section>
+            </q-item>
 
-          <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
-            data-tour-id="nav-security">
-            <q-item-section avatar>
-              <q-icon name="security" />
-            </q-item-section>
-            <q-item-section>
-              Security
-            </q-item-section>
-          </q-item>
-
-          <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
-            data-tour-id="nav-audit-logs">
-            <q-item-section avatar>
-              <q-icon name="history" />
-            </q-item-section>
-            <q-item-section>
-              Audit Logs
-            </q-item-section>
-          </q-item>
+            <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
+              data-tour-id="nav-audit-logs">
+              <q-item-section avatar>
+                <q-icon name="history" />
+              </q-item-section>
+              <q-item-section>
+                Audit Logs
+              </q-item-section>
+            </q-item>
+          </q-expansion-item>
         </q-list>
       </q-scroll-area>
     </q-drawer>

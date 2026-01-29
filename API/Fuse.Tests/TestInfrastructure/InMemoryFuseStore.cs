@@ -20,10 +20,13 @@ public sealed class InMemoryFuseStore : IFuseStore
             Identities: Array.Empty<Identity>(),
             Tags: Array.Empty<Tag>(),
             Environments: Array.Empty<EnvironmentInfo>(),
-            SecretProviders: Array.Empty<SecretProvider>(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-            SqlIntegrations: Array.Empty<SqlIntegration>()
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
     }
 

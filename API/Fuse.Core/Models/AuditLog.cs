@@ -79,7 +79,22 @@ public enum AuditAction
     SqlAccountCreated,
     SqlIntegrationBulkResolved,
     SqlPermissionsImported,
-    SqlOrphanPrincipalImported
+    SqlOrphanPrincipalImported,
+    
+    // Position actions
+    PositionCreated,
+    PositionUpdated,
+    PositionDeleted,
+    
+    // ResponsibilityType actions
+    ResponsibilityTypeCreated,
+    ResponsibilityTypeUpdated,
+    ResponsibilityTypeDeleted,
+    
+    // ResponsibilityAssignment actions
+    ResponsibilityAssignmentCreated,
+    ResponsibilityAssignmentUpdated,
+    ResponsibilityAssignmentDeleted
 }
 
 /// <summary>
@@ -99,7 +114,10 @@ public enum AuditArea
     SecretProvider,
     Secret,
     Config,
-    SqlIntegration
+    SqlIntegration,
+    Position,
+    ResponsibilityType,
+    ResponsibilityAssignment
 }
 
 /// <summary>
