@@ -1,4 +1,4 @@
-import { computed, Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useQuasar } from 'quasar'
 import { useFuseClient } from './useFuseClient'
