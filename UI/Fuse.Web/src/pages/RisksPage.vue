@@ -344,7 +344,7 @@ const deleteRiskMutation = useMutation({
   onError: (error: any) => {
     $q.notify({
       type: 'negative',
-      message: error?.response?.error || 'Failed to delete risk'
+      message: error?.message || 'Failed to delete risk'
     })
   }
 })
@@ -382,26 +382,5 @@ function confirmDelete(risk: Risk) {
 
 .content-card {
   margin-top: 16px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.full-span {
-  grid-column: 1 / -1;
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.form-dialog {
-  min-width: 500px;
-  max-width: 800px;
 }
 </style>

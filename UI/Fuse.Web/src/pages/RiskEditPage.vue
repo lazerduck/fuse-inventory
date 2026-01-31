@@ -273,8 +273,8 @@ watch(existingRisk, (risk) => {
       targetType: risk.targetType ?? null,
       targetId: risk.targetId ?? null,
       mitigation: risk.mitigation ?? null,
-      reviewDate: risk.reviewDate ? (new Date(risk.reviewDate).toISOString().split('T')[0] ?? null) : null,
-      approvalDate: risk.approvalDate ? (new Date(risk.approvalDate).toISOString().split('T')[0] ?? null) : null,
+      reviewDate: risk.reviewDate ? (new Date(risk.reviewDate).toISOString().split('T')[0] || null) : null,
+      approvalDate: risk.approvalDate ? (new Date(risk.approvalDate).toISOString().split('T')[0] || null) : null,
       tagIds: risk.tagIds ? Array.from(risk.tagIds) : null,
       notes: risk.notes ?? null
     }
@@ -390,7 +390,7 @@ const createMutation = useMutation({
   onError: (error: any) => {
     $q.notify({
       type: 'negative',
-      message: error?.response?.error || 'Failed to create risk'
+      message: error?.message || 'Failed to create risk'
     })
   }
 })
@@ -411,7 +411,7 @@ const updateMutation = useMutation({
   onError: (error: any) => {
     $q.notify({
       type: 'negative',
-      message: error?.response?.error || 'Failed to update risk'
+      message: error?.message || 'Failed to update risk'
     })
   }
 })
