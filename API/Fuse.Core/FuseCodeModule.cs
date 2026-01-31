@@ -21,6 +21,7 @@ public static class FuseCodeModule
         services.AddScoped<ISqlPermissionsInspector, SqlPermissionsInspector>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
