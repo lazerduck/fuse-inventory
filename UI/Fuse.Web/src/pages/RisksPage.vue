@@ -139,7 +139,6 @@ import { useQuasar, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { usePositions } from '../composables/usePositions'
 import { useApplications } from '../composables/useApplications'
 import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
@@ -153,16 +152,20 @@ const fuseStore = useFuseStore()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 
-const { data: risks = [], isLoading: risksLoading, error: risksError } = useQuery({
+const { data: risks, isLoading: risksLoading, error: risksError } = useQuery({
   queryKey: ['risks'],
   queryFn: () => client.riskAll()
 })
-const { positions } = usePositions()
-const { applications } = useApplications()
-const { accounts } = useAccounts()
-const { identities } = useIdentities()
-const { dataStores } = useDataStores()
-const { externalResources } = useExternalResources()
+
+const { data: positions } = useQuery({
+  queryKey: ['positions'],
+  queryFn: () => client.positionAll()
+})
+const { data: applications } = useApplications()
+const { data: accounts } = useAccounts()
+const { data: identities } = useIdentities()
+const { data: dataStores } = useDataStores()
+const { data: externalResources } = useExternalResources()
 
 const filter = ref('')
 const targetTypeFilter = ref<string | null>(null)
@@ -242,14 +245,16 @@ const columns: QTableColumn[] = [
 
 const positionLookup = computed(() => {
   const lookup: Record<string, string> = {}
-  positions.value?.forEach((p: any) => {
-    lookup[p.id] = p.name
-  })
+  if (positions.value) {
+    positions.value.forEach((p: any) => {
+      lookup[p.id] = p.name
+    })
+  }
   return lookup
 })
 
 const filteredRisks = computed(() => {
-  if (!risks.value) return []
+  if (!risks.value || !Array.isArray(risks.value)) return []
   
   let filtered = risks.value
   
@@ -263,22 +268,28 @@ const filteredRisks = computed(() => {
 function getTargetName(targetType: string, targetId: string): string {
   switch (targetType) {
     case 'Application':
-      return applications.value?.find((a: any) => a.id === targetId)?.name ?? targetId
+      if (!applications.value) return targetId
+      return (applications.value as any[]).find((a: any) => a.id === targetId)?.name ?? targetId
     case 'ApplicationInstance': {
-      for (const app of applications.value ?? []) {
+      if (!applications.value) return targetId
+      for (const app of (applications.value as any[])) {
         const instance = app.instances?.find((i: any) => i.id === targetId)
-        if (instance) return `${app.name} - ${instance.name}`
+        if (instance) return `${app.name} - ${instance.friendlyName || instance.name || 'Instance'}`
       }
       return targetId
     }
     case 'Account':
-      return accounts.value?.find((a: any) => a.id === targetId)?.name ?? targetId
+      if (!accounts.value) return targetId
+      return (accounts.value as any[]).find((a: any) => a.id === targetId)?.userName ?? targetId
     case 'Identity':
-      return identities.value?.find((i: any) => i.id === targetId)?.name ?? targetId
+      if (!identities.value) return targetId
+      return (identities.value as any[]).find((i: any) => i.id === targetId)?.name ?? targetId
     case 'DataStore':
-      return dataStores.value?.find((d: any) => d.id === targetId)?.name ?? targetId
+      if (!dataStores.value) return targetId
+      return (dataStores.value as any[]).find((d: any) => d.id === targetId)?.name ?? targetId
     case 'ExternalResource':
-      return externalResources.value?.find((e: any) => e.id === targetId)?.name ?? targetId
+      if (!externalResources.value) return targetId
+      return (externalResources.value as any[]).find((e: any) => e.id === targetId)?.name ?? targetId
     default:
       return targetId
   }
@@ -345,7 +356,7 @@ function confirmDelete(risk: Risk) {
     cancel: true,
     persistent: true
   }).onOk(async () => {
-    await deleteRiskMutation.mutateAsync(risk.id)
+    await deleteRiskMutation.mutateAsync(risk.id!)
   })
 }
 </script>

@@ -178,13 +178,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from '../composables/useFuseClient'
-import { usePositions } from '../composables/usePositions'
 import { useApplications } from '../composables/useApplications'
 import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
@@ -199,12 +198,16 @@ const fuseStore = useFuseStore()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 
-const { positions } = usePositions()
-const { applications } = useApplications()
-const { accounts } = useAccounts()
-const { identities } = useIdentities()
-const { dataStores } = useDataStores()
-const { externalResources } = useExternalResources()
+const { data: positions } = useQuery({
+  queryKey: ['positions'],
+  queryFn: () => client.positionAll()
+})
+
+const { data: applications } = useApplications()
+const { data: accounts } = useAccounts()
+const { data: identities } = useIdentities()
+const { data: dataStores } = useDataStores()
+const { data: externalResources } = useExternalResources()
 
 const riskId = computed(() => route.params.id as string | undefined)
 const isEditMode = computed(() => !!riskId.value)
@@ -260,20 +263,20 @@ const { data: existingRisk, isLoading } = useQuery({
 watch(existingRisk, (risk) => {
   if (risk) {
     form.value = {
-      title: risk.title,
-      description: risk.description,
-      impact: risk.impact,
-      likelihood: risk.likelihood,
-      status: risk.status,
-      ownerPositionId: risk.ownerPositionId,
-      approverPositionId: risk.approverPositionId || null,
-      targetType: risk.targetType,
-      targetId: risk.targetId,
-      mitigation: risk.mitigation,
-      reviewDate: risk.reviewDate ? risk.reviewDate.split('T')[0] : null,
-      approvalDate: risk.approvalDate ? risk.approvalDate.split('T')[0] : null,
+      title: risk.title ?? '',
+      description: risk.description ?? null,
+      impact: risk.impact ?? null,
+      likelihood: risk.likelihood ?? null,
+      status: risk.status ?? null,
+      ownerPositionId: risk.ownerPositionId ?? null,
+      approverPositionId: risk.approverPositionId ?? null,
+      targetType: risk.targetType ?? null,
+      targetId: risk.targetId ?? null,
+      mitigation: risk.mitigation ?? null,
+      reviewDate: risk.reviewDate ? (new Date(risk.reviewDate).toISOString().split('T')[0] ?? null) : null,
+      approvalDate: risk.approvalDate ? (new Date(risk.approvalDate).toISOString().split('T')[0] ?? null) : null,
       tagIds: risk.tagIds ? Array.from(risk.tagIds) : null,
-      notes: risk.notes
+      notes: risk.notes ?? null
     }
   }
 })
@@ -309,10 +312,11 @@ const statusOptions = [
 ]
 
 const positionOptions = computed(() => {
-  return positions.value?.map((p: any) => ({
+  if (!positions.value) return []
+  return positions.value.map((p: any) => ({
     label: p.name,
     value: p.id
-  })) ?? []
+  }))
 })
 
 const targetOptions = computed(() => {
@@ -320,13 +324,15 @@ const targetOptions = computed(() => {
 
   switch (form.value.targetType) {
     case 'Application':
-      return applications.value?.map((a: any) => ({
+      if (!applications.value) return []
+      return applications.value.map((a: any) => ({
         label: a.name,
         value: a.id
-      })) ?? []
+      }))
     case 'ApplicationInstance': {
+      if (!applications.value) return []
       const instances: any[] = []
-      applications.value?.forEach((app: any) => {
+      applications.value.forEach((app: any) => {
         app.instances?.forEach((instance: any) => {
           instances.push({
             label: `${app.name} - ${instance.name}`,
@@ -337,25 +343,29 @@ const targetOptions = computed(() => {
       return instances
     }
     case 'Account':
-      return accounts.value?.map((a: any) => ({
+      if (!accounts.value) return []
+      return accounts.value.map((a: any) => ({
         label: a.name,
         value: a.id
-      })) ?? []
+      }))
     case 'Identity':
-      return identities.value?.map((i: any) => ({
+      if (!identities.value) return []
+      return identities.value.map((i: any) => ({
         label: i.name,
         value: i.id
-      })) ?? []
+      }))
     case 'DataStore':
-      return dataStores.value?.map((d: any) => ({
+      if (!dataStores.value) return []
+      return dataStores.value.map((d: any) => ({
         label: d.name,
         value: d.id
-      })) ?? []
+      }))
     case 'ExternalResource':
-      return externalResources.value?.map((e: any) => ({
+      if (!externalResources.value) return []
+      return externalResources.value.map((e: any) => ({
         label: e.name,
         value: e.id
-      })) ?? []
+      }))
     default:
       return []
   }
@@ -420,43 +430,43 @@ async function handleSave() {
     return
   }
 
-  const tagIds = form.value.tagIds ? new Set(form.value.tagIds) : undefined
+  const tagIds = form.value.tagIds ?? undefined
 
   if (isEditMode.value) {
     const command = new UpdateRisk({
       id: riskId.value!,
       title: form.value.title,
-      description: form.value.description,
-      impact: form.value.impact,
-      likelihood: form.value.likelihood,
-      status: form.value.status,
-      ownerPositionId: form.value.ownerPositionId,
-      approverPositionId: form.value.approverPositionId,
-      targetType: form.value.targetType,
-      targetId: form.value.targetId,
-      mitigation: form.value.mitigation,
+      description: form.value.description ?? undefined,
+      impact: form.value.impact ?? undefined,
+      likelihood: form.value.likelihood ?? undefined,
+      status: form.value.status ?? undefined,
+      ownerPositionId: form.value.ownerPositionId ?? undefined,
+      approverPositionId: form.value.approverPositionId ?? undefined,
+      targetType: form.value.targetType ?? undefined,
+      targetId: form.value.targetId ?? undefined,
+      mitigation: form.value.mitigation ?? undefined,
       reviewDate: form.value.reviewDate ? new Date(form.value.reviewDate) : undefined,
       approvalDate: form.value.approvalDate ? new Date(form.value.approvalDate) : undefined,
       tagIds: tagIds,
-      notes: form.value.notes
+      notes: form.value.notes ?? undefined
     })
     await updateMutation.mutateAsync({ id: riskId.value!, command })
   } else {
     const command = new CreateRisk({
       title: form.value.title,
-      description: form.value.description,
-      impact: form.value.impact,
-      likelihood: form.value.likelihood,
-      status: form.value.status,
-      ownerPositionId: form.value.ownerPositionId,
-      approverPositionId: form.value.approverPositionId,
-      targetType: form.value.targetType,
-      targetId: form.value.targetId,
-      mitigation: form.value.mitigation,
+      description: form.value.description ?? undefined,
+      impact: form.value.impact ?? undefined,
+      likelihood: form.value.likelihood ?? undefined,
+      status: form.value.status ?? undefined,
+      ownerPositionId: form.value.ownerPositionId ?? undefined,
+      approverPositionId: form.value.approverPositionId ?? undefined,
+      targetType: form.value.targetType ?? undefined,
+      targetId: form.value.targetId ?? undefined,
+      mitigation: form.value.mitigation ?? undefined,
       reviewDate: form.value.reviewDate ? new Date(form.value.reviewDate) : undefined,
       approvalDate: form.value.approvalDate ? new Date(form.value.approvalDate) : undefined,
       tagIds: tagIds,
-      notes: form.value.notes
+      notes: form.value.notes ?? undefined
     })
     await createMutation.mutateAsync(command)
   }
