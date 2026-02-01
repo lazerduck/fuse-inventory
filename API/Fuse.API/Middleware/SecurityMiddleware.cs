@@ -13,7 +13,7 @@ public sealed class SecurityMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, ISecurityService securityService)
+    public async Task InvokeAsync(HttpContext context, ISecurityService securityService, IPermissionService permissionService)
     {
         var cancellationToken = context.RequestAborted;
         var path = context.Request.Path;
@@ -44,8 +44,8 @@ public sealed class SecurityMiddleware
 
         if (isSecurityEndpoint)
         {
-            // Security endpoints require admin access, except for login/logout/state and initial setup
-            if (!IsSecurityEndpointAllowed(path, context.Request.Method, user, requiresSetup))
+            // Security endpoints require admin access or specific permissions
+            if (!await IsSecurityEndpointAllowedAsync(path, context.Request.Method, user, requiresSetup, permissionService, cancellationToken))
             {
                 if (user is null)
                 {
@@ -58,7 +58,7 @@ public sealed class SecurityMiddleware
         }
         else
         {
-            // Enforce admin-only access for Audit endpoints
+            // Enforce permission-based or admin-only access for specific endpoints
             if (path.StartsWithSegments("/api/audit", StringComparison.OrdinalIgnoreCase))
             {
                 if (user is null)
@@ -66,14 +66,19 @@ public sealed class SecurityMiddleware
                     await WriteUnauthorizedAsync(context, cancellationToken);
                     return;
                 }
-                if (user.Role != SecurityRole.Admin)
+                
+                // Check for AuditLogsView permission
+                if (!await permissionService.HasPermissionAsync(user, Permission.AuditLogsView, cancellationToken))
                 {
-                    await WriteForbiddenAsync(context, cancellationToken);
-                    return;
+                    if (user.Role != SecurityRole.Admin) // Fallback to legacy admin check
+                    {
+                        await WriteForbiddenAsync(context, cancellationToken);
+                        return;
+                    }
                 }
             }
 
-            // Enforce admin-only access for Config export endpoint (exposes secrets)
+            // Enforce permission-based or admin-only access for Config export endpoint (exposes secrets)
             if (path.StartsWithSegments("/api/config/export", StringComparison.OrdinalIgnoreCase))
             {
                 if (user is null)
@@ -81,10 +86,15 @@ public sealed class SecurityMiddleware
                     await WriteUnauthorizedAsync(context, cancellationToken);
                     return;
                 }
-                if (user.Role != SecurityRole.Admin)
+                
+                // Check for ConfigurationExport permission
+                if (!await permissionService.HasPermissionAsync(user, Permission.ConfigurationExport, cancellationToken))
                 {
-                    await WriteForbiddenAsync(context, cancellationToken);
-                    return;
+                    if (user.Role != SecurityRole.Admin) // Fallback to legacy admin check
+                    {
+                        await WriteForbiddenAsync(context, cancellationToken);
+                        return;
+                    }
                 }
             }
 
@@ -183,7 +193,7 @@ public sealed class SecurityMiddleware
         return false;
     }
 
-    private static bool IsSecurityEndpointAllowed(PathString path, string method, SecurityUser? user, bool requiresSetup)
+    private static async Task<bool> IsSecurityEndpointAllowedAsync(PathString path, string method, SecurityUser? user, bool requiresSetup, IPermissionService permissionService, CancellationToken cancellationToken)
     {
         // During setup, allow specific endpoints without authentication
         if (requiresSetup && IsSetupAllowed(path, method))
@@ -199,8 +209,37 @@ public sealed class SecurityMiddleware
         if (path.StartsWithSegments("/api/security/logout", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(method))
             return true;
 
-        // All other security endpoints require admin role
-        return user?.Role == SecurityRole.Admin;
+        if (user is null)
+            return false;
+
+        // Check specific permissions for security endpoints
+        if (path.StartsWithSegments("/api/security/accounts", StringComparison.OrdinalIgnoreCase))
+        {
+            if (HttpMethods.IsGet(method))
+                return await permissionService.HasPermissionAsync(user, Permission.UsersRead, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsPost(method))
+                return await permissionService.HasPermissionAsync(user, Permission.UsersCreate, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsPatch(method) || HttpMethods.IsPut(method))
+                return await permissionService.HasPermissionAsync(user, Permission.UsersUpdate, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsDelete(method))
+                return await permissionService.HasPermissionAsync(user, Permission.UsersDelete, cancellationToken) || user.Role == SecurityRole.Admin;
+        }
+
+        // Role management endpoints
+        if (path.StartsWithSegments("/api/security/roles", StringComparison.OrdinalIgnoreCase) || path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase))
+        {
+            if (HttpMethods.IsGet(method))
+                return await permissionService.HasPermissionAsync(user, Permission.RolesRead, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsPost(method))
+                return await permissionService.HasPermissionAsync(user, Permission.RolesCreate, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsPatch(method) || HttpMethods.IsPut(method))
+                return await permissionService.HasPermissionAsync(user, Permission.RolesUpdate, cancellationToken) || user.Role == SecurityRole.Admin;
+            if (HttpMethods.IsDelete(method))
+                return await permissionService.HasPermissionAsync(user, Permission.RolesDelete, cancellationToken) || user.Role == SecurityRole.Admin;
+        }
+
+        // All other security endpoints require admin role (fallback)
+        return user.Role == SecurityRole.Admin;
     }
 
     private static AccessRequirement GetRequirement(SecurityLevel level, string method)

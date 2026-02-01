@@ -42,6 +42,20 @@ using (var scope = app.Services.CreateScope())
 {
     var store = scope.ServiceProvider.GetRequiredService<IFuseStore>();
     await store.LoadAsync();
+    
+    // Initialize default roles if they don't exist
+    var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+    var roles = await permissionService.EnsureDefaultRolesAsync();
+    
+    // Update the store with default roles if needed
+    var state = await store.GetAsync();
+    if (!state.Security.Roles.Any())
+    {
+        await store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Roles = roles.ToList() }
+        });
+    }
 }
 
 // Configure the HTTP request pipeline.
