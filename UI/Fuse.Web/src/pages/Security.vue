@@ -64,6 +64,23 @@
             :pagination="pagination"
             data-tour-id="data-stores-table"
           >
+          <template #body-cell-roleIds="props">
+            <q-td :props="props">
+              <div v-if="props.row.roleIds?.length" class="q-gutter-xs">
+                <q-chip
+                  v-for="roleId in props.row.roleIds"
+                  :key="roleId"
+                  dense
+                  color="primary"
+                  text-color="white"
+                  size="sm"
+                >
+                  {{ getRoleName(roleId) }}
+                </q-chip>
+              </div>
+              <span v-else class="text-grey">—</span>
+            </q-td>
+          </template>
           <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
             <q-btn 
@@ -124,6 +141,7 @@
         <EditSecurityAccount 
           v-if="selectedUser"
           :user="selectedUser"
+          :available-roles="availableRoles"
           :loading="updateUserMutation.isPending.value" 
           @submit="handleEditUser"
           @cancel="closeEditDialog" 
@@ -183,11 +201,12 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser } from '../api/client'
+import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser } from '../api/client'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
 import { getErrorMessage } from '../utils/error'
 import { useSecurities } from '../composables/useSecurity'
+import { useRoles } from '../composables/useRoles'
 
 const fuseStore = useFuseStore()
 const queryClient = useQueryClient()
@@ -203,14 +222,17 @@ const selectedUser = ref<SecurityUserResponse | null>(null)
 const securityError = ref<string | null>(null)
 
 const {data, isLoading } = useSecurities()
+const { data: rolesData } = useRoles()
 
 const users = computed(() => data.value ?? [])
+const availableRoles = computed(() => rolesData.value ?? [])
 
 const isAdmin = computed(() => fuseStore.currentUser?.role === SecurityRole.Admin)
 
 const columns: QTableColumn<SecurityUserResponse>[] = [
   { name: 'userName', label: 'Username', field: 'userName', sortable: true },
-  { name: 'role', label: 'Role', field: 'role', sortable: true },
+  { name: 'role', label: 'Legacy Role', field: 'role', sortable: true },
+  { name: 'roleIds', label: 'Assigned Roles', field: (row) => row.roleIds?.length || 0, sortable: true },
   { name: 'createdAt', label: 'Created', field: 'createdAt', sortable: true},
   { name: 'updatedAt', label: 'Updated', field: 'updatedAt', sortable: true},
   { name: 'actions', label: 'Actions', field: (row) => row.id, align: 'right' }
@@ -370,14 +392,40 @@ function deleteItem(user: SecurityUserResponse) {
   })
 }
 
-function handleEditUser(form: { id: string; role: SecurityRole | null }) {
+function handleEditUser(form: { id: string; role: SecurityRole | null; roleIds: string[] }) {
   securityError.value = null
-  const payload = Object.assign(new UpdateUser(), {
+  
+  // Update the legacy role first
+  const updatePayload = Object.assign(new UpdateUser(), {
     id: form.id || undefined,
     role: form.role || undefined
   })
-  updateUserMutation.mutate(payload)
+  updateUserMutation.mutate(updatePayload)
+  
+  // Then assign the new roles
+  if (form.roleIds) {
+    const assignPayload = Object.assign(new AssignRolesToUser(), {
+      userId: form.id || undefined,
+      roleIds: form.roleIds
+    })
+    assignRolesMutation.mutate({ userId: form.id, payload: assignPayload })
+  }
 }
+
+const assignRolesMutation = useMutation({
+  mutationFn: ({ userId, payload }: { userId: string, payload: AssignRolesToUser }) => 
+    client.roles(userId, payload),
+  onSuccess: async () => {
+    Notify.create({ type: 'positive', message: 'Roles assigned successfully' })
+    // Refresh the users list
+    queryClient.invalidateQueries({ queryKey: ['securityUsers']})
+  },
+  onError: (err) => {
+    const errorMsg = getErrorMessage(err, 'Unable to assign roles')
+    securityError.value = errorMsg
+    Notify.create({ type: 'negative', message: errorMsg })
+  }
+})
 
 function closeEditDialog() {
   isEditDialogOpen.value = false
@@ -386,6 +434,11 @@ function closeEditDialog() {
 
 function isCurrentUser(user: SecurityUserResponse): boolean {
   return user.id === fuseStore.currentUser?.id
+}
+
+function getRoleName(roleId: string): string {
+  const role = availableRoles.value.find(r => r.id === roleId)
+  return role?.name || roleId.substring(0, 8)
 }
 </script>
 
