@@ -279,6 +279,174 @@ public sealed class SecurityService : ISecurityService
         return Result.Success();
     }
 
+    public async Task<Result<Role>> CreateRoleAsync(CreateRole command, CancellationToken ct = default)
+    {
+        if (command is null)
+            return Result<Role>.Failure("Invalid role command.");
+        if (string.IsNullOrWhiteSpace(command.Name))
+            return Result<Role>.Failure("Role name cannot be empty.");
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+        var now = DateTime.UtcNow;
+
+        if (state.Roles.Any(r => string.Equals(r.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
+            return Result<Role>.Failure($"A role with the name '{command.Name}' already exists.", ErrorType.Conflict);
+
+        var role = new Role(Guid.NewGuid(), command.Name.Trim(), command.Description ?? string.Empty, command.Permissions ?? Array.Empty<Permission>(), now, now);
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Roles = s.Security.Roles.Append(role).ToList() }
+        }, ct);
+
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.RoleCreated,
+            AuditArea.Security,
+            command.RequestedBy.HasValue ? state.Users.FirstOrDefault(u => u.Id == command.RequestedBy)?.UserName ?? "System" : "System",
+            command.RequestedBy,
+            role.Id,
+            new { role.Name, role.Description, PermissionCount = role.Permissions.Count }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<Role>.Success(role);
+    }
+
+    public async Task<Result<Role>> UpdateRoleAsync(UpdateRole command, CancellationToken ct = default)
+    {
+        if (command is null || command.Id == default)
+            return Result<Role>.Failure("Role Id must be provided", ErrorType.Validation);
+        if (string.IsNullOrWhiteSpace(command.Name))
+            return Result<Role>.Failure("Role name cannot be empty.");
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+        var role = state.Roles.FirstOrDefault(r => r.Id == command.Id);
+
+        if (role is null)
+            return Result<Role>.Failure("Role not found", ErrorType.NotFound);
+
+        // Prevent updating default roles
+        if (role.Id == PermissionService.DefaultAdminRoleId || role.Id == PermissionService.DefaultReaderRoleId)
+            return Result<Role>.Failure("Default roles cannot be modified.", ErrorType.Validation);
+
+        // Check if name is taken by another role
+        if (state.Roles.Any(r => r.Id != command.Id && string.Equals(r.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
+            return Result<Role>.Failure($"A role with the name '{command.Name}' already exists.", ErrorType.Conflict);
+
+        var updatedRole = role with 
+        { 
+            Name = command.Name.Trim(), 
+            Description = command.Description ?? string.Empty,
+            Permissions = command.Permissions ?? Array.Empty<Permission>(),
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Roles = s.Security.Roles.Select(r => r.Id == command.Id ? updatedRole : r).ToList() }
+        }, ct);
+
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.RoleUpdated,
+            AuditArea.Security,
+            command.RequestedBy.HasValue ? state.Users.FirstOrDefault(u => u.Id == command.RequestedBy)?.UserName ?? "System" : "System",
+            command.RequestedBy,
+            role.Id,
+            new { updatedRole.Name, updatedRole.Description, PermissionCount = updatedRole.Permissions.Count }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<Role>.Success(updatedRole);
+    }
+
+    public async Task<Result> DeleteRoleAsync(DeleteRole command, CancellationToken ct = default)
+    {
+        if (command is null || command.Id == default)
+            return Result.Failure("Role Id must be provided", ErrorType.Validation);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+        var role = state.Roles.FirstOrDefault(r => r.Id == command.Id);
+
+        if (role is null)
+            return Result.Failure("Role not found", ErrorType.NotFound);
+
+        // Prevent deleting default roles
+        if (role.Id == PermissionService.DefaultAdminRoleId || role.Id == PermissionService.DefaultReaderRoleId)
+            return Result.Failure("Default roles cannot be deleted.", ErrorType.Validation);
+
+        // Check if any users have this role
+        if (state.Users.Any(u => u.RoleIds.Contains(command.Id)))
+            return Result.Failure("Cannot delete a role that is assigned to users.", ErrorType.Validation);
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Roles = s.Security.Roles.Where(r => r.Id != command.Id).ToList() }
+        }, ct);
+
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.RoleDeleted,
+            AuditArea.Security,
+            command.RequestedBy.HasValue ? state.Users.FirstOrDefault(u => u.Id == command.RequestedBy)?.UserName ?? "System" : "System",
+            command.RequestedBy,
+            role.Id,
+            new { role.Name }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<SecurityUser>> AssignRolesToUserAsync(AssignRolesToUser command, CancellationToken ct = default)
+    {
+        if (command is null || command.UserId == default)
+            return Result<SecurityUser>.Failure("User Id must be provided", ErrorType.Validation);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+        var user = state.Users.FirstOrDefault(u => u.Id == command.UserId);
+
+        if (user is null)
+            return Result<SecurityUser>.Failure("User not found", ErrorType.NotFound);
+
+        // Validate all role IDs exist
+        var roleIds = command.RoleIds ?? Array.Empty<Guid>();
+        foreach (var roleId in roleIds)
+        {
+            if (!state.Roles.Any(r => r.Id == roleId))
+                return Result<SecurityUser>.Failure($"Role {roleId} not found", ErrorType.Validation);
+        }
+
+        var updatedUser = user with 
+        { 
+            RoleIds = roleIds,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { Users = s.Security.Users.Select(u => u.Id == command.UserId ? updatedUser : u).ToList() }
+        }, ct);
+
+        // Audit log
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.UserRolesAssigned,
+            AuditArea.Security,
+            command.RequestedBy.HasValue ? state.Users.FirstOrDefault(u => u.Id == command.RequestedBy)?.UserName ?? "System" : "System",
+            command.RequestedBy,
+            user.Id,
+            new { UserName = user.UserName, RoleIds = roleIds }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result<SecurityUser>.Success(updatedUser);
+    }
+
     private static string GenerateSalt()
     {
         Span<byte> salt = stackalloc byte[16];
