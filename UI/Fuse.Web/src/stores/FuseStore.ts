@@ -16,6 +16,7 @@ export const useFuseStore = defineStore("fuse", {
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
+    isAdmin: (state) => state.currentUser?.role === SecurityRole.Admin,
     userRole: (state) => state.currentUser?.role ?? null,
     userName: (state) => state.currentUser?.userName ?? null,
     canModify: (state) => {

@@ -247,6 +247,17 @@
               </q-item-section>
             </q-item>
 
+            <q-item clickable v-ripple :to="{ name: 'roles' }" active-class="bg-primary text-white"
+              v-if="fuseStore.isAdmin"
+              data-tour-id="nav-roles">
+              <q-item-section avatar>
+                <q-icon name="admin_panel_settings" />
+              </q-item-section>
+              <q-item-section>
+                Roles
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
               data-tour-id="nav-audit-logs">
               <q-item-section avatar>
