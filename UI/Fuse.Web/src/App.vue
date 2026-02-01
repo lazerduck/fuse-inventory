@@ -164,6 +164,15 @@
           </q-expansion-item>
 
           <q-expansion-item label="Insights" icon="insights" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white">
+              <q-item-section avatar>
+                <q-icon name="warning" />
+              </q-item-section>
+              <q-item-section>
+                Risks
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
               data-tour-id="nav-view">
               <q-item-section avatar>

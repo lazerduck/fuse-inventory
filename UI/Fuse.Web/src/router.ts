@@ -129,6 +129,21 @@ const router = createRouter({
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')
     },
+    {
+      path: '/risks',
+      name: 'risks',
+      component: () => import('./pages/RisksPage.vue')
+    },
+    {
+      path: '/risks/create',
+      name: 'riskCreate',
+      component: () => import('./pages/RiskEditPage.vue')
+    },
+    {
+      path: '/risks/:id/edit',
+      name: 'riskEdit',
+      component: () => import('./pages/RiskEditPage.vue')
+    },
     // Read-only documentation mode routes
     {
       path: '/view',
