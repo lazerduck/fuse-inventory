@@ -20,6 +20,7 @@ public class PermissionService : IPermissionService
     public static readonly Guid DefaultReaderRoleId = new Guid("00000000-0000-0000-0000-000000000002");
 
     // Mapping of controller actions to required permissions
+    // Key format: "ControllerName.ActionName.HttpMethod" (e.g., "Application.GetAll.GET")
     private static readonly Dictionary<string, Permission> _actionPermissionMap = new()
     {
         // Application Controller

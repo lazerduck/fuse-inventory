@@ -45,15 +45,19 @@ using (var scope = app.Services.CreateScope())
     
     // Initialize default roles if they don't exist
     var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
-    var roles = await permissionService.EnsureDefaultRolesAsync();
+    var defaultRoles = await permissionService.EnsureDefaultRolesAsync();
     
     // Update the store with default roles if needed
     var state = await store.GetAsync();
-    if (!state.Security.Roles.Any())
+    var existingRoleIds = state.Security.Roles.Select(r => r.Id).ToHashSet();
+    var missingRoles = defaultRoles.Where(r => !existingRoleIds.Contains(r.Id)).ToList();
+    
+    if (missingRoles.Any())
     {
+        var allRoles = state.Security.Roles.Concat(missingRoles).ToList();
         await store.UpdateAsync(s => s with
         {
-            Security = s.Security with { Roles = roles.ToList() }
+            Security = s.Security with { Roles = allRoles }
         });
     }
 }

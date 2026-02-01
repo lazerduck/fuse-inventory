@@ -400,16 +400,20 @@ function handleEditUser(form: { id: string; role: SecurityRole | null; roleIds: 
     id: form.id || undefined,
     role: form.role || undefined
   })
-  updateUserMutation.mutate(updatePayload)
   
-  // Then assign the new roles
-  if (form.roleIds) {
-    const assignPayload = Object.assign(new AssignRolesToUser(), {
-      userId: form.id || undefined,
-      roleIds: form.roleIds
-    })
-    assignRolesMutation.mutate({ userId: form.id, payload: assignPayload })
-  }
+  // Chain the mutations: first update user, then assign roles
+  updateUserMutation.mutate(updatePayload, {
+    onSuccess: () => {
+      // Only assign roles if user update succeeded
+      if (form.roleIds) {
+        const assignPayload = Object.assign(new AssignRolesToUser(), {
+          userId: form.id || undefined,
+          roleIds: form.roleIds
+        })
+        assignRolesMutation.mutate({ userId: form.id, payload: assignPayload })
+      }
+    }
+  })
 }
 
 const assignRolesMutation = useMutation({
@@ -438,7 +442,8 @@ function isCurrentUser(user: SecurityUserResponse): boolean {
 
 function getRoleName(roleId: string): string {
   const role = availableRoles.value.find(r => r.id === roleId)
-  return role?.name || roleId.substring(0, 8)
+  if (role?.name) return role.name
+  return roleId && roleId.length >= 8 ? roleId.substring(0, 8) : 'Unknown'
 }
 </script>
 
