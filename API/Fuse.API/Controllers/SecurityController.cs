@@ -137,7 +137,7 @@ namespace Fuse.API.Controllers
         public async Task<IActionResult> GetAccounts()
         {
             var securityState = await _securityService.GetSecurityStateAsync();
-            var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.CreatedAt, m.UpdatedAt));
+            var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.RoleIds, m.CreatedAt, m.UpdatedAt));
             return Ok(response);
         }
 
@@ -171,7 +171,7 @@ namespace Fuse.API.Controllers
             }
 
             var user = result.Value!;
-            var response = new SecurityUserResponse(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
+            var response = new SecurityUserResponse(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
             return Ok(response);
         }
 
@@ -206,6 +206,35 @@ namespace Fuse.API.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("accounts/{userId}/roles")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> AssignUserRoles([FromRoute] Guid userId, [FromBody] AssignRolesToUser command)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(currentUserId, out var userGuid))
+            {
+                return BadRequest(new { error = "Invalid user context." });
+            }
+
+            var merged = command with { UserId = userId, RequestedBy = userGuid };
+            var result = await _securityService.AssignRolesToUserAsync(merged, HttpContext.RequestAborted);
+            
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            return Ok(new { message = "Roles assigned successfully" });
+        }
+
 
         private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)
         {
