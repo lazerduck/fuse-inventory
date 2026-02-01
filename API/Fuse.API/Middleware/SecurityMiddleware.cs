@@ -28,7 +28,8 @@ public sealed class SecurityMiddleware
         if (user is not null)
             AttachPrincipal(context, user);
 
-        var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase);
+        var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase) ||
+                                 path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase);
         var requiresSetup = state.RequiresSetup;
 
         if (requiresSetup && !IsSetupAllowed(path, context.Request.Method))

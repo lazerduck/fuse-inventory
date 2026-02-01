@@ -8,6 +8,109 @@ namespace Fuse.Tests.Permissions;
 
 public class PermissionServiceTests
 {
+    public static readonly object[][] PermissionMappings =
+    [
+        new object[] { "Application", "GetAll", "GET", Permission.ApplicationsRead },
+        new object[] { "Application", "Get", "GET", Permission.ApplicationsRead },
+        new object[] { "Application", "Create", "POST", Permission.ApplicationsCreate },
+        new object[] { "Application", "Update", "PUT", Permission.ApplicationsUpdate },
+        new object[] { "Application", "Update", "PATCH", Permission.ApplicationsUpdate },
+        new object[] { "Application", "Delete", "DELETE", Permission.ApplicationsDelete },
+
+        new object[] { "Account", "GetAll", "GET", Permission.AccountsRead },
+        new object[] { "Account", "Get", "GET", Permission.AccountsRead },
+        new object[] { "Account", "Create", "POST", Permission.AccountsCreate },
+        new object[] { "Account", "Update", "PUT", Permission.AccountsUpdate },
+        new object[] { "Account", "Update", "PATCH", Permission.AccountsUpdate },
+        new object[] { "Account", "Delete", "DELETE", Permission.AccountsDelete },
+        new object[] { "Account", "ApplyGrants", "POST", Permission.SqlGrantsApply },
+
+        new object[] { "Identity", "GetAll", "GET", Permission.IdentitiesRead },
+        new object[] { "Identity", "Get", "GET", Permission.IdentitiesRead },
+        new object[] { "Identity", "Create", "POST", Permission.IdentitiesCreate },
+        new object[] { "Identity", "Update", "PUT", Permission.IdentitiesUpdate },
+        new object[] { "Identity", "Update", "PATCH", Permission.IdentitiesUpdate },
+        new object[] { "Identity", "Delete", "DELETE", Permission.IdentitiesDelete },
+
+        new object[] { "DataStore", "GetAll", "GET", Permission.DataStoresRead },
+        new object[] { "DataStore", "Get", "GET", Permission.DataStoresRead },
+        new object[] { "DataStore", "Create", "POST", Permission.DataStoresCreate },
+        new object[] { "DataStore", "Update", "PUT", Permission.DataStoresUpdate },
+        new object[] { "DataStore", "Update", "PATCH", Permission.DataStoresUpdate },
+        new object[] { "DataStore", "Delete", "DELETE", Permission.DataStoresDelete },
+
+        new object[] { "Platform", "GetAll", "GET", Permission.PlatformsRead },
+        new object[] { "Platform", "Get", "GET", Permission.PlatformsRead },
+        new object[] { "Platform", "Create", "POST", Permission.PlatformsCreate },
+        new object[] { "Platform", "Update", "PUT", Permission.PlatformsUpdate },
+        new object[] { "Platform", "Update", "PATCH", Permission.PlatformsUpdate },
+        new object[] { "Platform", "Delete", "DELETE", Permission.PlatformsDelete },
+
+        new object[] { "Environment", "GetAll", "GET", Permission.EnvironmentsRead },
+        new object[] { "Environment", "Get", "GET", Permission.EnvironmentsRead },
+        new object[] { "Environment", "Create", "POST", Permission.EnvironmentsCreate },
+        new object[] { "Environment", "Update", "PUT", Permission.EnvironmentsUpdate },
+        new object[] { "Environment", "Update", "PATCH", Permission.EnvironmentsUpdate },
+        new object[] { "Environment", "Delete", "DELETE", Permission.EnvironmentsDelete },
+
+        new object[] { "ExternalResource", "GetAll", "GET", Permission.ExternalResourcesRead },
+        new object[] { "ExternalResource", "Get", "GET", Permission.ExternalResourcesRead },
+        new object[] { "ExternalResource", "Create", "POST", Permission.ExternalResourcesCreate },
+        new object[] { "ExternalResource", "Update", "PUT", Permission.ExternalResourcesUpdate },
+        new object[] { "ExternalResource", "Update", "PATCH", Permission.ExternalResourcesUpdate },
+        new object[] { "ExternalResource", "Delete", "DELETE", Permission.ExternalResourcesDelete },
+
+        new object[] { "Position", "GetAll", "GET", Permission.PositionsRead },
+        new object[] { "Position", "Get", "GET", Permission.PositionsRead },
+        new object[] { "Position", "Create", "POST", Permission.PositionsCreate },
+        new object[] { "Position", "Update", "PUT", Permission.PositionsUpdate },
+        new object[] { "Position", "Update", "PATCH", Permission.PositionsUpdate },
+        new object[] { "Position", "Delete", "DELETE", Permission.PositionsDelete },
+
+        new object[] { "ResponsibilityType", "GetAll", "GET", Permission.ResponsibilitiesRead },
+        new object[] { "ResponsibilityType", "Get", "GET", Permission.ResponsibilitiesRead },
+        new object[] { "ResponsibilityType", "Create", "POST", Permission.ResponsibilitiesCreate },
+        new object[] { "ResponsibilityType", "Update", "PUT", Permission.ResponsibilitiesUpdate },
+        new object[] { "ResponsibilityType", "Update", "PATCH", Permission.ResponsibilitiesUpdate },
+        new object[] { "ResponsibilityType", "Delete", "DELETE", Permission.ResponsibilitiesDelete },
+
+        new object[] { "ResponsibilityAssignment", "GetAll", "GET", Permission.ResponsibilitiesRead },
+        new object[] { "ResponsibilityAssignment", "Get", "GET", Permission.ResponsibilitiesRead },
+        new object[] { "ResponsibilityAssignment", "Create", "POST", Permission.ResponsibilitiesCreate },
+        new object[] { "ResponsibilityAssignment", "Update", "PUT", Permission.ResponsibilitiesUpdate },
+        new object[] { "ResponsibilityAssignment", "Update", "PATCH", Permission.ResponsibilitiesUpdate },
+        new object[] { "ResponsibilityAssignment", "Delete", "DELETE", Permission.ResponsibilitiesDelete },
+
+        new object[] { "Risk", "GetAll", "GET", Permission.RisksRead },
+        new object[] { "Risk", "Get", "GET", Permission.RisksRead },
+        new object[] { "Risk", "Create", "POST", Permission.RisksCreate },
+        new object[] { "Risk", "Update", "PUT", Permission.RisksUpdate },
+        new object[] { "Risk", "Update", "PATCH", Permission.RisksUpdate },
+        new object[] { "Risk", "Delete", "DELETE", Permission.RisksDelete },
+        new object[] { "Risk", "Approve", "POST", Permission.RisksApprove },
+
+        new object[] { "SecretProvider", "GetSecrets", "GET", Permission.AzureKeyVaultSecretsView },
+        new object[] { "SecretProvider", "Create", "POST", Permission.AzureKeyVaultConnectionsCreate },
+        new object[] { "SecretProvider", "Delete", "DELETE", Permission.AzureKeyVaultConnectionsDelete },
+
+        new object[] { "SqlIntegration", "Create", "POST", Permission.SqlConnectionsCreate },
+        new object[] { "SqlIntegration", "Delete", "DELETE", Permission.SqlConnectionsDelete },
+
+        new object[] { "KumaIntegration", "Create", "POST", Permission.KumaIntegrationsCreate },
+        new object[] { "KumaIntegration", "Delete", "DELETE", Permission.KumaIntegrationsDelete },
+
+        new object[] { "Config", "Export", "GET", Permission.ConfigurationExport },
+        new object[] { "Config", "Import", "POST", Permission.ConfigurationImport },
+
+        new object[] { "Audit", "GetAll", "GET", Permission.AuditLogsView },
+        new object[] { "Audit", "Get", "GET", Permission.AuditLogsView },
+
+        new object[] { "Security", "GetAccounts", "GET", Permission.UsersRead },
+        new object[] { "Security", "CreateAccount", "POST", Permission.UsersCreate },
+        new object[] { "Security", "UpdateUser", "PATCH", Permission.UsersUpdate },
+        new object[] { "Security", "DeleteUser", "DELETE", Permission.UsersDelete }
+    ];
+
     [Fact]
     public async Task GetUserPermissionsAsync_AdminRole_ReturnsAllPermissions()
     {
@@ -77,6 +180,18 @@ public class PermissionServiceTests
         Assert.Null(missing);
     }
 
+    [Theory]
+    [MemberData(nameof(PermissionMappings))]
+    public void GetRequiredPermission_ReturnsExpectedMapping(string controller, string action, string method, Permission expected)
+    {
+        var securityService = new Mock<ISecurityService>();
+        var service = new PermissionService(securityService.Object);
+
+        var permission = service.GetRequiredPermission(controller, action, method);
+
+        Assert.Equal(expected, permission);
+    }
+
     [Fact]
     public async Task EnsureDefaultRolesAsync_AddsMissingDefaults()
     {
@@ -143,6 +258,29 @@ public class PermissionServiceTests
         Assert.DoesNotContain(Permission.RisksApprove, readerRole.Permissions);
         Assert.DoesNotContain(Permission.ConfigurationExport, readerRole.Permissions);
         Assert.DoesNotContain(Permission.AzureKeyVaultSecretsView, readerRole.Permissions);
+    }
+
+    [Fact]
+    public void DefaultReaderRole_DoesNotContainAnyNonReadPermissions()
+    {
+        var securityService = new Mock<ISecurityService>();
+        var service = new PermissionService(securityService.Object);
+        var readerRole = service.GetDefaultReaderRole();
+
+        foreach (var permission in Enum.GetValues<Permission>())
+        {
+            var isReadPermission = permission.ToString().EndsWith("Read", StringComparison.Ordinal) ||
+                                   permission is Permission.UsersRead or Permission.RolesRead;
+
+            if (isReadPermission)
+            {
+                Assert.Contains(permission, readerRole.Permissions);
+            }
+            else
+            {
+                Assert.DoesNotContain(permission, readerRole.Permissions);
+            }
+        }
     }
 
     [Fact]
