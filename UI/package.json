@@ -3,7 +3,7 @@
     "@quasar/extras": "^1.17.0",
     "@tanstack/vue-query": "^5.90.7",
     "@vueuse/core": "^14.0.0",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "pinia": "^3.0.4",
     "quasar": "^2.18.5",
     "vue-router": "^4.6.3",
