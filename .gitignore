@@ -3,4 +3,4 @@ bin/
 node_modules/
 dist/
 data/
-test-data/
+test-data/*.disabled

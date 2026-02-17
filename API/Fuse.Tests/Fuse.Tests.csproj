@@ -21,12 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="../Fuse.Core/Fuse.Core.csproj" />
     <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
-    <ProjectReference Include="../Fuse.API/Fuse.API.csproj" />
   </ItemGroup>
 </Project>
