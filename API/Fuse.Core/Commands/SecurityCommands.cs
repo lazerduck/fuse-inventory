@@ -23,7 +23,7 @@ public record DeleteUser(Guid Id)
     public Guid? RequestedBy { get; init; }
 }
 
-public record UpdateUser(Guid Id, SecurityRole Role)
+public record UpdateUser(Guid Id, SecurityRole? Role = null)
 {
     public Guid? RequestedBy { get; init; }
 }

@@ -38,7 +38,7 @@ public sealed class SecurityService : ISecurityService
             return Result<SecuritySettings>.Failure("Only administrators can update security settings.", ErrorType.Unauthorized);
 
         var requester = state.Users.FirstOrDefault(u => u.Id == requesterId);
-        if (requester is null || requester.Role != SecurityRole.Admin)
+        if (!IsUserAdmin(requester, state))
             return Result<SecuritySettings>.Failure("Only administrators can update security settings.", ErrorType.Unauthorized);
 
         if (state.Settings.Level == command.Level)
@@ -50,11 +50,11 @@ public sealed class SecurityService : ISecurityService
         var updated = new SecuritySettings(command.Level, DateTime.UtcNow);
         await _store.UpdateAsync(s => s with { Security = s.Security with { Settings = updated } }, ct);
         
-        // Audit log
+        // Audit log (requester is guaranteed non-null at this point due to IsUserAdmin check)
         var auditLog = AuditHelper.CreateLog(
             AuditAction.SecuritySettingsUpdated,
             AuditArea.Security,
-            requester.UserName,
+            requester!.UserName,
             requester.Id,
             null,
             new { OldLevel = state.Settings.Level, NewLevel = updated.Level }
@@ -225,7 +225,10 @@ public sealed class SecurityService : ISecurityService
             return Result<SecurityUser>.Failure("User not found", ErrorType.NotFound);
         }
 
-        var updatedUser = user with { Role = command.Role };
+        // Only update role if a new value is provided, otherwise keep existing
+        var updatedUser = command.Role.HasValue 
+            ? user with { Role = command.Role.Value }
+            : user;
         
         await _store.UpdateAsync(s => s with
         {

@@ -25,7 +25,6 @@
             emit-value
             map-options
             :options="roleOptions"
-            :rules="[val => !!val || 'Role is required']"
             class="full-span"
             hint="For backward compatibility. Use role assignments below for fine-grained permissions."
           />
