@@ -490,6 +490,39 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    roleAll(signal?: AbortSignal): Promise<RoleInfo[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @return OK
+     */
+    roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @return No Content
+     */
+    roleDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
 
     /**
@@ -587,6 +620,12 @@ export interface IFuseApiClient {
      * @return No Content
      */
     accountsDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -5267,6 +5306,355 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    roleAll(signal?: AbortSignal): Promise<RoleInfo[]> {
+        let url_ = this.baseUrl + "/api/Role";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleAll(_response);
+        });
+    }
+
+    protected processRoleAll(response: Response): Promise<RoleInfo[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(RoleInfo.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRolePOST(_response);
+        });
+    }
+
+    protected processRolePOST(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = RoleInfo.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleGET(_response);
+        });
+    }
+
+    protected processRoleGET(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = RoleInfo.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRolePUT(_response);
+        });
+    }
+
+    protected processRolePUT(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = RoleInfo.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    roleDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleDELETE(_response);
+        });
+    }
+
+    protected processRoleDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Role/assign";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssign(_response);
+        });
+    }
+
+    protected processAssign(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
@@ -6211,6 +6599,62 @@ export class FuseApiClient implements IFuseApiClient {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Security/accounts/{userId}/roles";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoles(_response);
+        });
+    }
+
+    protected processRoles(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
             return response.text().then((_responseText) => {
             return;
             });
@@ -7804,6 +8248,58 @@ export interface IApplyEnvironmentAutomation {
     applicationId?: string | undefined;
 }
 
+export class AssignRolesToUser implements IAssignRolesToUser {
+    userId?: string;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IAssignRolesToUser) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.userId = _data["UserId"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): AssignRolesToUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new AssignRolesToUser();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["UserId"] = this.userId;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IAssignRolesToUser {
+    userId?: string;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
+}
+
 export enum AuditAction {
     ApplicationCreated = "ApplicationCreated",
     ApplicationUpdated = "ApplicationUpdated",
@@ -7838,6 +8334,10 @@ export enum AuditAction {
     SecurityUserLogin = "SecurityUserLogin",
     SecurityUserLogout = "SecurityUserLogout",
     SecuritySettingsUpdated = "SecuritySettingsUpdated",
+    RoleCreated = "RoleCreated",
+    RoleUpdated = "RoleUpdated",
+    RoleDeleted = "RoleDeleted",
+    UserRolesAssigned = "UserRolesAssigned",
     KumaIntegrationCreated = "KumaIntegrationCreated",
     KumaIntegrationUpdated = "KumaIntegrationUpdated",
     KumaIntegrationDeleted = "KumaIntegrationDeleted",
@@ -9464,6 +9964,62 @@ export interface ICreateRisk {
     notes?: string | undefined;
 }
 
+export class CreateRole implements ICreateRole {
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: ICreateRole) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): CreateRole {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateRole();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface ICreateRole {
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+}
+
 export class CreateSecret implements ICreateSecret {
     providerId?: string;
     secretName?: string | undefined;
@@ -10720,6 +11276,69 @@ export enum PasswordSourceUsed {
     NewSecret = "NewSecret",
 }
 
+export enum Permission {
+    ApplicationsRead = "ApplicationsRead",
+    ApplicationsCreate = "ApplicationsCreate",
+    ApplicationsUpdate = "ApplicationsUpdate",
+    ApplicationsDelete = "ApplicationsDelete",
+    AccountsRead = "AccountsRead",
+    AccountsCreate = "AccountsCreate",
+    AccountsUpdate = "AccountsUpdate",
+    AccountsDelete = "AccountsDelete",
+    IdentitiesRead = "IdentitiesRead",
+    IdentitiesCreate = "IdentitiesCreate",
+    IdentitiesUpdate = "IdentitiesUpdate",
+    IdentitiesDelete = "IdentitiesDelete",
+    DataStoresRead = "DataStoresRead",
+    DataStoresCreate = "DataStoresCreate",
+    DataStoresUpdate = "DataStoresUpdate",
+    DataStoresDelete = "DataStoresDelete",
+    PlatformsRead = "PlatformsRead",
+    PlatformsCreate = "PlatformsCreate",
+    PlatformsUpdate = "PlatformsUpdate",
+    PlatformsDelete = "PlatformsDelete",
+    EnvironmentsRead = "EnvironmentsRead",
+    EnvironmentsCreate = "EnvironmentsCreate",
+    EnvironmentsUpdate = "EnvironmentsUpdate",
+    EnvironmentsDelete = "EnvironmentsDelete",
+    ExternalResourcesRead = "ExternalResourcesRead",
+    ExternalResourcesCreate = "ExternalResourcesCreate",
+    ExternalResourcesUpdate = "ExternalResourcesUpdate",
+    ExternalResourcesDelete = "ExternalResourcesDelete",
+    PositionsRead = "PositionsRead",
+    PositionsCreate = "PositionsCreate",
+    PositionsUpdate = "PositionsUpdate",
+    PositionsDelete = "PositionsDelete",
+    ResponsibilitiesRead = "ResponsibilitiesRead",
+    ResponsibilitiesCreate = "ResponsibilitiesCreate",
+    ResponsibilitiesUpdate = "ResponsibilitiesUpdate",
+    ResponsibilitiesDelete = "ResponsibilitiesDelete",
+    RisksRead = "RisksRead",
+    RisksCreate = "RisksCreate",
+    RisksUpdate = "RisksUpdate",
+    RisksDelete = "RisksDelete",
+    RisksApprove = "RisksApprove",
+    AzureKeyVaultSecretsView = "AzureKeyVaultSecretsView",
+    AzureKeyVaultConnectionsCreate = "AzureKeyVaultConnectionsCreate",
+    AzureKeyVaultConnectionsDelete = "AzureKeyVaultConnectionsDelete",
+    SqlConnectionsCreate = "SqlConnectionsCreate",
+    SqlConnectionsDelete = "SqlConnectionsDelete",
+    SqlGrantsApply = "SqlGrantsApply",
+    KumaIntegrationsCreate = "KumaIntegrationsCreate",
+    KumaIntegrationsDelete = "KumaIntegrationsDelete",
+    ConfigurationExport = "ConfigurationExport",
+    ConfigurationImport = "ConfigurationImport",
+    AuditLogsView = "AuditLogsView",
+    UsersRead = "UsersRead",
+    UsersCreate = "UsersCreate",
+    UsersUpdate = "UsersUpdate",
+    UsersDelete = "UsersDelete",
+    RolesRead = "RolesRead",
+    RolesCreate = "RolesCreate",
+    RolesUpdate = "RolesUpdate",
+    RolesDelete = "RolesDelete",
+}
+
 export class Platform implements IPlatform {
     id?: string;
     displayName?: string | undefined;
@@ -11267,6 +11886,70 @@ export enum RiskStatus {
     Closed = "Closed",
 }
 
+export class RoleInfo implements IRoleInfo {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IRoleInfo) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): RoleInfo {
+        data = typeof data === 'object' ? data : {};
+        let result = new RoleInfo();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRoleInfo {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
 export class RotateSecret implements IRotateSecret {
     providerId?: string;
     secretName?: string | undefined;
@@ -11669,6 +12352,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -11686,6 +12370,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
             this.id = _data["Id"];
             this.userName = _data["UserName"];
             this.role = _data["Role"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
         }
@@ -11703,6 +12392,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
         data["Id"] = this.id;
         data["UserName"] = this.userName;
         data["Role"] = this.role;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
@@ -11713,6 +12407,7 @@ export interface ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -11721,6 +12416,7 @@ export class SecurityUserResponse implements ISecurityUserResponse {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -11738,6 +12434,11 @@ export class SecurityUserResponse implements ISecurityUserResponse {
             this.id = _data["Id"];
             this.userName = _data["UserName"];
             this.role = _data["Role"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
         }
@@ -11755,6 +12456,11 @@ export class SecurityUserResponse implements ISecurityUserResponse {
         data["Id"] = this.id;
         data["UserName"] = this.userName;
         data["Role"] = this.role;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
@@ -11765,6 +12471,7 @@ export interface ISecurityUserResponse {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -13667,6 +14374,66 @@ export interface IUpdateRisk {
     approvalDate?: Date | undefined;
     tagIds?: string[] | undefined;
     notes?: string | undefined;
+}
+
+export class UpdateRole implements IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IUpdateRole) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRole {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRole();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
 }
 
 export class UpdateSecretProvider implements IUpdateSecretProvider {

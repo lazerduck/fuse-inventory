@@ -95,6 +95,11 @@ const router = createRouter({
       component: () => import('./pages/Security.vue')
     },
     {
+      path: '/roles',
+      name: 'roles',
+      component: () => import('./pages/RolesPage.vue')
+    },
+    {
       path: '/graph',
       name: 'graph',
       component: () => import('./pages/Graph.vue')

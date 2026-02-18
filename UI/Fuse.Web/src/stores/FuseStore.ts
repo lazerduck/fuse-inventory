@@ -4,6 +4,9 @@ import { useAuthToken } from "../composables/useAuthToken";
 import { LogoutSecurityUser, SecurityRole } from "../api/client";
 import { type SecurityUserInfo, SecurityLevel, type LoginSecurityUser } from "../api/client";
 
+// Default Admin Role ID (matches PermissionService.DefaultAdminRoleId)
+const DEFAULT_ADMIN_ROLE_ID = "00000000-0000-0000-0000-000000000001";
+
 const fuseClient = useFuseClient
 const { getToken, setToken, clearToken } = useAuthToken()
 
@@ -16,6 +19,12 @@ export const useFuseStore = defineStore("fuse", {
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
+    isAdmin: (state) => {
+      if (!state.currentUser) return false;
+      // Check if user has legacy Admin role OR is assigned to the default Admin role
+      return state.currentUser.role === SecurityRole.Admin || 
+             (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false);
+    },
     userRole: (state) => state.currentUser?.role ?? null,
     userName: (state) => state.currentUser?.userName ?? null,
     canModify: (state) => {
@@ -23,8 +32,11 @@ export const useFuseStore = defineStore("fuse", {
         case SecurityLevel.None:
           return true;
         case SecurityLevel.RestrictedEditing:
-          case SecurityLevel.FullyRestricted:
-          return state.currentUser !== null && state.currentUser.role === SecurityRole.Admin;
+        case SecurityLevel.FullyRestricted:
+          if (!state.currentUser) return false;
+          // Check if user has legacy Admin role OR is assigned to the default Admin role
+          return state.currentUser.role === SecurityRole.Admin ||
+                 (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false);
         default:
           return false;
       }

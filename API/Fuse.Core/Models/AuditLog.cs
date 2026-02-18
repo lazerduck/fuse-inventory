@@ -54,6 +54,12 @@ public enum AuditAction
     SecurityUserLogout,
     SecuritySettingsUpdated,
     
+    // Role actions
+    RoleCreated,
+    RoleUpdated,
+    RoleDeleted,
+    UserRolesAssigned,
+    
     // KumaIntegration actions
     KumaIntegrationCreated,
     KumaIntegrationUpdated,

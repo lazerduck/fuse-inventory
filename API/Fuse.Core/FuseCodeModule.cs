@@ -24,6 +24,7 @@ public static class FuseCodeModule
         services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
+        services.AddSingleton<IPermissionService, PermissionService>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();
