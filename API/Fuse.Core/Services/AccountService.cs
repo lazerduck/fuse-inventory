@@ -157,7 +157,9 @@ public class AccountService : IAccountService
         // Validate target existence based on kind
         var targetExists = targetKind switch
         {
-            TargetKind.Application => store.Applications.Any(a => a.Id == targetId),
+            // Treat Application targets as Application Instance IDs; allow fallback to legacy app IDs for backward compatibility
+            TargetKind.Application => store.Applications.SelectMany(a => a.Instances).Any(i => i.Id == targetId)
+                || store.Applications.Any(a => a.Id == targetId),
             TargetKind.DataStore => store.DataStores.Any(d => d.Id == targetId),
             TargetKind.External => store.ExternalResources.Any(r => r.Id == targetId),
             _ => false
@@ -172,13 +174,9 @@ public class AccountService : IAccountService
                 return Result<Account>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
         }
 
-        // Basic auth-specific validation
-        bool requiresSecret = authKind is AuthKind.UserPassword or AuthKind.ApiKey or AuthKind.BearerToken or AuthKind.OAuthClient or AuthKind.ManagedIdentity or AuthKind.Certificate;
-        if (requiresSecret)
+        // Validate secret binding if provided
+        if (secretBinding.Kind != SecretBindingKind.None)
         {
-            if (secretBinding.Kind == SecretBindingKind.None)
-                return Result<Account>.Failure("Secret binding is required for the selected AuthKind.", ErrorType.Validation);
-            
             if (secretBinding.Kind == SecretBindingKind.PlainReference && string.IsNullOrWhiteSpace(secretBinding.PlainReference))
                 return Result<Account>.Failure("Plain reference value is required.", ErrorType.Validation);
             
@@ -215,11 +213,35 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure($"Account with ID '{command.AccountId}' not found.", ErrorType.NotFound);
         }
 
+        // Validate that privileges are deduplicated
+        var privileges = new HashSet<Privilege>(command.Privileges);
+        if (privileges.Count == 0)
+        {
+            return Result<Grant>.Failure("Grant must include at least one privilege.", ErrorType.Validation);
+        }
+
+        // Check for duplicate database/schema combinations with other grants on the same account
+        var normalizeKey = (string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var newKey = (Database: normalizeKey(command.Database), Schema: normalizeKey(command.Schema));
+
+        var duplicateGrant = account.Grants.FirstOrDefault(g =>
+            normalizeKey(g.Database) == newKey.Database &&
+            normalizeKey(g.Schema) == newKey.Schema
+        );
+
+        if (duplicateGrant is not null)
+        {
+            return Result<Grant>.Failure(
+                $"A grant for database '{command.Database}' and schema '{command.Schema}' already exists on this account.",
+                ErrorType.Validation
+            );
+        }
+
         var grant = new Grant(
             Guid.NewGuid(),
             command.Database,
             command.Schema,
-            command.Privileges
+            privileges
         );
 
         await _fuseStore.UpdateAsync(s =>
@@ -259,11 +281,36 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure($"Grant with ID '{command.GrantId}' not found on Account '{command.AccountId}'.", ErrorType.NotFound);
         }
 
+        // Validate that privileges are deduplicated
+        var privileges = new HashSet<Privilege>(command.Privileges);
+        if (privileges.Count == 0)
+        {
+            return Result<Grant>.Failure("Grant must include at least one privilege.", ErrorType.Validation);
+        }
+
+        // Check for duplicate database/schema combinations with other grants on the same account
+        var normalizeKey = (string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+        var updatedKey = (Database: normalizeKey(command.Database), Schema: normalizeKey(command.Schema));
+
+        var duplicateGrant = account.Grants.FirstOrDefault(g =>
+            g.Id != command.GrantId &&
+            normalizeKey(g.Database) == updatedKey.Database &&
+            normalizeKey(g.Schema) == updatedKey.Schema
+        );
+
+        if (duplicateGrant is not null)
+        {
+            return Result<Grant>.Failure(
+                $"A grant for database '{command.Database}' and schema '{command.Schema}' already exists on this account.",
+                ErrorType.Validation
+            );
+        }
+
         var updatedGrant = existingGrant with
         {
             Database = command.Database,
             Schema = command.Schema,
-            Privileges = command.Privileges
+            Privileges = privileges
         };
 
         await _fuseStore.UpdateAsync(s =>

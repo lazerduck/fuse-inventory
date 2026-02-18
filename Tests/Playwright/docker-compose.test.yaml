@@ -1,0 +1,14 @@
+services:
+  fuse-app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+      # Mount data directory for persistent storage (adjust path as needed)
+      - ./test-data:/app/data
+    restart: unless-stopped
+    container_name: fuse-inventory

@@ -17,15 +17,18 @@ namespace Fuse.API.Controllers
         private readonly ISecretProviderService _secretProviderService;
         private readonly ISecretOperationService _secretOperationService;
         private readonly ISecurityService _securityService;
+        private readonly IPermissionService _permissionService;
 
         public SecretProviderController(
             ISecretProviderService secretProviderService,
             ISecretOperationService secretOperationService,
-            ISecurityService securityService)
+            ISecurityService securityService,
+            IPermissionService permissionService)
         {
             _secretProviderService = secretProviderService;
             _secretOperationService = secretOperationService;
             _securityService = securityService;
+            _permissionService = permissionService;
         }
 
         [HttpGet]
@@ -242,7 +245,7 @@ namespace Fuse.API.Controllers
             }
 
             var user = securityState.Users.FirstOrDefault(u => u.Id == userId);
-            if (user is null || user.Role != SecurityRole.Admin)
+            if (!await _permissionService.IsUserAdminAsync(user))
             {
                 return StatusCode(403, new { error = "Admin role required for secret reveal operation." });
             }

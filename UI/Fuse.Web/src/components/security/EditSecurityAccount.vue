@@ -19,15 +19,44 @@
           />
           <q-select
             v-model="form.role"
-            label="Role"
+            label="Legacy Role"
             dense
             outlined
             emit-value
             map-options
             :options="roleOptions"
-            :rules="[val => !!val || 'Role is required']"
             class="full-span"
+            hint="For backward compatibility. Use role assignments below for fine-grained permissions."
           />
+          <div class="full-span q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Role Assignments</div>
+            <q-select
+              v-model="form.roleIds"
+              label="Assigned Roles"
+              dense
+              outlined
+              multiple
+              emit-value
+              map-options
+              use-chips
+              :options="availableRoles"
+              option-label="name"
+              option-value="id"
+              hint="Select one or more roles to assign permissions"
+            >
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.name }}</q-item-label>
+                    <q-item-label caption>{{ scope.opt.description }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-badge :label="scope.opt.permissions?.length || 0" color="primary" />
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
         </div>
       </q-card-section>
       <q-separator />
@@ -41,15 +70,17 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { SecurityRole, SecurityUserResponse } from '../../api/client'
+import { SecurityRole, SecurityUserResponse, RoleInfo } from '../../api/client'
 
 interface EditAccountForm {
   id: string
   role: SecurityRole | null
+  roleIds: string[]
 }
 
 interface Props {
   user: SecurityUserResponse
+  availableRoles?: RoleInfo[]
   loading?: boolean
 }
 
@@ -59,6 +90,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  availableRoles: () => [],
   loading: false
 })
 
@@ -66,7 +98,8 @@ const emit = defineEmits<Emits>()
 
 const form = reactive<EditAccountForm>({
   id: props.user.id || '',
-  role: props.user.role || null
+  role: props.user.role || null,
+  roleIds: [...(props.user.roleIds || [])]
 })
 
 const displayUserName = ref(props.user.userName || '')
@@ -85,6 +118,6 @@ function handleSubmit() {
 @import '../../styles/pages.css';
 
 .form-dialog {
-  min-width: 520px;
+  min-width: 600px;
 }
 </style>

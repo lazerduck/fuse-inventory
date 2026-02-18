@@ -8,3 +8,5 @@ data/
 playwright-report/
 test-results/
 playwright/.cache/
+test-data/*.disabled
+test-data/*

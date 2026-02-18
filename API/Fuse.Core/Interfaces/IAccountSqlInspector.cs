@@ -27,6 +27,16 @@ public record SqlActualGrant(
 public interface IAccountSqlInspector
 {
     /// <summary>
+    /// Lists all SQL server login names (without fetching grants).
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of principal names available on the server.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<string> PrincipalNames, string? ErrorMessage)> GetAllPrincipalNamesAsync(
+        SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
+
+    /// <summary>
     /// Queries SQL for the actual permissions of a principal.
     /// </summary>
     /// <param name="sqlIntegration">The SQL integration containing connection info.</param>

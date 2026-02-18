@@ -21,9 +21,14 @@ public static class FuseCodeModule
         services.AddScoped<ISqlPermissionsInspector, SqlPermissionsInspector>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
         services.AddSingleton<ISecurityService, SecurityService>();
+        services.AddSingleton<IPermissionService, PermissionService>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
+        services.AddScoped<IPositionService, PositionService>();
+        services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();
+        services.AddScoped<IResponsibilityAssignmentService, ResponsibilityAssignmentService>();
         services.AddHttpClient("kuma-validator");
         services.AddHttpClient("kuma-metrics");
         services.AddScoped<IKumaIntegrationValidator, HttpKumaIntegrationValidator>();

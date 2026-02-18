@@ -42,9 +42,13 @@ public class AccountServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-                SecretProviders: Array.Empty<SecretProvider>(),
-                SqlIntegrations: (sqlIntegrations ?? Array.Empty<SqlIntegration>()).ToArray(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: (sqlIntegrations ?? Array.Empty<SqlIntegration>()).ToArray(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Risks: Array.Empty<Risk>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -89,7 +93,21 @@ public class AccountServiceTests
     }
 
     [Fact]
-    public async Task CreateAccount_SecretRequired_ForApiKey()
+    public async Task CreateAccount_ApplicationInstance_Success()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "Env", null, new HashSet<Guid>());
+        var instance = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app });
+        var service = CreateService(store);
+        var result = await service.CreateAccountAsync(new CreateAccount(instance.Id, TargetKind.Application, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetAccountsAsync());
+    Assert.Equal(instance.Id, result.Value!.TargetId);
+    }
+
+    [Fact]
+    public async Task CreateAccount_EmptyPlainReference_ReturnsValidation()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(res: new[] { res });
@@ -97,6 +115,17 @@ public class AccountServiceTests
         var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CreateAccount_WithoutSecret_Success()
+    {
+        var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(res: new[] { res });
+        var service = CreateService(store);
+        var result = await service.CreateAccountAsync(new CreateAccount(res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.None, null, null), null, null, Array.Empty<Grant>(), new HashSet<Guid>()));
+    Assert.True(result.IsSuccess);
+    Assert.Single(await service.GetAccountsAsync());
     }
 
     [Fact]

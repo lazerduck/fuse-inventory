@@ -7,7 +7,731 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
-export class FuseApiClient {
+export interface IFuseApiClient {
+
+    /**
+     * @return OK
+     */
+    accountAll(signal?: AbortSignal): Promise<Account[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account>;
+
+    /**
+     * @return OK
+     */
+    accountGET(id: string, signal?: AbortSignal): Promise<Account>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account>;
+
+    /**
+     * @return No Content
+     */
+    accountDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
+
+    /**
+     * @return OK
+     */
+    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
+
+    /**
+     * @return No Content
+     */
+    grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    applicationAll(signal?: AbortSignal): Promise<Application[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application>;
+
+    /**
+     * @return OK
+     */
+    applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application>;
+
+    /**
+     * @return No Content
+     */
+    applicationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
+
+    /**
+     * @return No Content
+     */
+    instancesDELETE(appId: string, instanceId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
+
+    /**
+     * @return No Content
+     */
+    pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
+
+    /**
+     * @return No Content
+     */
+    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param action (optional) 
+     * @param area (optional) 
+     * @param userName (optional) 
+     * @param entityId (optional) 
+     * @param searchText (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult>;
+
+    /**
+     * @return OK
+     */
+    audit2(id: string, signal?: AbortSignal): Promise<AuditLog>;
+
+    /**
+     * @return OK
+     */
+    actions(signal?: AbortSignal): Promise<string[]>;
+
+    /**
+     * @return OK
+     */
+    areas(signal?: AbortSignal): Promise<string[]>;
+
+    /**
+     * @param format (optional) 
+     * @return OK
+     */
+    export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
+
+    /**
+     * @param format (optional) 
+     * @return OK
+     */
+    template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
+
+    /**
+     * @param format (optional) 
+     * @param file (optional) 
+     * @return OK
+     */
+    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    dataStoreAll(signal?: AbortSignal): Promise<DataStore[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
+
+    /**
+     * @return OK
+     */
+    dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
+
+    /**
+     * @return No Content
+     */
+    dataStoreDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
+
+    /**
+     * @return No Content
+     */
+    environmentDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
+
+    /**
+     * @return OK
+     */
+    externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
+
+    /**
+     * @return OK
+     */
+    externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
+
+    /**
+     * @return No Content
+     */
+    externalResourceDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    identityAll(signal?: AbortSignal): Promise<Identity[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @return OK
+     */
+    identityGET(id: string, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
+
+    /**
+     * @return No Content
+     */
+    identityDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
+
+    /**
+     * @return No Content
+     */
+    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @return OK
+     */
+    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
+
+    /**
+     * @return No Content
+     */
+    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    platformAll(signal?: AbortSignal): Promise<Platform[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @return OK
+     */
+    platformGET(id: string, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
+
+    /**
+     * @return No Content
+     */
+    platformDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    positionAll(signal?: AbortSignal): Promise<Position[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position>;
+
+    /**
+     * @return OK
+     */
+    positionGET(id: string, signal?: AbortSignal): Promise<Position>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position>;
+
+    /**
+     * @return No Content
+     */
+    positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    responsibilityAssignmentAll(applicationId: string, signal?: AbortSignal): Promise<ResponsibilityAssignment[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
+
+    /**
+     * @return OK
+     */
+    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
+
+    /**
+     * @return No Content
+     */
+    responsibilityAssignmentDELETE(applicationId: string, id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    responsibilityTypeAll(signal?: AbortSignal): Promise<ResponsibilityType[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
+
+    /**
+     * @return OK
+     */
+    responsibilityTypeGET(id: string, signal?: AbortSignal): Promise<ResponsibilityType>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
+
+    /**
+     * @return No Content
+     */
+    responsibilityTypeDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    riskAll(signal?: AbortSignal): Promise<Risk[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @return OK
+     */
+    riskGET(id: string, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
+
+    /**
+     * @return No Content
+     */
+    riskDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    target(targetType: string, targetId: string, signal?: AbortSignal): Promise<Risk[]>;
+
+    /**
+     * @return OK
+     */
+    roleAll(signal?: AbortSignal): Promise<RoleInfo[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @return OK
+     */
+    roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
+
+    /**
+     * @return No Content
+     */
+    roleDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @return OK
+     */
+    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
+
+    /**
+     * @return No Content
+     */
+    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param version (optional) 
+     * @return OK
+     */
+    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse>;
+
+    /**
+     * @return OK
+     */
+    state(signal?: AbortSignal): Promise<SecurityStateResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo>;
+
+    /**
+     * @return OK
+     */
+    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession>;
+
+    /**
+     * @param body (optional) 
+     * @return No Content
+     */
+    logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse>;
+
+    /**
+     * @return No Content
+     */
+    accountsDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
+
+    /**
+     * @return OK
+     */
+    sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
+
+    /**
+     * @return No Content
+     */
+    sqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
+
+    /**
+     * @return OK
+     */
+    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
+
+    /**
+     * @return OK
+     */
+    resolve(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse>;
+
+    /**
+     * @return OK
+     */
+    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult>;
+
+    /**
+     * @return OK
+     */
+    databases(id: string, signal?: AbortSignal): Promise<SqlDatabasesResponse>;
+
+    /**
+     * @return OK
+     */
+    tagAll(signal?: AbortSignal): Promise<Tag[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag>;
+
+    /**
+     * @return OK
+     */
+    tagGET(id: string, signal?: AbortSignal): Promise<Tag>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag>;
+
+    /**
+     * @return No Content
+     */
+    tagDELETE(id: string, signal?: AbortSignal): Promise<void>;
+}
+
+export class FuseApiClient implements IFuseApiClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -20,12 +744,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    accountAll(): Promise<Account[]> {
+    accountAll(signal?: AbortSignal): Promise<Account[]> {
         let url_ = this.baseUrl + "/api/Account";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -65,7 +790,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    accountPOST(body: CreateAccount | undefined): Promise<Account> {
+    accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -74,6 +799,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -113,7 +839,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    accountGET(id: string): Promise<Account> {
+    accountGET(id: string, signal?: AbortSignal): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -122,6 +848,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -161,7 +888,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    accountPUT(id: string, body: UpdateAccount | undefined): Promise<Account> {
+    accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -173,6 +900,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -219,7 +947,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    accountDELETE(id: string): Promise<void> {
+    accountDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Account/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -228,6 +956,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -262,7 +991,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    sqlStatus(id: string): Promise<CachedAccountSqlStatusResponse> {
+    sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -271,6 +1000,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -309,7 +1039,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    refresh(id: string): Promise<CachedAccountSqlStatusResponse> {
+    refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status/refresh";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -318,6 +1048,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -364,7 +1095,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    grantPOST(accountId: string, body: CreateAccountGrant | undefined): Promise<Grant> {
+    grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -376,6 +1107,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -423,7 +1155,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined): Promise<Grant> {
+    grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant/{grantId}";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -438,6 +1170,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -484,7 +1217,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    grantDELETE(accountId: string, grantId: string): Promise<void> {
+    grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Account/{accountId}/grant/{grantId}";
         if (accountId === undefined || accountId === null)
             throw new globalThis.Error("The parameter 'accountId' must be defined.");
@@ -496,6 +1229,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -530,12 +1264,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    applicationAll(): Promise<Application[]> {
+    applicationAll(signal?: AbortSignal): Promise<Application[]> {
         let url_ = this.baseUrl + "/api/Application";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -575,7 +1310,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    applicationPOST(body: CreateApplication | undefined): Promise<Application> {
+    applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -584,6 +1319,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -630,7 +1366,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    applicationGET(id: string): Promise<Application> {
+    applicationGET(id: string, signal?: AbortSignal): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -639,6 +1375,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -678,7 +1415,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    applicationPUT(id: string, body: UpdateApplication | undefined): Promise<Application> {
+    applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -690,6 +1427,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -743,7 +1481,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    applicationDELETE(id: string): Promise<void> {
+    applicationDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -752,6 +1490,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -787,7 +1526,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    instancesPOST(appId: string, body: CreateApplicationInstance | undefined): Promise<ApplicationInstance> {
+    instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -799,6 +1538,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -846,7 +1586,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined): Promise<ApplicationInstance> {
+    instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -861,6 +1601,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -907,7 +1648,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    instancesDELETE(appId: string, instanceId: string): Promise<void> {
+    instancesDELETE(appId: string, instanceId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -919,6 +1660,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -953,7 +1695,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    health(appId: string, instanceId: string): Promise<HealthStatusResponse> {
+    health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/health";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -965,6 +1707,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1004,7 +1747,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined): Promise<ApplicationPipeline> {
+    pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1016,6 +1759,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1070,7 +1814,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined): Promise<ApplicationPipeline> {
+    pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines/{pipelineId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1085,6 +1829,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1138,7 +1883,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    pipelinesDELETE(appId: string, pipelineId: string): Promise<void> {
+    pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/pipelines/{pipelineId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1150,6 +1895,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -1185,7 +1931,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined): Promise<ApplicationInstanceDependency> {
+    dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1200,6 +1946,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1247,7 +1994,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined): Promise<ApplicationInstanceDependency> {
+    dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies/{dependencyId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1265,6 +2012,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1311,7 +2059,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string): Promise<void> {
+    dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/dependencies/{dependencyId}";
         if (appId === undefined || appId === null)
             throw new globalThis.Error("The parameter 'appId' must be defined.");
@@ -1326,6 +2074,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -1369,7 +2118,7 @@ export class FuseApiClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined): Promise<AuditLogResult> {
+    audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult> {
         let url_ = this.baseUrl + "/api/Audit?";
         if (startTime === null)
             throw new globalThis.Error("The parameter 'startTime' cannot be null.");
@@ -1411,6 +2160,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1442,7 +2192,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    audit2(id: string): Promise<AuditLog> {
+    audit2(id: string, signal?: AbortSignal): Promise<AuditLog> {
         let url_ = this.baseUrl + "/api/Audit/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1451,6 +2201,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1489,12 +2240,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    actions(): Promise<string[]> {
+    actions(signal?: AbortSignal): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Audit/actions";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1533,12 +2285,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    areas(): Promise<string[]> {
+    areas(signal?: AbortSignal): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Audit/areas";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1578,7 +2331,7 @@ export class FuseApiClient {
      * @param format (optional) 
      * @return OK
      */
-    export(format: string | undefined): Promise<FileResponse> {
+    export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
         let url_ = this.baseUrl + "/api/Config/export?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -1588,6 +2341,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1631,7 +2385,7 @@ export class FuseApiClient {
      * @param format (optional) 
      * @return OK
      */
-    template(format: string | undefined): Promise<FileResponse> {
+    template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
         let url_ = this.baseUrl + "/api/Config/template?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -1641,6 +2395,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1685,7 +2440,7 @@ export class FuseApiClient {
      * @param file (optional) 
      * @return OK
      */
-    import(format: string | undefined, file: FileParameter | undefined): Promise<void> {
+    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Config/import?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -1702,6 +2457,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
             }
         };
@@ -1736,12 +2492,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    dataStoreAll(): Promise<DataStore[]> {
+    dataStoreAll(signal?: AbortSignal): Promise<DataStore[]> {
         let url_ = this.baseUrl + "/api/DataStore";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1781,7 +2538,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    dataStorePOST(body: CreateDataStore | undefined): Promise<DataStore> {
+    dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1790,6 +2547,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1836,7 +2594,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    dataStoreGET(id: string): Promise<DataStore> {
+    dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1845,6 +2603,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -1884,7 +2643,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    dataStorePUT(id: string, body: UpdateDataStore | undefined): Promise<DataStore> {
+    dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1896,6 +2655,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1949,7 +2709,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    dataStoreDELETE(id: string): Promise<void> {
+    dataStoreDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/DataStore/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -1958,6 +2718,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -1992,12 +2753,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    environmentAll(): Promise<EnvironmentInfo[]> {
+    environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]> {
         let url_ = this.baseUrl + "/api/Environment";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2037,7 +2799,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    environmentPOST(body: CreateEnvironment | undefined): Promise<EnvironmentInfo> {
+    environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
         let url_ = this.baseUrl + "/api/Environment";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2046,6 +2808,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2093,7 +2856,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    environmentPUT(id: string, body: UpdateEnvironment | undefined): Promise<EnvironmentInfo> {
+    environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
         let url_ = this.baseUrl + "/api/Environment/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2105,6 +2868,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2144,7 +2908,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    environmentDELETE(id: string): Promise<void> {
+    environmentDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Environment/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2153,6 +2917,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -2188,7 +2953,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    applyAutomation(body: ApplyEnvironmentAutomation | undefined): Promise<number> {
+    applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
         let url_ = this.baseUrl + "/api/Environment/apply-automation";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2197,6 +2962,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2237,12 +3003,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    externalResourceAll(): Promise<ExternalResource[]> {
+    externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]> {
         let url_ = this.baseUrl + "/api/ExternalResource";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2282,7 +3049,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    externalResourcePOST(body: CreateExternalResource | undefined): Promise<ExternalResource> {
+    externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2291,6 +3058,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2337,7 +3105,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    externalResourceGET(id: string): Promise<ExternalResource> {
+    externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2346,6 +3114,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2385,7 +3154,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    externalResourcePUT(id: string, body: UpdateExternalResource | undefined): Promise<ExternalResource> {
+    externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2397,6 +3166,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2450,7 +3220,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    externalResourceDELETE(id: string): Promise<void> {
+    externalResourceDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/ExternalResource/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2459,6 +3229,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -2493,12 +3264,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    identityAll(): Promise<Identity[]> {
+    identityAll(signal?: AbortSignal): Promise<Identity[]> {
         let url_ = this.baseUrl + "/api/Identity";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2538,7 +3310,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    identityPOST(body: CreateIdentity | undefined): Promise<Identity> {
+    identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2547,6 +3319,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2586,7 +3359,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    identityGET(id: string): Promise<Identity> {
+    identityGET(id: string, signal?: AbortSignal): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2595,6 +3368,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2634,7 +3408,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    identityPUT(id: string, body: UpdateIdentity | undefined): Promise<Identity> {
+    identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2646,6 +3420,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2692,7 +3467,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    identityDELETE(id: string): Promise<void> {
+    identityDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Identity/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -2701,6 +3476,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -2743,7 +3519,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined): Promise<IdentityAssignment> {
+    assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -2755,6 +3531,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2802,7 +3579,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined): Promise<IdentityAssignment> {
+    assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -2817,6 +3594,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -2863,7 +3641,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    assignmentDELETE(identityId: string, assignmentId: string): Promise<void> {
+    assignmentDELETE(identityId: string, assignmentId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Identity/{identityId}/assignment/{assignmentId}";
         if (identityId === undefined || identityId === null)
             throw new globalThis.Error("The parameter 'identityId' must be defined.");
@@ -2875,6 +3653,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -2909,12 +3688,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    kumaIntegrationAll(): Promise<KumaIntegrationResponse[]> {
+    kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]> {
         let url_ = this.baseUrl + "/api/KumaIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -2954,7 +3734,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    kumaIntegrationPOST(body: CreateKumaIntegration | undefined): Promise<KumaIntegrationResponse> {
+    kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2963,6 +3743,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3002,7 +3783,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    kumaIntegrationGET(id: string): Promise<KumaIntegrationResponse> {
+    kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3011,6 +3792,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3050,7 +3832,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined): Promise<KumaIntegrationResponse> {
+    kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3062,6 +3844,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3108,7 +3891,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    kumaIntegrationDELETE(id: string): Promise<void> {
+    kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/KumaIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3117,6 +3900,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -3151,12 +3935,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    platformAll(): Promise<Platform[]> {
+    platformAll(signal?: AbortSignal): Promise<Platform[]> {
         let url_ = this.baseUrl + "/api/Platform";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3196,7 +3981,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    platformPOST(body: CreatePlatform | undefined): Promise<Platform> {
+    platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3205,6 +3990,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3251,7 +4037,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    platformGET(id: string): Promise<Platform> {
+    platformGET(id: string, signal?: AbortSignal): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3260,6 +4046,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3299,7 +4086,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    platformPUT(id: string, body: UpdatePlatform | undefined): Promise<Platform> {
+    platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3311,6 +4098,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3364,7 +4152,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    platformDELETE(id: string): Promise<void> {
+    platformDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Platform/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3373,6 +4161,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -3407,12 +4196,1472 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    secretProviderAll(): Promise<SecretProviderResponse[]> {
+    positionAll(signal?: AbortSignal): Promise<Position[]> {
+        let url_ = this.baseUrl + "/api/Position";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPositionAll(_response);
+        });
+    }
+
+    protected processPositionAll(response: Response): Promise<Position[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Position.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Position[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position> {
+        let url_ = this.baseUrl + "/api/Position";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPositionPOST(_response);
+        });
+    }
+
+    protected processPositionPOST(response: Response): Promise<Position> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = Position.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Position>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    positionGET(id: string, signal?: AbortSignal): Promise<Position> {
+        let url_ = this.baseUrl + "/api/Position/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPositionGET(_response);
+        });
+    }
+
+    protected processPositionGET(response: Response): Promise<Position> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Position.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Position>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position> {
+        let url_ = this.baseUrl + "/api/Position/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPositionPUT(_response);
+        });
+    }
+
+    protected processPositionPUT(response: Response): Promise<Position> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Position.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Position>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    positionDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Position/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPositionDELETE(_response);
+        });
+    }
+
+    protected processPositionDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    responsibilityAssignmentAll(applicationId: string, signal?: AbortSignal): Promise<ResponsibilityAssignment[]> {
+        let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment";
+        if (applicationId === undefined || applicationId === null)
+            throw new globalThis.Error("The parameter 'applicationId' must be defined.");
+        url_ = url_.replace("{applicationId}", encodeURIComponent("" + applicationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityAssignmentAll(_response);
+        });
+    }
+
+    protected processResponsibilityAssignmentAll(response: Response): Promise<ResponsibilityAssignment[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ResponsibilityAssignment.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityAssignment[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
+        let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment";
+        if (applicationId === undefined || applicationId === null)
+            throw new globalThis.Error("The parameter 'applicationId' must be defined.");
+        url_ = url_.replace("{applicationId}", encodeURIComponent("" + applicationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityAssignmentPOST(_response);
+        });
+    }
+
+    protected processResponsibilityAssignmentPOST(response: Response): Promise<ResponsibilityAssignment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = ResponsibilityAssignment.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityAssignment>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
+        let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment/{id}";
+        if (applicationId === undefined || applicationId === null)
+            throw new globalThis.Error("The parameter 'applicationId' must be defined.");
+        url_ = url_.replace("{applicationId}", encodeURIComponent("" + applicationId));
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityAssignmentGET(_response);
+        });
+    }
+
+    protected processResponsibilityAssignmentGET(response: Response): Promise<ResponsibilityAssignment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResponsibilityAssignment.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityAssignment>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
+        let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment/{id}";
+        if (applicationId === undefined || applicationId === null)
+            throw new globalThis.Error("The parameter 'applicationId' must be defined.");
+        url_ = url_.replace("{applicationId}", encodeURIComponent("" + applicationId));
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityAssignmentPUT(_response);
+        });
+    }
+
+    protected processResponsibilityAssignmentPUT(response: Response): Promise<ResponsibilityAssignment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResponsibilityAssignment.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityAssignment>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    responsibilityAssignmentDELETE(applicationId: string, id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment/{id}";
+        if (applicationId === undefined || applicationId === null)
+            throw new globalThis.Error("The parameter 'applicationId' must be defined.");
+        url_ = url_.replace("{applicationId}", encodeURIComponent("" + applicationId));
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityAssignmentDELETE(_response);
+        });
+    }
+
+    protected processResponsibilityAssignmentDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    responsibilityTypeAll(signal?: AbortSignal): Promise<ResponsibilityType[]> {
+        let url_ = this.baseUrl + "/api/ResponsibilityType";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityTypeAll(_response);
+        });
+    }
+
+    protected processResponsibilityTypeAll(response: Response): Promise<ResponsibilityType[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ResponsibilityType.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityType[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
+        let url_ = this.baseUrl + "/api/ResponsibilityType";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityTypePOST(_response);
+        });
+    }
+
+    protected processResponsibilityTypePOST(response: Response): Promise<ResponsibilityType> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = ResponsibilityType.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityType>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    responsibilityTypeGET(id: string, signal?: AbortSignal): Promise<ResponsibilityType> {
+        let url_ = this.baseUrl + "/api/ResponsibilityType/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityTypeGET(_response);
+        });
+    }
+
+    protected processResponsibilityTypeGET(response: Response): Promise<ResponsibilityType> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResponsibilityType.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityType>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
+        let url_ = this.baseUrl + "/api/ResponsibilityType/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityTypePUT(_response);
+        });
+    }
+
+    protected processResponsibilityTypePUT(response: Response): Promise<ResponsibilityType> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ResponsibilityType.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ResponsibilityType>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    responsibilityTypeDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/ResponsibilityType/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResponsibilityTypeDELETE(_response);
+        });
+    }
+
+    protected processResponsibilityTypeDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    riskAll(signal?: AbortSignal): Promise<Risk[]> {
+        let url_ = this.baseUrl + "/api/Risk";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskAll(_response);
+        });
+    }
+
+    protected processRiskAll(response: Response): Promise<Risk[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Risk.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskPOST(_response);
+        });
+    }
+
+    protected processRiskPOST(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = Risk.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    riskGET(id: string, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskGET(_response);
+        });
+    }
+
+    protected processRiskGET(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Risk.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskPUT(_response);
+        });
+    }
+
+    protected processRiskPUT(response: Response): Promise<Risk> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Risk.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    riskDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Risk/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRiskDELETE(_response);
+        });
+    }
+
+    protected processRiskDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    target(targetType: string, targetId: string, signal?: AbortSignal): Promise<Risk[]> {
+        let url_ = this.baseUrl + "/api/Risk/target/{targetType}/{targetId}";
+        if (targetType === undefined || targetType === null)
+            throw new globalThis.Error("The parameter 'targetType' must be defined.");
+        url_ = url_.replace("{targetType}", encodeURIComponent("" + targetType));
+        if (targetId === undefined || targetId === null)
+            throw new globalThis.Error("The parameter 'targetId' must be defined.");
+        url_ = url_.replace("{targetId}", encodeURIComponent("" + targetId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processTarget(_response);
+        });
+    }
+
+    protected processTarget(response: Response): Promise<Risk[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Risk.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Risk[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    roleAll(signal?: AbortSignal): Promise<RoleInfo[]> {
+        let url_ = this.baseUrl + "/api/Role";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleAll(_response);
+        });
+    }
+
+    protected processRoleAll(response: Response): Promise<RoleInfo[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(RoleInfo.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRolePOST(_response);
+        });
+    }
+
+    protected processRolePOST(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = RoleInfo.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleGET(_response);
+        });
+    }
+
+    protected processRoleGET(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = RoleInfo.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRolePUT(_response);
+        });
+    }
+
+    protected processRolePUT(response: Response): Promise<RoleInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = RoleInfo.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RoleInfo>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    roleDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Role/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoleDELETE(_response);
+        });
+    }
+
+    protected processRoleDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Role/assign";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssign(_response);
+        });
+    }
+
+    protected processAssign(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3452,7 +5701,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    secretProviderPOST(body: CreateSecretProvider | undefined): Promise<SecretProviderResponse> {
+    secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3461,6 +5710,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3500,7 +5750,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    secretProviderGET(id: string): Promise<SecretProviderResponse> {
+    secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3509,6 +5759,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3548,7 +5799,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined): Promise<SecretProviderResponse> {
+    secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3560,6 +5811,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3606,7 +5858,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    secretProviderDELETE(id: string): Promise<void> {
+    secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -3615,6 +5867,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -3657,7 +5910,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    testConnection(body: TestSecretProviderConnection | undefined): Promise<void> {
+    testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/test-connection";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3666,6 +5919,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -3701,7 +5955,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    secretsAll(providerId: string): Promise<SecretMetadataResponse[]> {
+    secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -3710,6 +5964,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3763,7 +6018,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    secrets(providerId: string, body: CreateSecret | undefined): Promise<void> {
+    secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -3775,6 +6030,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -3818,7 +6074,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    rotate(providerId: string, secretName: string, body: RotateSecret | undefined): Promise<void> {
+    rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/rotate";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -3833,6 +6089,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -3876,7 +6133,7 @@ export class FuseApiClient {
      * @param version (optional) 
      * @return OK
      */
-    reveal(providerId: string, secretName: string, version: string | undefined): Promise<SecretValueResponse> {
+    reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse> {
         let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/secrets/{secretName}/reveal?";
         if (providerId === undefined || providerId === null)
             throw new globalThis.Error("The parameter 'providerId' must be defined.");
@@ -3892,6 +6149,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3944,12 +6202,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    state(): Promise<SecurityStateResponse> {
+    state(signal?: AbortSignal): Promise<SecurityStateResponse> {
         let url_ = this.baseUrl + "/api/Security/state";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -3982,7 +6241,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    settings(body: UpdateSecuritySettings | undefined): Promise<SecuritySettings> {
+    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings> {
         let url_ = this.baseUrl + "/api/Security/settings";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3991,6 +6250,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4045,7 +6305,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    accountsPOST(body: CreateSecurityUser | undefined): Promise<SecurityUserInfo> {
+    accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo> {
         let url_ = this.baseUrl + "/api/Security/accounts";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4054,6 +6314,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4107,12 +6368,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    accountsAll(): Promise<SecurityUserResponse[]> {
+    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]> {
         let url_ = this.baseUrl + "/api/Security/accounts";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4152,7 +6414,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body: LoginSecurityUser | undefined): Promise<LoginSession> {
+    login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession> {
         let url_ = this.baseUrl + "/api/Security/login";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4161,6 +6423,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4208,7 +6471,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return No Content
      */
-    logout(body: LogoutSecurityUser | undefined): Promise<void> {
+    logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Security/logout";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4217,6 +6480,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
             }
@@ -4253,7 +6517,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    accountsPATCH(id: string, body: UpdateUser | undefined): Promise<SecurityUserResponse> {
+    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse> {
         let url_ = this.baseUrl + "/api/Security/accounts/{Id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4265,6 +6529,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PATCH",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4311,7 +6576,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    accountsDELETE(id: string): Promise<void> {
+    accountsDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Security/accounts/{Id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4320,6 +6585,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -4359,14 +6625,71 @@ export class FuseApiClient {
     }
 
     /**
+     * @param body (optional) 
      * @return OK
      */
-    sqlIntegrationAll(): Promise<SqlIntegrationResponse[]> {
+    roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Security/accounts/{userId}/roles";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRoles(_response);
+        });
+    }
+
+    protected processRoles(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]> {
         let url_ = this.baseUrl + "/api/SqlIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4406,7 +6729,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    sqlIntegrationPOST(body: CreateSqlIntegration | undefined): Promise<SqlIntegrationResponse> {
+    sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -4415,6 +6738,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4468,7 +6792,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    sqlIntegrationGET(id: string): Promise<SqlIntegrationResponse> {
+    sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4477,6 +6801,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4516,7 +6841,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined): Promise<SqlIntegrationResponse> {
+    sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4528,6 +6853,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4581,7 +6907,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    sqlIntegrationDELETE(id: string): Promise<void> {
+    sqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4590,6 +6916,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -4624,7 +6951,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    permissionsOverview(id: string): Promise<CachedPermissionsOverviewResponse> {
+    permissionsOverview(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4633,6 +6960,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4671,7 +6999,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    refresh2(id: string): Promise<CachedPermissionsOverviewResponse> {
+    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview/refresh";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4680,6 +7008,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4718,7 +7047,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    resolve(id: string, accountId: string): Promise<ResolveDriftResponse> {
+    resolve(id: string, accountId: string, signal?: AbortSignal): Promise<ResolveDriftResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/resolve";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4730,6 +7059,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4775,7 +7105,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    import2(id: string, accountId: string): Promise<ImportPermissionsResponse> {
+    import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/import";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4787,6 +7117,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "POST",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -4833,7 +7164,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    import3(id: string, body: ImportOrphanPrincipalRequest | undefined): Promise<ImportOrphanPrincipalResponse> {
+    import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/orphan-principals/import";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4845,6 +7176,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4899,7 +7231,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined): Promise<CreateSqlAccountResponse> {
+    create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/accounts/{accountId}/create";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4914,6 +7246,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4968,7 +7301,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    bulkResolve(id: string, body: BulkResolveRequest | undefined): Promise<BulkResolveResponse> {
+    bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/bulk-resolve";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4980,6 +7313,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5027,7 +7361,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    testConnection2(body: TestSqlConnection | undefined): Promise<SqlConnectionTestResult> {
+    testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult> {
         let url_ = this.baseUrl + "/api/SqlIntegration/test-connection";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5036,6 +7370,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5075,7 +7410,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    databases(id: string): Promise<SqlDatabasesResponse> {
+    databases(id: string, signal?: AbortSignal): Promise<SqlDatabasesResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/databases";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5084,6 +7419,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5129,12 +7465,13 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    tagAll(): Promise<Tag[]> {
+    tagAll(signal?: AbortSignal): Promise<Tag[]> {
         let url_ = this.baseUrl + "/api/Tag";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5174,7 +7511,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return Created
      */
-    tagPOST(body: CreateTag | undefined): Promise<Tag> {
+    tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5183,6 +7520,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5229,7 +7567,7 @@ export class FuseApiClient {
     /**
      * @return OK
      */
-    tagGET(id: string): Promise<Tag> {
+    tagGET(id: string, signal?: AbortSignal): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5238,6 +7576,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "GET",
+            signal,
             headers: {
                 "Accept": "application/json"
             }
@@ -5277,7 +7616,7 @@ export class FuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    tagPUT(id: string, body: UpdateTag | undefined): Promise<Tag> {
+    tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5289,6 +7628,7 @@ export class FuseApiClient {
         let options_: RequestInit = {
             body: content_,
             method: "PUT",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5342,7 +7682,7 @@ export class FuseApiClient {
     /**
      * @return No Content
      */
-    tagDELETE(id: string): Promise<void> {
+    tagDELETE(id: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Tag/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -5351,6 +7691,7 @@ export class FuseApiClient {
 
         let options_: RequestInit = {
             method: "DELETE",
+            signal,
             headers: {
             }
         };
@@ -5907,6 +8248,58 @@ export interface IApplyEnvironmentAutomation {
     applicationId?: string | undefined;
 }
 
+export class AssignRolesToUser implements IAssignRolesToUser {
+    userId?: string;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IAssignRolesToUser) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.userId = _data["UserId"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): AssignRolesToUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new AssignRolesToUser();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["UserId"] = this.userId;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IAssignRolesToUser {
+    userId?: string;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
+}
+
 export enum AuditAction {
     ApplicationCreated = "ApplicationCreated",
     ApplicationUpdated = "ApplicationUpdated",
@@ -5941,6 +8334,10 @@ export enum AuditAction {
     SecurityUserLogin = "SecurityUserLogin",
     SecurityUserLogout = "SecurityUserLogout",
     SecuritySettingsUpdated = "SecuritySettingsUpdated",
+    RoleCreated = "RoleCreated",
+    RoleUpdated = "RoleUpdated",
+    RoleDeleted = "RoleDeleted",
+    UserRolesAssigned = "UserRolesAssigned",
     KumaIntegrationCreated = "KumaIntegrationCreated",
     KumaIntegrationUpdated = "KumaIntegrationUpdated",
     KumaIntegrationDeleted = "KumaIntegrationDeleted",
@@ -5958,6 +8355,18 @@ export enum AuditAction {
     SqlIntegrationBulkResolved = "SqlIntegrationBulkResolved",
     SqlPermissionsImported = "SqlPermissionsImported",
     SqlOrphanPrincipalImported = "SqlOrphanPrincipalImported",
+    PositionCreated = "PositionCreated",
+    PositionUpdated = "PositionUpdated",
+    PositionDeleted = "PositionDeleted",
+    ResponsibilityTypeCreated = "ResponsibilityTypeCreated",
+    ResponsibilityTypeUpdated = "ResponsibilityTypeUpdated",
+    ResponsibilityTypeDeleted = "ResponsibilityTypeDeleted",
+    ResponsibilityAssignmentCreated = "ResponsibilityAssignmentCreated",
+    ResponsibilityAssignmentUpdated = "ResponsibilityAssignmentUpdated",
+    ResponsibilityAssignmentDeleted = "ResponsibilityAssignmentDeleted",
+    RiskCreated = "RiskCreated",
+    RiskUpdated = "RiskUpdated",
+    RiskDeleted = "RiskDeleted",
 }
 
 export enum AuditArea {
@@ -5974,6 +8383,10 @@ export enum AuditArea {
     Secret = "Secret",
     Config = "Config",
     SqlIntegration = "SqlIntegration",
+    Position = "Position",
+    ResponsibilityType = "ResponsibilityType",
+    ResponsibilityAssignment = "ResponsibilityAssignment",
+    Risk = "Risk",
 }
 
 export class AuditLog implements IAuditLog {
@@ -7303,6 +9716,310 @@ export interface ICreatePlatform {
     tagIds?: string[] | undefined;
 }
 
+export class CreatePosition implements ICreatePosition {
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: ICreatePosition) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CreatePosition {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreatePosition();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICreatePosition {
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class CreateResponsibilityAssignment implements ICreateResponsibilityAssignment {
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+
+    constructor(data?: ICreateResponsibilityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.positionId = _data["PositionId"];
+            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
+            this.applicationId = _data["ApplicationId"];
+            this.scope = _data["Scope"];
+            this.environmentId = _data["EnvironmentId"];
+            this.notes = _data["Notes"];
+            this.primary = _data["Primary"];
+        }
+    }
+
+    static fromJS(data: any): CreateResponsibilityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateResponsibilityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["PositionId"] = this.positionId;
+        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
+        data["ApplicationId"] = this.applicationId;
+        data["Scope"] = this.scope;
+        data["EnvironmentId"] = this.environmentId;
+        data["Notes"] = this.notes;
+        data["Primary"] = this.primary;
+        return data;
+    }
+}
+
+export interface ICreateResponsibilityAssignment {
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+}
+
+export class CreateResponsibilityType implements ICreateResponsibilityType {
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: ICreateResponsibilityType) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+        }
+    }
+
+    static fromJS(data: any): CreateResponsibilityType {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateResponsibilityType();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        return data;
+    }
+}
+
+export interface ICreateResponsibilityType {
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class CreateRisk implements ICreateRisk {
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: ICreateRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): CreateRisk {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateRisk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface ICreateRisk {
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+}
+
+export class CreateRole implements ICreateRole {
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: ICreateRole) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): CreateRole {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateRole();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface ICreateRole {
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+}
+
 export class CreateSecret implements ICreateSecret {
     providerId?: string;
     secretName?: string | undefined;
@@ -8559,6 +11276,69 @@ export enum PasswordSourceUsed {
     NewSecret = "NewSecret",
 }
 
+export enum Permission {
+    ApplicationsRead = "ApplicationsRead",
+    ApplicationsCreate = "ApplicationsCreate",
+    ApplicationsUpdate = "ApplicationsUpdate",
+    ApplicationsDelete = "ApplicationsDelete",
+    AccountsRead = "AccountsRead",
+    AccountsCreate = "AccountsCreate",
+    AccountsUpdate = "AccountsUpdate",
+    AccountsDelete = "AccountsDelete",
+    IdentitiesRead = "IdentitiesRead",
+    IdentitiesCreate = "IdentitiesCreate",
+    IdentitiesUpdate = "IdentitiesUpdate",
+    IdentitiesDelete = "IdentitiesDelete",
+    DataStoresRead = "DataStoresRead",
+    DataStoresCreate = "DataStoresCreate",
+    DataStoresUpdate = "DataStoresUpdate",
+    DataStoresDelete = "DataStoresDelete",
+    PlatformsRead = "PlatformsRead",
+    PlatformsCreate = "PlatformsCreate",
+    PlatformsUpdate = "PlatformsUpdate",
+    PlatformsDelete = "PlatformsDelete",
+    EnvironmentsRead = "EnvironmentsRead",
+    EnvironmentsCreate = "EnvironmentsCreate",
+    EnvironmentsUpdate = "EnvironmentsUpdate",
+    EnvironmentsDelete = "EnvironmentsDelete",
+    ExternalResourcesRead = "ExternalResourcesRead",
+    ExternalResourcesCreate = "ExternalResourcesCreate",
+    ExternalResourcesUpdate = "ExternalResourcesUpdate",
+    ExternalResourcesDelete = "ExternalResourcesDelete",
+    PositionsRead = "PositionsRead",
+    PositionsCreate = "PositionsCreate",
+    PositionsUpdate = "PositionsUpdate",
+    PositionsDelete = "PositionsDelete",
+    ResponsibilitiesRead = "ResponsibilitiesRead",
+    ResponsibilitiesCreate = "ResponsibilitiesCreate",
+    ResponsibilitiesUpdate = "ResponsibilitiesUpdate",
+    ResponsibilitiesDelete = "ResponsibilitiesDelete",
+    RisksRead = "RisksRead",
+    RisksCreate = "RisksCreate",
+    RisksUpdate = "RisksUpdate",
+    RisksDelete = "RisksDelete",
+    RisksApprove = "RisksApprove",
+    AzureKeyVaultSecretsView = "AzureKeyVaultSecretsView",
+    AzureKeyVaultConnectionsCreate = "AzureKeyVaultConnectionsCreate",
+    AzureKeyVaultConnectionsDelete = "AzureKeyVaultConnectionsDelete",
+    SqlConnectionsCreate = "SqlConnectionsCreate",
+    SqlConnectionsDelete = "SqlConnectionsDelete",
+    SqlGrantsApply = "SqlGrantsApply",
+    KumaIntegrationsCreate = "KumaIntegrationsCreate",
+    KumaIntegrationsDelete = "KumaIntegrationsDelete",
+    ConfigurationExport = "ConfigurationExport",
+    ConfigurationImport = "ConfigurationImport",
+    AuditLogsView = "AuditLogsView",
+    UsersRead = "UsersRead",
+    UsersCreate = "UsersCreate",
+    UsersUpdate = "UsersUpdate",
+    UsersDelete = "UsersDelete",
+    RolesRead = "RolesRead",
+    RolesCreate = "RolesCreate",
+    RolesUpdate = "RolesUpdate",
+    RolesDelete = "RolesDelete",
+}
+
 export class Platform implements IPlatform {
     id?: string;
     displayName?: string | undefined;
@@ -8644,6 +11424,70 @@ export enum PlatformKind {
     Cluster = "Cluster",
     Serverless = "Serverless",
     ContainerHost = "ContainerHost",
+}
+
+export class Position implements IPosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IPosition) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): Position {
+        data = typeof data === 'object' ? data : {};
+        let result = new Position();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IPosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export enum Privilege {
@@ -8783,6 +11627,327 @@ export interface IResolveDriftResponse {
     operations?: DriftResolutionOperation[] | undefined;
     updatedStatus?: SqlAccountPermissionsStatus;
     errorMessage?: string | undefined;
+}
+
+export class ResponsibilityAssignment implements IResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IResponsibilityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.positionId = _data["PositionId"];
+            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
+            this.applicationId = _data["ApplicationId"];
+            this.scope = _data["Scope"];
+            this.environmentId = _data["EnvironmentId"];
+            this.notes = _data["Notes"];
+            this.primary = _data["Primary"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ResponsibilityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResponsibilityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["PositionId"] = this.positionId;
+        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
+        data["ApplicationId"] = this.applicationId;
+        data["Scope"] = this.scope;
+        data["EnvironmentId"] = this.environmentId;
+        data["Notes"] = this.notes;
+        data["Primary"] = this.primary;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export enum ResponsibilityScope {
+    All = "All",
+    Environment = "Environment",
+}
+
+export class ResponsibilityType implements IResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IResponsibilityType) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ResponsibilityType {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResponsibilityType();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export class Risk implements IRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): Risk {
+        data = typeof data === 'object' ? data : {};
+        let result = new Risk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export enum RiskImpact {
+    Low = "Low",
+    Medium = "Medium",
+    High = "High",
+    Critical = "Critical",
+}
+
+export enum RiskLikelihood {
+    Low = "Low",
+    Medium = "Medium",
+    High = "High",
+}
+
+export enum RiskStatus {
+    Identified = "Identified",
+    Mitigated = "Mitigated",
+    Accepted = "Accepted",
+    Closed = "Closed",
+}
+
+export class RoleInfo implements IRoleInfo {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IRoleInfo) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): RoleInfo {
+        data = typeof data === 'object' ? data : {};
+        let result = new RoleInfo();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRoleInfo {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export class RotateSecret implements IRotateSecret {
@@ -9187,6 +12352,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -9204,6 +12370,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
             this.id = _data["Id"];
             this.userName = _data["UserName"];
             this.role = _data["Role"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
         }
@@ -9221,6 +12392,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
         data["Id"] = this.id;
         data["UserName"] = this.userName;
         data["Role"] = this.role;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
@@ -9231,6 +12407,7 @@ export interface ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -9239,6 +12416,7 @@ export class SecurityUserResponse implements ISecurityUserResponse {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -9256,6 +12434,11 @@ export class SecurityUserResponse implements ISecurityUserResponse {
             this.id = _data["Id"];
             this.userName = _data["UserName"];
             this.role = _data["Role"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
         }
@@ -9273,6 +12456,11 @@ export class SecurityUserResponse implements ISecurityUserResponse {
         data["Id"] = this.id;
         data["UserName"] = this.userName;
         data["Role"] = this.role;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
@@ -9283,6 +12471,7 @@ export interface ISecurityUserResponse {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -10923,6 +14112,330 @@ export interface IUpdatePlatform {
     tagIds?: string[] | undefined;
 }
 
+export class UpdatePosition implements IUpdatePosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdatePosition) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdatePosition {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePosition();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdatePosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+
+    constructor(data?: IUpdateResponsibilityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.positionId = _data["PositionId"];
+            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
+            this.applicationId = _data["ApplicationId"];
+            this.scope = _data["Scope"];
+            this.environmentId = _data["EnvironmentId"];
+            this.notes = _data["Notes"];
+            this.primary = _data["Primary"];
+        }
+    }
+
+    static fromJS(data: any): UpdateResponsibilityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateResponsibilityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["PositionId"] = this.positionId;
+        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
+        data["ApplicationId"] = this.applicationId;
+        data["Scope"] = this.scope;
+        data["EnvironmentId"] = this.environmentId;
+        data["Notes"] = this.notes;
+        data["Primary"] = this.primary;
+        return data;
+    }
+}
+
+export interface IUpdateResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+}
+
+export class UpdateResponsibilityType implements IUpdateResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IUpdateResponsibilityType) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+        }
+    }
+
+    static fromJS(data: any): UpdateResponsibilityType {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateResponsibilityType();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        return data;
+    }
+}
+
+export interface IUpdateResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class UpdateRisk implements IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IUpdateRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.impact = _data["Impact"];
+            this.likelihood = _data["Likelihood"];
+            this.status = _data["Status"];
+            this.ownerPositionId = _data["OwnerPositionId"];
+            this.approverPositionId = _data["ApproverPositionId"];
+            this.targetType = _data["TargetType"];
+            this.targetId = _data["TargetId"];
+            this.mitigation = _data["Mitigation"];
+            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["TagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["TagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["Notes"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRisk {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRisk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Impact"] = this.impact;
+        data["Likelihood"] = this.likelihood;
+        data["Status"] = this.status;
+        data["OwnerPositionId"] = this.ownerPositionId;
+        data["ApproverPositionId"] = this.approverPositionId;
+        data["TargetType"] = this.targetType;
+        data["TargetId"] = this.targetId;
+        data["Mitigation"] = this.mitigation;
+        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["TagIds"] = [];
+            for (let item of this.tagIds)
+                data["TagIds"].push(item);
+        }
+        data["Notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+}
+
+export class UpdateRole implements IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IUpdateRole) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.name = _data["Name"];
+            this.description = _data["Description"];
+            if (Array.isArray(_data["Permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["Permissions"])
+                    this.permissions!.push(item);
+            }
+            this.requestedBy = _data["RequestedBy"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRole {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRole();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["Name"] = this.name;
+        data["Description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["Permissions"] = [];
+            for (let item of this.permissions)
+                data["Permissions"].push(item);
+        }
+        data["RequestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+}
+
 export class UpdateSecretProvider implements IUpdateSecretProvider {
     id?: string;
     name?: string | undefined;
@@ -11126,6 +14639,7 @@ export interface IUpdateTag {
 export class UpdateUser implements IUpdateUser {
     id?: string;
     role?: SecurityRole;
+    requestedBy?: string | undefined;
 
     constructor(data?: IUpdateUser) {
         if (data) {
@@ -11140,6 +14654,7 @@ export class UpdateUser implements IUpdateUser {
         if (_data) {
             this.id = _data["Id"];
             this.role = _data["Role"];
+            this.requestedBy = _data["RequestedBy"];
         }
     }
 
@@ -11154,6 +14669,7 @@ export class UpdateUser implements IUpdateUser {
         data = typeof data === 'object' ? data : {};
         data["Id"] = this.id;
         data["Role"] = this.role;
+        data["RequestedBy"] = this.requestedBy;
         return data;
     }
 }
@@ -11161,6 +14677,7 @@ export class UpdateUser implements IUpdateUser {
 export interface IUpdateUser {
     id?: string;
     role?: SecurityRole;
+    requestedBy?: string | undefined;
 }
 
 export interface FileParameter {

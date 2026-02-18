@@ -274,6 +274,10 @@ public class ConfigService : IConfigService
                 KumaIntegrations: existingKumaIntegrations.Values.ToList(),
                 SecretProviders: current.SecretProviders,
                 SqlIntegrations: current.SqlIntegrations,
+                Positions: current.Positions,
+                ResponsibilityTypes: current.ResponsibilityTypes,
+                ResponsibilityAssignments: current.ResponsibilityAssignments,
+                Risks: current.Risks,
                 Security: current.Security
             );
         }, ct);

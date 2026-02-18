@@ -80,9 +80,24 @@ const router = createRouter({
       component: () => import('./pages/TagsPage.vue')
     },
     {
+      path: '/positions',
+      name: 'positions',
+      component: () => import('./pages/PositionsPage.vue')
+    },
+    {
+      path: '/responsibility-types',
+      name: 'responsibilityTypes',
+      component: () => import('./pages/ResponsibilityTypesPage.vue')
+    },
+    {
       path: '/security',
       name: 'security',
       component: () => import('./pages/Security.vue')
+    },
+    {
+      path: '/roles',
+      name: 'roles',
+      component: () => import('./pages/RolesPage.vue')
     },
     {
       path: '/graph',
@@ -118,6 +133,21 @@ const router = createRouter({
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')
+    },
+    {
+      path: '/risks',
+      name: 'risks',
+      component: () => import('./pages/RisksPage.vue')
+    },
+    {
+      path: '/risks/create',
+      name: 'riskCreate',
+      component: () => import('./pages/RiskEditPage.vue')
+    },
+    {
+      path: '/risks/:id/edit',
+      name: 'riskEdit',
+      component: () => import('./pages/RiskEditPage.vue')
     },
     // Read-only documentation mode routes
     {

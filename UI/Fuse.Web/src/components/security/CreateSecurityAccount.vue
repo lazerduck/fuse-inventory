@@ -18,13 +18,14 @@
           />
           <q-select
             v-model="form.role"
-            label="Role"
+            label="Legacy Role"
             dense
             outlined
             emit-value
             map-options
             :options="roleOptions"
-            :rules="[val => !!val || 'Role is required']"
+            :rules="[val => requireSetup ? (!!val || 'Admin role is required for setup') : true]"
+            hint="For backward compatibility. Use role assignments below for fine-grained permissions."
           />
           <q-input
             v-model="form.password"
@@ -58,6 +59,35 @@
             outlined
             class="full-span"
           />
+          <div v-if="!requireSetup" class="full-span q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Role Assignments</div>
+            <q-select
+              v-model="form.roleIds"
+              label="Assigned Roles"
+              dense
+              outlined
+              multiple
+              emit-value
+              map-options
+              use-chips
+              :options="availableRoles"
+              option-label="name"
+              option-value="id"
+              hint="Select one or more roles to assign permissions"
+            >
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.name }}</q-item-label>
+                    <q-item-label caption>{{ scope.opt.description }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-badge :label="scope.opt.permissions?.length || 0" color="primary" />
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
         </div>
         <q-banner v-if="requireSetup" class="bg-blue-1 text-info q-mt-md" dense rounded>
           <template #avatar>
@@ -77,17 +107,19 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { SecurityRole } from '../../api/client'
+import { SecurityRole, RoleInfo } from '../../api/client'
 
 interface SecurityAccountForm {
   userName: string
   password: string
   role: SecurityRole | null
   requestedBy: string
+  roleIds: string[]
 }
 
 interface Props {
   requireSetup?: boolean
+  availableRoles?: RoleInfo[]
   loading?: boolean
 }
 
@@ -98,6 +130,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   requireSetup: false,
+  availableRoles: () => [],
   loading: false
 })
 
@@ -107,7 +140,8 @@ const form = reactive<SecurityAccountForm>({
   userName: '',
   password: '',
   role: props.requireSetup ? SecurityRole.Admin : null,
-  requestedBy: ''
+  requestedBy: '',
+  roleIds: []
 })
 
 const confirmPassword = ref('')

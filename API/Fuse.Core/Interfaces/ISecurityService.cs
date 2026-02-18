@@ -14,4 +14,10 @@ public interface ISecurityService
     Task<SecurityUser?> ValidateSessionAsync(string token, bool refresh, CancellationToken ct = default);
     Task<Result<SecurityUser>> UpdateUser(UpdateUser command, CancellationToken ct = default);
     Task<Result> DeleteUser(DeleteUser command, CancellationToken ct = default);
+    
+    // Role management methods
+    Task<Result<Role>> CreateRoleAsync(CreateRole command, CancellationToken ct = default);
+    Task<Result<Role>> UpdateRoleAsync(UpdateRole command, CancellationToken ct = default);
+    Task<Result> DeleteRoleAsync(DeleteRole command, CancellationToken ct = default);
+    Task<Result<SecurityUser>> AssignRolesToUserAsync(AssignRolesToUser command, CancellationToken ct = default);
 }
