@@ -42,7 +42,7 @@ jobs:
       run: dotnet test --no-build --configuration Release --verbosity normal /p:AltCover=true /p:AltCoverAssemblyFilter="Fuse\.Tests"
     
     - name: Generate Cobertura Report
-      run: reportgenerator -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura
+      run: reportgenerator -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura "-assemblyfilters:+Fuse.*"
     
     - name: Code Coverage Summary
       uses: irongut/CodeCoverageSummary@v1.3.0
