@@ -40,4 +40,9 @@ public interface IPermissionService
     /// Ensure default roles exist in the system
     /// </summary>
     Task<IReadOnlyList<Role>> EnsureDefaultRolesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if user has admin privileges via legacy Admin role OR membership in default Admin role
+    /// </summary>
+    Task<bool> IsUserAdminAsync(SecurityUser? user, CancellationToken cancellationToken = default);
 }

@@ -132,8 +132,12 @@
 
       <!-- Create Account Dialog -->
       <q-dialog v-model="isCreateDialogOpen" persistent>
-        <CreateSecurityAccount :loading="createAccountMutation.isPending.value" @submit="handleCreateAccount"
-          @cancel="isCreateDialogOpen = false" />
+        <CreateSecurityAccount 
+          :available-roles="availableRoles"
+          :loading="createAccountMutation.isPending.value" 
+          @submit="handleCreateAccount"
+          @cancel="isCreateDialogOpen = false" 
+        />
       </q-dialog>
 
       <!-- Edit User Dialog -->
@@ -318,7 +322,7 @@ const updateSecurityLevelMutation = useMutation({
   }
 })
 
-function handleCreateAccount(form: { userName: string; password: string; role: SecurityRole | null; requestedBy: string }) {
+function handleCreateAccount(form: { userName: string; password: string; role: SecurityRole | null; requestedBy: string; roleIds: string[] }) {
   securityError.value = null
   const payload = Object.assign(new CreateSecurityUser(), {
     userName: form.userName || undefined,
@@ -326,7 +330,18 @@ function handleCreateAccount(form: { userName: string; password: string; role: S
     role: form.role || undefined,
     requestedBy: form.requestedBy || undefined
   })
-  createAccountMutation.mutate(payload)
+  createAccountMutation.mutate(payload, {
+    onSuccess: (newUser) => {
+      // If custom roles were selected, assign them after account creation
+      if (form.roleIds && form.roleIds.length > 0 && newUser.id) {
+        const assignPayload = Object.assign(new AssignRolesToUser(), {
+          userId: newUser.id,
+          roleIds: form.roleIds
+        })
+        assignRolesMutation.mutate({ userId: newUser.id, payload: assignPayload })
+      }
+    }
+  })
 }
 
 function handleUpdateSecurityLevel() {

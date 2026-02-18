@@ -18,10 +18,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.3" />
     <PackageReference Include="Testcontainers.MsSql" Version="3.8.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Fuse.Core/Fuse.Core.csproj" />
     <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
+    <ProjectReference Include="../Fuse.API/Fuse.API.csproj" />
   </ItemGroup>
 </Project>

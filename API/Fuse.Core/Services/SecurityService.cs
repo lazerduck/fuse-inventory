@@ -92,13 +92,14 @@ public sealed class SecurityService : ISecurityService
                 return Result<SecurityUser>.Failure("Only administrators can create users.", ErrorType.Unauthorized);
 
             var requester = state.Users.FirstOrDefault(u => u.Id == requesterId);
-            if (requester is null || requester.Role != SecurityRole.Admin)
+            if (requester is null || !IsUserAdmin(requester, state))
                 return Result<SecurityUser>.Failure("Only administrators can create users.", ErrorType.Unauthorized);
         }
 
         var salt = GenerateSalt();
         var hash = HashPassword(command.Password, salt);
-        var user = new SecurityUser(Guid.NewGuid(), command.UserName.Trim(), hash, salt, command.Role, now, now);
+        var legacyRole = command.Role ?? SecurityRole.Reader;
+        var user = new SecurityUser(Guid.NewGuid(), command.UserName.Trim(), hash, salt, legacyRole, now, now);
 
         await _store.UpdateAsync(s => s with
         {
@@ -137,7 +138,7 @@ public sealed class SecurityService : ISecurityService
 
         var token = Guid.NewGuid().ToString("N");
         var expires = DateTime.UtcNow.Add(SessionLifetime);
-        var info = new SecurityUserInfo(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
+        var info = new SecurityUserInfo(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
 
         _sessions[token] = new SessionRecord(token, user.Id, expires);
         
@@ -467,4 +468,23 @@ public sealed class SecurityService : ISecurityService
     }
 
     private record SessionRecord(string Token, Guid UserId, DateTime ExpiresAt);
+
+    /// <summary>
+    /// Check if a user is an administrator (has admin legacy role or is assigned to the default Admin role)
+    /// </summary>
+    private static bool IsUserAdmin(SecurityUser? user, SecurityState state)
+    {
+        if (user is null)
+            return false;
+
+        // Check if user has legacy Admin role
+        if (user.Role == SecurityRole.Admin)
+            return true;
+
+        // Check if user is assigned to default Admin role
+        if (user.RoleIds.Contains(PermissionService.DefaultAdminRoleId))
+            return true;
+
+        return false;
+    }
 }

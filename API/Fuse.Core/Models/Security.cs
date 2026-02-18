@@ -244,7 +244,7 @@ public record SecurityState
     public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin);
 }
 
-public record SecurityUserInfo(Guid Id, string UserName, SecurityRole Role, DateTime CreatedAt, DateTime UpdatedAt);
+public record SecurityUserInfo(Guid Id, string UserName, SecurityRole Role, IReadOnlyList<Guid>? RoleIds, DateTime CreatedAt, DateTime UpdatedAt);
 
 public record RoleInfo(Guid Id, string Name, string Description, IReadOnlyList<Permission> Permissions, DateTime CreatedAt, DateTime UpdatedAt);
 

@@ -81,8 +81,7 @@ namespace Fuse.API.Controllers
             {
                 if (currentUser is null)
                     return Unauthorized(new { error = "Authentication required." });
-                if (currentUser.Role != SecurityRole.Admin)
-                    return Forbid();
+                // Permission check is handled by SecurityMiddleware using granular permissions
             }
 
             var merged = command with { RequestedBy = currentUser?.Id };
@@ -250,7 +249,7 @@ namespace Fuse.API.Controllers
         {
             return user is null
                 ? null
-                : new SecurityUserInfo(user.Id, user.UserName, user.Role, user.CreatedAt, user.UpdatedAt);
+                : new SecurityUserInfo(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
         }
 
         public class SecurityStateResponse

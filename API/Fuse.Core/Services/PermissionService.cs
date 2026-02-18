@@ -256,4 +256,15 @@ public class PermissionService : IPermissionService
             Permission.RolesRead
         };
     }
+
+    /// <summary>
+    /// Check if user has admin privileges via legacy Admin role OR membership in default Admin role
+    /// </summary>
+    public async Task<bool> IsUserAdminAsync(SecurityUser? user, CancellationToken cancellationToken = default)
+    {
+        if (user is null) return false;
+        if (user.Role == SecurityRole.Admin) return true; // Legacy check
+        if (user.RoleIds.Contains(DefaultAdminRoleId)) return true; // Role membership check
+        return false;
+    }
 }

@@ -29,7 +29,8 @@ public sealed class SecurityMiddleware
             AttachPrincipal(context, user);
 
         var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase) ||
-                                 path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase);
+                     path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||
+                     path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase);
         var requiresSetup = state.RequiresSetup;
 
         if (requiresSetup && !IsSetupAllowed(path, context.Request.Method))
@@ -71,7 +72,7 @@ public sealed class SecurityMiddleware
                 // Check for AuditLogsView permission
                 if (!await permissionService.HasPermissionAsync(user, Permission.AuditLogsView, cancellationToken))
                 {
-                    if (user.Role != SecurityRole.Admin) // Fallback to legacy admin check
+                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
                     {
                         await WriteForbiddenAsync(context, cancellationToken);
                         return;
@@ -91,7 +92,7 @@ public sealed class SecurityMiddleware
                 // Check for ConfigurationExport permission
                 if (!await permissionService.HasPermissionAsync(user, Permission.ConfigurationExport, cancellationToken))
                 {
-                    if (user.Role != SecurityRole.Admin) // Fallback to legacy admin check
+                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
                     {
                         await WriteForbiddenAsync(context, cancellationToken);
                         return;
@@ -99,9 +100,36 @@ public sealed class SecurityMiddleware
                 }
             }
 
-            var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
-            if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
-                return;
+            // Enforce granular permissions for CRUD endpoints
+            var crudPermission = GetRequiredCrudPermission(path, context.Request.Method, permissionService);
+            var permissionHandled = false;
+            if (crudPermission.HasValue)
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+
+                if (!await permissionService.HasPermissionAsync(user, crudPermission.Value, cancellationToken))
+                {
+                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
+                    {
+                        await WriteForbiddenAsync(context, cancellationToken);
+                        return;
+                    }
+                }
+
+                // Permission was checked and satisfied, skip legacy security-level enforcement
+                permissionHandled = true;
+            }
+
+            if (!permissionHandled)
+            {
+                var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
+                if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
+                    return;
+            }
         }
 
         await _next(context);
@@ -130,6 +158,8 @@ public sealed class SecurityMiddleware
                 return false;
             }
 
+            // Note: This legacy access requirement check still uses direct role check
+            // because it's only used during the transition period before full permission migration
             if (user.Role != SecurityRole.Admin)
             {
                 await WriteForbiddenAsync(context, cancellationToken);
@@ -227,7 +257,9 @@ public sealed class SecurityMiddleware
         }
 
         // Role management endpoints
-        if (path.StartsWithSegments("/api/security/roles", StringComparison.OrdinalIgnoreCase) || path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase))
+        if (path.StartsWithSegments("/api/security/roles", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase))
         {
             if (HttpMethods.IsGet(method))
                 return await permissionService.HasPermissionAsync(user, Permission.RolesRead, cancellationToken) || user.Role == SecurityRole.Admin;
@@ -261,5 +293,125 @@ public sealed class SecurityMiddleware
         Public,
         Read,
         Admin
+    }
+
+    /// <summary>
+    /// Determines the required permission for a CRUD endpoint based on the request path and method.
+    /// Returns null if the endpoint doesn't have a granular permission mapping.
+    /// </summary>
+    private static Permission? GetRequiredCrudPermission(PathString path, string method, IPermissionService permissionService)
+    {
+        // Extract controller name and determine action
+        var (controllerName, actionName) = ExtractControllerAndAction(path, method);
+        
+        if (string.IsNullOrEmpty(controllerName) || string.IsNullOrEmpty(actionName))
+            return null;
+
+        return permissionService.GetRequiredPermission(
+            controllerName,
+            actionName,
+            method.ToUpperInvariant());
+    }
+
+    /// <summary>
+    /// Extracts the controller name and determines the action name from the request path and HTTP method.
+    /// Returns (controllerName, actionName) or (null, null) if extraction fails.
+    /// </summary>
+    private static (string? controllerName, string? actionName) ExtractControllerAndAction(PathString path, string method)
+    {
+        var pathStr = path.Value ?? "";
+        
+        // Remove /api/ prefix
+        if (!pathStr.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+            return (null, null);
+
+        pathStr = pathStr[5..]; // Remove "/api/"
+
+        // Split path into segments
+        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+            return (null, null);
+
+        var controllerSegment = segments[0];
+
+        // Skip security endpoints - handled separately
+        if (controllerSegment.Equals("security", StringComparison.OrdinalIgnoreCase) ||
+            controllerSegment.Equals("roles", StringComparison.OrdinalIgnoreCase))
+            return (null, null);
+
+        // Map controller segment to proper PascalCase
+        var controllerName = NormalizeControllerName(controllerSegment);
+        if (string.IsNullOrEmpty(controllerName))
+            return (null, null);
+
+        // Determine action based on HTTP method and route structure
+        string actionName = method.ToUpperInvariant() switch
+        {
+            "GET" => segments.Length > 1 ? "Get" : "GetAll",
+            "POST" => "Create",
+            "PUT" => "Update",
+            "PATCH" => "Update",
+            "DELETE" => "Delete",
+            _ => ""
+        };
+
+        // Handle special actions in POST requests (e.g., Risk.Approve.POST, Account.ApplyGrants.POST)
+        if (HttpMethods.IsPost(method) && segments.Length > 1)
+        {
+            var lastSegment = segments[^1];
+            // Check if last segment is a special action (not a GUID or ID)
+            if (!IsGuidOrId(lastSegment))
+            {
+                // Capitalize the action name
+                actionName = char.ToUpperInvariant(lastSegment[0]) + lastSegment[1..];
+            }
+        }
+
+        return (controllerName, actionName);
+    }
+
+    private static string? NormalizeControllerName(string controllerSegment)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["application"] = "Application",
+            ["account"] = "Account",
+            ["identity"] = "Identity",
+            ["datastore"] = "DataStore",
+            ["platform"] = "Platform",
+            ["environment"] = "Environment",
+            ["externalresource"] = "ExternalResource",
+            ["position"] = "Position",
+            ["responsibilitytype"] = "ResponsibilityType",
+            ["responsibilityassignment"] = "ResponsibilityAssignment",
+            ["risk"] = "Risk",
+            ["secretprovider"] = "SecretProvider",
+            ["sqlintegration"] = "SqlIntegration",
+            ["kumaintegration"] = "KumaIntegration",
+            ["config"] = "Config",
+            ["audit"] = "Audit",
+            ["tag"] = "Tag",
+            ["role"] = "Role"
+        };
+
+        return map.TryGetValue(controllerSegment, out var controllerName)
+            ? controllerName
+            : null;
+    }
+
+    /// <summary>
+    /// Determines if a path segment is a GUID or numeric ID.
+    /// </summary>
+    private static bool IsGuidOrId(string segment)
+    {
+        // Check if it's a GUID
+        if (Guid.TryParse(segment, out _))
+            return true;
+
+        // Check if it's a number
+        if (int.TryParse(segment, out _))
+            return true;
+
+        return false;
     }
 }

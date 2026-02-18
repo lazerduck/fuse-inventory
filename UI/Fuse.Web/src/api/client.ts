@@ -12352,6 +12352,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -12369,6 +12370,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
             this.id = _data["Id"];
             this.userName = _data["UserName"];
             this.role = _data["Role"];
+            if (Array.isArray(_data["RoleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["RoleIds"])
+                    this.roleIds!.push(item);
+            }
             this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
             this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
         }
@@ -12386,6 +12392,11 @@ export class SecurityUserInfo implements ISecurityUserInfo {
         data["Id"] = this.id;
         data["UserName"] = this.userName;
         data["Role"] = this.role;
+        if (Array.isArray(this.roleIds)) {
+            data["RoleIds"] = [];
+            for (let item of this.roleIds)
+                data["RoleIds"].push(item);
+        }
         data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
@@ -12396,6 +12407,7 @@ export interface ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
     role?: SecurityRole;
+    roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }

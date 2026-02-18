@@ -9,7 +9,7 @@ public record UpdateSecuritySettings(SecurityLevel Level)
     public Guid? RequestedBy { get; init; }
 }
 
-public record CreateSecurityUser(string UserName, string Password, SecurityRole Role)
+public record CreateSecurityUser(string UserName, string Password, SecurityRole? Role = null)
 {
     public Guid? RequestedBy { get; init; }
 }
