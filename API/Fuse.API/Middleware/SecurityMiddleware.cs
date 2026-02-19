@@ -60,6 +60,17 @@ public sealed class SecurityMiddleware
         }
         else
         {
+            // First check site-wide security level - it should override user-specific permissions
+            // when the site-wide setting is more permissive
+            var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
+            
+            // If site-wide level allows public access, allow without authentication
+            if (requirement == AccessRequirement.Public)
+            {
+                await _next(context);
+                return;
+            }
+            
             // Enforce permission-based or admin-only access for specific endpoints
             if (path.StartsWithSegments("/api/audit", StringComparison.OrdinalIgnoreCase))
             {
@@ -126,7 +137,6 @@ public sealed class SecurityMiddleware
 
             if (!permissionHandled)
             {
-                var requirement = GetRequirement(state.Settings.Level, context.Request.Method);
                 if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
                     return;
             }
