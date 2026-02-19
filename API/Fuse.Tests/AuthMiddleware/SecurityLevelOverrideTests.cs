@@ -33,21 +33,38 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         {
             await unauthClient.ApiSecurityAccountsPostAsync(new CreateSecurityUser
             {
-                UserName = "testAdmin",
-                Password = "TestPassword123!",
+                UserName = "initialAdmin",
+                Password = "InitialPassword123!",
                 Role = ApiClient.SecurityRole.Admin
             });
-            _adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "testAdmin", "TestPassword123!");
+            _adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "initialAdmin", "InitialPassword123!");
         }
         else
         {
-            _adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "testAdmin", "TestPassword123!");
+            _adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "initialAdmin", "InitialPassword123!");
         }
 
         _adminClient = _apiFixture.CreateAuthenticatedClient(_adminToken);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        // Restore security level to FullyRestricted for other tests
+        if (_adminClient is not null)
+        {
+            try
+            {
+                await _adminClient.ApiSecuritySettingsAsync(new UpdateSecuritySettings
+                {
+                    Level = ApiClient.SecurityLevel.FullyRestricted
+                });
+            }
+            catch
+            {
+                // Ignore errors during cleanup
+            }
+        }
+    }
 
     [Fact]
     public async Task SecurityLevel_None_Allows_Unauthenticated_Read_Access()
