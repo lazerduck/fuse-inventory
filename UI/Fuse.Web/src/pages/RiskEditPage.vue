@@ -345,7 +345,7 @@ const targetOptions = computed(() => {
     case 'Account':
       if (!accounts.value) return []
       return accounts.value.map((a: any) => ({
-        label: a.name,
+        label: a.userName,
         value: a.id
       }))
     case 'Identity':
