@@ -37,7 +37,7 @@ public record CreateSecret(
 
 public record RotateSecret(
     Guid ProviderId,
-    string SecretName,
+    string? SecretName,
     string NewSecretValue
 );
 
