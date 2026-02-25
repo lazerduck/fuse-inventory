@@ -49,6 +49,11 @@ fuse-inventory/
 │   └── Fuse.Tests/          # Unit and integration tests
 ├── UI/                      # Frontend Vue application
 │   └── Fuse.Web/            # Vue 3 + Quasar web UI
+├── test-data/               # Demo/testing data (JSON files)
+│   ├── accounts.json        # Mock accounts with credentials
+│   ├── applications.json    # Sample applications
+│   ├── environments.json    # Sample environments
+│   └── ...                  # Other mock entities
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # CI/CD pipeline
@@ -181,6 +186,14 @@ Fuse-Inventory is built to enable users to work the way *they* want. It doesn't 
 - Focus on flexibility and power-user features
 - Document risks, but don't prevent actions
 
+## Test Data
+
+The `test-data/` directory contains a complete mock environment for demonstration and testing:
+- **Demo Account**: Username `Admin`, Password `Password`
+- Includes sample configurations for all major entities: accounts, applications, environments, datastores, external resources, identities, platforms, risks, etc.
+- Can be used for manual testing, demos, and developing new features
+- JSON files in this directory are automatically loaded when the application starts
+
 ## Notes for Copilot
 
 - This is an active project with a stable core data model
@@ -188,3 +201,4 @@ Fuse-Inventory is built to enable users to work the way *they* want. It doesn't 
 - The UI uses Vue 3 Composition API exclusively
 - The project values simplicity and self-hosting over complex architectures
 - When in doubt, favor minimal changes that maintain backward compatibility
+- Test data with demo credentials (Admin/Password) is available in the `test-data/` folder for testing and demos
