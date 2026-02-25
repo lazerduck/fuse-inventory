@@ -7,6 +7,14 @@
       </div>
       <div class="flex q-gutter-sm">
         <q-btn flat label="Cancel" @click="handleCancel" />
+        <q-btn
+          v-if="isEditMode && identity?.ownerInstanceId"
+          flat
+          color="secondary"
+          icon="content_copy"
+          label="Clone across environments"
+          @click="openCloneDialog"
+        />
         <q-btn 
           color="primary" 
           :label="isEditMode ? 'Save Changes' : 'Create Identity'" 
@@ -59,8 +67,7 @@
     </q-card>
 
     <!-- Assignment Dialog -->
-    <q-dialog v-model="isAssignmentDialogOpen" persistent>
-      <q-card class="form-dialog">
+    <q-dialog v-model="isAssignmentDialogOpen" persistent>      <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">{{ assignmentDialogTitle }}</div>
           <q-btn flat round dense icon="close" @click="closeAssignmentDialog" />
@@ -111,6 +118,50 @@
         </q-form>
       </q-card>
     </q-dialog>
+
+    <!-- Clone Dialog -->
+    <q-dialog v-model="isCloneDialogOpen" persistent>
+      <q-card style="min-width: 480px">
+        <q-card-section class="dialog-header">
+          <div class="text-h6">Clone across environments</div>
+          <q-btn flat round dense icon="close" @click="isCloneDialogOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <div v-if="isCloneTargetsLoading" class="row items-center justify-center q-pa-md">
+            <q-spinner color="primary" size="2em" />
+          </div>
+          <div v-else-if="cloneTargets.length === 0" class="text-grey-6 q-pa-sm">
+            No other environments found for this identity's application.
+          </div>
+          <div v-else>
+            <p class="q-mb-sm text-body2">Select the environments to clone this identity into:</p>
+            <q-list>
+              <q-item v-for="target in cloneTargets" :key="target.id" tag="label" dense>
+                <q-item-section side>
+                  <q-checkbox v-model="selectedCloneTargetIds" :val="target.id!" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ target.label }}</q-item-label>
+                  <q-item-label caption>{{ target.environmentName }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" @click="isCloneDialogOpen = false" />
+          <q-btn
+            color="primary"
+            label="Clone"
+            :loading="isCloning"
+            :disable="selectedCloneTargetIds.length === 0"
+            @click="handleClone"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -130,7 +181,9 @@ import {
   ApplicationInstanceDependency,
   CreateApplicationDependency,
   UpdateApplicationDependency,
-  DependencyAuthKind
+  DependencyAuthKind,
+  CloneTarget,
+  CloneIdentityRequest
 } from '../api/client'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'
@@ -516,6 +569,49 @@ function confirmReplaceDependency(
 }
 
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+
+// Clone across environments
+const isCloneDialogOpen = ref(false)
+const selectedCloneTargetIds = ref<string[]>([])
+const cloneTargets = ref<CloneTarget[]>([])
+const isCloneTargetsLoading = ref(false)
+
+const cloneMutation = useMutation({
+  mutationFn: ({ id, payload }: { id: string; payload: CloneIdentityRequest }) =>
+    client.identityClone(id, payload),
+  onSuccess: (created) => {
+    queryClient.invalidateQueries({ queryKey: ['identities'] })
+    isCloneDialogOpen.value = false
+    Notify.create({ type: 'positive', message: `Cloned to ${created.length} environment${created.length !== 1 ? 's' : ''}` })
+  },
+  onError: (err) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to clone identity') })
+  }
+})
+
+const isCloning = computed(() => cloneMutation.isPending.value)
+
+async function openCloneDialog() {
+  if (!identityId.value) return
+  isCloneDialogOpen.value = true
+  selectedCloneTargetIds.value = []
+  isCloneTargetsLoading.value = true
+  try {
+    cloneTargets.value = await client.identityCloneTargets(identityId.value)
+  } catch {
+    cloneTargets.value = []
+  } finally {
+    isCloneTargetsLoading.value = false
+  }
+}
+
+function handleClone() {
+  if (!identityId.value || selectedCloneTargetIds.value.length === 0) return
+  const payload = Object.assign(new CloneIdentityRequest(), {
+    targetOwnerInstanceIds: [...selectedCloneTargetIds.value]
+  })
+  cloneMutation.mutate({ id: identityId.value, payload })
+}
 
 function handleCancel() {
   router.push('/identities')

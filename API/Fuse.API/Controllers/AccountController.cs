@@ -136,6 +136,42 @@ namespace Fuse.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/clone-targets")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetAccountCloneTargets([FromRoute] Guid id)
+        {
+            var result = await _accountService.GetAccountCloneTargetsAsync(id);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/clone")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Account>))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<IEnumerable<Account>>> CloneAccount([FromRoute] Guid id, [FromBody] CloneAccount command)
+        {
+            var merged = command with { SourceId = id };
+            var result = await _accountService.CloneAccountAsync(merged);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost("{accountId}/grant")]
         [ProducesResponseType(201, Type = typeof(Grant))]
         [ProducesResponseType(400)]
