@@ -1,0 +1,42 @@
+[
+  {
+    "id": "6ed1c1d0-7d4a-4e46-9a31-175d52a07e61",
+    "name": "Head of It",
+    "description": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:24:09.2532584Z",
+    "updatedAt": "2026-02-25T20:24:09.2532584Z"
+  },
+  {
+    "id": "77aa1da1-b7cb-4e4f-8985-aa3c840868f6",
+    "name": "Head of Development",
+    "description": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:24:19.28423Z",
+    "updatedAt": "2026-02-25T20:24:19.28423Z"
+  },
+  {
+    "id": "c7ed2b04-eaec-4f98-84f2-862458cd5c18",
+    "name": "IT Support",
+    "description": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:24:51.5101872Z",
+    "updatedAt": "2026-02-25T20:24:51.5101872Z"
+  },
+  {
+    "id": "2b546f8b-467e-4d57-9f42-cd1ab54b9d73",
+    "name": "Developer",
+    "description": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:24:57.571151Z",
+    "updatedAt": "2026-02-25T20:24:57.571151Z"
+  },
+  {
+    "id": "4ba3ddb5-7936-4804-bc9c-12865c6d4c58",
+    "name": "Customer Support",
+    "description": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:26:13.0446311Z",
+    "updatedAt": "2026-02-25T20:26:13.0446311Z"
+  }
+]
