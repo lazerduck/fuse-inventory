@@ -105,6 +105,33 @@
       ],
       "createdAt": "2026-02-25T18:42:43.5172767Z",
       "updatedAt": "2026-02-25T18:42:43.5172768Z"
+    },
+    {
+      "id": "5775d343-26da-4473-bdd8-8be452629a4d",
+      "name": "Developer",
+      "description": "",
+      "permissions": [
+        "ApplicationsRead",
+        "ApplicationsCreate",
+        "ApplicationsUpdate",
+        "ApplicationsDelete",
+        "AccountsRead",
+        "IdentitiesRead",
+        "DataStoresRead",
+        "PlatformsRead",
+        "EnvironmentsRead",
+        "EnvironmentsCreate",
+        "EnvironmentsUpdate",
+        "EnvironmentsDelete",
+        "ExternalResourcesRead",
+        "ExternalResourcesCreate",
+        "ExternalResourcesUpdate",
+        "ExternalResourcesDelete",
+        "RisksRead",
+        "RisksCreate"
+      ],
+      "createdAt": "2026-02-25T21:15:54.4292897Z",
+      "updatedAt": "2026-02-25T21:15:54.4292897Z"
     }
   ]
 }
