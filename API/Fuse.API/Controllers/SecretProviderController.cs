@@ -204,16 +204,18 @@ namespace Fuse.API.Controllers
         public async Task<IActionResult> RotateSecret([FromRoute] Guid providerId, [FromRoute] string secretName, [FromBody] RotateSecret command)
         {
             var merged = command with { ProviderId = providerId, SecretName = secretName };
+            var securityState = await _securityService.GetSecurityStateAsync();
             var (userName, userId) = GetUserInfo();
 
             if (userId is null)
             {
-                return StatusCode(403, new { error = "Authentication required for secret reveal operation." });
+                return StatusCode(403, new { error = "Authentication required for secret rotate operation." });
             }
-            
-            if (!IsAdmin())
+
+            var user = securityState.Users.FirstOrDefault(u => u.Id == userId);
+            if (!await _permissionService.IsUserAdminAsync(user))
             {
-                return StatusCode(403, new { error = "Admin role required for secret reveal operation." });
+                return StatusCode(403, new { error = "Admin role required for secret rotate operation." });
             }
 
             var result = await _secretOperationService.RotateSecretAsync(merged, userName, userId);
