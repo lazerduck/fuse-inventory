@@ -5,6 +5,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
+    using Fuse.Core.Responses;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -71,7 +72,6 @@ namespace Fuse.API.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteIdentity([FromRoute] Guid id)
         {
             var result = await _identityService.DeleteIdentityAsync(new DeleteIdentity(id));
@@ -84,6 +84,42 @@ namespace Fuse.API.Controllers
                 };
             }
             return NoContent();
+        }
+
+        [HttpGet("{id}/clone-targets")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetIdentityCloneTargets([FromRoute] Guid id)
+        {
+            var result = await _identityService.GetIdentityCloneTargetsAsync(id);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/clone")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Identity>))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<IEnumerable<Identity>>> CloneIdentity([FromRoute] Guid id, [FromBody] CloneIdentity command)
+        {
+            var merged = command with { SourceId = id };
+            var result = await _identityService.CloneIdentityAsync(merged);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
         }
 
         [HttpPost("{identityId}/assignment")]

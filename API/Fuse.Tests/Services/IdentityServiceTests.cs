@@ -423,4 +423,119 @@ public class IdentityServiceTests
 
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task GetIdentityCloneTargets_NoOwnerInstance_ReturnsEmpty()
+    {
+        var identity = new Identity(Guid.NewGuid(), "Identity", IdentityKind.AzureManagedIdentity, null, null, Array.Empty<IdentityAssignment>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(identities: new[] { identity });
+        var service = CreateService(store);
+
+        var result = await service.GetIdentityCloneTargetsAsync(identity.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value!);
+    }
+
+    [Fact]
+    public async Task GetIdentityCloneTargets_WithOwnerInstance_ReturnsSiblings()
+    {
+        var env1Id = Guid.NewGuid();
+        var env2Id = Guid.NewGuid();
+        var inst1Id = Guid.NewGuid();
+        var inst2Id = Guid.NewGuid();
+        var inst1 = new ApplicationInstance(inst1Id, env1Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var inst2 = new ApplicationInstance(inst2Id, env2Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst1, inst2 }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var identity = new Identity(Guid.NewGuid(), "Identity", IdentityKind.AzureManagedIdentity, null, inst1Id, Array.Empty<IdentityAssignment>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Identities: new[] { identity },
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { new EnvironmentInfo(env1Id, "Dev", null, new HashSet<Guid>()), new EnvironmentInfo(env2Id, "Prod", null, new HashSet<Guid>()) },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = CreateService(store);
+
+        var result = await service.GetIdentityCloneTargetsAsync(identity.Id);
+
+        Assert.True(result.IsSuccess);
+        var target = Assert.Single(result.Value!);
+        Assert.Equal(inst2Id, target.Id);
+        Assert.Equal("Prod", target.EnvironmentName);
+    }
+
+    [Fact]
+    public async Task CloneIdentity_Success()
+    {
+        var env1Id = Guid.NewGuid();
+        var env2Id = Guid.NewGuid();
+        var inst1Id = Guid.NewGuid();
+        var inst2Id = Guid.NewGuid();
+        var inst1 = new ApplicationInstance(inst1Id, env1Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var inst2 = new ApplicationInstance(inst2Id, env2Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst1, inst2 }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var identity = new Identity(Guid.NewGuid(), "My Identity", IdentityKind.KubernetesServiceAccount, "Notes", inst1Id, Array.Empty<IdentityAssignment>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var snapshot = new Snapshot(
+            Applications: new[] { app },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Identities: new[] { identity },
+            Tags: Array.Empty<Tag>(),
+            Environments: Array.Empty<EnvironmentInfo>(),
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+        var store = new InMemoryFuseStore(snapshot);
+        var service = CreateService(store);
+
+        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(identity.Id, new[] { inst2Id }));
+
+        Assert.True(result.IsSuccess);
+        var cloned = Assert.Single(result.Value!);
+        Assert.NotEqual(identity.Id, cloned.Id);
+        Assert.Equal("My Identity", cloned.Name);
+        Assert.Equal(IdentityKind.KubernetesServiceAccount, cloned.Kind);
+        Assert.Equal(inst2Id, cloned.OwnerInstanceId);
+        Assert.Equal(2, (await service.GetIdentitiesAsync()).Count);
+    }
+
+    [Fact]
+    public async Task CloneIdentity_NoOwnerInstance_ReturnsValidation()
+    {
+        var identity = new Identity(Guid.NewGuid(), "Identity", IdentityKind.AzureManagedIdentity, null, null, Array.Empty<IdentityAssignment>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(identities: new[] { identity });
+        var service = CreateService(store);
+
+        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(identity.Id, new[] { Guid.NewGuid() }));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CloneIdentity_SourceNotFound()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(Guid.NewGuid(), new[] { Guid.NewGuid() }));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
 }
