@@ -1,0 +1,594 @@
+[
+  {
+    "id": "4772b2cc-b955-4cc3-be44-756145fca633",
+    "name": "Payment Processor",
+    "version": "1",
+    "description": "Allows customers to make payments for their orders",
+    "owner": null,
+    "notes": null,
+    "framework": "DotNet 10",
+    "repositoryUri": null,
+    "icon": "payment",
+    "tagIds": [],
+    "instances": [
+      {
+        "id": "97228858-2bab-47a5-a4c0-27a64b705d5a",
+        "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+        "platformId": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "d52fad53-3bce-4df4-ac25-be0af8264388",
+            "targetId": "912339c2-4657-4f13-8fe4-2ae910cf3f53",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:13:21.0390747Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "b3ec895a-72ce-405c-9817-0e795f7d5f83",
+        "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+        "platformId": "ddce937b-316a-4c2e-a54f-0133640aff0e",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "903370d5-721b-4516-aeea-8ef07a0fd822",
+            "targetId": "425855d9-1ed1-4f7a-a618-b3b24db57fae",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:13:21.0390747Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "eef3b084-e406-4d20-accf-1209cab864b3",
+        "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+        "platformId": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "1367021c-2edb-4079-8504-e680fe2088b0",
+            "targetId": "425855d9-1ed1-4f7a-a618-b3b24db57fae",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:13:21.0390747Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      }
+    ],
+    "pipelines": [],
+    "createdAt": "2026-02-25T19:13:21.0045183Z",
+    "updatedAt": "2026-02-25T20:18:09.3421822Z"
+  },
+  {
+    "id": "56b7a0b0-b9ec-4fde-a71a-f0adc1eb6994",
+    "name": "Order Manager",
+    "version": "1",
+    "description": "Stores and generates orders",
+    "owner": null,
+    "notes": null,
+    "framework": "Python",
+    "repositoryUri": null,
+    "icon": "shopping_cart",
+    "tagIds": [],
+    "instances": [
+      {
+        "id": "3ac36dc7-aa46-4bb0-95b6-55889b26fd5b",
+        "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+        "platformId": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "10cd8fff-19e0-4f38-b0f2-8d7e5abad80b",
+            "targetId": "15b7f880-7728-4c7c-85e5-2554e1533075",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+          },
+          {
+            "id": "6833d610-1af6-4953-a4b9-56e2e72cf899",
+            "targetId": "97228858-2bab-47a5-a4c0-27a64b705d5a",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+          },
+          {
+            "id": "123cc414-0dc9-4352-a68a-ecce6def1200",
+            "targetId": "c55ed07e-2e05-4740-adcd-34cc27c366e3",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+          },
+          {
+            "id": "21543872-4139-4a43-97fd-10112161b42f",
+            "targetId": "e355cdfb-e997-4232-87ac-e82326e917ac",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:14:33.4021586Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "10caf851-7378-4fa1-806b-11accf80cefe",
+        "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+        "platformId": "ddce937b-316a-4c2e-a54f-0133640aff0e",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "28d007b2-ee52-4660-885b-74ce1cef95b5",
+            "targetId": "2b113de5-619e-4075-b9f2-4e59856f3d92",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+          },
+          {
+            "id": "e10d196f-8332-4470-9187-c73dafff0152",
+            "targetId": "b3ec895a-72ce-405c-9817-0e795f7d5f83",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+          },
+          {
+            "id": "4e86fcca-235b-42b0-a4e5-7edf6e579da2",
+            "targetId": "b4d5e5b7-087d-4539-a60d-42e6b1c2ecf2",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+          },
+          {
+            "id": "5d7175a1-1023-4aca-9cf4-7e0eec9895e5",
+            "targetId": "9c8f3651-cda5-4119-a779-d6a0446e8405",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:14:33.4021586Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "79ba1a62-d10f-4985-aec7-98cb39ae7e34",
+        "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+        "platformId": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "ae89fd06-30bb-47ee-850f-46d2e7c41f58",
+            "targetId": "5c08263f-c5ee-48bd-9e02-4e3293ed1d6e",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+          },
+          {
+            "id": "a4732c30-69b5-47cb-a04e-856fc6415d66",
+            "targetId": "eef3b084-e406-4d20-accf-1209cab864b3",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+          },
+          {
+            "id": "206dc3ae-873e-4375-a6e8-f35c5abd6d61",
+            "targetId": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+          },
+          {
+            "id": "dc0479c2-32ff-47dd-ad4e-5e6af0a20ba1",
+            "targetId": "747713e6-44e8-46b3-9d6b-f0e664e97524",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "Identity",
+            "accountId": null,
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:14:33.4021586Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      }
+    ],
+    "pipelines": [],
+    "createdAt": "2026-02-25T19:14:33.3556808Z",
+    "updatedAt": "2026-02-25T20:18:09.3421822Z"
+  },
+  {
+    "id": "d1208d9e-0365-44c1-9d95-bdf8520331da",
+    "name": "Inventory",
+    "version": "1",
+    "description": "Stores and manages what items are in stock",
+    "owner": null,
+    "notes": null,
+    "framework": "DotNet 10",
+    "repositoryUri": null,
+    "icon": "storage",
+    "tagIds": [],
+    "instances": [
+      {
+        "id": "c55ed07e-2e05-4740-adcd-34cc27c366e3",
+        "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+        "platformId": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
+        "baseUri": "https://Inventory.company.com",
+        "healthUri": "https://Inventory.company.com/health",
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "9c390d87-875c-4a11-be25-8300475c4ee2",
+            "targetId": "0d99a20a-d50a-45ef-be83-5c58dc409b8d",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Account",
+            "accountId": "4445d7e1-70cb-4978-9c2b-0a175029fb82",
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:15:38.8217491Z",
+        "updatedAt": "2026-02-25T20:09:39.1846496Z"
+      },
+      {
+        "id": "b4d5e5b7-087d-4539-a60d-42e6b1c2ecf2",
+        "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+        "platformId": "ddce937b-316a-4c2e-a54f-0133640aff0e",
+        "baseUri": "https://Inventory.preprod.company.com",
+        "healthUri": "https://Inventory.preprod.company.com/health",
+        "openApiUri": "https://Inventory.preprod.company.com/swagger",
+        "version": null,
+        "dependencies": [
+          {
+            "id": "df666be9-2edd-4df9-89d8-35e620cc24a1",
+            "targetId": "4ebcfb3e-3aaf-4ac7-b131-70c8b7314047",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Account",
+            "accountId": "c2e01b16-6818-4df2-a537-b09a6dfcbac9",
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:15:38.8217491Z",
+        "updatedAt": "2026-02-25T20:09:48.4268762Z"
+      },
+      {
+        "id": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
+        "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+        "platformId": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
+        "baseUri": "https://Inventory.dev.company.com",
+        "healthUri": "https://Inventory.dev.company.com/health",
+        "openApiUri": "https://Inventory.dev.company.com/swagger",
+        "version": null,
+        "dependencies": [
+          {
+            "id": "2073334f-7bb8-4629-a633-9aa22d03160e",
+            "targetId": "f805d016-cb44-49e9-980b-baf92dc1704b",
+            "targetKind": "DataStore",
+            "port": null,
+            "authKind": "Account",
+            "accountId": "9e7e3577-edd2-4bee-9357-0e5d7770317f",
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:15:38.8217491Z",
+        "updatedAt": "2026-02-25T20:09:57.9531754Z"
+      }
+    ],
+    "pipelines": [],
+    "createdAt": "2026-02-25T19:15:38.7841539Z",
+    "updatedAt": "2026-02-25T20:09:57.9531809Z"
+  },
+  {
+    "id": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "name": "Store Front",
+    "version": "1",
+    "description": null,
+    "owner": null,
+    "notes": null,
+    "framework": "ReactJS",
+    "repositoryUri": null,
+    "icon": "dashboard",
+    "tagIds": [],
+    "instances": [
+      {
+        "id": "d63f5804-36c0-4d16-8153-c5d6a0fac3f0",
+        "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+        "platformId": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "72057ed4-c5d7-430d-bd5d-34848114aa84",
+            "targetId": "97228858-2bab-47a5-a4c0-27a64b705d5a",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "694cf8cf-760b-454e-8ccc-0edc2c4f930d",
+            "targetId": "3ac36dc7-aa46-4bb0-95b6-55889b26fd5b",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "75ae9fef-4493-4300-b25e-8f9f84faad5d",
+            "targetId": "c55ed07e-2e05-4740-adcd-34cc27c366e3",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "01c4da64-982f-4367-b628-b03a766eef6c",
+            "targetId": "e355cdfb-e997-4232-87ac-e82326e917ac",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:16:12.4227106Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "8ef4496a-9ac6-45ee-bf46-6fb0016cc546",
+        "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+        "platformId": "ddce937b-316a-4c2e-a54f-0133640aff0e",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "cd31f1e3-5397-4af9-83ba-279dc1d2a406",
+            "targetId": "b3ec895a-72ce-405c-9817-0e795f7d5f83",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "4d34751a-c409-44ce-b1c5-e39198c23cd8",
+            "targetId": "10caf851-7378-4fa1-806b-11accf80cefe",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "447e83f4-9a00-4640-afb5-75f0a2bb5f78",
+            "targetId": "b4d5e5b7-087d-4539-a60d-42e6b1c2ecf2",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "d0d2053f-e78f-453f-bc5c-8d1757900268",
+            "targetId": "9c8f3651-cda5-4119-a779-d6a0446e8405",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:16:12.4227106Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "ef31ac34-2e97-4eee-980a-7e1163e70a53",
+        "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+        "platformId": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "cd41fad0-3e64-4407-ae8a-c06c4cfb9171",
+            "targetId": "eef3b084-e406-4d20-accf-1209cab864b3",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "db724d6f-0a64-4e7a-8792-46577e4cb8e4",
+            "targetId": "79ba1a62-d10f-4985-aec7-98cb39ae7e34",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "3e589c40-e6a9-4b02-9c3b-595ebc051ffa",
+            "targetId": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          },
+          {
+            "id": "3d73d83b-0eeb-47fd-a068-ee5c90798722",
+            "targetId": "747713e6-44e8-46b3-9d6b-f0e664e97524",
+            "targetKind": "Application",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:16:12.4227106Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      }
+    ],
+    "pipelines": [],
+    "createdAt": "2026-02-25T19:16:12.4040285Z",
+    "updatedAt": "2026-02-25T20:18:09.3421822Z"
+  },
+  {
+    "id": "d4de4780-ce94-4e36-b2fa-6519ef476c9d",
+    "name": "Notification service",
+    "version": "1",
+    "description": "Sends notifications to customers about their orders",
+    "owner": null,
+    "notes": null,
+    "framework": "Ruby",
+    "repositoryUri": null,
+    "icon": "email",
+    "tagIds": [],
+    "instances": [
+      {
+        "id": "e355cdfb-e997-4232-87ac-e82326e917ac",
+        "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+        "platformId": "e13ef2cf-87b2-42a6-9990-260dce15eb54",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "d6702612-ac3b-49dd-9996-c57c2053ab5c",
+            "targetId": "0a4c44d1-709e-4b1c-b2fa-9cab2d24dc88",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:17:31.4370655Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "9c8f3651-cda5-4119-a779-d6a0446e8405",
+        "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+        "platformId": "ddce937b-316a-4c2e-a54f-0133640aff0e",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "41ff58ac-89ca-44f8-b620-b7feb1dabf2f",
+            "targetId": "83488f4f-92b7-4fae-9a37-dd819e7415e4",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:17:31.4370655Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      },
+      {
+        "id": "747713e6-44e8-46b3-9d6b-f0e664e97524",
+        "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+        "platformId": "5131c464-beec-4b9b-9f5e-c1eef07910c7",
+        "baseUri": null,
+        "healthUri": null,
+        "openApiUri": null,
+        "version": null,
+        "dependencies": [
+          {
+            "id": "2a283402-950b-4010-adaa-636e1e11bd23",
+            "targetId": "83488f4f-92b7-4fae-9a37-dd819e7415e4",
+            "targetKind": "External",
+            "port": null,
+            "authKind": "None",
+            "accountId": null,
+            "identityId": null
+          }
+        ],
+        "tagIds": [],
+        "createdAt": "2026-02-25T19:17:31.4370655Z",
+        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+      }
+    ],
+    "pipelines": [],
+    "createdAt": "2026-02-25T19:17:31.3996385Z",
+    "updatedAt": "2026-02-25T20:18:09.3421822Z"
+  }
+]

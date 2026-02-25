@@ -1,0 +1,95 @@
+[
+  {
+    "id": "4445d7e1-70cb-4978-9c2b-0a175029fb82",
+    "targetId": "0d99a20a-d50a-45ef-be83-5c58dc409b8d",
+    "targetKind": "DataStore",
+    "authKind": "UserPassword",
+    "secretBinding": {
+      "kind": "None",
+      "plainReference": null,
+      "azureKeyVault": null
+    },
+    "userName": "SVC_Inventory",
+    "parameters": null,
+    "grants": [
+      {
+        "id": "2f79fab8-1371-468f-bae2-c1474e85ffdc",
+        "database": "inventory",
+        "schema": null,
+        "privileges": [
+          "Select",
+          "Insert",
+          "Update",
+          "Delete",
+          "Connect"
+        ]
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:33:07.8406686Z",
+    "updatedAt": "2026-02-25T19:33:34.4418056Z",
+    "secretRef": ""
+  },
+  {
+    "id": "c2e01b16-6818-4df2-a537-b09a6dfcbac9",
+    "targetId": "4ebcfb3e-3aaf-4ac7-b131-70c8b7314047",
+    "targetKind": "DataStore",
+    "authKind": "UserPassword",
+    "secretBinding": {
+      "kind": "None",
+      "plainReference": null,
+      "azureKeyVault": null
+    },
+    "userName": "SVC_Inventory",
+    "parameters": null,
+    "grants": [
+      {
+        "id": "1ca1d1ab-9447-42a6-a645-1e0267d7acf3",
+        "database": "inventory",
+        "schema": null,
+        "privileges": [
+          "Select",
+          "Insert",
+          "Update",
+          "Delete",
+          "Connect"
+        ]
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:34:00.7463364Z",
+    "updatedAt": "2026-02-25T19:35:20.6493909Z",
+    "secretRef": ""
+  },
+  {
+    "id": "9e7e3577-edd2-4bee-9357-0e5d7770317f",
+    "targetId": "f805d016-cb44-49e9-980b-baf92dc1704b",
+    "targetKind": "DataStore",
+    "authKind": "UserPassword",
+    "secretBinding": {
+      "kind": "None",
+      "plainReference": null,
+      "azureKeyVault": null
+    },
+    "userName": "SVC_inventory",
+    "parameters": null,
+    "grants": [
+      {
+        "id": "21054b7e-0d5e-4533-bd40-3e7176cb2507",
+        "database": "inventory",
+        "schema": null,
+        "privileges": [
+          "Select",
+          "Insert",
+          "Update",
+          "Delete",
+          "Connect"
+        ]
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:34:52.1774728Z",
+    "updatedAt": "2026-02-25T19:35:13.0251355Z",
+    "secretRef": ""
+  }
+]
