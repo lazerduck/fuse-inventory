@@ -18,7 +18,8 @@ public record Snapshot(
     IReadOnlyList<ResponsibilityType> ResponsibilityTypes,
     IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
     IReadOnlyList<Risk> Risks,
-    SecurityState Security
+    SecurityState Security,
+    PasswordGeneratorConfig? PasswordGeneratorConfig = null
 )
 {
     public Snapshot(
