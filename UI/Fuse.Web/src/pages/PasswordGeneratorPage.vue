@@ -42,7 +42,7 @@
                 outlined
                 dense
                 required
-                :rules="[val => val >= 8 || 'Minimum length is 8', val => val <= 256 || 'Maximum length is 256']"
+                :rules="[val => (val !== '' && Number(val) >= 8) || 'Minimum length is 8', val => (val !== '' && Number(val) <= 256) || 'Maximum length is 256']"
                 hint="Number of characters in the generated password (8–256)"
                 class="q-mb-md"
               />
@@ -97,7 +97,7 @@
                 </template>
               </q-input>
               <div class="text-caption text-grey-6 q-mt-xs">
-                Make note of this password – you will need to apply it to the actual system using this secret.
+                Note the password – apply it to the system using this secret.
               </div>
             </template>
           </q-card-section>
