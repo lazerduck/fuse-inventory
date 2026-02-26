@@ -751,6 +751,22 @@ export interface IFuseApiClient {
      * @return No Content
      */
     tagDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse>;
 }
 
 export class FuseApiClient implements IFuseApiClient {
@@ -7988,6 +8004,127 @@ export class FuseApiClient implements IFuseApiClient {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorGetConfig(_response);
+        });
+    }
+
+    protected processPasswordGeneratorGetConfig(response: Response): Promise<PasswordGeneratorConfig> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PasswordGeneratorConfig.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasswordGeneratorConfig>(null as any);
+    }
+
+    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body ? body.toJSON() : null);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorUpdateConfig(_response);
+        });
+    }
+
+    protected processPasswordGeneratorUpdateConfig(response: Response): Promise<PasswordGeneratorConfig> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PasswordGeneratorConfig.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            return throwException("Bad Request", status, _responseText, _headers);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            return throwException("Forbidden", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasswordGeneratorConfig>(null as any);
+    }
+
+    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/generate";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorGenerate(_response);
+        });
+    }
+
+    protected processPasswordGeneratorGenerate(response: Response): Promise<GeneratePasswordResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = GeneratePasswordResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            return throwException("Bad Request", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GeneratePasswordResponse>(null as any);
+    }
 }
 
 export class Account implements IAccount {
@@ -15119,4 +15256,120 @@ function throwException(message: string, status: number, response: string, heade
         throw result;
     else
         throw new ApiException(message, status, response, headers, null);
+}
+
+export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
+
+    constructor(data?: IPasswordGeneratorConfig) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.allowedCharacters = _data["allowedCharacters"];
+            this.length = _data["length"];
+        }
+    }
+
+    static fromJS(data: any): PasswordGeneratorConfig {
+        data = typeof data === 'object' ? data : {};
+        let result = new PasswordGeneratorConfig();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["allowedCharacters"] = this.allowedCharacters;
+        data["length"] = this.length;
+        return data;
+    }
+}
+
+export interface IPasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
+}
+
+export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
+
+    constructor(data?: IUpdatePasswordGeneratorConfig) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.allowedCharacters = _data["allowedCharacters"];
+            this.length = _data["length"];
+        }
+    }
+
+    static fromJS(data: any): UpdatePasswordGeneratorConfig {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePasswordGeneratorConfig();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["allowedCharacters"] = this.allowedCharacters;
+        data["length"] = this.length;
+        return data;
+    }
+}
+
+export interface IUpdatePasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
+}
+
+export class GeneratePasswordResponse implements IGeneratePasswordResponse {
+    password?: string | undefined;
+
+    constructor(data?: IGeneratePasswordResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.password = _data["password"];
+        }
+    }
+
+    static fromJS(data: any): GeneratePasswordResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GeneratePasswordResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["password"] = this.password;
+        return data;
+    }
+}
+
+export interface IGeneratePasswordResponse {
+    password?: string | undefined;
 }

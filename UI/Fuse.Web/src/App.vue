@@ -237,6 +237,15 @@
               </q-item-section>
             </q-item>
 
+            <q-item clickable v-ripple :to="{ name: 'passwordGenerator' }" active-class="bg-primary text-white">
+              <q-item-section avatar>
+                <q-icon name="password" />
+              </q-item-section>
+              <q-item-section>
+                Password Generator
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
               data-tour-id="nav-security">
               <q-item-section avatar>

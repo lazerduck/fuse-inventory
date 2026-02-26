@@ -130,6 +130,11 @@ const router = createRouter({
       component: () => import('./pages/SqlPermissionsOverviewPage.vue')
     },
     {
+      path: '/password-generator',
+      name: 'passwordGenerator',
+      component: () => import('./pages/PasswordGeneratorPage.vue')
+    },
+    {
       path: '/audit-logs',
       name: 'auditLogs',
       component: () => import('./pages/AuditLogsPage.vue')
