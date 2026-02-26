@@ -48,3 +48,9 @@ public record AssignRolesToUser(Guid UserId, IReadOnlyList<Guid> RoleIds)
 {
     public Guid? RequestedBy { get; init; }
 }
+
+public record ResetPassword(Guid TargetUserId, string NewPassword)
+{
+    public Guid? RequestedBy { get; init; }
+    public string? CurrentPassword { get; init; }
+}
