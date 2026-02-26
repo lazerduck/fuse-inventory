@@ -917,4 +917,183 @@ public class SecurityServiceTests
     }
 
     #endregion
+
+    #region ResetPasswordAsync Tests
+
+    [Fact]
+    public async Task ResetPasswordAsync_NullCommand_ReturnsValidationFailure()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+
+        var result = await service.ResetPasswordAsync(null!);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_EmptyNewPassword_ReturnsValidationFailure()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "pass123", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var user = state.Users.First();
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(user.Id, "") { RequestedBy = user.Id, CurrentPassword = "pass123" });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("New password cannot be empty", result.Error);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_UserNotFound_ReturnsNotFound()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "pass123", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var admin = state.Users.First();
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(Guid.NewGuid(), "newpass123") { RequestedBy = admin.Id });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_SelfReset_NoCurrentPassword_ReturnsValidationFailure()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "pass123", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var user = state.Users.First();
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(user.Id, "newpass123") { RequestedBy = user.Id });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("Current password is required", result.Error);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_SelfReset_WrongCurrentPassword_ReturnsUnauthorized()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "pass123", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var user = state.Users.First();
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(user.Id, "newpass123") { RequestedBy = user.Id, CurrentPassword = "wrongpass" });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+        Assert.Contains("Current password is incorrect", result.Error);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_SelfReset_Success_CanLoginWithNewPassword()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "oldpass123", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var user = state.Users.First();
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(user.Id, "newpass456") { RequestedBy = user.Id, CurrentPassword = "oldpass123" });
+
+        Assert.True(result.IsSuccess);
+
+        // Old password should no longer work
+        var oldLogin = await service.LoginAsync(new LoginSecurityUser("admin", "oldpass123"));
+        Assert.False(oldLogin.IsSuccess);
+
+        // New password should work
+        var newLogin = await service.LoginAsync(new LoginSecurityUser("admin", "newpass456"));
+        Assert.True(newLogin.IsSuccess);
+
+        // Audit log should be recorded
+        Assert.Contains(auditService.Logs, l => l.Action == AuditAction.PasswordReset && l.EntityId == user.Id);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_AdminReset_NonAdmin_Success()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "adminpass", SecurityRole.Admin));
+        var adminState = await service.GetSecurityStateAsync();
+        var admin = adminState.Users.First();
+
+        await service.CreateUserAsync(new CreateSecurityUser("reader", "oldpass", SecurityRole.Reader) { RequestedBy = admin.Id });
+        var readerState = await service.GetSecurityStateAsync();
+        var reader = readerState.Users.First(u => u.UserName == "reader");
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(reader.Id, "newpass456") { RequestedBy = admin.Id });
+
+        Assert.True(result.IsSuccess);
+
+        // New password should work for reader
+        var newLogin = await service.LoginAsync(new LoginSecurityUser("reader", "newpass456"));
+        Assert.True(newLogin.IsSuccess);
+
+        // Audit log should be recorded
+        Assert.Contains(auditService.Logs, l => l.Action == AuditAction.PasswordReset && l.EntityId == reader.Id);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_AdminReset_CannotResetAdminPassword()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin1", "pass1", SecurityRole.Admin));
+        var state = await service.GetSecurityStateAsync();
+        var admin1 = state.Users.First();
+
+        await service.CreateUserAsync(new CreateSecurityUser("admin2", "pass2", SecurityRole.Admin) { RequestedBy = admin1.Id });
+        state = await service.GetSecurityStateAsync();
+        var admin2 = state.Users.First(u => u.UserName == "admin2");
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(admin2.Id, "newpass") { RequestedBy = admin1.Id });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("cannot reset the password of another administrator", result.Error);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_NonAdminReset_OtherUser_ReturnsUnauthorized()
+    {
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service = new SecurityService(store, auditService);
+        await service.CreateUserAsync(new CreateSecurityUser("admin", "adminpass", SecurityRole.Admin));
+        var adminState = await service.GetSecurityStateAsync();
+        var admin = adminState.Users.First();
+
+        await service.CreateUserAsync(new CreateSecurityUser("reader1", "pass1", SecurityRole.Reader) { RequestedBy = admin.Id });
+        await service.CreateUserAsync(new CreateSecurityUser("reader2", "pass2", SecurityRole.Reader) { RequestedBy = admin.Id });
+        var state = await service.GetSecurityStateAsync();
+        var reader1 = state.Users.First(u => u.UserName == "reader1");
+        var reader2 = state.Users.First(u => u.UserName == "reader2");
+
+        var result = await service.ResetPasswordAsync(new ResetPassword(reader2.Id, "newpass") { RequestedBy = reader1.Id });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    }
+
+    #endregion
 }

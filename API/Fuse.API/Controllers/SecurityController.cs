@@ -235,6 +235,40 @@ namespace Fuse.API.Controllers
         }
 
 
+        [HttpPost("accounts/{id}/reset-password")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ResetPassword([FromRoute] Guid id, [FromBody] ResetPasswordRequest request)
+        {
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser is null)
+                return Unauthorized(new { error = "Authentication required." });
+
+            var command = new ResetPassword(id, request.NewPassword)
+            {
+                RequestedBy = currentUser.Id,
+                CurrentPassword = request.CurrentPassword
+            };
+
+            var result = await _securityService.ResetPasswordAsync(command, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            return NoContent();
+        }
+
+
         private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -259,6 +293,12 @@ namespace Fuse.API.Controllers
             public bool RequiresSetup { get; set; }
             public bool HasUsers { get; set; }
             public SecurityUserInfo? CurrentUser { get; set; }
+        }
+
+        public class ResetPasswordRequest
+        {
+            public string NewPassword { get; set; } = string.Empty;
+            public string? CurrentPassword { get; set; }
         }
     }
 }

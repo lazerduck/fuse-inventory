@@ -39,9 +39,52 @@
                 <q-tooltip>Edit security level</q-tooltip>
               </q-btn>
             </p>
-            <p><strong>Current User:</strong> {{ fuseStore.currentUser?.userName ?? 'Not logged in' }}</p>
-            <p><strong>Role:</strong> {{ fuseStore.currentUser?.role ?? '—' }}</p>
           </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Current User Overview -->
+      <q-card class="content-card q-mb-md">
+        <q-card-section>
+          <div class="text-h6 q-mb-md">My Account</div>
+          <div v-if="fuseStore.currentUser" class="text-body2">
+            <div class="row q-gutter-md">
+              <div class="col-auto">
+                <p><strong>Username:</strong> {{ fuseStore.currentUser.userName }}</p>
+                <p><strong>Legacy Role:</strong> {{ fuseStore.currentUser.role ?? '—' }}</p>
+              </div>
+              <div class="col">
+                <p><strong>Assigned Roles:</strong></p>
+                <div v-if="fuseStore.currentUser.roleIds?.length" class="q-gutter-xs q-mb-sm">
+                  <q-chip
+                    v-for="roleId in fuseStore.currentUser.roleIds"
+                    :key="roleId"
+                    dense
+                    color="primary"
+                    text-color="white"
+                    size="sm"
+                    clickable
+                    @click="viewRolePermissions(roleId)"
+                  >
+                    {{ getRoleName(roleId) }}
+                    <q-tooltip>Click to view permissions</q-tooltip>
+                  </q-chip>
+                </div>
+                <span v-else class="text-grey">No roles assigned</span>
+              </div>
+            </div>
+            <div class="q-mt-sm">
+              <q-btn
+                flat
+                dense
+                color="primary"
+                icon="lock_reset"
+                label="Reset My Password"
+                @click="openSelfResetDialog"
+              />
+            </div>
+          </div>
+          <div v-else class="text-grey">Not logged in</div>
         </q-card-section>
       </q-card>
 
@@ -74,8 +117,11 @@
                   color="primary"
                   text-color="white"
                   size="sm"
+                  clickable
+                  @click="viewRolePermissions(roleId)"
                 >
                   {{ getRoleName(roleId) }}
+                  <q-tooltip>Click to view permissions</q-tooltip>
                 </q-chip>
               </div>
               <span v-else class="text-grey">—</span>
@@ -94,6 +140,18 @@
               @click="editItem(props.row)"
             >
               <q-tooltip v-if="isCurrentUser(props.row)">You cannot edit your own account</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              dense
+              round
+              icon="lock_reset"
+              color="warning"
+              class="q-ml-xs"
+              v-if="isAdmin && !isCurrentUser(props.row) && props.row.role !== 'Admin'"
+              @click="openAdminResetDialog(props.row)"
+            >
+              <q-tooltip>Reset password</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -152,6 +210,52 @@
         />
       </q-dialog>
 
+      <!-- Reset Password Dialog -->
+      <q-dialog v-model="isResetPasswordDialogOpen" persistent>
+        <ResetPasswordDialog
+          v-if="resetPasswordTarget"
+          :user-name="resetPasswordTarget.userName || ''"
+          :is-self-reset="resetPasswordTarget.id === fuseStore.currentUser?.id"
+          :loading="resetPasswordMutation.isPending.value"
+          @submit="handleResetPassword"
+          @cancel="closeResetPasswordDialog"
+        />
+      </q-dialog>
+
+      <!-- View Role Permissions Dialog -->
+      <q-dialog v-model="isPermissionsDialogOpen">
+        <q-card style="min-width: 480px; max-width: 600px">
+          <q-card-section class="dialog-header">
+            <div class="text-h6">Role Permissions: {{ selectedRole?.name }}</div>
+            <q-btn flat round dense icon="close" @click="isPermissionsDialogOpen = false" />
+          </q-card-section>
+          <q-separator />
+          <q-card-section>
+            <div v-if="selectedRole?.description" class="text-body2 text-grey-7 q-mb-md">
+              {{ selectedRole.description }}
+            </div>
+            <div v-if="selectedRole?.permissions?.length">
+              <div class="q-gutter-xs">
+                <q-chip
+                  v-for="perm in selectedRole.permissions"
+                  :key="perm"
+                  dense
+                  color="teal"
+                  text-color="white"
+                  size="sm"
+                >
+                  {{ perm }}
+                </q-chip>
+              </div>
+            </div>
+            <div v-else class="text-grey text-body2">No permissions assigned to this role.</div>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Close" color="grey" @click="isPermissionsDialogOpen = false" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
       <!-- Edit Security Level Dialog -->
       <q-dialog v-model="isEditSecurityLevelDialogOpen" persistent>
         <q-card style="min-width: 400px">
@@ -205,9 +309,10 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser } from '../api/client'
+import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo } from '../api/client'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
+import ResetPasswordDialog from '../components/security/ResetPasswordDialog.vue'
 import { getErrorMessage } from '../utils/error'
 import { useSecurities } from '../composables/useSecurity'
 import { useRoles } from '../composables/useRoles'
@@ -221,8 +326,12 @@ const pagination = { rowsPerPage: 10 }
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const isEditSecurityLevelDialogOpen = ref(false)
+const isResetPasswordDialogOpen = ref(false)
+const isPermissionsDialogOpen = ref(false)
 const selectedSecurityLevel = ref<SecurityLevel | null>(null)
 const selectedUser = ref<SecurityUserResponse | null>(null)
+const resetPasswordTarget = ref<SecurityUserResponse | null>(null)
+const selectedRole = ref<RoleInfo | null>(null)
 const securityError = ref<string | null>(null)
 
 const {data, isLoading } = useSecurities()
@@ -389,6 +498,20 @@ const deleteUserMutation = useMutation({
   }
 })
 
+const resetPasswordMutation = useMutation({
+  mutationFn: ({ userId, payload }: { userId: string; payload: ResetPasswordRequest }) =>
+    client.resetPassword(userId, payload),
+  onSuccess: () => {
+    Notify.create({ type: 'positive', message: 'Password reset successfully' })
+    closeResetPasswordDialog()
+  },
+  onError: (err) => {
+    const errorMsg = getErrorMessage(err, 'Unable to reset password')
+    securityError.value = errorMsg
+    Notify.create({ type: 'negative', message: errorMsg })
+  }
+})
+
 function editItem(user: SecurityUserResponse) {
   selectedUser.value = user
   isEditDialogOpen.value = true
@@ -405,6 +528,48 @@ function deleteItem(user: SecurityUserResponse) {
       deleteUserMutation.mutate(user.id)
     }
   })
+}
+
+function openSelfResetDialog() {
+  if (fuseStore.currentUser) {
+    resetPasswordTarget.value = {
+      id: fuseStore.currentUser.id,
+      userName: fuseStore.currentUser.userName,
+      role: fuseStore.currentUser.role,
+      roleIds: fuseStore.currentUser.roleIds,
+      createdAt: fuseStore.currentUser.createdAt,
+      updatedAt: fuseStore.currentUser.updatedAt
+    } as SecurityUserResponse
+    isResetPasswordDialogOpen.value = true
+  }
+}
+
+function openAdminResetDialog(user: SecurityUserResponse) {
+  resetPasswordTarget.value = user
+  isResetPasswordDialogOpen.value = true
+}
+
+function closeResetPasswordDialog() {
+  isResetPasswordDialogOpen.value = false
+  resetPasswordTarget.value = null
+}
+
+function handleResetPassword(form: { newPassword: string; currentPassword?: string }) {
+  if (!resetPasswordTarget.value?.id) return
+  securityError.value = null
+  const payload = Object.assign(new ResetPasswordRequest(), {
+    newPassword: form.newPassword,
+    currentPassword: form.currentPassword || undefined
+  })
+  resetPasswordMutation.mutate({ userId: resetPasswordTarget.value.id, payload })
+}
+
+function viewRolePermissions(roleId: string) {
+  const role = availableRoles.value.find(r => r.id === roleId)
+  if (role) {
+    selectedRole.value = role
+    isPermissionsDialogOpen.value = true
+  }
 }
 
 function handleEditUser(form: { id: string; role: SecurityRole | null; roleIds: string[] }) {
@@ -470,5 +635,11 @@ function getRoleName(roleId: string): string {
   justify-content: center;
   align-items: center;
   min-height: 60vh;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
