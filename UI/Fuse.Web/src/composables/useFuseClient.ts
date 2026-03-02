@@ -6,11 +6,11 @@ let client: FuseApiClient | null = null
 export function useFuseClient() {
   if (!client) {
     const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+    const { getToken, clearToken } = useAuthToken()
     
     // Create a custom fetch wrapper that adds the auth token
     const authFetch = {
-      fetch: (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-        const { getToken } = useAuthToken()
+      fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
         const token = getToken()
         
         // Clone or create headers
@@ -27,7 +27,14 @@ export function useFuseClient() {
           headers
         }
         
-        return window.fetch(url, authInit)
+        const response = await window.fetch(url, authInit)
+
+        if (response.status === 401) {
+          clearToken()
+          window.dispatchEvent(new Event('fuse-auth-invalid'))
+        }
+
+        return response
       }
     }
     

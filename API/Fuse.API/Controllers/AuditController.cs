@@ -19,6 +19,7 @@ public class AuditController : ControllerBase
     /// Query audit logs with filtering and pagination
     /// </summary>
     [HttpGet]
+    [SwaggerOperation(OperationId = "audit")]
     [ProducesResponseType(200, Type = typeof(AuditLogResult))]
     public async Task<ActionResult<AuditLogResult>> QueryAuditLogs(
         [FromQuery] DateTime? startTime,
@@ -52,6 +53,7 @@ public class AuditController : ControllerBase
     /// Get a specific audit log by ID
     /// </summary>
     [HttpGet("{id}")]
+    [SwaggerOperation(OperationId = "audit2")]
     [ProducesResponseType(200, Type = typeof(AuditLog))]
     [ProducesResponseType(404)]
     public async Task<ActionResult<AuditLog>> GetAuditLog([FromRoute] Guid id)
@@ -68,6 +70,7 @@ public class AuditController : ControllerBase
     /// Get all available audit actions
     /// </summary>
     [HttpGet("actions")]
+    [SwaggerOperation(OperationId = "actions")]
     [ProducesResponseType(200, Type = typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAuditActions()
     {
@@ -79,6 +82,7 @@ public class AuditController : ControllerBase
     /// Get all available audit areas
     /// </summary>
     [HttpGet("areas")]
+    [SwaggerOperation(OperationId = "areas")]
     [ProducesResponseType(200, Type = typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAuditAreas()
     {

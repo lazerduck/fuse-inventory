@@ -21,14 +21,16 @@ namespace Fuse.API.Controllers
             _currentUser = currentUser;
         }
 
-        [HttpGet]
+        [HttpGet(Name = "responsibilityAssignmentAll")]
+        [SwaggerOperation(OperationId = "responsibilityAssignmentAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<ResponsibilityAssignment>))]
         public async Task<ActionResult<IEnumerable<ResponsibilityAssignment>>> GetResponsibilityAssignmentsByApplication([FromRoute] Guid applicationId)
         {
             return Ok(await _responsibilityAssignmentService.GetResponsibilityAssignmentsByApplicationIdAsync(applicationId));
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "responsibilityAssignmentGET")]
+        [SwaggerOperation(OperationId = "responsibilityAssignmentGET")]
         [ProducesResponseType(200, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<ResponsibilityAssignment>> GetResponsibilityAssignmentById([FromRoute] Guid applicationId, [FromRoute] Guid id)
@@ -40,7 +42,8 @@ namespace Fuse.API.Controllers
             return Ok(assignment);
         }
 
-        [HttpPost]
+        [HttpPost(Name = "responsibilityAssignmentPOST")]
+        [SwaggerOperation(OperationId = "responsibilityAssignmentPOST")]
         [ProducesResponseType(201, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -64,7 +67,8 @@ namespace Fuse.API.Controllers
             return CreatedAtAction(nameof(GetResponsibilityAssignmentById), new { applicationId, id = assignment.Id }, assignment);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id}", Name = "responsibilityAssignmentPUT")]
+        [SwaggerOperation(OperationId = "responsibilityAssignmentPUT")]
         [ProducesResponseType(200, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -90,7 +94,8 @@ namespace Fuse.API.Controllers
             return Ok(result.Value);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}", Name = "responsibilityAssignmentDELETE")]
+        [SwaggerOperation(OperationId = "responsibilityAssignmentDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteResponsibilityAssignment([FromRoute] Guid applicationId, [FromRoute] Guid id)

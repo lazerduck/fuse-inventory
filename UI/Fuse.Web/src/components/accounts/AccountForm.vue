@@ -100,9 +100,27 @@
               label="Secret Value"
               dense
               outlined
-              type="password"
+              :type="showNewSecretValue ? 'text' : 'password'"
               required
-            />
+            >
+              <template #append>
+                <q-btn flat dense round :icon="showNewSecretValue ? 'visibility_off' : 'visibility'" @click="showNewSecretValue = !showNewSecretValue" />
+              </template>
+            </q-input>
+            <div class="flex justify-between items-center q-mt-xs">
+              <q-btn
+                flat
+                dense
+                icon="autorenew"
+                label="Generate Password"
+                color="secondary"
+                :loading="isGeneratingPassword"
+                @click="handleGeneratePassword"
+              />
+              <div v-if="newSecretValue" class="text-caption text-grey-6">
+                Note the password – apply it to the system using this secret.
+              </div>
+            </div>
             <div class="flex justify-end q-gutter-sm q-mt-sm">
               <q-btn flat label="Cancel" @click="closeCreateSecret" :disable="createSecretMutation.isPending.value" />
               <q-btn
@@ -235,6 +253,8 @@ const secretError = computed(() =>
 const createSecretOpen = ref(false)
 const newSecretName = ref('')
 const newSecretValue = ref('')
+const showNewSecretValue = ref(false)
+const isGeneratingPassword = ref(false)
 
 const createSecretMutation = useMutation({
   mutationFn: async ({ providerId, secretName, secretValue }: {
@@ -293,6 +313,20 @@ function closeCreateSecret() {
   createSecretOpen.value = false
   newSecretName.value = ''
   newSecretValue.value = ''
+  showNewSecretValue.value = false
+}
+
+async function handleGeneratePassword() {
+  isGeneratingPassword.value = true
+  showNewSecretValue.value = true
+  try {
+    const response = await client.passwordGeneratorGenerate()
+    newSecretValue.value = response.password ?? ''
+  } catch {
+    Notify.create({ type: 'negative', message: 'Unable to generate password. Check password generator configuration.' })
+  } finally {
+    isGeneratingPassword.value = false
+  }
 }
 
 function handleCreateSecret() {

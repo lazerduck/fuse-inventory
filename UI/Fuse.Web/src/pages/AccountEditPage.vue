@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'
-import { Grant, CloneTarget, CloneAccountRequest, TargetKind } from '../api/client'
+import { Grant, CloneTarget, CloneAccount, TargetKind } from '../api/client'
 import AccountForm from '../components/accounts/AccountForm.vue'
 import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
 import AccountSqlStatusSection from '../components/accounts/AccountSqlStatusSection.vue'
@@ -287,7 +287,7 @@ const cloneTargets = ref<CloneTarget[]>([])
 const isCloneTargetsLoading = ref(false)
 
 const cloneMutation = useMutation({
-  mutationFn: ({ id, payload }: { id: string; payload: CloneAccountRequest }) =>
+  mutationFn: ({ id, payload }: { id: string; payload: CloneAccount }) =>
     client2.accountClone(id, payload),
   onSuccess: (created) => {
     queryClient2.invalidateQueries({ queryKey: ['accounts'] })
@@ -317,7 +317,7 @@ async function openCloneDialog() {
 
 function handleClone() {
   if (!accountId.value || selectedCloneTargetIds.value.length === 0) return
-  const payload = Object.assign(new CloneAccountRequest(), {
+  const payload = Object.assign(new CloneAccount(), {
     targetIds: [...selectedCloneTargetIds.value]
   })
   cloneMutation.mutate({ id: accountId.value, payload })
