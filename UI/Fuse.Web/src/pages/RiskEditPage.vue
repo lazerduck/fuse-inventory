@@ -15,7 +15,7 @@
           color="primary"
           :label="isEditMode ? 'Save Changes' : 'Create Risk'"
           :loading="isSaving"
-          :disable="!fuseStore.canModify"
+          :disable="isEditMode ? !fuseStore.hasPermission(Permission.RisksUpdate) : !fuseStore.hasPermission(Permission.RisksCreate)"
           @click="handleSave"
         />
       </div>
@@ -25,11 +25,11 @@
       {{ loadError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canModify" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.RisksRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to {{ isEditMode ? 'edit' : 'create' }} risks.
     </q-banner>
 
-    <q-card v-if="fuseStore.canModify && !loadError" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.RisksRead) && !loadError" class="content-card">
       <q-card-section>
         <div class="text-h6 q-mb-md">Risk Details</div>
         <div v-if="isLoading" class="row items-center justify-center q-pa-lg">
@@ -189,7 +189,7 @@ import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
-import { CreateRisk, UpdateRisk, RiskImpact, RiskLikelihood, RiskStatus } from '../api/client'
+import { CreateRisk, UpdateRisk, RiskImpact, RiskLikelihood, RiskStatus, Permission } from '../api/client'
 
 const router = useRouter()
 const route = useRoute()

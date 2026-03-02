@@ -19,6 +19,7 @@
           color="primary" 
           :label="isEditMode ? 'Save Changes' : 'Create Identity'" 
           :loading="isSaving"
+          :disable="isEditMode ? !fuseStore.hasPermission(Permission.IdentitiesUpdate) : !fuseStore.hasPermission(Permission.IdentitiesCreate)"
           @click="handleSave"
         />
       </div>
@@ -28,11 +29,11 @@
       {{ loadError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canModify" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.IdentitiesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to {{ isEditMode ? 'edit' : 'create' }} identities.
     </q-banner>
 
-    <q-card v-if="fuseStore.canModify && !loadError" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.IdentitiesRead) && !loadError" class="content-card">
       <q-card-section>
         <div class="text-h6 q-mb-md">Identity Details</div>
         <div v-if="isLoading" class="row items-center justify-center q-pa-lg">
@@ -183,7 +184,8 @@ import {
   UpdateApplicationDependency,
   DependencyAuthKind,
   CloneTarget,
-  CloneIdentity
+  CloneIdentity,
+  Permission
 } from '../api/client'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'

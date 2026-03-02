@@ -9,7 +9,7 @@
         color="primary"
         label="Create Application"
         icon="add"
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.ApplicationsCreate)"
         @click="openCreateDialog"
         data-tour-id="create-application"
       />
@@ -19,11 +19,11 @@
       {{ applicationsError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.ApplicationsRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view applications. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.ApplicationsRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -70,7 +70,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
               @click="navigateToEdit(props.row)"
             />
             <q-btn
@@ -80,7 +80,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
               @click="confirmApplicationDelete(props.row)"
             />
           </q-td>
@@ -183,7 +183,8 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import {
   Application,
-  CreateApplication
+  CreateApplication,
+  Permission
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

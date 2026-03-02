@@ -14,7 +14,7 @@
         <q-select v-model="form.accountId" :options="accountOptions" label="Account" :disable="loading" clearable />
         <div class="q-mt-md flex justify-end">
           <q-btn label="Cancel" flat @click="$emit('cancel')" :disable="loading" />
-          <q-btn label="Save" color="primary" type="submit" :loading="loading" class="q-ml-sm" />
+          <q-btn label="Save" color="primary" type="submit" :loading="loading" class="q-ml-sm" :disable="disabled" />
         </div>
       </q-form>
     </q-card-section>
@@ -27,7 +27,7 @@ import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
 import { useAccounts } from '../../composables/useAccounts'
 
-const props = defineProps<{ mode: 'create' | 'edit'; initialValue?: any; loading: boolean }>()
+const props = defineProps<{ mode: 'create' | 'edit'; initialValue?: any; loading: boolean; disabled?: boolean }>()
 const emit = defineEmits(['submit', 'cancel'])
 
 const environmentsStore = useEnvironments()

@@ -105,7 +105,7 @@
           type="submit" 
           :label="submitLabel" 
           :loading="loading"
-          :disable="!hasAnyCapability"
+          :disable="!hasAnyCapability || disabled"
         />
       </q-card-actions>
     </q-form>
@@ -139,6 +139,7 @@ interface Props {
   mode?: Mode
   initialValue?: Partial<SecretProviderResponse> | null
   loading?: boolean
+  disabled?: boolean
 }
 
 interface Emits {
@@ -149,7 +150,8 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   mode: 'create',
   initialValue: null,
-  loading: false
+  loading: false,
+  disabled: false
 })
 const emit = defineEmits<Emits>()
 

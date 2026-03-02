@@ -9,7 +9,7 @@
         color="primary" 
         label="Add Integration" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.SqlConnectionsCreate)"
         @click="openCreateDialog" 
       />
     </div>
@@ -70,7 +70,7 @@
               icon="edit" 
               color="primary" 
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.canRead"
               @click="openEditDialog(props.row)" 
             >
               <q-tooltip>Edit Integration</q-tooltip>
@@ -82,7 +82,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.SqlConnectionsDelete)"
               @click="confirmDelete(props.row)"
             >
               <q-tooltip>Delete Integration</q-tooltip>
@@ -102,6 +102,7 @@
         :mode="selectedIntegration ? 'edit' : 'create'"
         :initial-value="selectedIntegration"
         :loading="formLoading"
+        :disabled="!fuseStore.hasPermission(Permission.SqlConnectionsCreate)"
         @submit="handleFormSubmit"
         @cancel="closeFormDialog"
       />
@@ -118,7 +119,8 @@ import type { QTableColumn } from 'quasar'
 import { 
   SqlIntegrationResponse, 
   CreateSqlIntegration, 
-  UpdateSqlIntegration
+  UpdateSqlIntegration,
+  Permission
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

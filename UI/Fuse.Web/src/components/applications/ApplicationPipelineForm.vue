@@ -15,7 +15,7 @@
       <q-separator />
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="emit('cancel')" />
-        <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" />
+        <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -36,6 +36,7 @@ interface Props {
   initialValue?: Partial<ApplicationPipeline> | null
   mode?: Mode
   loading?: boolean
+  disabled?: boolean
 }
 
 interface Emits {
@@ -46,7 +47,8 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   initialValue: null,
   mode: 'create',
-  loading: false
+  loading: false,
+  disabled: false
 })
 const emit = defineEmits<Emits>()
 

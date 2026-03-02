@@ -136,7 +136,7 @@ import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverv
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useSqlPermissionsActions } from '../composables/useSqlPermissionsActions'
 import { useFuseStore } from '../stores/FuseStore'
-import { PasswordSource, SecurityLevel, SyncStatus } from '../api/client'
+import { PasswordSource, SyncStatus, Permission } from '../api/client'
 import type {
   AuthKind,
   SecretBindingKind,
@@ -231,10 +231,7 @@ const hasCreatePermission = computed(() => {
 })
 
 const canResolve = computed(() => {
-  if (fuseStore.securityLevel === SecurityLevel.None) {
-    return true
-  }
-  return fuseStore.canModify
+  return fuseStore.hasPermission(Permission.SqlGrantsApply)
 })
 
 const canBulkResolve = computed(() => {

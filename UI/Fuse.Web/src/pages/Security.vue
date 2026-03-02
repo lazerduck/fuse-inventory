@@ -89,11 +89,11 @@
       </q-card>
 
       <!-- Admin Only: User Accounts Table -->
-      <q-card v-if="isAdmin" class="content-card">
+      <q-card v-if="fuseStore.hasPermission(Permission.UsersRead)" class="content-card">
         <q-card-section class="q-pa-none">
           <div class="q-pa-md" style="display: flex; justify-content: space-between; align-items: center;">
             <div class="text-h6">User Accounts</div>
-            <q-btn color="primary" label="Create Account" icon="add" @click="openCreateDialog" />
+            <q-btn color="primary" label="Create Account" icon="add" :disable="!fuseStore.hasPermission(Permission.UsersCreate)" @click="openCreateDialog" />
           </div>
           <q-separator />
 
@@ -135,7 +135,7 @@
               round 
               icon="edit" 
               color="primary" 
-              v-if="isAdmin"
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate)"
               :disable="isCurrentUser(props.row)"
               @click="editItem(props.row)"
             >
@@ -148,7 +148,7 @@
               icon="lock_reset"
               color="warning"
               class="q-ml-xs"
-              v-if="isAdmin && !isCurrentUser(props.row) && props.row.role !== 'Admin'"
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate) && !isCurrentUser(props.row) && props.row.role !== 'Admin'"
               @click="openAdminResetDialog(props.row)"
             >
               <q-tooltip>Reset password</q-tooltip>
@@ -160,7 +160,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              v-if="isAdmin"
+              v-if="fuseStore.hasPermission(Permission.UsersDelete)"
               :disable="isCurrentUser(props.row)"
               @click="deleteItem(props.row)"
             >
@@ -309,7 +309,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo } from '../api/client'
+import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo, Permission } from '../api/client'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
 import ResetPasswordDialog from '../components/security/ResetPasswordDialog.vue'
@@ -340,7 +340,7 @@ const { data: rolesData } = useRoles()
 const users = computed(() => data.value ?? [])
 const availableRoles = computed(() => rolesData.value ?? [])
 
-const isAdmin = computed(() => fuseStore.currentUser?.role === SecurityRole.Admin)
+const isAdmin = computed(() => fuseStore.isAdmin)
 
 const columns: QTableColumn<SecurityUserResponse>[] = [
   { name: 'userName', label: 'Username', field: 'userName', sortable: true },

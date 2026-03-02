@@ -9,7 +9,7 @@
         color="primary" 
         label="Create Platform" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.PlatformsCreate)"
         @click="openCreateDialog" 
       />
     </div>
@@ -18,11 +18,11 @@
       {{ platformError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.PlatformsRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view platforms. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.PlatformsRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -77,7 +77,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.PlatformsRead)"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
@@ -87,7 +87,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.PlatformsDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -103,6 +103,7 @@
         :mode="dialogMode"
         :initial-value="selectedPlatform"
         :loading="isAnyPending"
+        :disabled="dialogMode === 'edit' ? !fuseStore.hasPermission(Permission.PlatformsUpdate) : !fuseStore.hasPermission(Permission.PlatformsCreate)"
         @submit="handleSubmit"
         @cancel="closeDialog"
       />
@@ -115,7 +116,7 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { Platform, CreatePlatform, UpdatePlatform } from '../api/client'
+import { Platform, CreatePlatform, UpdatePlatform, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'

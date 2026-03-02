@@ -9,7 +9,7 @@
         color="primary" 
         label="Add Provider" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
         @click="openCreateDialog" 
       />
     </div>
@@ -61,7 +61,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.canRead"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
@@ -71,7 +71,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -89,6 +89,7 @@
         :mode="selectedProvider ? 'edit' : 'create'"
         :initial-value="selectedProvider"
         :loading="formLoading"
+        :disabled="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
         @submit="handleFormSubmit"
         @cancel="closeFormDialog"
       />
@@ -107,7 +108,8 @@ import {
   UpdateSecretProvider,
   SecretProviderAuthMode,
   SecretProviderCapabilities,
-  SecretProviderCredentials
+  SecretProviderCredentials,
+  Permission
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
