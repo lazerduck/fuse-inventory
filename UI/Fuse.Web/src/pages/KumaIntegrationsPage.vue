@@ -41,7 +41,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" :disable="!fuseStore.canRead"
+            <q-btn flat dense round icon="edit" color="primary" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
               @click="openEditDialog(props.row)" />
             <q-btn flat dense round icon="delete" color="negative" class="q-ml-xs" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsDelete)"
               @click="confirmDelete(props.row)" />

@@ -70,7 +70,7 @@
               icon="edit" 
               color="primary" 
               class="q-ml-xs"
-              :disable="!fuseStore.canRead"
+              :disable="!fuseStore.hasPermission(Permission.SqlConnectionsCreate)"
               @click="openEditDialog(props.row)" 
             >
               <q-tooltip>Edit Integration</q-tooltip>

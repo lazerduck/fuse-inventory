@@ -61,7 +61,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canRead"
+              :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
