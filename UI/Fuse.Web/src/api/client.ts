@@ -453,7 +453,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    responsibilityAssignment(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
+    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
 
     /**
      * @param body (optional) 
@@ -4987,7 +4987,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    responsibilityAssignment(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
+    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
         let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment/{id}";
         if (applicationId === undefined || applicationId === null)
             throw new globalThis.Error("The parameter 'applicationId' must be defined.");
@@ -5006,11 +5006,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processResponsibilityAssignment(_response);
+            return this.processResponsibilityAssignmentGET(_response);
         });
     }
 
-    protected processResponsibilityAssignment(response: Response): Promise<ResponsibilityAssignment> {
+    protected processResponsibilityAssignmentGET(response: Response): Promise<ResponsibilityAssignment> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {

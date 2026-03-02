@@ -21,6 +21,7 @@ namespace Fuse.API.Controllers
         /// <param name="format">The export format: json or yaml (default: json)</param>
         /// <returns>The configuration file content</returns>
         [HttpGet("export")]
+        [SwaggerOperation(OperationId = "export")]
         [ProducesResponseType(200, Type = typeof(FileContentResult))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Export([FromQuery] string format = "json")
@@ -53,6 +54,7 @@ namespace Fuse.API.Controllers
         /// <param name="format">The template format: json or yaml (default: json)</param>
         /// <returns>A template configuration file</returns>
         [HttpGet("template")]
+        [SwaggerOperation(OperationId = "template")]
         [ProducesResponseType(200, Type = typeof(FileContentResult))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTemplate([FromQuery] string format = "json")
@@ -87,6 +89,7 @@ namespace Fuse.API.Controllers
         /// <param name="file">The configuration file to import</param>
         /// <returns>Success status</returns>
         [HttpPost("import")]
+        [SwaggerOperation(OperationId = "importPOST")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Import([FromQuery] string format, IFormFile file)

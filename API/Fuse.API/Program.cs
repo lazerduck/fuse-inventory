@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
-using Fuse.API.Swagger;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
 using Fuse.Data;
@@ -21,7 +20,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.CustomOperationIds(OperationIdGenerator.BuildStableOperationId);
+    options.EnableAnnotations();
 });
 
 // Configure CORS for development

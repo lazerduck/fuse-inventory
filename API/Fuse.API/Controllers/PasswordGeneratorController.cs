@@ -26,6 +26,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("config")]
+        [SwaggerOperation(OperationId = "passwordGeneratorGetConfig")]
         [ProducesResponseType(200, Type = typeof(PasswordGeneratorConfig))]
         public async Task<ActionResult<PasswordGeneratorConfig>> GetConfig()
         {
@@ -34,6 +35,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPut("config")]
+        [SwaggerOperation(OperationId = "passwordGeneratorUpdateConfig")]
         [ProducesResponseType(200, Type = typeof(PasswordGeneratorConfig))]
         [ProducesResponseType(400)]
         [ProducesResponseType(403)]
@@ -57,6 +59,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("generate")]
+        [SwaggerOperation(OperationId = "passwordGeneratorGenerate")]
         [ProducesResponseType(200, Type = typeof(GeneratePasswordResponse))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<GeneratePasswordResponse>> Generate()

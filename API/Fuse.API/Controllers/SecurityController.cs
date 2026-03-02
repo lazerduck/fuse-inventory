@@ -23,6 +23,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("state")]
+        [SwaggerOperation(OperationId = "state")]
         [ProducesResponseType(200)]
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
@@ -41,6 +42,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("settings")]
+        [SwaggerOperation(OperationId = "settings")]
         [ProducesResponseType(200, Type = typeof(SecuritySettings))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -68,6 +70,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("accounts")]
+        [SwaggerOperation(OperationId = "accountsPOST")]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -101,6 +104,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("login")]
+        [SwaggerOperation(OperationId = "login")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -120,6 +124,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("logout")]
+        [SwaggerOperation(OperationId = "logout")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Logout([FromBody] LogoutSecurityUser command)
@@ -132,6 +137,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("accounts")]
+        [SwaggerOperation(OperationId = "accountsAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserResponse>))]
         public async Task<IActionResult> GetAccounts()
         {
@@ -141,6 +147,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPatch("accounts/{Id}")]
+        [SwaggerOperation(OperationId = "accountsPATCH")]
         [ProducesResponseType(200, Type = typeof(SecurityUserResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -175,6 +182,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpDelete("accounts/{Id}")]
+        [SwaggerOperation(OperationId = "accountsDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -207,6 +215,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("accounts/{userId}/roles")]
+        [SwaggerOperation(OperationId = "roles")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
