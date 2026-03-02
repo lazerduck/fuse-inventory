@@ -39,23 +39,23 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    accountClone(id: string, body: CloneAccountRequest | undefined, signal?: AbortSignal): Promise<Account[]>;
-
-    /**
-     * @return OK
-     */
     sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
 
     /**
      * @return OK
      */
     refresh(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse>;
+
+    /**
+     * @return OK
+     */
+    accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]>;
 
     /**
      * @param body (optional) 
@@ -203,7 +203,7 @@ export interface IFuseApiClient {
      * @param file (optional) 
      * @return OK
      */
-    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
+    importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -323,7 +323,7 @@ export interface IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    identityClone(id: string, body: CloneIdentityRequest | undefined, signal?: AbortSignal): Promise<Identity[]>;
+    identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]>;
 
     /**
      * @param body (optional) 
@@ -368,6 +368,22 @@ export interface IFuseApiClient {
      * @return No Content
      */
     kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse>;
 
     /**
      * @return OK
@@ -437,7 +453,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
+    responsibilityAssignment(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
 
     /**
      * @param body (optional) 
@@ -540,7 +556,7 @@ export interface IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
+    assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -684,7 +700,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
+    refreshPOST(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse>;
 
     /**
      * @return OK
@@ -751,22 +767,6 @@ export interface IFuseApiClient {
      * @return No Content
      */
     tagDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
-    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
-
-    /**
-     * @param body (optional)
-     * @return OK
-     */
-    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
-
-    /**
-     * @return OK
-     */
-    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse>;
 }
 
 export class FuseApiClient implements IFuseApiClient {
@@ -1029,128 +1029,6 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]> {
-        let url_ = this.baseUrl + "/api/Account/{id}/clone-targets";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAccountCloneTargets(_response);
-        });
-    }
-
-    protected processAccountCloneTargets(response: Response): Promise<CloneTarget[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(CloneTarget.fromJS(item));
-            }
-            else {
-                result200 = null as any;
-            }
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<CloneTarget[]>(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    accountClone(id: string, body: CloneAccountRequest | undefined, signal?: AbortSignal): Promise<Account[]> {
-        let url_ = this.baseUrl + "/api/Account/{id}/clone";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAccountClone(_response);
-        });
-    }
-
-    protected processAccountClone(response: Response): Promise<Account[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(Account.fromJS(item));
-            }
-            else {
-                result200 = null as any;
-            }
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Account[]>(null as any);
-    }
-
-    /**
-     * @return OK
-     */
     sqlStatus(id: string, signal?: AbortSignal): Promise<CachedAccountSqlStatusResponse> {
         let url_ = this.baseUrl + "/api/Account/{id}/sql-status";
         if (id === undefined || id === null)
@@ -1249,6 +1127,128 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<CachedAccountSqlStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]> {
+        let url_ = this.baseUrl + "/api/Account/{id}/clone-targets";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAccountCloneTargets(_response);
+        });
+    }
+
+    protected processAccountCloneTargets(response: Response): Promise<CloneTarget[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CloneTarget.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CloneTarget[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]> {
+        let url_ = this.baseUrl + "/api/Account/{id}/clone";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAccountClone(_response);
+        });
+    }
+
+    protected processAccountClone(response: Response): Promise<Account[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(Account.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Account[]>(null as any);
     }
 
     /**
@@ -2600,7 +2600,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param file (optional) 
      * @return OK
      */
-    import(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
+    importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Config/import?";
         if (format === null)
             throw new globalThis.Error("The parameter 'format' cannot be null.");
@@ -2623,11 +2623,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processImport(_response);
+            return this.processImportPOST(_response);
         });
     }
 
-    protected processImport(response: Response): Promise<void> {
+    protected processImportPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -3653,13 +3653,6 @@ export class FuseApiClient implements IFuseApiClient {
             return response.text().then((_responseText) => {
             return;
             });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
             let result404: any = null;
@@ -3734,7 +3727,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    identityClone(id: string, body: CloneIdentityRequest | undefined, signal?: AbortSignal): Promise<Identity[]> {
+    identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]> {
         let url_ = this.baseUrl + "/api/Identity/{id}/clone";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -4212,6 +4205,146 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorGetConfig(_response);
+        });
+    }
+
+    protected processPasswordGeneratorGetConfig(response: Response): Promise<PasswordGeneratorConfig> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PasswordGeneratorConfig.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasswordGeneratorConfig>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorUpdateConfig(_response);
+        });
+    }
+
+    protected processPasswordGeneratorUpdateConfig(response: Response): Promise<PasswordGeneratorConfig> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PasswordGeneratorConfig.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasswordGeneratorConfig>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse> {
+        let url_ = this.baseUrl + "/api/PasswordGenerator/generate";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPasswordGeneratorGenerate(_response);
+        });
+    }
+
+    protected processPasswordGeneratorGenerate(response: Response): Promise<GeneratePasswordResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = GeneratePasswordResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GeneratePasswordResponse>(null as any);
     }
 
     /**
@@ -4854,7 +4987,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
+    responsibilityAssignment(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
         let url_ = this.baseUrl + "/api/application/{applicationId}/ResponsibilityAssignment/{id}";
         if (applicationId === undefined || applicationId === null)
             throw new globalThis.Error("The parameter 'applicationId' must be defined.");
@@ -4873,11 +5006,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processResponsibilityAssignmentGET(_response);
+            return this.processResponsibilityAssignment(_response);
         });
     }
 
-    protected processResponsibilityAssignmentGET(response: Response): Promise<ResponsibilityAssignment> {
+    protected processResponsibilityAssignment(response: Response): Promise<ResponsibilityAssignment> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -5878,7 +6011,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    assign(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
+    assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/Role/assign";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5894,11 +6027,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAssign(_response);
+            return this.processAssignPOST(_response);
         });
     }
 
-    protected processAssign(response: Response): Promise<void> {
+    protected processAssignPOST(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -7281,7 +7414,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    refresh2(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
+    refreshPOST(id: string, signal?: AbortSignal): Promise<CachedPermissionsOverviewResponse> {
         let url_ = this.baseUrl + "/api/SqlIntegration/{id}/permissions-overview/refresh";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -7297,11 +7430,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processRefresh2(_response);
+            return this.processRefreshPOST(_response);
         });
     }
 
-    protected processRefresh2(response: Response): Promise<CachedPermissionsOverviewResponse> {
+    protected processRefreshPOST(response: Response): Promise<CachedPermissionsOverviewResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -8004,127 +8137,6 @@ export class FuseApiClient implements IFuseApiClient {
         }
         return Promise.resolve<void>(null as any);
     }
-
-    passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
-        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPasswordGeneratorGetConfig(_response);
-        });
-    }
-
-    protected processPasswordGeneratorGetConfig(response: Response): Promise<PasswordGeneratorConfig> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PasswordGeneratorConfig.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PasswordGeneratorConfig>(null as any);
-    }
-
-    passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
-        let url_ = this.baseUrl + "/api/PasswordGenerator/config";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body ? body.toJSON() : null);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPasswordGeneratorUpdateConfig(_response);
-        });
-    }
-
-    protected processPasswordGeneratorUpdateConfig(response: Response): Promise<PasswordGeneratorConfig> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PasswordGeneratorConfig.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            return throwException("Bad Request", status, _responseText, _headers);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            return throwException("Forbidden", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PasswordGeneratorConfig>(null as any);
-    }
-
-    passwordGeneratorGenerate(signal?: AbortSignal): Promise<GeneratePasswordResponse> {
-        let url_ = this.baseUrl + "/api/PasswordGenerator/generate";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "POST",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPasswordGeneratorGenerate(_response);
-        });
-    }
-
-    protected processPasswordGeneratorGenerate(response: Response): Promise<GeneratePasswordResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = GeneratePasswordResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            return throwException("Bad Request", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<GeneratePasswordResponse>(null as any);
-    }
 }
 
 export class Account implements IAccount {
@@ -8152,32 +8164,32 @@ export class Account implements IAccount {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.authKind = _data["AuthKind"];
-            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
-            this.userName = _data["UserName"];
-            if (_data["Parameters"]) {
+            this.id = _data["id"];
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.authKind = _data["authKind"];
+            this.secretBinding = _data["secretBinding"] ? SecretBinding.fromJS(_data["secretBinding"]) : undefined as any;
+            this.userName = _data["userName"];
+            if (_data["parameters"]) {
                 this.parameters = {} as any;
-                for (let key in _data["Parameters"]) {
-                    if (_data["Parameters"].hasOwnProperty(key))
-                        (this.parameters as any)![key] = _data["Parameters"][key];
+                for (let key in _data["parameters"]) {
+                    if (_data["parameters"].hasOwnProperty(key))
+                        (this.parameters as any)![key] = _data["parameters"][key];
                 }
             }
-            if (Array.isArray(_data["Grants"])) {
+            if (Array.isArray(_data["grants"])) {
                 this.grants = [] as any;
-                for (let item of _data["Grants"])
+                for (let item of _data["grants"])
                     this.grants!.push(Grant.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
-            (this as any).secretRef = _data["SecretRef"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            (this as any).secretRef = _data["secretRef"];
         }
     }
 
@@ -8190,32 +8202,32 @@ export class Account implements IAccount {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["AuthKind"] = this.authKind;
-        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
-        data["UserName"] = this.userName;
+        data["id"] = this.id;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["authKind"] = this.authKind;
+        data["secretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
+        data["userName"] = this.userName;
         if (this.parameters) {
-            data["Parameters"] = {};
+            data["parameters"] = {};
             for (let key in this.parameters) {
                 if (this.parameters.hasOwnProperty(key))
-                    (data["Parameters"] as any)[key] = (this.parameters as any)[key];
+                    (data["parameters"] as any)[key] = (this.parameters as any)[key];
             }
         }
         if (Array.isArray(this.grants)) {
-            data["Grants"] = [];
+            data["grants"] = [];
             for (let item of this.grants)
-                data["Grants"].push(item ? item.toJSON() : undefined as any);
+                data["grants"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        data["SecretRef"] = this.secretRef;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["secretRef"] = this.secretRef;
         return data;
     }
 }
@@ -8255,17 +8267,17 @@ export class AccountSqlStatusResponse implements IAccountSqlStatusResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.sqlIntegrationId = _data["SqlIntegrationId"];
-            this.sqlIntegrationName = _data["SqlIntegrationName"];
-            this.status = _data["Status"];
-            this.statusSummary = _data["StatusSummary"];
-            if (Array.isArray(_data["PermissionComparisons"])) {
+            this.accountId = _data["accountId"];
+            this.sqlIntegrationId = _data["sqlIntegrationId"];
+            this.sqlIntegrationName = _data["sqlIntegrationName"];
+            this.status = _data["status"];
+            this.statusSummary = _data["statusSummary"];
+            if (Array.isArray(_data["permissionComparisons"])) {
                 this.permissionComparisons = [] as any;
-                for (let item of _data["PermissionComparisons"])
+                for (let item of _data["permissionComparisons"])
                     this.permissionComparisons!.push(SqlPermissionComparison.fromJS(item));
             }
-            this.errorMessage = _data["ErrorMessage"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -8278,17 +8290,17 @@ export class AccountSqlStatusResponse implements IAccountSqlStatusResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["SqlIntegrationId"] = this.sqlIntegrationId;
-        data["SqlIntegrationName"] = this.sqlIntegrationName;
-        data["Status"] = this.status;
-        data["StatusSummary"] = this.statusSummary;
+        data["accountId"] = this.accountId;
+        data["sqlIntegrationId"] = this.sqlIntegrationId;
+        data["sqlIntegrationName"] = this.sqlIntegrationName;
+        data["status"] = this.status;
+        data["statusSummary"] = this.statusSummary;
         if (Array.isArray(this.permissionComparisons)) {
-            data["PermissionComparisons"] = [];
+            data["permissionComparisons"] = [];
             for (let item of this.permissionComparisons)
-                data["PermissionComparisons"].push(item ? item.toJSON() : undefined as any);
+                data["permissionComparisons"].push(item ? item.toJSON() : undefined as any);
         }
-        data["ErrorMessage"] = this.errorMessage;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -8330,32 +8342,32 @@ export class Application implements IApplication {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.version = _data["Version"];
-            this.description = _data["Description"];
-            this.owner = _data["Owner"];
-            this.notes = _data["Notes"];
-            this.framework = _data["Framework"];
-            this.repositoryUri = _data["RepositoryUri"];
-            this.icon = _data["Icon"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.version = _data["version"];
+            this.description = _data["description"];
+            this.owner = _data["owner"];
+            this.notes = _data["notes"];
+            this.framework = _data["framework"];
+            this.repositoryUri = _data["repositoryUri"];
+            this.icon = _data["icon"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            if (Array.isArray(_data["Instances"])) {
+            if (Array.isArray(_data["instances"])) {
                 this.instances = [] as any;
-                for (let item of _data["Instances"])
+                for (let item of _data["instances"])
                     this.instances!.push(ApplicationInstance.fromJS(item));
             }
-            if (Array.isArray(_data["Pipelines"])) {
+            if (Array.isArray(_data["pipelines"])) {
                 this.pipelines = [] as any;
-                for (let item of _data["Pipelines"])
+                for (let item of _data["pipelines"])
                     this.pipelines!.push(ApplicationPipeline.fromJS(item));
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -8368,32 +8380,32 @@ export class Application implements IApplication {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Version"] = this.version;
-        data["Description"] = this.description;
-        data["Owner"] = this.owner;
-        data["Notes"] = this.notes;
-        data["Framework"] = this.framework;
-        data["RepositoryUri"] = this.repositoryUri;
-        data["Icon"] = this.icon;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["version"] = this.version;
+        data["description"] = this.description;
+        data["owner"] = this.owner;
+        data["notes"] = this.notes;
+        data["framework"] = this.framework;
+        data["repositoryUri"] = this.repositoryUri;
+        data["icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         if (Array.isArray(this.instances)) {
-            data["Instances"] = [];
+            data["instances"] = [];
             for (let item of this.instances)
-                data["Instances"].push(item ? item.toJSON() : undefined as any);
+                data["instances"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.pipelines)) {
-            data["Pipelines"] = [];
+            data["pipelines"] = [];
             for (let item of this.pipelines)
-                data["Pipelines"].push(item ? item.toJSON() : undefined as any);
+                data["pipelines"].push(item ? item.toJSON() : undefined as any);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -8439,25 +8451,25 @@ export class ApplicationInstance implements IApplicationInstance {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.baseUri = _data["BaseUri"];
-            this.healthUri = _data["HealthUri"];
-            this.openApiUri = _data["OpenApiUri"];
-            this.version = _data["Version"];
-            if (Array.isArray(_data["Dependencies"])) {
+            this.id = _data["id"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.baseUri = _data["baseUri"];
+            this.healthUri = _data["healthUri"];
+            this.openApiUri = _data["openApiUri"];
+            this.version = _data["version"];
+            if (Array.isArray(_data["dependencies"])) {
                 this.dependencies = [] as any;
-                for (let item of _data["Dependencies"])
+                for (let item of _data["dependencies"])
                     this.dependencies!.push(ApplicationInstanceDependency.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -8470,25 +8482,25 @@ export class ApplicationInstance implements IApplicationInstance {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["BaseUri"] = this.baseUri;
-        data["HealthUri"] = this.healthUri;
-        data["OpenApiUri"] = this.openApiUri;
-        data["Version"] = this.version;
+        data["id"] = this.id;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["baseUri"] = this.baseUri;
+        data["healthUri"] = this.healthUri;
+        data["openApiUri"] = this.openApiUri;
+        data["version"] = this.version;
         if (Array.isArray(this.dependencies)) {
-            data["Dependencies"] = [];
+            data["dependencies"] = [];
             for (let item of this.dependencies)
-                data["Dependencies"].push(item ? item.toJSON() : undefined as any);
+                data["dependencies"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -8527,13 +8539,13 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.port = _data["Port"];
-            this.authKind = _data["AuthKind"];
-            this.accountId = _data["AccountId"];
-            this.identityId = _data["IdentityId"];
+            this.id = _data["id"];
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.port = _data["port"];
+            this.authKind = _data["authKind"];
+            this.accountId = _data["accountId"];
+            this.identityId = _data["identityId"];
         }
     }
 
@@ -8546,13 +8558,13 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["Port"] = this.port;
-        data["AuthKind"] = this.authKind;
-        data["AccountId"] = this.accountId;
-        data["IdentityId"] = this.identityId;
+        data["id"] = this.id;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["port"] = this.port;
+        data["authKind"] = this.authKind;
+        data["accountId"] = this.accountId;
+        data["identityId"] = this.identityId;
         return data;
     }
 }
@@ -8583,9 +8595,9 @@ export class ApplicationPipeline implements IApplicationPipeline {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.pipelineUri = _data["PipelineUri"];
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.pipelineUri = _data["pipelineUri"];
         }
     }
 
@@ -8598,9 +8610,9 @@ export class ApplicationPipeline implements IApplicationPipeline {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["PipelineUri"] = this.pipelineUri;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["pipelineUri"] = this.pipelineUri;
         return data;
     }
 }
@@ -8626,8 +8638,8 @@ export class ApplyEnvironmentAutomation implements IApplyEnvironmentAutomation {
 
     init(_data?: any) {
         if (_data) {
-            this.environmentId = _data["EnvironmentId"];
-            this.applicationId = _data["ApplicationId"];
+            this.environmentId = _data["environmentId"];
+            this.applicationId = _data["applicationId"];
         }
     }
 
@@ -8640,8 +8652,8 @@ export class ApplyEnvironmentAutomation implements IApplyEnvironmentAutomation {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["EnvironmentId"] = this.environmentId;
-        data["ApplicationId"] = this.applicationId;
+        data["environmentId"] = this.environmentId;
+        data["applicationId"] = this.applicationId;
         return data;
     }
 }
@@ -8667,13 +8679,13 @@ export class AssignRolesToUser implements IAssignRolesToUser {
 
     init(_data?: any) {
         if (_data) {
-            this.userId = _data["UserId"];
-            if (Array.isArray(_data["RoleIds"])) {
+            this.userId = _data["userId"];
+            if (Array.isArray(_data["roleIds"])) {
                 this.roleIds = [] as any;
-                for (let item of _data["RoleIds"])
+                for (let item of _data["roleIds"])
                     this.roleIds!.push(item);
             }
-            this.requestedBy = _data["RequestedBy"];
+            this.requestedBy = _data["requestedBy"];
         }
     }
 
@@ -8686,13 +8698,13 @@ export class AssignRolesToUser implements IAssignRolesToUser {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["UserId"] = this.userId;
+        data["userId"] = this.userId;
         if (Array.isArray(this.roleIds)) {
-            data["RoleIds"] = [];
+            data["roleIds"] = [];
             for (let item of this.roleIds)
-                data["RoleIds"].push(item);
+                data["roleIds"].push(item);
         }
-        data["RequestedBy"] = this.requestedBy;
+        data["requestedBy"] = this.requestedBy;
         return data;
     }
 }
@@ -8813,14 +8825,14 @@ export class AuditLog implements IAuditLog {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
-            this.action = _data["Action"];
-            this.area = _data["Area"];
-            this.userName = _data["UserName"];
-            this.userId = _data["UserId"];
-            this.entityId = _data["EntityId"];
-            this.changeDetails = _data["ChangeDetails"];
+            this.id = _data["id"];
+            this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
+            this.action = _data["action"];
+            this.area = _data["area"];
+            this.userName = _data["userName"];
+            this.userId = _data["userId"];
+            this.entityId = _data["entityId"];
+            this.changeDetails = _data["changeDetails"];
         }
     }
 
@@ -8833,14 +8845,14 @@ export class AuditLog implements IAuditLog {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
-        data["Action"] = this.action;
-        data["Area"] = this.area;
-        data["UserName"] = this.userName;
-        data["UserId"] = this.userId;
-        data["EntityId"] = this.entityId;
-        data["ChangeDetails"] = this.changeDetails;
+        data["id"] = this.id;
+        data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        data["action"] = this.action;
+        data["area"] = this.area;
+        data["userName"] = this.userName;
+        data["userId"] = this.userId;
+        data["entityId"] = this.entityId;
+        data["changeDetails"] = this.changeDetails;
         return data;
     }
 }
@@ -8874,15 +8886,15 @@ export class AuditLogResult implements IAuditLogResult {
 
     init(_data?: any) {
         if (_data) {
-            if (Array.isArray(_data["Logs"])) {
+            if (Array.isArray(_data["logs"])) {
                 this.logs = [] as any;
-                for (let item of _data["Logs"])
+                for (let item of _data["logs"])
                     this.logs!.push(AuditLog.fromJS(item));
             }
-            this.totalCount = _data["TotalCount"];
-            this.page = _data["Page"];
-            this.pageSize = _data["PageSize"];
-            (this as any).totalPages = _data["TotalPages"];
+            this.totalCount = _data["totalCount"];
+            this.page = _data["page"];
+            this.pageSize = _data["pageSize"];
+            (this as any).totalPages = _data["totalPages"];
         }
     }
 
@@ -8896,14 +8908,14 @@ export class AuditLogResult implements IAuditLogResult {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         if (Array.isArray(this.logs)) {
-            data["Logs"] = [];
+            data["logs"] = [];
             for (let item of this.logs)
-                data["Logs"].push(item ? item.toJSON() : undefined as any);
+                data["logs"].push(item ? item.toJSON() : undefined as any);
         }
-        data["TotalCount"] = this.totalCount;
-        data["Page"] = this.page;
-        data["PageSize"] = this.pageSize;
-        data["TotalPages"] = this.totalPages;
+        data["totalCount"] = this.totalCount;
+        data["page"] = this.page;
+        data["pageSize"] = this.pageSize;
+        data["totalPages"] = this.totalPages;
         return data;
     }
 }
@@ -8943,9 +8955,9 @@ export class AzureKeyVaultBinding implements IAzureKeyVaultBinding {
 
     init(_data?: any) {
         if (_data) {
-            this.providerId = _data["ProviderId"];
-            this.secretName = _data["SecretName"];
-            this.version = _data["Version"];
+            this.providerId = _data["providerId"];
+            this.secretName = _data["secretName"];
+            this.version = _data["version"];
         }
     }
 
@@ -8958,9 +8970,9 @@ export class AzureKeyVaultBinding implements IAzureKeyVaultBinding {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ProviderId"] = this.providerId;
-        data["SecretName"] = this.secretName;
-        data["Version"] = this.version;
+        data["providerId"] = this.providerId;
+        data["secretName"] = this.secretName;
+        data["version"] = this.version;
         return data;
     }
 }
@@ -8995,13 +9007,13 @@ export class BulkResolveAccountResult implements IBulkResolveAccountResult {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.accountName = _data["AccountName"];
-            this.principalName = _data["PrincipalName"];
-            this.operationType = _data["OperationType"];
-            this.success = _data["Success"];
-            this.errorMessage = _data["ErrorMessage"];
-            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
+            this.accountId = _data["accountId"];
+            this.accountName = _data["accountName"];
+            this.principalName = _data["principalName"];
+            this.operationType = _data["operationType"];
+            this.success = _data["success"];
+            this.errorMessage = _data["errorMessage"];
+            this.updatedStatus = _data["updatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["updatedStatus"]) : undefined as any;
         }
     }
 
@@ -9014,13 +9026,13 @@ export class BulkResolveAccountResult implements IBulkResolveAccountResult {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["AccountName"] = this.accountName;
-        data["PrincipalName"] = this.principalName;
-        data["OperationType"] = this.operationType;
-        data["Success"] = this.success;
-        data["ErrorMessage"] = this.errorMessage;
-        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["accountId"] = this.accountId;
+        data["accountName"] = this.accountName;
+        data["principalName"] = this.principalName;
+        data["operationType"] = this.operationType;
+        data["success"] = this.success;
+        data["errorMessage"] = this.errorMessage;
+        data["updatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
         return data;
     }
 }
@@ -9049,7 +9061,7 @@ export class BulkResolveRequest implements IBulkResolveRequest {
 
     init(_data?: any) {
         if (_data) {
-            this.passwordSource = _data["PasswordSource"];
+            this.passwordSource = _data["passwordSource"];
         }
     }
 
@@ -9062,7 +9074,7 @@ export class BulkResolveRequest implements IBulkResolveRequest {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["PasswordSource"] = this.passwordSource;
+        data["passwordSource"] = this.passwordSource;
         return data;
     }
 }
@@ -9089,15 +9101,15 @@ export class BulkResolveResponse implements IBulkResolveResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.integrationId = _data["IntegrationId"];
-            this.success = _data["Success"];
-            this.summary = _data["Summary"] ? BulkResolveSummary.fromJS(_data["Summary"]) : undefined as any;
-            if (Array.isArray(_data["Results"])) {
+            this.integrationId = _data["integrationId"];
+            this.success = _data["success"];
+            this.summary = _data["summary"] ? BulkResolveSummary.fromJS(_data["summary"]) : undefined as any;
+            if (Array.isArray(_data["results"])) {
                 this.results = [] as any;
-                for (let item of _data["Results"])
+                for (let item of _data["results"])
                     this.results!.push(BulkResolveAccountResult.fromJS(item));
             }
-            this.errorMessage = _data["ErrorMessage"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -9110,15 +9122,15 @@ export class BulkResolveResponse implements IBulkResolveResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["IntegrationId"] = this.integrationId;
-        data["Success"] = this.success;
-        data["Summary"] = this.summary ? this.summary.toJSON() : undefined as any;
+        data["integrationId"] = this.integrationId;
+        data["success"] = this.success;
+        data["summary"] = this.summary ? this.summary.toJSON() : undefined as any;
         if (Array.isArray(this.results)) {
-            data["Results"] = [];
+            data["results"] = [];
             for (let item of this.results)
-                data["Results"].push(item ? item.toJSON() : undefined as any);
+                data["results"].push(item ? item.toJSON() : undefined as any);
         }
-        data["ErrorMessage"] = this.errorMessage;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -9149,11 +9161,11 @@ export class BulkResolveSummary implements IBulkResolveSummary {
 
     init(_data?: any) {
         if (_data) {
-            this.totalProcessed = _data["TotalProcessed"];
-            this.accountsCreated = _data["AccountsCreated"];
-            this.driftsResolved = _data["DriftsResolved"];
-            this.skipped = _data["Skipped"];
-            this.failed = _data["Failed"];
+            this.totalProcessed = _data["totalProcessed"];
+            this.accountsCreated = _data["accountsCreated"];
+            this.driftsResolved = _data["driftsResolved"];
+            this.skipped = _data["skipped"];
+            this.failed = _data["failed"];
         }
     }
 
@@ -9166,11 +9178,11 @@ export class BulkResolveSummary implements IBulkResolveSummary {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["TotalProcessed"] = this.totalProcessed;
-        data["AccountsCreated"] = this.accountsCreated;
-        data["DriftsResolved"] = this.driftsResolved;
-        data["Skipped"] = this.skipped;
-        data["Failed"] = this.failed;
+        data["totalProcessed"] = this.totalProcessed;
+        data["accountsCreated"] = this.accountsCreated;
+        data["driftsResolved"] = this.driftsResolved;
+        data["skipped"] = this.skipped;
+        data["failed"] = this.failed;
         return data;
     }
 }
@@ -9199,9 +9211,9 @@ export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusRe
 
     init(_data?: any) {
         if (_data) {
-            this.status = _data["Status"] ? AccountSqlStatusResponse.fromJS(_data["Status"]) : undefined as any;
-            this.cachedAt = _data["CachedAt"] ? new Date(_data["CachedAt"].toString()) : undefined as any;
-            this.isCached = _data["IsCached"];
+            this.status = _data["status"] ? AccountSqlStatusResponse.fromJS(_data["status"]) : undefined as any;
+            this.cachedAt = _data["cachedAt"] ? new Date(_data["cachedAt"].toString()) : undefined as any;
+            this.isCached = _data["isCached"];
         }
     }
 
@@ -9214,9 +9226,9 @@ export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusRe
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Status"] = this.status ? this.status.toJSON() : undefined as any;
-        data["CachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
-        data["IsCached"] = this.isCached;
+        data["status"] = this.status ? this.status.toJSON() : undefined as any;
+        data["cachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
+        data["isCached"] = this.isCached;
         return data;
     }
 }
@@ -9243,9 +9255,9 @@ export class CachedPermissionsOverviewResponse implements ICachedPermissionsOver
 
     init(_data?: any) {
         if (_data) {
-            this.overview = _data["Overview"] ? SqlIntegrationPermissionsOverviewResponse.fromJS(_data["Overview"]) : undefined as any;
-            this.cachedAt = _data["CachedAt"] ? new Date(_data["CachedAt"].toString()) : undefined as any;
-            this.isCached = _data["IsCached"];
+            this.overview = _data["overview"] ? SqlIntegrationPermissionsOverviewResponse.fromJS(_data["overview"]) : undefined as any;
+            this.cachedAt = _data["cachedAt"] ? new Date(_data["cachedAt"].toString()) : undefined as any;
+            this.isCached = _data["isCached"];
         }
     }
 
@@ -9258,9 +9270,9 @@ export class CachedPermissionsOverviewResponse implements ICachedPermissionsOver
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Overview"] = this.overview ? this.overview.toJSON() : undefined as any;
-        data["CachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
-        data["IsCached"] = this.isCached;
+        data["overview"] = this.overview ? this.overview.toJSON() : undefined as any;
+        data["cachedAt"] = this.cachedAt ? this.cachedAt.toISOString() : undefined as any;
+        data["isCached"] = this.isCached;
         return data;
     }
 }
@@ -9269,6 +9281,146 @@ export interface ICachedPermissionsOverviewResponse {
     overview?: SqlIntegrationPermissionsOverviewResponse;
     cachedAt?: Date | undefined;
     isCached?: boolean;
+}
+
+export class CloneAccount implements ICloneAccount {
+    sourceId?: string;
+    targetIds?: string[] | undefined;
+
+    constructor(data?: ICloneAccount) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.sourceId = _data["sourceId"];
+            if (Array.isArray(_data["targetIds"])) {
+                this.targetIds = [] as any;
+                for (let item of _data["targetIds"])
+                    this.targetIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CloneAccount {
+        data = typeof data === 'object' ? data : {};
+        let result = new CloneAccount();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["sourceId"] = this.sourceId;
+        if (Array.isArray(this.targetIds)) {
+            data["targetIds"] = [];
+            for (let item of this.targetIds)
+                data["targetIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICloneAccount {
+    sourceId?: string;
+    targetIds?: string[] | undefined;
+}
+
+export class CloneIdentity implements ICloneIdentity {
+    sourceId?: string;
+    targetOwnerInstanceIds?: string[] | undefined;
+
+    constructor(data?: ICloneIdentity) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.sourceId = _data["sourceId"];
+            if (Array.isArray(_data["targetOwnerInstanceIds"])) {
+                this.targetOwnerInstanceIds = [] as any;
+                for (let item of _data["targetOwnerInstanceIds"])
+                    this.targetOwnerInstanceIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CloneIdentity {
+        data = typeof data === 'object' ? data : {};
+        let result = new CloneIdentity();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["sourceId"] = this.sourceId;
+        if (Array.isArray(this.targetOwnerInstanceIds)) {
+            data["targetOwnerInstanceIds"] = [];
+            for (let item of this.targetOwnerInstanceIds)
+                data["targetOwnerInstanceIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICloneIdentity {
+    sourceId?: string;
+    targetOwnerInstanceIds?: string[] | undefined;
+}
+
+export class CloneTarget implements ICloneTarget {
+    id?: string;
+    label?: string | undefined;
+    environmentName?: string | undefined;
+
+    constructor(data?: ICloneTarget) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.label = _data["label"];
+            this.environmentName = _data["environmentName"];
+        }
+    }
+
+    static fromJS(data: any): CloneTarget {
+        data = typeof data === 'object' ? data : {};
+        let result = new CloneTarget();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["label"] = this.label;
+        data["environmentName"] = this.environmentName;
+        return data;
+    }
+}
+
+export interface ICloneTarget {
+    id?: string;
+    label?: string | undefined;
+    environmentName?: string | undefined;
 }
 
 export class CreateAccount implements ICreateAccount {
@@ -9292,26 +9444,26 @@ export class CreateAccount implements ICreateAccount {
 
     init(_data?: any) {
         if (_data) {
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.authKind = _data["AuthKind"];
-            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
-            this.userName = _data["UserName"];
-            if (_data["Parameters"]) {
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.authKind = _data["authKind"];
+            this.secretBinding = _data["secretBinding"] ? SecretBinding.fromJS(_data["secretBinding"]) : undefined as any;
+            this.userName = _data["userName"];
+            if (_data["parameters"]) {
                 this.parameters = {} as any;
-                for (let key in _data["Parameters"]) {
-                    if (_data["Parameters"].hasOwnProperty(key))
-                        (this.parameters as any)![key] = _data["Parameters"][key];
+                for (let key in _data["parameters"]) {
+                    if (_data["parameters"].hasOwnProperty(key))
+                        (this.parameters as any)![key] = _data["parameters"][key];
                 }
             }
-            if (Array.isArray(_data["Grants"])) {
+            if (Array.isArray(_data["grants"])) {
                 this.grants = [] as any;
-                for (let item of _data["Grants"])
+                for (let item of _data["grants"])
                     this.grants!.push(Grant.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9326,27 +9478,27 @@ export class CreateAccount implements ICreateAccount {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["AuthKind"] = this.authKind;
-        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
-        data["UserName"] = this.userName;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["authKind"] = this.authKind;
+        data["secretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
+        data["userName"] = this.userName;
         if (this.parameters) {
-            data["Parameters"] = {};
+            data["parameters"] = {};
             for (let key in this.parameters) {
                 if (this.parameters.hasOwnProperty(key))
-                    (data["Parameters"] as any)[key] = (this.parameters as any)[key];
+                    (data["parameters"] as any)[key] = (this.parameters as any)[key];
             }
         }
         if (Array.isArray(this.grants)) {
-            data["Grants"] = [];
+            data["grants"] = [];
             for (let item of this.grants)
-                data["Grants"].push(item ? item.toJSON() : undefined as any);
+                data["grants"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9380,12 +9532,12 @@ export class CreateAccountGrant implements ICreateAccountGrant {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            if (Array.isArray(_data["Privileges"])) {
+            this.accountId = _data["accountId"];
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            if (Array.isArray(_data["privileges"])) {
                 this.privileges = [] as any;
-                for (let item of _data["Privileges"])
+                for (let item of _data["privileges"])
                     this.privileges!.push(item);
             }
         }
@@ -9400,13 +9552,13 @@ export class CreateAccountGrant implements ICreateAccountGrant {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
+        data["accountId"] = this.accountId;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
         if (Array.isArray(this.privileges)) {
-            data["Privileges"] = [];
+            data["privileges"] = [];
             for (let item of this.privileges)
-                data["Privileges"].push(item);
+                data["privileges"].push(item);
         }
         return data;
     }
@@ -9441,17 +9593,17 @@ export class CreateApplication implements ICreateApplication {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.version = _data["Version"];
-            this.description = _data["Description"];
-            this.owner = _data["Owner"];
-            this.notes = _data["Notes"];
-            this.framework = _data["Framework"];
-            this.repositoryUri = _data["RepositoryUri"];
-            this.icon = _data["Icon"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.name = _data["name"];
+            this.version = _data["version"];
+            this.description = _data["description"];
+            this.owner = _data["owner"];
+            this.notes = _data["notes"];
+            this.framework = _data["framework"];
+            this.repositoryUri = _data["repositoryUri"];
+            this.icon = _data["icon"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9466,18 +9618,18 @@ export class CreateApplication implements ICreateApplication {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Version"] = this.version;
-        data["Description"] = this.description;
-        data["Owner"] = this.owner;
-        data["Notes"] = this.notes;
-        data["Framework"] = this.framework;
-        data["RepositoryUri"] = this.repositoryUri;
-        data["Icon"] = this.icon;
+        data["name"] = this.name;
+        data["version"] = this.version;
+        data["description"] = this.description;
+        data["owner"] = this.owner;
+        data["notes"] = this.notes;
+        data["framework"] = this.framework;
+        data["repositoryUri"] = this.repositoryUri;
+        data["icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9516,14 +9668,14 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.instanceId = _data["InstanceId"];
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.port = _data["Port"];
-            this.authKind = _data["AuthKind"];
-            this.accountId = _data["AccountId"];
-            this.identityId = _data["IdentityId"];
+            this.applicationId = _data["applicationId"];
+            this.instanceId = _data["instanceId"];
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.port = _data["port"];
+            this.authKind = _data["authKind"];
+            this.accountId = _data["accountId"];
+            this.identityId = _data["identityId"];
         }
     }
 
@@ -9536,14 +9688,14 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["InstanceId"] = this.instanceId;
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["Port"] = this.port;
-        data["AuthKind"] = this.authKind;
-        data["AccountId"] = this.accountId;
-        data["IdentityId"] = this.identityId;
+        data["applicationId"] = this.applicationId;
+        data["instanceId"] = this.instanceId;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["port"] = this.port;
+        data["authKind"] = this.authKind;
+        data["accountId"] = this.accountId;
+        data["identityId"] = this.identityId;
         return data;
     }
 }
@@ -9580,16 +9732,16 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.baseUri = _data["BaseUri"];
-            this.healthUri = _data["HealthUri"];
-            this.openApiUri = _data["OpenApiUri"];
-            this.version = _data["Version"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.applicationId = _data["applicationId"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.baseUri = _data["baseUri"];
+            this.healthUri = _data["healthUri"];
+            this.openApiUri = _data["openApiUri"];
+            this.version = _data["version"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9604,17 +9756,17 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["BaseUri"] = this.baseUri;
-        data["HealthUri"] = this.healthUri;
-        data["OpenApiUri"] = this.openApiUri;
-        data["Version"] = this.version;
+        data["applicationId"] = this.applicationId;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["baseUri"] = this.baseUri;
+        data["healthUri"] = this.healthUri;
+        data["openApiUri"] = this.openApiUri;
+        data["version"] = this.version;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9647,9 +9799,9 @@ export class CreateApplicationPipeline implements ICreateApplicationPipeline {
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.name = _data["Name"];
-            this.pipelineUri = _data["PipelineUri"];
+            this.applicationId = _data["applicationId"];
+            this.name = _data["name"];
+            this.pipelineUri = _data["pipelineUri"];
         }
     }
 
@@ -9662,9 +9814,9 @@ export class CreateApplicationPipeline implements ICreateApplicationPipeline {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["Name"] = this.name;
-        data["PipelineUri"] = this.pipelineUri;
+        data["applicationId"] = this.applicationId;
+        data["name"] = this.name;
+        data["pipelineUri"] = this.pipelineUri;
         return data;
     }
 }
@@ -9694,14 +9846,14 @@ export class CreateDataStore implements ICreateDataStore {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.kind = _data["Kind"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.connectionUri = _data["ConnectionUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.name = _data["name"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9716,15 +9868,15 @@ export class CreateDataStore implements ICreateDataStore {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Kind"] = this.kind;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["ConnectionUri"] = this.connectionUri;
+        data["name"] = this.name;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["connectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9759,17 +9911,17 @@ export class CreateEnvironment implements ICreateEnvironment {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.autoCreateInstances = _data["AutoCreateInstances"];
-            this.baseUriTemplate = _data["BaseUriTemplate"];
-            this.healthUriTemplate = _data["HealthUriTemplate"];
-            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
+            this.autoCreateInstances = _data["autoCreateInstances"];
+            this.baseUriTemplate = _data["baseUriTemplate"];
+            this.healthUriTemplate = _data["healthUriTemplate"];
+            this.openApiUriTemplate = _data["openApiUriTemplate"];
         }
     }
 
@@ -9782,17 +9934,17 @@ export class CreateEnvironment implements ICreateEnvironment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["AutoCreateInstances"] = this.autoCreateInstances;
-        data["BaseUriTemplate"] = this.baseUriTemplate;
-        data["HealthUriTemplate"] = this.healthUriTemplate;
-        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
+        data["autoCreateInstances"] = this.autoCreateInstances;
+        data["baseUriTemplate"] = this.baseUriTemplate;
+        data["healthUriTemplate"] = this.healthUriTemplate;
+        data["openApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -9824,12 +9976,12 @@ export class CreateExternalResource implements ICreateExternalResource {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.resourceUri = _data["ResourceUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.resourceUri = _data["resourceUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9844,13 +9996,13 @@ export class CreateExternalResource implements ICreateExternalResource {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["ResourceUri"] = this.resourceUri;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["resourceUri"] = this.resourceUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9882,18 +10034,18 @@ export class CreateIdentity implements ICreateIdentity {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.kind = _data["Kind"];
-            this.notes = _data["Notes"];
-            this.ownerInstanceId = _data["OwnerInstanceId"];
-            if (Array.isArray(_data["Assignments"])) {
+            this.name = _data["name"];
+            this.kind = _data["kind"];
+            this.notes = _data["notes"];
+            this.ownerInstanceId = _data["ownerInstanceId"];
+            if (Array.isArray(_data["assignments"])) {
                 this.assignments = [] as any;
-                for (let item of _data["Assignments"])
+                for (let item of _data["assignments"])
                     this.assignments!.push(IdentityAssignment.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -9908,19 +10060,19 @@ export class CreateIdentity implements ICreateIdentity {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Kind"] = this.kind;
-        data["Notes"] = this.notes;
-        data["OwnerInstanceId"] = this.ownerInstanceId;
+        data["name"] = this.name;
+        data["kind"] = this.kind;
+        data["notes"] = this.notes;
+        data["ownerInstanceId"] = this.ownerInstanceId;
         if (Array.isArray(this.assignments)) {
-            data["Assignments"] = [];
+            data["assignments"] = [];
             for (let item of this.assignments)
-                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+                data["assignments"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -9953,11 +10105,11 @@ export class CreateIdentityAssignment implements ICreateIdentityAssignment {
 
     init(_data?: any) {
         if (_data) {
-            this.identityId = _data["IdentityId"];
-            this.targetKind = _data["TargetKind"];
-            this.targetId = _data["TargetId"];
-            this.role = _data["Role"];
-            this.notes = _data["Notes"];
+            this.identityId = _data["identityId"];
+            this.targetKind = _data["targetKind"];
+            this.targetId = _data["targetId"];
+            this.role = _data["role"];
+            this.notes = _data["notes"];
         }
     }
 
@@ -9970,11 +10122,11 @@ export class CreateIdentityAssignment implements ICreateIdentityAssignment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["IdentityId"] = this.identityId;
-        data["TargetKind"] = this.targetKind;
-        data["TargetId"] = this.targetId;
-        data["Role"] = this.role;
-        data["Notes"] = this.notes;
+        data["identityId"] = this.identityId;
+        data["targetKind"] = this.targetKind;
+        data["targetId"] = this.targetId;
+        data["role"] = this.role;
+        data["notes"] = this.notes;
         return data;
     }
 }
@@ -10006,16 +10158,16 @@ export class CreateKumaIntegration implements ICreateKumaIntegration {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            if (Array.isArray(_data["EnvironmentIds"])) {
+            this.name = _data["name"];
+            if (Array.isArray(_data["environmentIds"])) {
                 this.environmentIds = [] as any;
-                for (let item of _data["EnvironmentIds"])
+                for (let item of _data["environmentIds"])
                     this.environmentIds!.push(item);
             }
-            this.platformId = _data["PlatformId"];
-            this.accountId = _data["AccountId"];
-            this.uri = _data["Uri"];
-            this.apiKey = _data["ApiKey"];
+            this.platformId = _data["platformId"];
+            this.accountId = _data["accountId"];
+            this.uri = _data["uri"];
+            this.apiKey = _data["apiKey"];
         }
     }
 
@@ -10028,16 +10180,16 @@ export class CreateKumaIntegration implements ICreateKumaIntegration {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
+        data["name"] = this.name;
         if (Array.isArray(this.environmentIds)) {
-            data["EnvironmentIds"] = [];
+            data["environmentIds"] = [];
             for (let item of this.environmentIds)
-                data["EnvironmentIds"].push(item);
+                data["environmentIds"].push(item);
         }
-        data["PlatformId"] = this.platformId;
-        data["AccountId"] = this.accountId;
-        data["Uri"] = this.uri;
-        data["ApiKey"] = this.apiKey;
+        data["platformId"] = this.platformId;
+        data["accountId"] = this.accountId;
+        data["uri"] = this.uri;
+        data["apiKey"] = this.apiKey;
         return data;
     }
 }
@@ -10071,15 +10223,15 @@ export class CreatePlatform implements ICreatePlatform {
 
     init(_data?: any) {
         if (_data) {
-            this.displayName = _data["DisplayName"];
-            this.dnsName = _data["DnsName"];
-            this.os = _data["Os"];
-            this.kind = _data["Kind"];
-            this.ipAddress = _data["IpAddress"];
-            this.notes = _data["Notes"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.displayName = _data["displayName"];
+            this.dnsName = _data["dnsName"];
+            this.os = _data["os"];
+            this.kind = _data["kind"];
+            this.ipAddress = _data["ipAddress"];
+            this.notes = _data["notes"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -10094,16 +10246,16 @@ export class CreatePlatform implements ICreatePlatform {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["DisplayName"] = this.displayName;
-        data["DnsName"] = this.dnsName;
-        data["Os"] = this.os;
-        data["Kind"] = this.kind;
-        data["IpAddress"] = this.ipAddress;
-        data["Notes"] = this.notes;
+        data["displayName"] = this.displayName;
+        data["dnsName"] = this.dnsName;
+        data["os"] = this.os;
+        data["kind"] = this.kind;
+        data["ipAddress"] = this.ipAddress;
+        data["notes"] = this.notes;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -10135,11 +10287,11 @@ export class CreatePosition implements ICreatePosition {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -10154,12 +10306,12 @@ export class CreatePosition implements ICreatePosition {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -10191,13 +10343,13 @@ export class CreateResponsibilityAssignment implements ICreateResponsibilityAssi
 
     init(_data?: any) {
         if (_data) {
-            this.positionId = _data["PositionId"];
-            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
-            this.applicationId = _data["ApplicationId"];
-            this.scope = _data["Scope"];
-            this.environmentId = _data["EnvironmentId"];
-            this.notes = _data["Notes"];
-            this.primary = _data["Primary"];
+            this.positionId = _data["positionId"];
+            this.responsibilityTypeId = _data["responsibilityTypeId"];
+            this.applicationId = _data["applicationId"];
+            this.scope = _data["scope"];
+            this.environmentId = _data["environmentId"];
+            this.notes = _data["notes"];
+            this.primary = _data["primary"];
         }
     }
 
@@ -10210,13 +10362,13 @@ export class CreateResponsibilityAssignment implements ICreateResponsibilityAssi
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["PositionId"] = this.positionId;
-        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
-        data["ApplicationId"] = this.applicationId;
-        data["Scope"] = this.scope;
-        data["EnvironmentId"] = this.environmentId;
-        data["Notes"] = this.notes;
-        data["Primary"] = this.primary;
+        data["positionId"] = this.positionId;
+        data["responsibilityTypeId"] = this.responsibilityTypeId;
+        data["applicationId"] = this.applicationId;
+        data["scope"] = this.scope;
+        data["environmentId"] = this.environmentId;
+        data["notes"] = this.notes;
+        data["primary"] = this.primary;
         return data;
     }
 }
@@ -10246,8 +10398,8 @@ export class CreateResponsibilityType implements ICreateResponsibilityType {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
+            this.name = _data["name"];
+            this.description = _data["description"];
         }
     }
 
@@ -10260,8 +10412,8 @@ export class CreateResponsibilityType implements ICreateResponsibilityType {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["name"] = this.name;
+        data["description"] = this.description;
         return data;
     }
 }
@@ -10298,24 +10450,24 @@ export class CreateRisk implements ICreateRisk {
 
     init(_data?: any) {
         if (_data) {
-            this.title = _data["Title"];
-            this.description = _data["Description"];
-            this.impact = _data["Impact"];
-            this.likelihood = _data["Likelihood"];
-            this.status = _data["Status"];
-            this.ownerPositionId = _data["OwnerPositionId"];
-            this.approverPositionId = _data["ApproverPositionId"];
-            this.targetType = _data["TargetType"];
-            this.targetId = _data["TargetId"];
-            this.mitigation = _data["Mitigation"];
-            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
-            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
-            if (Array.isArray(_data["TagIds"])) {
+            this.title = _data["title"];
+            this.description = _data["description"];
+            this.impact = _data["impact"];
+            this.likelihood = _data["likelihood"];
+            this.status = _data["status"];
+            this.ownerPositionId = _data["ownerPositionId"];
+            this.approverPositionId = _data["approverPositionId"];
+            this.targetType = _data["targetType"];
+            this.targetId = _data["targetId"];
+            this.mitigation = _data["mitigation"];
+            this.reviewDate = _data["reviewDate"] ? new Date(_data["reviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["approvalDate"] ? new Date(_data["approvalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.notes = _data["Notes"];
+            this.notes = _data["notes"];
         }
     }
 
@@ -10328,24 +10480,24 @@ export class CreateRisk implements ICreateRisk {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Title"] = this.title;
-        data["Description"] = this.description;
-        data["Impact"] = this.impact;
-        data["Likelihood"] = this.likelihood;
-        data["Status"] = this.status;
-        data["OwnerPositionId"] = this.ownerPositionId;
-        data["ApproverPositionId"] = this.approverPositionId;
-        data["TargetType"] = this.targetType;
-        data["TargetId"] = this.targetId;
-        data["Mitigation"] = this.mitigation;
-        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
-        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        data["title"] = this.title;
+        data["description"] = this.description;
+        data["impact"] = this.impact;
+        data["likelihood"] = this.likelihood;
+        data["status"] = this.status;
+        data["ownerPositionId"] = this.ownerPositionId;
+        data["approverPositionId"] = this.approverPositionId;
+        data["targetType"] = this.targetType;
+        data["targetId"] = this.targetId;
+        data["mitigation"] = this.mitigation;
+        data["reviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["approvalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["Notes"] = this.notes;
+        data["notes"] = this.notes;
         return data;
     }
 }
@@ -10384,14 +10536,14 @@ export class CreateRole implements ICreateRole {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["Permissions"])) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["permissions"])) {
                 this.permissions = [] as any;
-                for (let item of _data["Permissions"])
+                for (let item of _data["permissions"])
                     this.permissions!.push(item);
             }
-            this.requestedBy = _data["RequestedBy"];
+            this.requestedBy = _data["requestedBy"];
         }
     }
 
@@ -10404,14 +10556,14 @@ export class CreateRole implements ICreateRole {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.permissions)) {
-            data["Permissions"] = [];
+            data["permissions"] = [];
             for (let item of this.permissions)
-                data["Permissions"].push(item);
+                data["permissions"].push(item);
         }
-        data["RequestedBy"] = this.requestedBy;
+        data["requestedBy"] = this.requestedBy;
         return data;
     }
 }
@@ -10439,9 +10591,9 @@ export class CreateSecret implements ICreateSecret {
 
     init(_data?: any) {
         if (_data) {
-            this.providerId = _data["ProviderId"];
-            this.secretName = _data["SecretName"];
-            this.secretValue = _data["SecretValue"];
+            this.providerId = _data["providerId"];
+            this.secretName = _data["secretName"];
+            this.secretValue = _data["secretValue"];
         }
     }
 
@@ -10454,9 +10606,9 @@ export class CreateSecret implements ICreateSecret {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ProviderId"] = this.providerId;
-        data["SecretName"] = this.secretName;
-        data["SecretValue"] = this.secretValue;
+        data["providerId"] = this.providerId;
+        data["secretName"] = this.secretName;
+        data["secretValue"] = this.secretValue;
         return data;
     }
 }
@@ -10485,11 +10637,11 @@ export class CreateSecretProvider implements ICreateSecretProvider {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.vaultUri = _data["VaultUri"];
-            this.authMode = _data["AuthMode"];
-            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
-            this.capabilities = _data["Capabilities"];
+            this.name = _data["name"];
+            this.vaultUri = _data["vaultUri"];
+            this.authMode = _data["authMode"];
+            this.credentials = _data["credentials"] ? SecretProviderCredentials.fromJS(_data["credentials"]) : undefined as any;
+            this.capabilities = _data["capabilities"];
         }
     }
 
@@ -10502,11 +10654,11 @@ export class CreateSecretProvider implements ICreateSecretProvider {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["VaultUri"] = this.vaultUri;
-        data["AuthMode"] = this.authMode;
-        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
-        data["Capabilities"] = this.capabilities;
+        data["name"] = this.name;
+        data["vaultUri"] = this.vaultUri;
+        data["authMode"] = this.authMode;
+        data["credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        data["capabilities"] = this.capabilities;
         return data;
     }
 }
@@ -10536,10 +10688,10 @@ export class CreateSecurityUser implements ICreateSecurityUser {
 
     init(_data?: any) {
         if (_data) {
-            this.userName = _data["UserName"];
-            this.password = _data["Password"];
-            this.role = _data["Role"];
-            this.requestedBy = _data["RequestedBy"];
+            this.userName = _data["userName"];
+            this.password = _data["password"];
+            this.role = _data["role"];
+            this.requestedBy = _data["requestedBy"];
         }
     }
 
@@ -10552,10 +10704,10 @@ export class CreateSecurityUser implements ICreateSecurityUser {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["UserName"] = this.userName;
-        data["Password"] = this.password;
-        data["Role"] = this.role;
-        data["RequestedBy"] = this.requestedBy;
+        data["userName"] = this.userName;
+        data["password"] = this.password;
+        data["role"] = this.role;
+        data["requestedBy"] = this.requestedBy;
         return data;
     }
 }
@@ -10582,8 +10734,8 @@ export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
 
     init(_data?: any) {
         if (_data) {
-            this.passwordSource = _data["PasswordSource"];
-            this.password = _data["Password"];
+            this.passwordSource = _data["passwordSource"];
+            this.password = _data["password"];
         }
     }
 
@@ -10596,8 +10748,8 @@ export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["PasswordSource"] = this.passwordSource;
-        data["Password"] = this.password;
+        data["passwordSource"] = this.passwordSource;
+        data["password"] = this.password;
         return data;
     }
 }
@@ -10627,17 +10779,17 @@ export class CreateSqlAccountResponse implements ICreateSqlAccountResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            this.passwordSource = _data["PasswordSource"];
-            if (Array.isArray(_data["Operations"])) {
+            this.accountId = _data["accountId"];
+            this.principalName = _data["principalName"];
+            this.success = _data["success"];
+            this.passwordSource = _data["passwordSource"];
+            if (Array.isArray(_data["operations"])) {
                 this.operations = [] as any;
-                for (let item of _data["Operations"])
+                for (let item of _data["operations"])
                     this.operations!.push(SqlAccountCreationOperation.fromJS(item));
             }
-            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
-            this.errorMessage = _data["ErrorMessage"];
+            this.updatedStatus = _data["updatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["updatedStatus"]) : undefined as any;
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -10650,17 +10802,17 @@ export class CreateSqlAccountResponse implements ICreateSqlAccountResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
-        data["PasswordSource"] = this.passwordSource;
+        data["accountId"] = this.accountId;
+        data["principalName"] = this.principalName;
+        data["success"] = this.success;
+        data["passwordSource"] = this.passwordSource;
         if (Array.isArray(this.operations)) {
-            data["Operations"] = [];
+            data["operations"] = [];
             for (let item of this.operations)
-                data["Operations"].push(item ? item.toJSON() : undefined as any);
+                data["operations"].push(item ? item.toJSON() : undefined as any);
         }
-        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
-        data["ErrorMessage"] = this.errorMessage;
+        data["updatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -10693,11 +10845,11 @@ export class CreateSqlIntegration implements ICreateSqlIntegration {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.dataStoreId = _data["DataStoreId"];
-            this.connectionString = _data["ConnectionString"];
-            this.accountId = _data["AccountId"];
-            this.manualPassword = _data["ManualPassword"];
+            this.name = _data["name"];
+            this.dataStoreId = _data["dataStoreId"];
+            this.connectionString = _data["connectionString"];
+            this.accountId = _data["accountId"];
+            this.manualPassword = _data["manualPassword"];
         }
     }
 
@@ -10710,11 +10862,11 @@ export class CreateSqlIntegration implements ICreateSqlIntegration {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["DataStoreId"] = this.dataStoreId;
-        data["ConnectionString"] = this.connectionString;
-        data["AccountId"] = this.accountId;
-        data["ManualPassword"] = this.manualPassword;
+        data["name"] = this.name;
+        data["dataStoreId"] = this.dataStoreId;
+        data["connectionString"] = this.connectionString;
+        data["accountId"] = this.accountId;
+        data["manualPassword"] = this.manualPassword;
         return data;
     }
 }
@@ -10743,9 +10895,9 @@ export class CreateTag implements ICreateTag {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.color = _data["Color"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.color = _data["color"];
         }
     }
 
@@ -10758,9 +10910,9 @@ export class CreateTag implements ICreateTag {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["Color"] = this.color;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["color"] = this.color;
         return data;
     }
 }
@@ -10794,20 +10946,20 @@ export class DataStore implements IDataStore {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.kind = _data["Kind"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.connectionUri = _data["ConnectionUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -10820,20 +10972,20 @@ export class DataStore implements IDataStore {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["Kind"] = this.kind;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["ConnectionUri"] = this.connectionUri;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["connectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -10876,12 +11028,12 @@ export class DriftResolutionOperation implements IDriftResolutionOperation {
 
     init(_data?: any) {
         if (_data) {
-            this.operationType = _data["OperationType"];
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            this.privilege = _data["Privilege"];
-            this.success = _data["Success"];
-            this.errorMessage = _data["ErrorMessage"];
+            this.operationType = _data["operationType"];
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            this.privilege = _data["privilege"];
+            this.success = _data["success"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -10894,12 +11046,12 @@ export class DriftResolutionOperation implements IDriftResolutionOperation {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["OperationType"] = this.operationType;
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
-        data["Privilege"] = this.privilege;
-        data["Success"] = this.success;
-        data["ErrorMessage"] = this.errorMessage;
+        data["operationType"] = this.operationType;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
+        data["privilege"] = this.privilege;
+        data["success"] = this.success;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -10934,18 +11086,18 @@ export class EnvironmentInfo implements IEnvironmentInfo {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.autoCreateInstances = _data["AutoCreateInstances"];
-            this.baseUriTemplate = _data["BaseUriTemplate"];
-            this.healthUriTemplate = _data["HealthUriTemplate"];
-            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
+            this.autoCreateInstances = _data["autoCreateInstances"];
+            this.baseUriTemplate = _data["baseUriTemplate"];
+            this.healthUriTemplate = _data["healthUriTemplate"];
+            this.openApiUriTemplate = _data["openApiUriTemplate"];
         }
     }
 
@@ -10958,18 +11110,18 @@ export class EnvironmentInfo implements IEnvironmentInfo {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["AutoCreateInstances"] = this.autoCreateInstances;
-        data["BaseUriTemplate"] = this.baseUriTemplate;
-        data["HealthUriTemplate"] = this.healthUriTemplate;
-        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
+        data["autoCreateInstances"] = this.autoCreateInstances;
+        data["baseUriTemplate"] = this.baseUriTemplate;
+        data["healthUriTemplate"] = this.healthUriTemplate;
+        data["openApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -11005,17 +11157,17 @@ export class ExternalResource implements IExternalResource {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.resourceUri = _data["ResourceUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.resourceUri = _data["resourceUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -11028,17 +11180,17 @@ export class ExternalResource implements IExternalResource {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["ResourceUri"] = this.resourceUri;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["resourceUri"] = this.resourceUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11051,6 +11203,42 @@ export interface IExternalResource {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export class GeneratePasswordResponse implements IGeneratePasswordResponse {
+    password?: string | undefined;
+
+    constructor(data?: IGeneratePasswordResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.password = _data["password"];
+        }
+    }
+
+    static fromJS(data: any): GeneratePasswordResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GeneratePasswordResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["password"] = this.password;
+        return data;
+    }
+}
+
+export interface IGeneratePasswordResponse {
+    password?: string | undefined;
 }
 
 export class Grant implements IGrant {
@@ -11070,12 +11258,12 @@ export class Grant implements IGrant {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            if (Array.isArray(_data["Privileges"])) {
+            this.id = _data["id"];
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            if (Array.isArray(_data["privileges"])) {
                 this.privileges = [] as any;
-                for (let item of _data["Privileges"])
+                for (let item of _data["privileges"])
                     this.privileges!.push(item);
             }
         }
@@ -11090,13 +11278,13 @@ export class Grant implements IGrant {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
+        data["id"] = this.id;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
         if (Array.isArray(this.privileges)) {
-            data["Privileges"] = [];
+            data["privileges"] = [];
             for (let item of this.privileges)
-                data["Privileges"].push(item);
+                data["privileges"].push(item);
         }
         return data;
     }
@@ -11126,10 +11314,10 @@ export class HealthStatusResponse implements IHealthStatusResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.monitorUrl = _data["MonitorUrl"];
-            this.status = _data["Status"];
-            this.monitorName = _data["MonitorName"];
-            this.lastChecked = _data["LastChecked"] ? new Date(_data["LastChecked"].toString()) : undefined as any;
+            this.monitorUrl = _data["monitorUrl"];
+            this.status = _data["status"];
+            this.monitorName = _data["monitorName"];
+            this.lastChecked = _data["lastChecked"] ? new Date(_data["lastChecked"].toString()) : undefined as any;
         }
     }
 
@@ -11142,10 +11330,10 @@ export class HealthStatusResponse implements IHealthStatusResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["MonitorUrl"] = this.monitorUrl;
-        data["Status"] = this.status;
-        data["MonitorName"] = this.monitorName;
-        data["LastChecked"] = this.lastChecked ? this.lastChecked.toISOString() : undefined as any;
+        data["monitorUrl"] = this.monitorUrl;
+        data["status"] = this.status;
+        data["monitorName"] = this.monitorName;
+        data["lastChecked"] = this.lastChecked ? this.lastChecked.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11179,23 +11367,23 @@ export class Identity implements IIdentity {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.kind = _data["Kind"];
-            this.notes = _data["Notes"];
-            this.ownerInstanceId = _data["OwnerInstanceId"];
-            if (Array.isArray(_data["Assignments"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.kind = _data["kind"];
+            this.notes = _data["notes"];
+            this.ownerInstanceId = _data["ownerInstanceId"];
+            if (Array.isArray(_data["assignments"])) {
                 this.assignments = [] as any;
-                for (let item of _data["Assignments"])
+                for (let item of _data["assignments"])
                     this.assignments!.push(IdentityAssignment.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -11208,23 +11396,23 @@ export class Identity implements IIdentity {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Kind"] = this.kind;
-        data["Notes"] = this.notes;
-        data["OwnerInstanceId"] = this.ownerInstanceId;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["kind"] = this.kind;
+        data["notes"] = this.notes;
+        data["ownerInstanceId"] = this.ownerInstanceId;
         if (Array.isArray(this.assignments)) {
-            data["Assignments"] = [];
+            data["assignments"] = [];
             for (let item of this.assignments)
-                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+                data["assignments"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11259,11 +11447,11 @@ export class IdentityAssignment implements IIdentityAssignment {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.targetKind = _data["TargetKind"];
-            this.targetId = _data["TargetId"];
-            this.role = _data["Role"];
-            this.notes = _data["Notes"];
+            this.id = _data["id"];
+            this.targetKind = _data["targetKind"];
+            this.targetId = _data["targetId"];
+            this.role = _data["role"];
+            this.notes = _data["notes"];
         }
     }
 
@@ -11276,11 +11464,11 @@ export class IdentityAssignment implements IIdentityAssignment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["TargetKind"] = this.targetKind;
-        data["TargetId"] = this.targetId;
-        data["Role"] = this.role;
-        data["Notes"] = this.notes;
+        data["id"] = this.id;
+        data["targetKind"] = this.targetKind;
+        data["targetId"] = this.targetId;
+        data["role"] = this.role;
+        data["notes"] = this.notes;
         return data;
     }
 }
@@ -11316,9 +11504,9 @@ export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalReque
 
     init(_data?: any) {
         if (_data) {
-            this.principalName = _data["PrincipalName"];
-            this.authKind = _data["AuthKind"];
-            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
+            this.principalName = _data["principalName"];
+            this.authKind = _data["authKind"];
+            this.secretBinding = _data["secretBinding"] ? SecretBinding.fromJS(_data["secretBinding"]) : undefined as any;
         }
     }
 
@@ -11331,9 +11519,9 @@ export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalReque
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["PrincipalName"] = this.principalName;
-        data["AuthKind"] = this.authKind;
-        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
+        data["principalName"] = this.principalName;
+        data["authKind"] = this.authKind;
+        data["secretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
         return data;
     }
 }
@@ -11362,15 +11550,15 @@ export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResp
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            if (Array.isArray(_data["ImportedGrants"])) {
+            this.accountId = _data["accountId"];
+            this.principalName = _data["principalName"];
+            this.success = _data["success"];
+            if (Array.isArray(_data["importedGrants"])) {
                 this.importedGrants = [] as any;
-                for (let item of _data["ImportedGrants"])
+                for (let item of _data["importedGrants"])
                     this.importedGrants!.push(Grant.fromJS(item));
             }
-            this.errorMessage = _data["ErrorMessage"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -11383,15 +11571,15 @@ export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResp
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
+        data["accountId"] = this.accountId;
+        data["principalName"] = this.principalName;
+        data["success"] = this.success;
         if (Array.isArray(this.importedGrants)) {
-            data["ImportedGrants"] = [];
+            data["importedGrants"] = [];
             for (let item of this.importedGrants)
-                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
+                data["importedGrants"].push(item ? item.toJSON() : undefined as any);
         }
-        data["ErrorMessage"] = this.errorMessage;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -11423,16 +11611,16 @@ export class ImportPermissionsResponse implements IImportPermissionsResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            if (Array.isArray(_data["ImportedGrants"])) {
+            this.accountId = _data["accountId"];
+            this.principalName = _data["principalName"];
+            this.success = _data["success"];
+            if (Array.isArray(_data["importedGrants"])) {
                 this.importedGrants = [] as any;
-                for (let item of _data["ImportedGrants"])
+                for (let item of _data["importedGrants"])
                     this.importedGrants!.push(Grant.fromJS(item));
             }
-            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
-            this.errorMessage = _data["ErrorMessage"];
+            this.updatedStatus = _data["updatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["updatedStatus"]) : undefined as any;
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -11445,16 +11633,16 @@ export class ImportPermissionsResponse implements IImportPermissionsResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
+        data["accountId"] = this.accountId;
+        data["principalName"] = this.principalName;
+        data["success"] = this.success;
         if (Array.isArray(this.importedGrants)) {
-            data["ImportedGrants"] = [];
+            data["importedGrants"] = [];
             for (let item of this.importedGrants)
-                data["ImportedGrants"].push(item ? item.toJSON() : undefined as any);
+                data["importedGrants"].push(item ? item.toJSON() : undefined as any);
         }
-        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
-        data["ErrorMessage"] = this.errorMessage;
+        data["updatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -11489,18 +11677,18 @@ export class KumaIntegrationResponse implements IKumaIntegrationResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            if (Array.isArray(_data["EnvironmentIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            if (Array.isArray(_data["environmentIds"])) {
                 this.environmentIds = [] as any;
-                for (let item of _data["EnvironmentIds"])
+                for (let item of _data["environmentIds"])
                     this.environmentIds!.push(item);
             }
-            this.platformId = _data["PlatformId"];
-            this.accountId = _data["AccountId"];
-            this.uri = _data["Uri"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.platformId = _data["platformId"];
+            this.accountId = _data["accountId"];
+            this.uri = _data["uri"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -11513,18 +11701,18 @@ export class KumaIntegrationResponse implements IKumaIntegrationResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
+        data["id"] = this.id;
+        data["name"] = this.name;
         if (Array.isArray(this.environmentIds)) {
-            data["EnvironmentIds"] = [];
+            data["environmentIds"] = [];
             for (let item of this.environmentIds)
-                data["EnvironmentIds"].push(item);
+                data["environmentIds"].push(item);
         }
-        data["PlatformId"] = this.platformId;
-        data["AccountId"] = this.accountId;
-        data["Uri"] = this.uri;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["platformId"] = this.platformId;
+        data["accountId"] = this.accountId;
+        data["uri"] = this.uri;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11555,8 +11743,8 @@ export class LoginSecurityUser implements ILoginSecurityUser {
 
     init(_data?: any) {
         if (_data) {
-            this.userName = _data["UserName"];
-            this.password = _data["Password"];
+            this.userName = _data["userName"];
+            this.password = _data["password"];
         }
     }
 
@@ -11569,8 +11757,8 @@ export class LoginSecurityUser implements ILoginSecurityUser {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["UserName"] = this.userName;
-        data["Password"] = this.password;
+        data["userName"] = this.userName;
+        data["password"] = this.password;
         return data;
     }
 }
@@ -11596,9 +11784,9 @@ export class LoginSession implements ILoginSession {
 
     init(_data?: any) {
         if (_data) {
-            this.token = _data["Token"];
-            this.expiresAt = _data["ExpiresAt"] ? new Date(_data["ExpiresAt"].toString()) : undefined as any;
-            this.user = _data["User"] ? SecurityUserInfo.fromJS(_data["User"]) : undefined as any;
+            this.token = _data["token"];
+            this.expiresAt = _data["expiresAt"] ? new Date(_data["expiresAt"].toString()) : undefined as any;
+            this.user = _data["user"] ? SecurityUserInfo.fromJS(_data["user"]) : undefined as any;
         }
     }
 
@@ -11611,9 +11799,9 @@ export class LoginSession implements ILoginSession {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Token"] = this.token;
-        data["ExpiresAt"] = this.expiresAt ? this.expiresAt.toISOString() : undefined as any;
-        data["User"] = this.user ? this.user.toJSON() : undefined as any;
+        data["token"] = this.token;
+        data["expiresAt"] = this.expiresAt ? this.expiresAt.toISOString() : undefined as any;
+        data["user"] = this.user ? this.user.toJSON() : undefined as any;
         return data;
     }
 }
@@ -11638,7 +11826,7 @@ export class LogoutSecurityUser implements ILogoutSecurityUser {
 
     init(_data?: any) {
         if (_data) {
-            this.token = _data["Token"];
+            this.token = _data["token"];
         }
     }
 
@@ -11651,7 +11839,7 @@ export class LogoutSecurityUser implements ILogoutSecurityUser {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Token"] = this.token;
+        data["token"] = this.token;
         return data;
     }
 }
@@ -11665,6 +11853,46 @@ export enum MonitorStatus {
     Up = "Up",
     Pending = "Pending",
     Maintenance = "Maintenance",
+}
+
+export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
+
+    constructor(data?: IPasswordGeneratorConfig) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.allowedCharacters = _data["allowedCharacters"];
+            this.length = _data["length"];
+        }
+    }
+
+    static fromJS(data: any): PasswordGeneratorConfig {
+        data = typeof data === 'object' ? data : {};
+        let result = new PasswordGeneratorConfig();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["allowedCharacters"] = this.allowedCharacters;
+        data["length"] = this.length;
+        return data;
+    }
+}
+
+export interface IPasswordGeneratorConfig {
+    allowedCharacters?: string | undefined;
+    length?: number;
 }
 
 export enum PasswordSource {
@@ -11765,20 +11993,20 @@ export class Platform implements IPlatform {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.displayName = _data["DisplayName"];
-            this.dnsName = _data["DnsName"];
-            this.os = _data["Os"];
-            this.kind = _data["Kind"];
-            this.ipAddress = _data["IpAddress"];
-            this.notes = _data["Notes"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.displayName = _data["displayName"];
+            this.dnsName = _data["dnsName"];
+            this.os = _data["os"];
+            this.kind = _data["kind"];
+            this.ipAddress = _data["ipAddress"];
+            this.notes = _data["notes"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -11791,20 +12019,20 @@ export class Platform implements IPlatform {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["DisplayName"] = this.displayName;
-        data["DnsName"] = this.dnsName;
-        data["Os"] = this.os;
-        data["Kind"] = this.kind;
-        data["IpAddress"] = this.ipAddress;
-        data["Notes"] = this.notes;
+        data["id"] = this.id;
+        data["displayName"] = this.displayName;
+        data["dnsName"] = this.dnsName;
+        data["os"] = this.os;
+        data["kind"] = this.kind;
+        data["ipAddress"] = this.ipAddress;
+        data["notes"] = this.notes;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11848,16 +12076,16 @@ export class Position implements IPosition {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -11870,16 +12098,16 @@ export class Position implements IPosition {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -11987,16 +12215,16 @@ export class ResolveDriftResponse implements IResolveDriftResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.principalName = _data["PrincipalName"];
-            this.success = _data["Success"];
-            if (Array.isArray(_data["Operations"])) {
+            this.accountId = _data["accountId"];
+            this.principalName = _data["principalName"];
+            this.success = _data["success"];
+            if (Array.isArray(_data["operations"])) {
                 this.operations = [] as any;
-                for (let item of _data["Operations"])
+                for (let item of _data["operations"])
                     this.operations!.push(DriftResolutionOperation.fromJS(item));
             }
-            this.updatedStatus = _data["UpdatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["UpdatedStatus"]) : undefined as any;
-            this.errorMessage = _data["ErrorMessage"];
+            this.updatedStatus = _data["updatedStatus"] ? SqlAccountPermissionsStatus.fromJS(_data["updatedStatus"]) : undefined as any;
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -12009,16 +12237,16 @@ export class ResolveDriftResponse implements IResolveDriftResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["PrincipalName"] = this.principalName;
-        data["Success"] = this.success;
+        data["accountId"] = this.accountId;
+        data["principalName"] = this.principalName;
+        data["success"] = this.success;
         if (Array.isArray(this.operations)) {
-            data["Operations"] = [];
+            data["operations"] = [];
             for (let item of this.operations)
-                data["Operations"].push(item ? item.toJSON() : undefined as any);
+                data["operations"].push(item ? item.toJSON() : undefined as any);
         }
-        data["UpdatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
-        data["ErrorMessage"] = this.errorMessage;
+        data["updatedStatus"] = this.updatedStatus ? this.updatedStatus.toJSON() : undefined as any;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -12055,16 +12283,16 @@ export class ResponsibilityAssignment implements IResponsibilityAssignment {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.positionId = _data["PositionId"];
-            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
-            this.applicationId = _data["ApplicationId"];
-            this.scope = _data["Scope"];
-            this.environmentId = _data["EnvironmentId"];
-            this.notes = _data["Notes"];
-            this.primary = _data["Primary"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.id = _data["id"];
+            this.positionId = _data["positionId"];
+            this.responsibilityTypeId = _data["responsibilityTypeId"];
+            this.applicationId = _data["applicationId"];
+            this.scope = _data["scope"];
+            this.environmentId = _data["environmentId"];
+            this.notes = _data["notes"];
+            this.primary = _data["primary"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12077,16 +12305,16 @@ export class ResponsibilityAssignment implements IResponsibilityAssignment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["PositionId"] = this.positionId;
-        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
-        data["ApplicationId"] = this.applicationId;
-        data["Scope"] = this.scope;
-        data["EnvironmentId"] = this.environmentId;
-        data["Notes"] = this.notes;
-        data["Primary"] = this.primary;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["id"] = this.id;
+        data["positionId"] = this.positionId;
+        data["responsibilityTypeId"] = this.responsibilityTypeId;
+        data["applicationId"] = this.applicationId;
+        data["scope"] = this.scope;
+        data["environmentId"] = this.environmentId;
+        data["notes"] = this.notes;
+        data["primary"] = this.primary;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12127,11 +12355,11 @@ export class ResponsibilityType implements IResponsibilityType {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12144,11 +12372,11 @@ export class ResponsibilityType implements IResponsibilityType {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12191,27 +12419,27 @@ export class Risk implements IRisk {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.title = _data["Title"];
-            this.description = _data["Description"];
-            this.impact = _data["Impact"];
-            this.likelihood = _data["Likelihood"];
-            this.status = _data["Status"];
-            this.ownerPositionId = _data["OwnerPositionId"];
-            this.approverPositionId = _data["ApproverPositionId"];
-            this.targetType = _data["TargetType"];
-            this.targetId = _data["TargetId"];
-            this.mitigation = _data["Mitigation"];
-            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
-            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.title = _data["title"];
+            this.description = _data["description"];
+            this.impact = _data["impact"];
+            this.likelihood = _data["likelihood"];
+            this.status = _data["status"];
+            this.ownerPositionId = _data["ownerPositionId"];
+            this.approverPositionId = _data["approverPositionId"];
+            this.targetType = _data["targetType"];
+            this.targetId = _data["targetId"];
+            this.mitigation = _data["mitigation"];
+            this.reviewDate = _data["reviewDate"] ? new Date(_data["reviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["approvalDate"] ? new Date(_data["approvalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.notes = _data["Notes"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.notes = _data["notes"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12224,27 +12452,27 @@ export class Risk implements IRisk {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Title"] = this.title;
-        data["Description"] = this.description;
-        data["Impact"] = this.impact;
-        data["Likelihood"] = this.likelihood;
-        data["Status"] = this.status;
-        data["OwnerPositionId"] = this.ownerPositionId;
-        data["ApproverPositionId"] = this.approverPositionId;
-        data["TargetType"] = this.targetType;
-        data["TargetId"] = this.targetId;
-        data["Mitigation"] = this.mitigation;
-        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
-        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        data["id"] = this.id;
+        data["title"] = this.title;
+        data["description"] = this.description;
+        data["impact"] = this.impact;
+        data["likelihood"] = this.likelihood;
+        data["status"] = this.status;
+        data["ownerPositionId"] = this.ownerPositionId;
+        data["approverPositionId"] = this.approverPositionId;
+        data["targetType"] = this.targetType;
+        data["targetId"] = this.targetId;
+        data["mitigation"] = this.mitigation;
+        data["reviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["approvalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["Notes"] = this.notes;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["notes"] = this.notes;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12308,16 +12536,16 @@ export class RoleInfo implements IRoleInfo {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["Permissions"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["permissions"])) {
                 this.permissions = [] as any;
-                for (let item of _data["Permissions"])
+                for (let item of _data["permissions"])
                     this.permissions!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12330,16 +12558,16 @@ export class RoleInfo implements IRoleInfo {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.permissions)) {
-            data["Permissions"] = [];
+            data["permissions"] = [];
             for (let item of this.permissions)
-                data["Permissions"].push(item);
+                data["permissions"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12369,9 +12597,9 @@ export class RotateSecret implements IRotateSecret {
 
     init(_data?: any) {
         if (_data) {
-            this.providerId = _data["ProviderId"];
-            this.secretName = _data["SecretName"];
-            this.newSecretValue = _data["NewSecretValue"];
+            this.providerId = _data["providerId"];
+            this.secretName = _data["secretName"];
+            this.newSecretValue = _data["newSecretValue"];
         }
     }
 
@@ -12384,9 +12612,9 @@ export class RotateSecret implements IRotateSecret {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ProviderId"] = this.providerId;
-        data["SecretName"] = this.secretName;
-        data["NewSecretValue"] = this.newSecretValue;
+        data["providerId"] = this.providerId;
+        data["secretName"] = this.secretName;
+        data["newSecretValue"] = this.newSecretValue;
         return data;
     }
 }
@@ -12413,9 +12641,9 @@ export class SecretBinding implements ISecretBinding {
 
     init(_data?: any) {
         if (_data) {
-            this.kind = _data["Kind"];
-            this.plainReference = _data["PlainReference"];
-            this.azureKeyVault = _data["AzureKeyVault"] ? AzureKeyVaultBinding.fromJS(_data["AzureKeyVault"]) : undefined as any;
+            this.kind = _data["kind"];
+            this.plainReference = _data["plainReference"];
+            this.azureKeyVault = _data["azureKeyVault"] ? AzureKeyVaultBinding.fromJS(_data["azureKeyVault"]) : undefined as any;
         }
     }
 
@@ -12428,9 +12656,9 @@ export class SecretBinding implements ISecretBinding {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Kind"] = this.kind;
-        data["PlainReference"] = this.plainReference;
-        data["AzureKeyVault"] = this.azureKeyVault ? this.azureKeyVault.toJSON() : undefined as any;
+        data["kind"] = this.kind;
+        data["plainReference"] = this.plainReference;
+        data["azureKeyVault"] = this.azureKeyVault ? this.azureKeyVault.toJSON() : undefined as any;
         return data;
     }
 }
@@ -12464,10 +12692,10 @@ export class SecretMetadataResponse implements ISecretMetadataResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.name = _data["Name"];
-            this.enabled = _data["Enabled"];
-            this.updatedOn = _data["UpdatedOn"] ? new Date(_data["UpdatedOn"].toString()) : undefined as any;
-            this.contentType = _data["ContentType"];
+            this.name = _data["name"];
+            this.enabled = _data["enabled"];
+            this.updatedOn = _data["updatedOn"] ? new Date(_data["updatedOn"].toString()) : undefined as any;
+            this.contentType = _data["contentType"];
         }
     }
 
@@ -12480,10 +12708,10 @@ export class SecretMetadataResponse implements ISecretMetadataResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Name"] = this.name;
-        data["Enabled"] = this.enabled;
-        data["UpdatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        data["ContentType"] = this.contentType;
+        data["name"] = this.name;
+        data["enabled"] = this.enabled;
+        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["contentType"] = this.contentType;
         return data;
     }
 }
@@ -12524,9 +12752,9 @@ export class SecretProviderCredentials implements ISecretProviderCredentials {
 
     init(_data?: any) {
         if (_data) {
-            this.tenantId = _data["TenantId"];
-            this.clientId = _data["ClientId"];
-            this.clientSecret = _data["ClientSecret"];
+            this.tenantId = _data["tenantId"];
+            this.clientId = _data["clientId"];
+            this.clientSecret = _data["clientSecret"];
         }
     }
 
@@ -12539,9 +12767,9 @@ export class SecretProviderCredentials implements ISecretProviderCredentials {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["TenantId"] = this.tenantId;
-        data["ClientId"] = this.clientId;
-        data["ClientSecret"] = this.clientSecret;
+        data["tenantId"] = this.tenantId;
+        data["clientId"] = this.clientId;
+        data["clientSecret"] = this.clientSecret;
         return data;
     }
 }
@@ -12572,13 +12800,13 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.vaultUri = _data["VaultUri"];
-            this.authMode = _data["AuthMode"];
-            this.capabilities = _data["Capabilities"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.vaultUri = _data["vaultUri"];
+            this.authMode = _data["authMode"];
+            this.capabilities = _data["capabilities"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12591,13 +12819,13 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["VaultUri"] = this.vaultUri;
-        data["AuthMode"] = this.authMode;
-        data["Capabilities"] = this.capabilities;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["vaultUri"] = this.vaultUri;
+        data["authMode"] = this.authMode;
+        data["capabilities"] = this.capabilities;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12626,7 +12854,7 @@ export class SecretValueResponse implements ISecretValueResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.value = _data["Value"];
+            this.value = _data["value"];
         }
     }
 
@@ -12639,7 +12867,7 @@ export class SecretValueResponse implements ISecretValueResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Value"] = this.value;
+        data["value"] = this.value;
         return data;
     }
 }
@@ -12674,8 +12902,8 @@ export class SecuritySettings implements ISecuritySettings {
 
     init(_data?: any) {
         if (_data) {
-            this.level = _data["Level"];
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.level = _data["level"];
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12688,8 +12916,8 @@ export class SecuritySettings implements ISecuritySettings {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Level"] = this.level;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["level"] = this.level;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12717,11 +12945,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.level = _data["Level"];
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
-            this.requiresSetup = _data["RequiresSetup"];
-            this.hasUsers = _data["HasUsers"];
-            this.currentUser = _data["CurrentUser"] ? SecurityUserInfo.fromJS(_data["CurrentUser"]) : undefined as any;
+            this.level = _data["level"];
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            this.requiresSetup = _data["requiresSetup"];
+            this.hasUsers = _data["hasUsers"];
+            this.currentUser = _data["currentUser"] ? SecurityUserInfo.fromJS(_data["currentUser"]) : undefined as any;
         }
     }
 
@@ -12734,11 +12962,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Level"] = this.level;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        data["RequiresSetup"] = this.requiresSetup;
-        data["HasUsers"] = this.hasUsers;
-        data["CurrentUser"] = this.currentUser ? this.currentUser.toJSON() : undefined as any;
+        data["level"] = this.level;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["requiresSetup"] = this.requiresSetup;
+        data["hasUsers"] = this.hasUsers;
+        data["currentUser"] = this.currentUser ? this.currentUser.toJSON() : undefined as any;
         return data;
     }
 }
@@ -12770,16 +12998,16 @@ export class SecurityUserInfo implements ISecurityUserInfo {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.userName = _data["UserName"];
-            this.role = _data["Role"];
-            if (Array.isArray(_data["RoleIds"])) {
+            this.id = _data["id"];
+            this.userName = _data["userName"];
+            this.role = _data["role"];
+            if (Array.isArray(_data["roleIds"])) {
                 this.roleIds = [] as any;
-                for (let item of _data["RoleIds"])
+                for (let item of _data["roleIds"])
                     this.roleIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12792,16 +13020,16 @@ export class SecurityUserInfo implements ISecurityUserInfo {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["UserName"] = this.userName;
-        data["Role"] = this.role;
+        data["id"] = this.id;
+        data["userName"] = this.userName;
+        data["role"] = this.role;
         if (Array.isArray(this.roleIds)) {
-            data["RoleIds"] = [];
+            data["roleIds"] = [];
             for (let item of this.roleIds)
-                data["RoleIds"].push(item);
+                data["roleIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12834,16 +13062,16 @@ export class SecurityUserResponse implements ISecurityUserResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.userName = _data["UserName"];
-            this.role = _data["Role"];
-            if (Array.isArray(_data["RoleIds"])) {
+            this.id = _data["id"];
+            this.userName = _data["userName"];
+            this.role = _data["role"];
+            if (Array.isArray(_data["roleIds"])) {
                 this.roleIds = [] as any;
-                for (let item of _data["RoleIds"])
+                for (let item of _data["roleIds"])
                     this.roleIds!.push(item);
             }
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -12856,16 +13084,16 @@ export class SecurityUserResponse implements ISecurityUserResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["UserName"] = this.userName;
-        data["Role"] = this.role;
+        data["id"] = this.id;
+        data["userName"] = this.userName;
+        data["role"] = this.role;
         if (Array.isArray(this.roleIds)) {
-            data["RoleIds"] = [];
+            data["roleIds"] = [];
             for (let item of this.roleIds)
-                data["RoleIds"].push(item);
+                data["roleIds"].push(item);
         }
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -12896,10 +13124,10 @@ export class SqlAccountCreationOperation implements ISqlAccountCreationOperation
 
     init(_data?: any) {
         if (_data) {
-            this.operationType = _data["OperationType"];
-            this.database = _data["Database"];
-            this.success = _data["Success"];
-            this.errorMessage = _data["ErrorMessage"];
+            this.operationType = _data["operationType"];
+            this.database = _data["database"];
+            this.success = _data["success"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -12912,10 +13140,10 @@ export class SqlAccountCreationOperation implements ISqlAccountCreationOperation
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["OperationType"] = this.operationType;
-        data["Database"] = this.database;
-        data["Success"] = this.success;
-        data["ErrorMessage"] = this.errorMessage;
+        data["operationType"] = this.operationType;
+        data["database"] = this.database;
+        data["success"] = this.success;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -12946,16 +13174,16 @@ export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.accountName = _data["AccountName"];
-            this.principalName = _data["PrincipalName"];
-            this.status = _data["Status"];
-            if (Array.isArray(_data["PermissionComparisons"])) {
+            this.accountId = _data["accountId"];
+            this.accountName = _data["accountName"];
+            this.principalName = _data["principalName"];
+            this.status = _data["status"];
+            if (Array.isArray(_data["permissionComparisons"])) {
                 this.permissionComparisons = [] as any;
-                for (let item of _data["PermissionComparisons"])
+                for (let item of _data["permissionComparisons"])
                     this.permissionComparisons!.push(SqlPermissionComparison.fromJS(item));
             }
-            this.errorMessage = _data["ErrorMessage"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -12968,16 +13196,16 @@ export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["AccountName"] = this.accountName;
-        data["PrincipalName"] = this.principalName;
-        data["Status"] = this.status;
+        data["accountId"] = this.accountId;
+        data["accountName"] = this.accountName;
+        data["principalName"] = this.principalName;
+        data["status"] = this.status;
         if (Array.isArray(this.permissionComparisons)) {
-            data["PermissionComparisons"] = [];
+            data["permissionComparisons"] = [];
             for (let item of this.permissionComparisons)
-                data["PermissionComparisons"].push(item ? item.toJSON() : undefined as any);
+                data["permissionComparisons"].push(item ? item.toJSON() : undefined as any);
         }
-        data["ErrorMessage"] = this.errorMessage;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -13007,11 +13235,11 @@ export class SqlActualGrant implements ISqlActualGrant {
 
     init(_data?: any) {
         if (_data) {
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            if (Array.isArray(_data["Privileges"])) {
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            if (Array.isArray(_data["privileges"])) {
                 this.privileges = [] as any;
-                for (let item of _data["Privileges"])
+                for (let item of _data["privileges"])
                     this.privileges!.push(item);
             }
         }
@@ -13026,12 +13254,12 @@ export class SqlActualGrant implements ISqlActualGrant {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
         if (Array.isArray(this.privileges)) {
-            data["Privileges"] = [];
+            data["privileges"] = [];
             for (let item of this.privileges)
-                data["Privileges"].push(item);
+                data["privileges"].push(item);
         }
         return data;
     }
@@ -13059,9 +13287,9 @@ export class SqlConnectionTestResult implements ISqlConnectionTestResult {
 
     init(_data?: any) {
         if (_data) {
-            this.isSuccessful = _data["IsSuccessful"];
-            this.permissions = _data["Permissions"];
-            this.errorMessage = _data["ErrorMessage"];
+            this.isSuccessful = _data["isSuccessful"];
+            this.permissions = _data["permissions"];
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -13074,9 +13302,9 @@ export class SqlConnectionTestResult implements ISqlConnectionTestResult {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["IsSuccessful"] = this.isSuccessful;
-        data["Permissions"] = this.permissions;
-        data["ErrorMessage"] = this.errorMessage;
+        data["isSuccessful"] = this.isSuccessful;
+        data["permissions"] = this.permissions;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -13101,9 +13329,9 @@ export class SqlDatabasesResponse implements ISqlDatabasesResponse {
 
     init(_data?: any) {
         if (_data) {
-            if (Array.isArray(_data["Databases"])) {
+            if (Array.isArray(_data["databases"])) {
                 this.databases = [] as any;
-                for (let item of _data["Databases"])
+                for (let item of _data["databases"])
                     this.databases!.push(item);
             }
         }
@@ -13119,9 +13347,9 @@ export class SqlDatabasesResponse implements ISqlDatabasesResponse {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         if (Array.isArray(this.databases)) {
-            data["Databases"] = [];
+            data["databases"] = [];
             for (let item of this.databases)
-                data["Databases"].push(item);
+                data["databases"].push(item);
         }
         return data;
     }
@@ -13150,20 +13378,20 @@ export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegratio
 
     init(_data?: any) {
         if (_data) {
-            this.integrationId = _data["IntegrationId"];
-            this.integrationName = _data["IntegrationName"];
-            if (Array.isArray(_data["Accounts"])) {
+            this.integrationId = _data["integrationId"];
+            this.integrationName = _data["integrationName"];
+            if (Array.isArray(_data["accounts"])) {
                 this.accounts = [] as any;
-                for (let item of _data["Accounts"])
+                for (let item of _data["accounts"])
                     this.accounts!.push(SqlAccountPermissionsStatus.fromJS(item));
             }
-            if (Array.isArray(_data["OrphanPrincipals"])) {
+            if (Array.isArray(_data["orphanPrincipals"])) {
                 this.orphanPrincipals = [] as any;
-                for (let item of _data["OrphanPrincipals"])
+                for (let item of _data["orphanPrincipals"])
                     this.orphanPrincipals!.push(SqlOrphanPrincipal.fromJS(item));
             }
-            this.summary = _data["Summary"] ? SqlPermissionsOverviewSummary.fromJS(_data["Summary"]) : undefined as any;
-            this.errorMessage = _data["ErrorMessage"];
+            this.summary = _data["summary"] ? SqlPermissionsOverviewSummary.fromJS(_data["summary"]) : undefined as any;
+            this.errorMessage = _data["errorMessage"];
         }
     }
 
@@ -13176,20 +13404,20 @@ export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegratio
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["IntegrationId"] = this.integrationId;
-        data["IntegrationName"] = this.integrationName;
+        data["integrationId"] = this.integrationId;
+        data["integrationName"] = this.integrationName;
         if (Array.isArray(this.accounts)) {
-            data["Accounts"] = [];
+            data["accounts"] = [];
             for (let item of this.accounts)
-                data["Accounts"].push(item ? item.toJSON() : undefined as any);
+                data["accounts"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.orphanPrincipals)) {
-            data["OrphanPrincipals"] = [];
+            data["orphanPrincipals"] = [];
             for (let item of this.orphanPrincipals)
-                data["OrphanPrincipals"].push(item ? item.toJSON() : undefined as any);
+                data["orphanPrincipals"].push(item ? item.toJSON() : undefined as any);
         }
-        data["Summary"] = this.summary ? this.summary.toJSON() : undefined as any;
-        data["ErrorMessage"] = this.errorMessage;
+        data["summary"] = this.summary ? this.summary.toJSON() : undefined as any;
+        data["errorMessage"] = this.errorMessage;
         return data;
     }
 }
@@ -13223,13 +13451,13 @@ export class SqlIntegrationResponse implements ISqlIntegrationResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.dataStoreId = _data["DataStoreId"];
-            this.accountId = _data["AccountId"];
-            this.permissions = _data["Permissions"];
-            this.createdAt = _data["CreatedAt"] ? new Date(_data["CreatedAt"].toString()) : undefined as any;
-            this.updatedAt = _data["UpdatedAt"] ? new Date(_data["UpdatedAt"].toString()) : undefined as any;
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.dataStoreId = _data["dataStoreId"];
+            this.accountId = _data["accountId"];
+            this.permissions = _data["permissions"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
         }
     }
 
@@ -13242,13 +13470,13 @@ export class SqlIntegrationResponse implements ISqlIntegrationResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["DataStoreId"] = this.dataStoreId;
-        data["AccountId"] = this.accountId;
-        data["Permissions"] = this.permissions;
-        data["CreatedAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["UpdatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["dataStoreId"] = this.dataStoreId;
+        data["accountId"] = this.accountId;
+        data["permissions"] = this.permissions;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         return data;
     }
 }
@@ -13278,10 +13506,10 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
 
     init(_data?: any) {
         if (_data) {
-            this.principalName = _data["PrincipalName"];
-            if (Array.isArray(_data["ActualPermissions"])) {
+            this.principalName = _data["principalName"];
+            if (Array.isArray(_data["actualPermissions"])) {
                 this.actualPermissions = [] as any;
-                for (let item of _data["ActualPermissions"])
+                for (let item of _data["actualPermissions"])
                     this.actualPermissions!.push(SqlActualGrant.fromJS(item));
             }
         }
@@ -13296,11 +13524,11 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["PrincipalName"] = this.principalName;
+        data["principalName"] = this.principalName;
         if (Array.isArray(this.actualPermissions)) {
-            data["ActualPermissions"] = [];
+            data["actualPermissions"] = [];
             for (let item of this.actualPermissions)
-                data["ActualPermissions"].push(item ? item.toJSON() : undefined as any);
+                data["actualPermissions"].push(item ? item.toJSON() : undefined as any);
         }
         return data;
     }
@@ -13330,26 +13558,26 @@ export class SqlPermissionComparison implements ISqlPermissionComparison {
 
     init(_data?: any) {
         if (_data) {
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            if (Array.isArray(_data["ConfiguredPrivileges"])) {
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            if (Array.isArray(_data["configuredPrivileges"])) {
                 this.configuredPrivileges = [] as any;
-                for (let item of _data["ConfiguredPrivileges"])
+                for (let item of _data["configuredPrivileges"])
                     this.configuredPrivileges!.push(item);
             }
-            if (Array.isArray(_data["ActualPrivileges"])) {
+            if (Array.isArray(_data["actualPrivileges"])) {
                 this.actualPrivileges = [] as any;
-                for (let item of _data["ActualPrivileges"])
+                for (let item of _data["actualPrivileges"])
                     this.actualPrivileges!.push(item);
             }
-            if (Array.isArray(_data["MissingPrivileges"])) {
+            if (Array.isArray(_data["missingPrivileges"])) {
                 this.missingPrivileges = [] as any;
-                for (let item of _data["MissingPrivileges"])
+                for (let item of _data["missingPrivileges"])
                     this.missingPrivileges!.push(item);
             }
-            if (Array.isArray(_data["ExtraPrivileges"])) {
+            if (Array.isArray(_data["extraPrivileges"])) {
                 this.extraPrivileges = [] as any;
-                for (let item of _data["ExtraPrivileges"])
+                for (let item of _data["extraPrivileges"])
                     this.extraPrivileges!.push(item);
             }
         }
@@ -13364,27 +13592,27 @@ export class SqlPermissionComparison implements ISqlPermissionComparison {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
         if (Array.isArray(this.configuredPrivileges)) {
-            data["ConfiguredPrivileges"] = [];
+            data["configuredPrivileges"] = [];
             for (let item of this.configuredPrivileges)
-                data["ConfiguredPrivileges"].push(item);
+                data["configuredPrivileges"].push(item);
         }
         if (Array.isArray(this.actualPrivileges)) {
-            data["ActualPrivileges"] = [];
+            data["actualPrivileges"] = [];
             for (let item of this.actualPrivileges)
-                data["ActualPrivileges"].push(item);
+                data["actualPrivileges"].push(item);
         }
         if (Array.isArray(this.missingPrivileges)) {
-            data["MissingPrivileges"] = [];
+            data["missingPrivileges"] = [];
             for (let item of this.missingPrivileges)
-                data["MissingPrivileges"].push(item);
+                data["missingPrivileges"].push(item);
         }
         if (Array.isArray(this.extraPrivileges)) {
-            data["ExtraPrivileges"] = [];
+            data["extraPrivileges"] = [];
             for (let item of this.extraPrivileges)
-                data["ExtraPrivileges"].push(item);
+                data["extraPrivileges"].push(item);
         }
         return data;
     }
@@ -13425,12 +13653,12 @@ export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSum
 
     init(_data?: any) {
         if (_data) {
-            this.totalAccounts = _data["TotalAccounts"];
-            this.inSyncCount = _data["InSyncCount"];
-            this.driftCount = _data["DriftCount"];
-            this.missingPrincipalCount = _data["MissingPrincipalCount"];
-            this.errorCount = _data["ErrorCount"];
-            this.orphanPrincipalCount = _data["OrphanPrincipalCount"];
+            this.totalAccounts = _data["totalAccounts"];
+            this.inSyncCount = _data["inSyncCount"];
+            this.driftCount = _data["driftCount"];
+            this.missingPrincipalCount = _data["missingPrincipalCount"];
+            this.errorCount = _data["errorCount"];
+            this.orphanPrincipalCount = _data["orphanPrincipalCount"];
         }
     }
 
@@ -13443,12 +13671,12 @@ export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSum
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["TotalAccounts"] = this.totalAccounts;
-        data["InSyncCount"] = this.inSyncCount;
-        data["DriftCount"] = this.driftCount;
-        data["MissingPrincipalCount"] = this.missingPrincipalCount;
-        data["ErrorCount"] = this.errorCount;
-        data["OrphanPrincipalCount"] = this.orphanPrincipalCount;
+        data["totalAccounts"] = this.totalAccounts;
+        data["inSyncCount"] = this.inSyncCount;
+        data["driftCount"] = this.driftCount;
+        data["missingPrincipalCount"] = this.missingPrincipalCount;
+        data["errorCount"] = this.errorCount;
+        data["orphanPrincipalCount"] = this.orphanPrincipalCount;
         return data;
     }
 }
@@ -13487,10 +13715,10 @@ export class Tag implements ITag {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.color = _data["Color"];
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.color = _data["color"];
         }
     }
 
@@ -13503,10 +13731,10 @@ export class Tag implements ITag {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["Color"] = this.color;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["color"] = this.color;
         return data;
     }
 }
@@ -13551,9 +13779,9 @@ export class TestSecretProviderConnection implements ITestSecretProviderConnecti
 
     init(_data?: any) {
         if (_data) {
-            this.vaultUri = _data["VaultUri"];
-            this.authMode = _data["AuthMode"];
-            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
+            this.vaultUri = _data["vaultUri"];
+            this.authMode = _data["authMode"];
+            this.credentials = _data["credentials"] ? SecretProviderCredentials.fromJS(_data["credentials"]) : undefined as any;
         }
     }
 
@@ -13566,9 +13794,9 @@ export class TestSecretProviderConnection implements ITestSecretProviderConnecti
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["VaultUri"] = this.vaultUri;
-        data["AuthMode"] = this.authMode;
-        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        data["vaultUri"] = this.vaultUri;
+        data["authMode"] = this.authMode;
+        data["credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
         return data;
     }
 }
@@ -13593,7 +13821,7 @@ export class TestSqlConnection implements ITestSqlConnection {
 
     init(_data?: any) {
         if (_data) {
-            this.connectionString = _data["ConnectionString"];
+            this.connectionString = _data["connectionString"];
         }
     }
 
@@ -13606,7 +13834,7 @@ export class TestSqlConnection implements ITestSqlConnection {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ConnectionString"] = this.connectionString;
+        data["connectionString"] = this.connectionString;
         return data;
     }
 }
@@ -13637,27 +13865,27 @@ export class UpdateAccount implements IUpdateAccount {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.authKind = _data["AuthKind"];
-            this.secretBinding = _data["SecretBinding"] ? SecretBinding.fromJS(_data["SecretBinding"]) : undefined as any;
-            this.userName = _data["UserName"];
-            if (_data["Parameters"]) {
+            this.id = _data["id"];
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.authKind = _data["authKind"];
+            this.secretBinding = _data["secretBinding"] ? SecretBinding.fromJS(_data["secretBinding"]) : undefined as any;
+            this.userName = _data["userName"];
+            if (_data["parameters"]) {
                 this.parameters = {} as any;
-                for (let key in _data["Parameters"]) {
-                    if (_data["Parameters"].hasOwnProperty(key))
-                        (this.parameters as any)![key] = _data["Parameters"][key];
+                for (let key in _data["parameters"]) {
+                    if (_data["parameters"].hasOwnProperty(key))
+                        (this.parameters as any)![key] = _data["parameters"][key];
                 }
             }
-            if (Array.isArray(_data["Grants"])) {
+            if (Array.isArray(_data["grants"])) {
                 this.grants = [] as any;
-                for (let item of _data["Grants"])
+                for (let item of _data["grants"])
                     this.grants!.push(Grant.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -13672,28 +13900,28 @@ export class UpdateAccount implements IUpdateAccount {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["AuthKind"] = this.authKind;
-        data["SecretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
-        data["UserName"] = this.userName;
+        data["id"] = this.id;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["authKind"] = this.authKind;
+        data["secretBinding"] = this.secretBinding ? this.secretBinding.toJSON() : undefined as any;
+        data["userName"] = this.userName;
         if (this.parameters) {
-            data["Parameters"] = {};
+            data["parameters"] = {};
             for (let key in this.parameters) {
                 if (this.parameters.hasOwnProperty(key))
-                    (data["Parameters"] as any)[key] = (this.parameters as any)[key];
+                    (data["parameters"] as any)[key] = (this.parameters as any)[key];
             }
         }
         if (Array.isArray(this.grants)) {
-            data["Grants"] = [];
+            data["grants"] = [];
             for (let item of this.grants)
-                data["Grants"].push(item ? item.toJSON() : undefined as any);
+                data["grants"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -13729,13 +13957,13 @@ export class UpdateAccountGrant implements IUpdateAccountGrant {
 
     init(_data?: any) {
         if (_data) {
-            this.accountId = _data["AccountId"];
-            this.grantId = _data["GrantId"];
-            this.database = _data["Database"];
-            this.schema = _data["Schema"];
-            if (Array.isArray(_data["Privileges"])) {
+            this.accountId = _data["accountId"];
+            this.grantId = _data["grantId"];
+            this.database = _data["database"];
+            this.schema = _data["schema"];
+            if (Array.isArray(_data["privileges"])) {
                 this.privileges = [] as any;
-                for (let item of _data["Privileges"])
+                for (let item of _data["privileges"])
                     this.privileges!.push(item);
             }
         }
@@ -13750,14 +13978,14 @@ export class UpdateAccountGrant implements IUpdateAccountGrant {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["AccountId"] = this.accountId;
-        data["GrantId"] = this.grantId;
-        data["Database"] = this.database;
-        data["Schema"] = this.schema;
+        data["accountId"] = this.accountId;
+        data["grantId"] = this.grantId;
+        data["database"] = this.database;
+        data["schema"] = this.schema;
         if (Array.isArray(this.privileges)) {
-            data["Privileges"] = [];
+            data["privileges"] = [];
             for (let item of this.privileges)
-                data["Privileges"].push(item);
+                data["privileges"].push(item);
         }
         return data;
     }
@@ -13794,18 +14022,18 @@ export class UpdateApplication implements IUpdateApplication {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.version = _data["Version"];
-            this.description = _data["Description"];
-            this.owner = _data["Owner"];
-            this.notes = _data["Notes"];
-            this.framework = _data["Framework"];
-            this.repositoryUri = _data["RepositoryUri"];
-            this.icon = _data["Icon"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.version = _data["version"];
+            this.description = _data["description"];
+            this.owner = _data["owner"];
+            this.notes = _data["notes"];
+            this.framework = _data["framework"];
+            this.repositoryUri = _data["repositoryUri"];
+            this.icon = _data["icon"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -13820,19 +14048,19 @@ export class UpdateApplication implements IUpdateApplication {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Version"] = this.version;
-        data["Description"] = this.description;
-        data["Owner"] = this.owner;
-        data["Notes"] = this.notes;
-        data["Framework"] = this.framework;
-        data["RepositoryUri"] = this.repositoryUri;
-        data["Icon"] = this.icon;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["version"] = this.version;
+        data["description"] = this.description;
+        data["owner"] = this.owner;
+        data["notes"] = this.notes;
+        data["framework"] = this.framework;
+        data["repositoryUri"] = this.repositoryUri;
+        data["icon"] = this.icon;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -13873,15 +14101,15 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.instanceId = _data["InstanceId"];
-            this.dependencyId = _data["DependencyId"];
-            this.targetId = _data["TargetId"];
-            this.targetKind = _data["TargetKind"];
-            this.port = _data["Port"];
-            this.authKind = _data["AuthKind"];
-            this.accountId = _data["AccountId"];
-            this.identityId = _data["IdentityId"];
+            this.applicationId = _data["applicationId"];
+            this.instanceId = _data["instanceId"];
+            this.dependencyId = _data["dependencyId"];
+            this.targetId = _data["targetId"];
+            this.targetKind = _data["targetKind"];
+            this.port = _data["port"];
+            this.authKind = _data["authKind"];
+            this.accountId = _data["accountId"];
+            this.identityId = _data["identityId"];
         }
     }
 
@@ -13894,15 +14122,15 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["InstanceId"] = this.instanceId;
-        data["DependencyId"] = this.dependencyId;
-        data["TargetId"] = this.targetId;
-        data["TargetKind"] = this.targetKind;
-        data["Port"] = this.port;
-        data["AuthKind"] = this.authKind;
-        data["AccountId"] = this.accountId;
-        data["IdentityId"] = this.identityId;
+        data["applicationId"] = this.applicationId;
+        data["instanceId"] = this.instanceId;
+        data["dependencyId"] = this.dependencyId;
+        data["targetId"] = this.targetId;
+        data["targetKind"] = this.targetKind;
+        data["port"] = this.port;
+        data["authKind"] = this.authKind;
+        data["accountId"] = this.accountId;
+        data["identityId"] = this.identityId;
         return data;
     }
 }
@@ -13941,17 +14169,17 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.instanceId = _data["InstanceId"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.baseUri = _data["BaseUri"];
-            this.healthUri = _data["HealthUri"];
-            this.openApiUri = _data["OpenApiUri"];
-            this.version = _data["Version"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.applicationId = _data["applicationId"];
+            this.instanceId = _data["instanceId"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.baseUri = _data["baseUri"];
+            this.healthUri = _data["healthUri"];
+            this.openApiUri = _data["openApiUri"];
+            this.version = _data["version"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -13966,18 +14194,18 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["InstanceId"] = this.instanceId;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["BaseUri"] = this.baseUri;
-        data["HealthUri"] = this.healthUri;
-        data["OpenApiUri"] = this.openApiUri;
-        data["Version"] = this.version;
+        data["applicationId"] = this.applicationId;
+        data["instanceId"] = this.instanceId;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["baseUri"] = this.baseUri;
+        data["healthUri"] = this.healthUri;
+        data["openApiUri"] = this.openApiUri;
+        data["version"] = this.version;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -14012,10 +14240,10 @@ export class UpdateApplicationPipeline implements IUpdateApplicationPipeline {
 
     init(_data?: any) {
         if (_data) {
-            this.applicationId = _data["ApplicationId"];
-            this.pipelineId = _data["PipelineId"];
-            this.name = _data["Name"];
-            this.pipelineUri = _data["PipelineUri"];
+            this.applicationId = _data["applicationId"];
+            this.pipelineId = _data["pipelineId"];
+            this.name = _data["name"];
+            this.pipelineUri = _data["pipelineUri"];
         }
     }
 
@@ -14028,10 +14256,10 @@ export class UpdateApplicationPipeline implements IUpdateApplicationPipeline {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["ApplicationId"] = this.applicationId;
-        data["PipelineId"] = this.pipelineId;
-        data["Name"] = this.name;
-        data["PipelineUri"] = this.pipelineUri;
+        data["applicationId"] = this.applicationId;
+        data["pipelineId"] = this.pipelineId;
+        data["name"] = this.name;
+        data["pipelineUri"] = this.pipelineUri;
         return data;
     }
 }
@@ -14063,15 +14291,15 @@ export class UpdateDataStore implements IUpdateDataStore {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.kind = _data["Kind"];
-            this.environmentId = _data["EnvironmentId"];
-            this.platformId = _data["PlatformId"];
-            this.connectionUri = _data["ConnectionUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.platformId = _data["platformId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -14086,16 +14314,16 @@ export class UpdateDataStore implements IUpdateDataStore {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Kind"] = this.kind;
-        data["EnvironmentId"] = this.environmentId;
-        data["PlatformId"] = this.platformId;
-        data["ConnectionUri"] = this.connectionUri;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["platformId"] = this.platformId;
+        data["connectionUri"] = this.connectionUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -14132,18 +14360,18 @@ export class UpdateEnvironment implements IUpdateEnvironment {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
-            this.autoCreateInstances = _data["AutoCreateInstances"];
-            this.baseUriTemplate = _data["BaseUriTemplate"];
-            this.healthUriTemplate = _data["HealthUriTemplate"];
-            this.openApiUriTemplate = _data["OpenApiUriTemplate"];
+            this.autoCreateInstances = _data["autoCreateInstances"];
+            this.baseUriTemplate = _data["baseUriTemplate"];
+            this.healthUriTemplate = _data["healthUriTemplate"];
+            this.openApiUriTemplate = _data["openApiUriTemplate"];
         }
     }
 
@@ -14156,18 +14384,18 @@ export class UpdateEnvironment implements IUpdateEnvironment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
-        data["AutoCreateInstances"] = this.autoCreateInstances;
-        data["BaseUriTemplate"] = this.baseUriTemplate;
-        data["HealthUriTemplate"] = this.healthUriTemplate;
-        data["OpenApiUriTemplate"] = this.openApiUriTemplate;
+        data["autoCreateInstances"] = this.autoCreateInstances;
+        data["baseUriTemplate"] = this.baseUriTemplate;
+        data["healthUriTemplate"] = this.healthUriTemplate;
+        data["openApiUriTemplate"] = this.openApiUriTemplate;
         return data;
     }
 }
@@ -14201,13 +14429,13 @@ export class UpdateExternalResource implements IUpdateExternalResource {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.resourceUri = _data["ResourceUri"];
-            if (Array.isArray(_data["TagIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.resourceUri = _data["resourceUri"];
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -14222,14 +14450,14 @@ export class UpdateExternalResource implements IUpdateExternalResource {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["ResourceUri"] = this.resourceUri;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["resourceUri"] = this.resourceUri;
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -14263,19 +14491,19 @@ export class UpdateIdentity implements IUpdateIdentity {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.kind = _data["Kind"];
-            this.notes = _data["Notes"];
-            this.ownerInstanceId = _data["OwnerInstanceId"];
-            if (Array.isArray(_data["Assignments"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.kind = _data["kind"];
+            this.notes = _data["notes"];
+            this.ownerInstanceId = _data["ownerInstanceId"];
+            if (Array.isArray(_data["assignments"])) {
                 this.assignments = [] as any;
-                for (let item of _data["Assignments"])
+                for (let item of _data["assignments"])
                     this.assignments!.push(IdentityAssignment.fromJS(item));
             }
-            if (Array.isArray(_data["TagIds"])) {
+            if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
+                for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
         }
@@ -14290,20 +14518,20 @@ export class UpdateIdentity implements IUpdateIdentity {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Kind"] = this.kind;
-        data["Notes"] = this.notes;
-        data["OwnerInstanceId"] = this.ownerInstanceId;
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["kind"] = this.kind;
+        data["notes"] = this.notes;
+        data["ownerInstanceId"] = this.ownerInstanceId;
         if (Array.isArray(this.assignments)) {
-            data["Assignments"] = [];
+            data["assignments"] = [];
             for (let item of this.assignments)
-                data["Assignments"].push(item ? item.toJSON() : undefined as any);
+                data["assignments"].push(item ? item.toJSON() : undefined as any);
         }
         if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
+            data["tagIds"] = [];
             for (let item of this.tagIds)
-                data["TagIds"].push(item);
+                data["tagIds"].push(item);
         }
         return data;
     }
@@ -14338,12 +14566,12 @@ export class UpdateIdentityAssignment implements IUpdateIdentityAssignment {
 
     init(_data?: any) {
         if (_data) {
-            this.identityId = _data["IdentityId"];
-            this.assignmentId = _data["AssignmentId"];
-            this.targetKind = _data["TargetKind"];
-            this.targetId = _data["TargetId"];
-            this.role = _data["Role"];
-            this.notes = _data["Notes"];
+            this.identityId = _data["identityId"];
+            this.assignmentId = _data["assignmentId"];
+            this.targetKind = _data["targetKind"];
+            this.targetId = _data["targetId"];
+            this.role = _data["role"];
+            this.notes = _data["notes"];
         }
     }
 
@@ -14356,12 +14584,12 @@ export class UpdateIdentityAssignment implements IUpdateIdentityAssignment {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["IdentityId"] = this.identityId;
-        data["AssignmentId"] = this.assignmentId;
-        data["TargetKind"] = this.targetKind;
-        data["TargetId"] = this.targetId;
-        data["Role"] = this.role;
-        data["Notes"] = this.notes;
+        data["identityId"] = this.identityId;
+        data["assignmentId"] = this.assignmentId;
+        data["targetKind"] = this.targetKind;
+        data["targetId"] = this.targetId;
+        data["role"] = this.role;
+        data["notes"] = this.notes;
         return data;
     }
 }
@@ -14395,17 +14623,17 @@ export class UpdateKumaIntegration implements IUpdateKumaIntegration {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            if (Array.isArray(_data["EnvironmentIds"])) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            if (Array.isArray(_data["environmentIds"])) {
                 this.environmentIds = [] as any;
-                for (let item of _data["EnvironmentIds"])
+                for (let item of _data["environmentIds"])
                     this.environmentIds!.push(item);
             }
-            this.platformId = _data["PlatformId"];
-            this.accountId = _data["AccountId"];
-            this.uri = _data["Uri"];
-            this.apiKey = _data["ApiKey"];
+            this.platformId = _data["platformId"];
+            this.accountId = _data["accountId"];
+            this.uri = _data["uri"];
+            this.apiKey = _data["apiKey"];
         }
     }
 
@@ -14418,17 +14646,17 @@ export class UpdateKumaIntegration implements IUpdateKumaIntegration {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
+        data["id"] = this.id;
+        data["name"] = this.name;
         if (Array.isArray(this.environmentIds)) {
-            data["EnvironmentIds"] = [];
+            data["environmentIds"] = [];
             for (let item of this.environmentIds)
-                data["EnvironmentIds"].push(item);
+                data["environmentIds"].push(item);
         }
-        data["PlatformId"] = this.platformId;
-        data["AccountId"] = this.accountId;
-        data["Uri"] = this.uri;
-        data["ApiKey"] = this.apiKey;
+        data["platformId"] = this.platformId;
+        data["accountId"] = this.accountId;
+        data["uri"] = this.uri;
+        data["apiKey"] = this.apiKey;
         return data;
     }
 }
@@ -14441,861 +14669,6 @@ export interface IUpdateKumaIntegration {
     accountId?: string | undefined;
     uri?: string | undefined;
     apiKey?: string | undefined;
-}
-
-export class UpdatePlatform implements IUpdatePlatform {
-    id?: string;
-    displayName?: string | undefined;
-    dnsName?: string | undefined;
-    os?: string | undefined;
-    kind?: PlatformKind;
-    ipAddress?: string | undefined;
-    notes?: string | undefined;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: IUpdatePlatform) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.displayName = _data["DisplayName"];
-            this.dnsName = _data["DnsName"];
-            this.os = _data["Os"];
-            this.kind = _data["Kind"];
-            this.ipAddress = _data["IpAddress"];
-            this.notes = _data["Notes"];
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): UpdatePlatform {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdatePlatform();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["DisplayName"] = this.displayName;
-        data["DnsName"] = this.dnsName;
-        data["Os"] = this.os;
-        data["Kind"] = this.kind;
-        data["IpAddress"] = this.ipAddress;
-        data["Notes"] = this.notes;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IUpdatePlatform {
-    id?: string;
-    displayName?: string | undefined;
-    dnsName?: string | undefined;
-    os?: string | undefined;
-    kind?: PlatformKind;
-    ipAddress?: string | undefined;
-    notes?: string | undefined;
-    tagIds?: string[] | undefined;
-}
-
-export class UpdatePosition implements IUpdatePosition {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: IUpdatePosition) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): UpdatePosition {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdatePosition();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IUpdatePosition {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    tagIds?: string[] | undefined;
-}
-
-export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
-    id?: string;
-    positionId?: string;
-    responsibilityTypeId?: string;
-    applicationId?: string;
-    scope?: ResponsibilityScope;
-    environmentId?: string | undefined;
-    notes?: string | undefined;
-    primary?: boolean;
-
-    constructor(data?: IUpdateResponsibilityAssignment) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.positionId = _data["PositionId"];
-            this.responsibilityTypeId = _data["ResponsibilityTypeId"];
-            this.applicationId = _data["ApplicationId"];
-            this.scope = _data["Scope"];
-            this.environmentId = _data["EnvironmentId"];
-            this.notes = _data["Notes"];
-            this.primary = _data["Primary"];
-        }
-    }
-
-    static fromJS(data: any): UpdateResponsibilityAssignment {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateResponsibilityAssignment();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["PositionId"] = this.positionId;
-        data["ResponsibilityTypeId"] = this.responsibilityTypeId;
-        data["ApplicationId"] = this.applicationId;
-        data["Scope"] = this.scope;
-        data["EnvironmentId"] = this.environmentId;
-        data["Notes"] = this.notes;
-        data["Primary"] = this.primary;
-        return data;
-    }
-}
-
-export interface IUpdateResponsibilityAssignment {
-    id?: string;
-    positionId?: string;
-    responsibilityTypeId?: string;
-    applicationId?: string;
-    scope?: ResponsibilityScope;
-    environmentId?: string | undefined;
-    notes?: string | undefined;
-    primary?: boolean;
-}
-
-export class UpdateResponsibilityType implements IUpdateResponsibilityType {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-
-    constructor(data?: IUpdateResponsibilityType) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-        }
-    }
-
-    static fromJS(data: any): UpdateResponsibilityType {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateResponsibilityType();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        return data;
-    }
-}
-
-export interface IUpdateResponsibilityType {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-}
-
-export class UpdateRisk implements IUpdateRisk {
-    id?: string;
-    title?: string | undefined;
-    description?: string | undefined;
-    impact?: RiskImpact;
-    likelihood?: RiskLikelihood;
-    status?: RiskStatus;
-    ownerPositionId?: string;
-    approverPositionId?: string | undefined;
-    targetType?: string | undefined;
-    targetId?: string;
-    mitigation?: string | undefined;
-    reviewDate?: Date | undefined;
-    approvalDate?: Date | undefined;
-    tagIds?: string[] | undefined;
-    notes?: string | undefined;
-
-    constructor(data?: IUpdateRisk) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.title = _data["Title"];
-            this.description = _data["Description"];
-            this.impact = _data["Impact"];
-            this.likelihood = _data["Likelihood"];
-            this.status = _data["Status"];
-            this.ownerPositionId = _data["OwnerPositionId"];
-            this.approverPositionId = _data["ApproverPositionId"];
-            this.targetType = _data["TargetType"];
-            this.targetId = _data["TargetId"];
-            this.mitigation = _data["Mitigation"];
-            this.reviewDate = _data["ReviewDate"] ? new Date(_data["ReviewDate"].toString()) : undefined as any;
-            this.approvalDate = _data["ApprovalDate"] ? new Date(_data["ApprovalDate"].toString()) : undefined as any;
-            if (Array.isArray(_data["TagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["TagIds"])
-                    this.tagIds!.push(item);
-            }
-            this.notes = _data["Notes"];
-        }
-    }
-
-    static fromJS(data: any): UpdateRisk {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateRisk();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Title"] = this.title;
-        data["Description"] = this.description;
-        data["Impact"] = this.impact;
-        data["Likelihood"] = this.likelihood;
-        data["Status"] = this.status;
-        data["OwnerPositionId"] = this.ownerPositionId;
-        data["ApproverPositionId"] = this.approverPositionId;
-        data["TargetType"] = this.targetType;
-        data["TargetId"] = this.targetId;
-        data["Mitigation"] = this.mitigation;
-        data["ReviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
-        data["ApprovalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
-        if (Array.isArray(this.tagIds)) {
-            data["TagIds"] = [];
-            for (let item of this.tagIds)
-                data["TagIds"].push(item);
-        }
-        data["Notes"] = this.notes;
-        return data;
-    }
-}
-
-export interface IUpdateRisk {
-    id?: string;
-    title?: string | undefined;
-    description?: string | undefined;
-    impact?: RiskImpact;
-    likelihood?: RiskLikelihood;
-    status?: RiskStatus;
-    ownerPositionId?: string;
-    approverPositionId?: string | undefined;
-    targetType?: string | undefined;
-    targetId?: string;
-    mitigation?: string | undefined;
-    reviewDate?: Date | undefined;
-    approvalDate?: Date | undefined;
-    tagIds?: string[] | undefined;
-    notes?: string | undefined;
-}
-
-export class UpdateRole implements IUpdateRole {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    permissions?: Permission[] | undefined;
-    requestedBy?: string | undefined;
-
-    constructor(data?: IUpdateRole) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            if (Array.isArray(_data["Permissions"])) {
-                this.permissions = [] as any;
-                for (let item of _data["Permissions"])
-                    this.permissions!.push(item);
-            }
-            this.requestedBy = _data["RequestedBy"];
-        }
-    }
-
-    static fromJS(data: any): UpdateRole {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateRole();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        if (Array.isArray(this.permissions)) {
-            data["Permissions"] = [];
-            for (let item of this.permissions)
-                data["Permissions"].push(item);
-        }
-        data["RequestedBy"] = this.requestedBy;
-        return data;
-    }
-}
-
-export interface IUpdateRole {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    permissions?: Permission[] | undefined;
-    requestedBy?: string | undefined;
-}
-
-export class UpdateSecretProvider implements IUpdateSecretProvider {
-    id?: string;
-    name?: string | undefined;
-    vaultUri?: string | undefined;
-    authMode?: SecretProviderAuthMode;
-    credentials?: SecretProviderCredentials;
-    capabilities?: SecretProviderCapabilities;
-
-    constructor(data?: IUpdateSecretProvider) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.vaultUri = _data["VaultUri"];
-            this.authMode = _data["AuthMode"];
-            this.credentials = _data["Credentials"] ? SecretProviderCredentials.fromJS(_data["Credentials"]) : undefined as any;
-            this.capabilities = _data["Capabilities"];
-        }
-    }
-
-    static fromJS(data: any): UpdateSecretProvider {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateSecretProvider();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["VaultUri"] = this.vaultUri;
-        data["AuthMode"] = this.authMode;
-        data["Credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
-        data["Capabilities"] = this.capabilities;
-        return data;
-    }
-}
-
-export interface IUpdateSecretProvider {
-    id?: string;
-    name?: string | undefined;
-    vaultUri?: string | undefined;
-    authMode?: SecretProviderAuthMode;
-    credentials?: SecretProviderCredentials;
-    capabilities?: SecretProviderCapabilities;
-}
-
-export class UpdateSecuritySettings implements IUpdateSecuritySettings {
-    level?: SecurityLevel;
-    requestedBy?: string | undefined;
-
-    constructor(data?: IUpdateSecuritySettings) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.level = _data["Level"];
-            this.requestedBy = _data["RequestedBy"];
-        }
-    }
-
-    static fromJS(data: any): UpdateSecuritySettings {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateSecuritySettings();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Level"] = this.level;
-        data["RequestedBy"] = this.requestedBy;
-        return data;
-    }
-}
-
-export interface IUpdateSecuritySettings {
-    level?: SecurityLevel;
-    requestedBy?: string | undefined;
-}
-
-export class UpdateSqlIntegration implements IUpdateSqlIntegration {
-    id?: string;
-    name?: string | undefined;
-    dataStoreId?: string;
-    connectionString?: string | undefined;
-    accountId?: string | undefined;
-    manualPassword?: string | undefined;
-
-    constructor(data?: IUpdateSqlIntegration) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.dataStoreId = _data["DataStoreId"];
-            this.connectionString = _data["ConnectionString"];
-            this.accountId = _data["AccountId"];
-            this.manualPassword = _data["ManualPassword"];
-        }
-    }
-
-    static fromJS(data: any): UpdateSqlIntegration {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateSqlIntegration();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["DataStoreId"] = this.dataStoreId;
-        data["ConnectionString"] = this.connectionString;
-        data["AccountId"] = this.accountId;
-        data["ManualPassword"] = this.manualPassword;
-        return data;
-    }
-}
-
-export interface IUpdateSqlIntegration {
-    id?: string;
-    name?: string | undefined;
-    dataStoreId?: string;
-    connectionString?: string | undefined;
-    accountId?: string | undefined;
-    manualPassword?: string | undefined;
-}
-
-export class UpdateTag implements IUpdateTag {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    color?: TagColor;
-
-    constructor(data?: IUpdateTag) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.name = _data["Name"];
-            this.description = _data["Description"];
-            this.color = _data["Color"];
-        }
-    }
-
-    static fromJS(data: any): UpdateTag {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateTag();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Name"] = this.name;
-        data["Description"] = this.description;
-        data["Color"] = this.color;
-        return data;
-    }
-}
-
-export interface IUpdateTag {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    color?: TagColor;
-}
-
-export class UpdateUser implements IUpdateUser {
-    id?: string;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
-
-    constructor(data?: IUpdateUser) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.role = _data["Role"];
-            this.requestedBy = _data["RequestedBy"];
-        }
-    }
-
-    static fromJS(data: any): UpdateUser {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateUser();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Role"] = this.role;
-        data["RequestedBy"] = this.requestedBy;
-        return data;
-    }
-}
-
-export interface IUpdateUser {
-    id?: string;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
-}
-
-export interface FileParameter {
-    data: any;
-    fileName: string;
-}
-
-export interface FileResponse {
-    data: Blob;
-    status: number;
-    fileName?: string;
-    headers?: { [name: string]: any };
-}
-
-export class CloneTarget implements ICloneTarget {
-    id?: string;
-    label?: string;
-    environmentName?: string;
-
-    constructor(data?: ICloneTarget) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["Id"];
-            this.label = _data["Label"];
-            this.environmentName = _data["EnvironmentName"];
-        }
-    }
-
-    static fromJS(data: any): CloneTarget {
-        data = typeof data === 'object' ? data : {};
-        let result = new CloneTarget();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["Id"] = this.id;
-        data["Label"] = this.label;
-        data["EnvironmentName"] = this.environmentName;
-        return data;
-    }
-}
-
-export interface ICloneTarget {
-    id?: string;
-    label?: string;
-    environmentName?: string;
-}
-
-export class CloneIdentityRequest implements ICloneIdentityRequest {
-    targetOwnerInstanceIds?: string[];
-
-    constructor(data?: ICloneIdentityRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["TargetOwnerInstanceIds"])) {
-                this.targetOwnerInstanceIds = [] as any;
-                for (let item of _data["TargetOwnerInstanceIds"])
-                    this.targetOwnerInstanceIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): CloneIdentityRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new CloneIdentityRequest();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.targetOwnerInstanceIds)) {
-            data["TargetOwnerInstanceIds"] = [];
-            for (let item of this.targetOwnerInstanceIds)
-                data["TargetOwnerInstanceIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface ICloneIdentityRequest {
-    targetOwnerInstanceIds?: string[];
-}
-
-export class CloneAccountRequest implements ICloneAccountRequest {
-    targetIds?: string[];
-
-    constructor(data?: ICloneAccountRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["TargetIds"])) {
-                this.targetIds = [] as any;
-                for (let item of _data["TargetIds"])
-                    this.targetIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): CloneAccountRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new CloneAccountRequest();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.targetIds)) {
-            data["TargetIds"] = [];
-            for (let item of this.targetIds)
-                data["TargetIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface ICloneAccountRequest {
-    targetIds?: string[];
-}
-
-export class ApiException extends Error {
-    override message: string;
-    status: number;
-    response: string;
-    headers: { [key: string]: any; };
-    result: any;
-
-    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
-        super();
-
-        this.message = message;
-        this.status = status;
-        this.response = response;
-        this.headers = headers;
-        this.result = result;
-    }
-
-    protected isApiException = true;
-
-    static isApiException(obj: any): obj is ApiException {
-        return obj.isApiException === true;
-    }
-}
-
-function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): any {
-    if (result !== null && result !== undefined)
-        throw result;
-    else
-        throw new ApiException(message, status, response, headers, null);
-}
-
-export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
-    allowedCharacters?: string | undefined;
-    length?: number;
-
-    constructor(data?: IPasswordGeneratorConfig) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.allowedCharacters = _data["allowedCharacters"];
-            this.length = _data["length"];
-        }
-    }
-
-    static fromJS(data: any): PasswordGeneratorConfig {
-        data = typeof data === 'object' ? data : {};
-        let result = new PasswordGeneratorConfig();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["allowedCharacters"] = this.allowedCharacters;
-        data["length"] = this.length;
-        return data;
-    }
-}
-
-export interface IPasswordGeneratorConfig {
-    allowedCharacters?: string | undefined;
-    length?: number;
 }
 
 export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
@@ -15338,10 +14711,17 @@ export interface IUpdatePasswordGeneratorConfig {
     length?: number;
 }
 
-export class GeneratePasswordResponse implements IGeneratePasswordResponse {
-    password?: string | undefined;
+export class UpdatePlatform implements IUpdatePlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
 
-    constructor(data?: IGeneratePasswordResponse) {
+    constructor(data?: IUpdatePlatform) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -15352,24 +14732,664 @@ export class GeneratePasswordResponse implements IGeneratePasswordResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.password = _data["password"];
+            this.id = _data["id"];
+            this.displayName = _data["displayName"];
+            this.dnsName = _data["dnsName"];
+            this.os = _data["os"];
+            this.kind = _data["kind"];
+            this.ipAddress = _data["ipAddress"];
+            this.notes = _data["notes"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
         }
     }
 
-    static fromJS(data: any): GeneratePasswordResponse {
+    static fromJS(data: any): UpdatePlatform {
         data = typeof data === 'object' ? data : {};
-        let result = new GeneratePasswordResponse();
+        let result = new UpdatePlatform();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["password"] = this.password;
+        data["id"] = this.id;
+        data["displayName"] = this.displayName;
+        data["dnsName"] = this.dnsName;
+        data["os"] = this.os;
+        data["kind"] = this.kind;
+        data["ipAddress"] = this.ipAddress;
+        data["notes"] = this.notes;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
         return data;
     }
 }
 
-export interface IGeneratePasswordResponse {
-    password?: string | undefined;
+export interface IUpdatePlatform {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    kind?: PlatformKind;
+    ipAddress?: string | undefined;
+    notes?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class UpdatePosition implements IUpdatePosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdatePosition) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdatePosition {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePosition();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdatePosition {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+
+    constructor(data?: IUpdateResponsibilityAssignment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.positionId = _data["positionId"];
+            this.responsibilityTypeId = _data["responsibilityTypeId"];
+            this.applicationId = _data["applicationId"];
+            this.scope = _data["scope"];
+            this.environmentId = _data["environmentId"];
+            this.notes = _data["notes"];
+            this.primary = _data["primary"];
+        }
+    }
+
+    static fromJS(data: any): UpdateResponsibilityAssignment {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateResponsibilityAssignment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["positionId"] = this.positionId;
+        data["responsibilityTypeId"] = this.responsibilityTypeId;
+        data["applicationId"] = this.applicationId;
+        data["scope"] = this.scope;
+        data["environmentId"] = this.environmentId;
+        data["notes"] = this.notes;
+        data["primary"] = this.primary;
+        return data;
+    }
+}
+
+export interface IUpdateResponsibilityAssignment {
+    id?: string;
+    positionId?: string;
+    responsibilityTypeId?: string;
+    applicationId?: string;
+    scope?: ResponsibilityScope;
+    environmentId?: string | undefined;
+    notes?: string | undefined;
+    primary?: boolean;
+}
+
+export class UpdateResponsibilityType implements IUpdateResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IUpdateResponsibilityType) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+        }
+    }
+
+    static fromJS(data: any): UpdateResponsibilityType {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateResponsibilityType();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IUpdateResponsibilityType {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class UpdateRisk implements IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IUpdateRisk) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.title = _data["title"];
+            this.description = _data["description"];
+            this.impact = _data["impact"];
+            this.likelihood = _data["likelihood"];
+            this.status = _data["status"];
+            this.ownerPositionId = _data["ownerPositionId"];
+            this.approverPositionId = _data["approverPositionId"];
+            this.targetType = _data["targetType"];
+            this.targetId = _data["targetId"];
+            this.mitigation = _data["mitigation"];
+            this.reviewDate = _data["reviewDate"] ? new Date(_data["reviewDate"].toString()) : undefined as any;
+            this.approvalDate = _data["approvalDate"] ? new Date(_data["approvalDate"].toString()) : undefined as any;
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.notes = _data["notes"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRisk {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRisk();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["title"] = this.title;
+        data["description"] = this.description;
+        data["impact"] = this.impact;
+        data["likelihood"] = this.likelihood;
+        data["status"] = this.status;
+        data["ownerPositionId"] = this.ownerPositionId;
+        data["approverPositionId"] = this.approverPositionId;
+        data["targetType"] = this.targetType;
+        data["targetId"] = this.targetId;
+        data["mitigation"] = this.mitigation;
+        data["reviewDate"] = this.reviewDate ? this.reviewDate.toISOString() : undefined as any;
+        data["approvalDate"] = this.approvalDate ? this.approvalDate.toISOString() : undefined as any;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        data["notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IUpdateRisk {
+    id?: string;
+    title?: string | undefined;
+    description?: string | undefined;
+    impact?: RiskImpact;
+    likelihood?: RiskLikelihood;
+    status?: RiskStatus;
+    ownerPositionId?: string;
+    approverPositionId?: string | undefined;
+    targetType?: string | undefined;
+    targetId?: string;
+    mitigation?: string | undefined;
+    reviewDate?: Date | undefined;
+    approvalDate?: Date | undefined;
+    tagIds?: string[] | undefined;
+    notes?: string | undefined;
+}
+
+export class UpdateRole implements IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IUpdateRole) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["permissions"])
+                    this.permissions!.push(item);
+            }
+            this.requestedBy = _data["requestedBy"];
+        }
+    }
+
+    static fromJS(data: any): UpdateRole {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateRole();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.permissions)) {
+            data["permissions"] = [];
+            for (let item of this.permissions)
+                data["permissions"].push(item);
+        }
+        data["requestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IUpdateRole {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    permissions?: Permission[] | undefined;
+    requestedBy?: string | undefined;
+}
+
+export class UpdateSecretProvider implements IUpdateSecretProvider {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
+
+    constructor(data?: IUpdateSecretProvider) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.vaultUri = _data["vaultUri"];
+            this.authMode = _data["authMode"];
+            this.credentials = _data["credentials"] ? SecretProviderCredentials.fromJS(_data["credentials"]) : undefined as any;
+            this.capabilities = _data["capabilities"];
+        }
+    }
+
+    static fromJS(data: any): UpdateSecretProvider {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateSecretProvider();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["vaultUri"] = this.vaultUri;
+        data["authMode"] = this.authMode;
+        data["credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        data["capabilities"] = this.capabilities;
+        return data;
+    }
+}
+
+export interface IUpdateSecretProvider {
+    id?: string;
+    name?: string | undefined;
+    vaultUri?: string | undefined;
+    authMode?: SecretProviderAuthMode;
+    credentials?: SecretProviderCredentials;
+    capabilities?: SecretProviderCapabilities;
+}
+
+export class UpdateSecuritySettings implements IUpdateSecuritySettings {
+    level?: SecurityLevel;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IUpdateSecuritySettings) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.level = _data["level"];
+            this.requestedBy = _data["requestedBy"];
+        }
+    }
+
+    static fromJS(data: any): UpdateSecuritySettings {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateSecuritySettings();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["level"] = this.level;
+        data["requestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IUpdateSecuritySettings {
+    level?: SecurityLevel;
+    requestedBy?: string | undefined;
+}
+
+export class UpdateSqlIntegration implements IUpdateSqlIntegration {
+    id?: string;
+    name?: string | undefined;
+    dataStoreId?: string;
+    connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
+
+    constructor(data?: IUpdateSqlIntegration) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.dataStoreId = _data["dataStoreId"];
+            this.connectionString = _data["connectionString"];
+            this.accountId = _data["accountId"];
+            this.manualPassword = _data["manualPassword"];
+        }
+    }
+
+    static fromJS(data: any): UpdateSqlIntegration {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateSqlIntegration();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["dataStoreId"] = this.dataStoreId;
+        data["connectionString"] = this.connectionString;
+        data["accountId"] = this.accountId;
+        data["manualPassword"] = this.manualPassword;
+        return data;
+    }
+}
+
+export interface IUpdateSqlIntegration {
+    id?: string;
+    name?: string | undefined;
+    dataStoreId?: string;
+    connectionString?: string | undefined;
+    accountId?: string | undefined;
+    manualPassword?: string | undefined;
+}
+
+export class UpdateTag implements IUpdateTag {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    color?: TagColor;
+
+    constructor(data?: IUpdateTag) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.color = _data["color"];
+        }
+    }
+
+    static fromJS(data: any): UpdateTag {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateTag();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["color"] = this.color;
+        return data;
+    }
+}
+
+export interface IUpdateTag {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    color?: TagColor;
+}
+
+export class UpdateUser implements IUpdateUser {
+    id?: string;
+    role?: SecurityRole;
+    requestedBy?: string | undefined;
+
+    constructor(data?: IUpdateUser) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.role = _data["role"];
+            this.requestedBy = _data["requestedBy"];
+        }
+    }
+
+    static fromJS(data: any): UpdateUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateUser();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["role"] = this.role;
+        data["requestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface IUpdateUser {
+    id?: string;
+    role?: SecurityRole;
+    requestedBy?: string | undefined;
+}
+
+export interface FileParameter {
+    data: any;
+    fileName: string;
+}
+
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
+}
+
+export class ApiException extends Error {
+    override message: string;
+    status: number;
+    response: string;
+    headers: { [key: string]: any; };
+    result: any;
+
+    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
+        super();
+
+        this.message = message;
+        this.status = status;
+        this.response = response;
+        this.headers = headers;
+        this.result = result;
+    }
+
+    protected isApiException = true;
+
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
+    }
+}
+
+function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): any {
+    if (result !== null && result !== undefined)
+        throw result;
+    else
+        throw new ApiException(message, status, response, headers, null);
 }

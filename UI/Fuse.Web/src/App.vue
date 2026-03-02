@@ -312,7 +312,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
@@ -340,6 +340,10 @@ const showLoginDialog = ref(false)
 const loginLoading = ref(false)
 const loginError = ref<string | null>(null)
 const showOnboardingPrompt = ref(false)
+
+function handleAuthInvalid() {
+  fuseStore.invalidateAuth()
+}
 
 const cheatSheetDialog = computed({
   get: () => onboardingStore.showCheatSheet,
@@ -377,6 +381,7 @@ watch(
 )
 
 onMounted(async () => {
+  window.addEventListener('fuse-auth-invalid', handleAuthInvalid)
   await fuseStore.initializeAuth()
 
   if (fuseStore.requireSetup) {
@@ -384,6 +389,10 @@ onMounted(async () => {
   }
 
   await evaluateOnboardingPrompt()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('fuse-auth-invalid', handleAuthInvalid)
 })
 
 async function evaluateOnboardingPrompt() {

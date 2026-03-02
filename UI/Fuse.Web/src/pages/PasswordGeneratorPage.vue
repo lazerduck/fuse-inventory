@@ -106,13 +106,13 @@
 
       <!-- Help Section -->
       <div class="col-12">
-        <q-card class="content-card bg-blue-1">
+        <q-card :class="helpCardClasses">
           <q-card-section>
             <div class="text-h6 q-mb-sm">
               <q-icon name="help_outline" class="q-mr-sm" />
               How It Works
             </div>
-            <ul class="q-pl-md text-grey-8">
+            <ul class="q-pl-md" :class="helpTextClass">
               <li><strong>Allowed Characters:</strong> Only the characters you specify here will appear in generated passwords.</li>
               <li><strong>Length:</strong> Each generated password will contain exactly this many characters.</li>
               <li><strong>Secure Generation:</strong> Passwords are generated using a cryptographically secure random number generator.</li>
@@ -127,8 +127,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Notify, copyToClipboard as qCopyToClipboard } from 'quasar'
+import { ref, onMounted, computed } from 'vue'
+import { Notify, copyToClipboard as qCopyToClipboard, useQuasar } from 'quasar'
 import { UpdatePasswordGeneratorConfig } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
@@ -136,6 +136,7 @@ import { getErrorMessage } from '../utils/error'
 
 const client = useFuseClient()
 const fuseStore = useFuseStore()
+const $q = useQuasar()
 
 const loadError = ref<string | null>(null)
 const isSaving = ref(false)
@@ -147,6 +148,14 @@ const form = ref({
   allowedCharacters: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+',
   length: 32
 })
+
+// Theme-aware classes
+const isDark = computed(() => $q.dark.isActive)
+const helpCardClasses = computed(() => [
+  'content-card',
+  isDark.value ? 'bg-blue-10 text-white' : 'bg-blue-1'
+])
+const helpTextClass = computed(() => (isDark.value ? 'text-grey-3' : 'text-grey-8'))
 
 onMounted(async () => {
   try {

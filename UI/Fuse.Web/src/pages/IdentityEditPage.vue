@@ -183,7 +183,7 @@ import {
   UpdateApplicationDependency,
   DependencyAuthKind,
   CloneTarget,
-  CloneIdentityRequest
+  CloneIdentity
 } from '../api/client'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'
@@ -577,7 +577,7 @@ const cloneTargets = ref<CloneTarget[]>([])
 const isCloneTargetsLoading = ref(false)
 
 const cloneMutation = useMutation({
-  mutationFn: ({ id, payload }: { id: string; payload: CloneIdentityRequest }) =>
+  mutationFn: ({ id, payload }: { id: string; payload: CloneIdentity }) =>
     client.identityClone(id, payload),
   onSuccess: (created) => {
     queryClient.invalidateQueries({ queryKey: ['identities'] })
@@ -607,7 +607,7 @@ async function openCloneDialog() {
 
 function handleClone() {
   if (!identityId.value || selectedCloneTargetIds.value.length === 0) return
-  const payload = Object.assign(new CloneIdentityRequest(), {
+  const payload = Object.assign(new CloneIdentity(), {
     targetOwnerInstanceIds: [...selectedCloneTargetIds.value]
   })
   cloneMutation.mutate({ id: identityId.value, payload })
