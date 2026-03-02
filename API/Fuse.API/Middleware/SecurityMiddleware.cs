@@ -256,6 +256,14 @@ public sealed class SecurityMiddleware
         // Check specific permissions for security endpoints
         if (path.StartsWithSegments("/api/security/accounts", StringComparison.OrdinalIgnoreCase))
         {
+            if (HttpMethods.IsPost(method) && TryGetPasswordResetTargetUserId(path, out var targetUserId))
+            {
+                if (user.Id == targetUserId)
+                    return true;
+
+                return await permissionService.IsUserAdminAsync(user, cancellationToken);
+            }
+
             if (HttpMethods.IsGet(method))
                 return await permissionService.HasPermissionAsync(user, Permission.UsersRead, cancellationToken) || user.Role == SecurityRole.Admin;
             if (HttpMethods.IsPost(method))
@@ -271,6 +279,9 @@ public sealed class SecurityMiddleware
             path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase))
         {
+            if (HttpMethods.IsGet(method) && TryGetRoleIdFromPath(path, out var roleId) && user.RoleIds.Contains(roleId))
+                return true;
+
             if (HttpMethods.IsGet(method))
                 return await permissionService.HasPermissionAsync(user, Permission.RolesRead, cancellationToken) || user.Role == SecurityRole.Admin;
             if (HttpMethods.IsPost(method))
@@ -283,6 +294,54 @@ public sealed class SecurityMiddleware
 
         // All other security endpoints require admin role (fallback)
         return user.Role == SecurityRole.Admin;
+    }
+
+    private static bool TryGetPasswordResetTargetUserId(PathString path, out Guid targetUserId)
+    {
+        targetUserId = Guid.Empty;
+
+        var pathStr = path.Value;
+        if (string.IsNullOrWhiteSpace(pathStr))
+            return false;
+
+        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 5)
+            return false;
+
+        if (!segments[0].Equals("api", StringComparison.OrdinalIgnoreCase) ||
+            !segments[1].Equals("security", StringComparison.OrdinalIgnoreCase) ||
+            !segments[2].Equals("accounts", StringComparison.OrdinalIgnoreCase) ||
+            !segments[4].Equals("reset-password", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return Guid.TryParse(segments[3], out targetUserId);
+    }
+
+    private static bool TryGetRoleIdFromPath(PathString path, out Guid roleId)
+    {
+        roleId = Guid.Empty;
+
+        var pathStr = path.Value;
+        if (string.IsNullOrWhiteSpace(pathStr))
+            return false;
+
+        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 3)
+            return false;
+
+        if (!segments[0].Equals("api", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var roleSegment = segments[1];
+        if (!roleSegment.Equals("role", StringComparison.OrdinalIgnoreCase) &&
+            !roleSegment.Equals("roles", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return Guid.TryParse(segments[2], out roleId);
     }
 
     private static AccessRequirement GetRequirement(SecurityLevel level, string method)

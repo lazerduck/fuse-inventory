@@ -20,4 +20,5 @@ public interface ISecurityService
     Task<Result<Role>> UpdateRoleAsync(UpdateRole command, CancellationToken ct = default);
     Task<Result> DeleteRoleAsync(DeleteRole command, CancellationToken ct = default);
     Task<Result<SecurityUser>> AssignRolesToUserAsync(AssignRolesToUser command, CancellationToken ct = default);
+    Task<Result> ResetPasswordAsync(ResetPassword command, CancellationToken ct = default);
 }

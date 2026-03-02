@@ -53,6 +53,7 @@ public enum AuditAction
     SecurityUserLogin,
     SecurityUserLogout,
     SecuritySettingsUpdated,
+    PasswordReset,
     
     // Role actions
     RoleCreated,
