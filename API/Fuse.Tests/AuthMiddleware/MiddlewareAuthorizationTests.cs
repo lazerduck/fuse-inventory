@@ -369,6 +369,70 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetOwnAssignedRole_WithoutRolesReadPermission_ReturnsOk()
+    {
+        if (!_userTokens.TryGetValue("no-permissions-user", out var token) || string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var stateResponse = await client.GetAsync("/api/security/state");
+        stateResponse.EnsureSuccessStatusCode();
+
+        var stateJson = await stateResponse.Content.ReadAsStringAsync();
+        using var stateDoc = System.Text.Json.JsonDocument.Parse(stateJson);
+
+        var roleIds = stateDoc.RootElement
+            .GetProperty("currentUser")
+            .GetProperty("roleIds")
+            .EnumerateArray()
+            .Select(item => item.GetString())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+
+        Assert.NotEmpty(roleIds);
+        Assert.True(Guid.TryParse(roleIds[0], out var roleId));
+
+        var response = await client.GetAsync($"/api/role/{roleId}");
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUnassignedRole_WithoutRolesReadPermission_IsForbidden()
+    {
+        if (!_userTokens.TryGetValue("no-permissions-user", out var token) || string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var stateResponse = await client.GetAsync("/api/security/state");
+        stateResponse.EnsureSuccessStatusCode();
+
+        var stateJson = await stateResponse.Content.ReadAsStringAsync();
+        using var stateDoc = System.Text.Json.JsonDocument.Parse(stateJson);
+
+        var assignedRoleIds = stateDoc.RootElement
+            .GetProperty("currentUser")
+            .GetProperty("roleIds")
+            .EnumerateArray()
+            .Select(item => item.GetString())
+            .Where(item => Guid.TryParse(item, out _))
+            .Select(Guid.Parse)
+            .ToHashSet();
+
+        var targetRoleId = Guid.NewGuid();
+        while (assignedRoleIds.Contains(targetRoleId))
+        {
+            targetRoleId = Guid.NewGuid();
+        }
+
+        var response = await client.GetAsync($"/api/role/{targetRoleId}");
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     /// <summary>
     /// Get test cases for core endpoint access without scenario variation.
     /// </summary>
