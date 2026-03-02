@@ -54,11 +54,20 @@ export const useFuseStore = defineStore("fuse", {
     }
   },
   actions: {
+    invalidateAuth() {
+      clearToken();
+      this.sessionToken = null;
+      this.currentUser = null;
+    },
     async fetchStatus() {
       const status = await fuseClient().state();
       this.requireSetup = status.requiresSetup || false;
       this.securityLevel = status.level || null;
       this.currentUser = status.currentUser || null;
+
+      if (!this.currentUser) {
+        this.sessionToken = null;
+      }
     },
     async login(credentials: LoginSecurityUser) {
       const session = await fuseClient().login(credentials);
@@ -108,9 +117,7 @@ export const useFuseStore = defineStore("fuse", {
           }
         } catch (error) {
           // Token is invalid or expired
-          clearToken();
-          this.sessionToken = null;
-          this.currentUser = null;
+          this.invalidateAuth();
         }
       } else {
         // No token, just fetch status

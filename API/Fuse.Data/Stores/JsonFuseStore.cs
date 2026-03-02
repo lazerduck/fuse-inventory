@@ -56,7 +56,8 @@ public sealed class JsonFuseStore : IFuseStore
                 ResponsibilityTypes: await ReadAsync<ResponsibilityType>("responsibilitytypes.json", ct),
                 ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
                 Risks: await ReadAsync<Risk>("risks.json", ct),
-                Security: await ReadSecurityAsync("security.json", ct)
+                Security: await ReadSecurityAsync("security.json", ct),
+                PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct)
             );
 
             // Temporary migration: convert application-target dependencies to instance-target dependencies.
@@ -147,6 +148,8 @@ public sealed class JsonFuseStore : IFuseStore
             await WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct);
             await WriteAsync("risks.json", snapshot.Risks, ct);
             await WriteAsync("security.json", snapshot.Security, ct);
+            if (snapshot.PasswordGeneratorConfig is not null)
+                await WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct);
 
             _cache = snapshot; // swap the in-memory snapshot
             Changed?.Invoke(snapshot);
@@ -191,6 +194,14 @@ public sealed class JsonFuseStore : IFuseStore
         await using var fs = File.OpenRead(path);
         return (await JsonSerializer.DeserializeAsync<SecurityState>(fs, Json, ct))
             ?? new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
+    }
+
+    private async Task<T?> ReadObjectAsync<T>(string file, CancellationToken ct) where T : class
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return null;
+        await using var fs = File.OpenRead(path);
+        return await JsonSerializer.DeserializeAsync<T>(fs, Json, ct);
     }
 
     private async Task WriteAsync<T>(string file, T value, CancellationToken ct)

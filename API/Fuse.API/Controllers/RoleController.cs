@@ -9,6 +9,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Microsoft.AspNetCore.Mvc;
+    using Swashbuckle.AspNetCore.Annotations;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -22,6 +23,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "roleAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<RoleInfo>))]
         public async Task<ActionResult<IEnumerable<RoleInfo>>> GetRoles()
         {
@@ -31,6 +33,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(OperationId = "roleGET")]
         [ProducesResponseType(200, Type = typeof(RoleInfo))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<RoleInfo>> GetRoleById(Guid id)
@@ -46,6 +49,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost]
+        [SwaggerOperation(OperationId = "rolePOST")]
         [ProducesResponseType(201, Type = typeof(RoleInfo))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -78,6 +82,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [SwaggerOperation(OperationId = "rolePUT")]
         [ProducesResponseType(200, Type = typeof(RoleInfo))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -112,6 +117,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(OperationId = "roleDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -142,6 +148,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("assign")]
+        [SwaggerOperation(OperationId = "assignPOST")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
