@@ -110,6 +110,11 @@ const router = createRouter({
       component: () => import('./pages/ConfigPage.vue')
     },
     {
+      path: '/kuma-dashboard',
+      name: 'kumaDashboard',
+      component: () => import('./pages/KumaDashboardPage.vue')
+    },
+    {
       path: '/kuma-integrations',
       name: 'kumaIntegrations',
       component: () => import('./pages/KumaIntegrationsPage.vue')
