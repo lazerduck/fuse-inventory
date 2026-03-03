@@ -49,6 +49,7 @@
         <ApplicationDetailsForm
           :initial-value="application"
           :loading="updateApplicationMutation.isPending.value"
+          :disabled="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
           @cancel="navigateBack"
           @delete="confirmApplicationDelete"
           @submit="handleSubmitApplication"
@@ -69,7 +70,7 @@
               label="Add Instance"
               dense
               icon="add"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ApplicationsCreate)"
               @click="openInstanceDialog()"
               data-tour-id="add-instance"
             />
@@ -116,7 +117,7 @@
                   round
                   icon="edit"
                   color="primary"
-                  :disable="!fuseStore.canModify"
+                  :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
                   @click="navigateToInstance(props.row)"
                 />
                 <q-btn
@@ -126,7 +127,7 @@
                   icon="delete"
                   color="negative"
                   class="q-ml-xs"
-                  :disable="!fuseStore.canModify"
+                  :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
                   @click="confirmInstanceDelete(props.row)"
                 />
               </q-td>
@@ -156,7 +157,7 @@
               label="Add Pipeline" 
               dense 
               icon="add" 
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ApplicationsCreate)"
               @click="openPipelineDialog()" 
             />
           </q-card-section>
@@ -177,7 +178,7 @@
                   round
                   icon="edit"
                   color="primary"
-                  :disable="!fuseStore.canModify"
+                  :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
                   @click="openPipelineDialog(props.row)"
                 />
                 <q-btn
@@ -187,7 +188,7 @@
                   icon="delete"
                   color="negative"
                   class="q-ml-xs"
-                  :disable="!fuseStore.canModify"
+                  :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
                   @click="confirmPipelineDelete(props.row)"
                 />
               </q-td>
@@ -207,7 +208,7 @@
           :target-id="application.id!"
           :positions="positions ?? []"
           :loading="risksLoading"
-          :disable-actions="!fuseStore.canModify"
+          :disable-actions="!fuseStore.hasPermission(Permission.RisksUpdate)"
           @save="handleSaveRisk"
           @delete="handleDeleteRisk"
         />
@@ -218,6 +219,7 @@
       <ApplicationInstanceForm
         mode="create"
         :loading="createInstanceMutation.isPending.value"
+        :disabled="!fuseStore.hasPermission(Permission.ApplicationsCreate)"
         @submit="handleSubmitInstance"
         @cancel="closeInstanceDialog"
       />
@@ -228,6 +230,7 @@
         :mode="editingPipeline ? 'edit' : 'create'"
         :initial-value="editingPipeline"
         :loading="pipelineMutationPending"
+        :disabled="editingPipeline ? !fuseStore.hasPermission(Permission.ApplicationsUpdate) : !fuseStore.hasPermission(Permission.ApplicationsCreate)"
         @submit="handleSubmitPipeline"
         @cancel="closePipelineDialog"
       />
@@ -248,7 +251,8 @@ import {
   CreateApplicationPipeline,
   UpdateApplication,
   UpdateApplicationPipeline,
-  Risk
+  Risk,
+  Permission
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

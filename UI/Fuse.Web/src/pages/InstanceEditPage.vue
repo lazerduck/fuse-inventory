@@ -58,14 +58,14 @@
             flat
             label="Delete"
             color="negative"
-            :disable="!fuseStore.canModify"
+            :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
             @click="confirmInstanceDelete"
           />
           <q-btn
             color="primary"
             type="submit"
             label="Save"
-            :disable="!fuseStore.canModify"
+            :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
             :loading="updateInstanceMutation.isPending.value"
           />
         </q-card-actions>
@@ -85,7 +85,7 @@
           label="Add Dependency"
           dense
           icon="add"
-          :disable="dependencyActionsDisabled || !fuseStore.canModify"
+          :disable="dependencyActionsDisabled || !fuseStore.hasPermission(Permission.ApplicationsCreate)"
           @click="openDependencyDialog()"
         />
       </q-card-section>
@@ -121,7 +121,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="dependencyActionsDisabled || !fuseStore.canModify"
+              :disable="dependencyActionsDisabled || !fuseStore.hasPermission(Permission.ApplicationsRead)"
               @click="openDependencyDialog(props.row)"
             />
             <q-btn
@@ -131,7 +131,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="dependencyActionsDisabled || !fuseStore.canModify"
+              :disable="dependencyActionsDisabled || !fuseStore.hasPermission(Permission.ApplicationsDelete)"
               @click="confirmDependencyDelete(props.row)"
             />
           </q-td>
@@ -236,7 +236,7 @@
               type="submit"
               :label="editingDependency ? 'Save' : 'Add'"
               :loading="dependencyDialogLoading"
-              :disable="!dependencyForm.targetId"
+              :disable="!dependencyForm.targetId || (editingDependency ? !fuseStore.hasPermission(Permission.ApplicationsUpdate) : !fuseStore.hasPermission(Permission.ApplicationsCreate))"
             />
           </q-card-actions>
         </q-form>
@@ -258,7 +258,8 @@ import {
   DependencyAuthKind,
   TargetKind,
   UpdateApplicationDependency,
-  UpdateApplicationInstance
+  UpdateApplicationInstance,
+  Permission
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

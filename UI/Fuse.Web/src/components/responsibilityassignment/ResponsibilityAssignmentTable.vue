@@ -4,11 +4,11 @@
       {{ assignmentError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.ResponsibilitiesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view ownership assignments. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)" class="content-card">
       <q-card-section class="dialog-header">
         <div>
           <div class="text-h6">Ownership</div>
@@ -19,7 +19,7 @@
           label="Add Assignment"
           dense
           icon="add"
-          :disable="!fuseStore.canModify"
+          :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesCreate)"
           @click="openCreateDialog"
         />
       </q-card-section>
@@ -87,7 +87,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesRead)"
               @click="openEditDialog(props.row)"
             />
             <q-btn
@@ -97,7 +97,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -113,6 +113,7 @@
       :application-id="applicationId"
       :assignment="selectedAssignment"
       :loading="isAnyPending"
+      :disabled="selectedAssignment ? !fuseStore.hasPermission(Permission.ResponsibilitiesUpdate) : !fuseStore.hasPermission(Permission.ResponsibilitiesCreate)"
       @save="handleSave"
     />
   </div>
@@ -127,7 +128,8 @@ import {
   ResponsibilityAssignment,
   ResponsibilityScope,
   CreateResponsibilityAssignment,
-  UpdateResponsibilityAssignment
+  UpdateResponsibilityAssignment,
+  Permission
 } from '../../api/client'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useFuseStore } from '../../stores/FuseStore'

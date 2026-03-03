@@ -9,7 +9,7 @@
         color="primary" 
         label="Create Resource" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.ExternalResourcesCreate)"
         @click="openCreateDialog" 
       />
     </div>
@@ -18,11 +18,11 @@
       {{ resourceError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.ExternalResourcesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view external resources. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.ExternalResourcesRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -67,7 +67,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ExternalResourcesRead)"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
@@ -77,7 +77,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ExternalResourcesDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -93,6 +93,7 @@
         :mode="dialogMode"
         :initial-value="selectedResource"
         :loading="isAnyPending"
+        :disabled="dialogMode === 'edit' ? !fuseStore.hasPermission(Permission.ExternalResourcesUpdate) : !fuseStore.hasPermission(Permission.ExternalResourcesCreate)"
         @submit="handleSubmit"
         @cancel="closeDialog"
       />
@@ -105,7 +106,7 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { ExternalResource, CreateExternalResource, UpdateExternalResource } from '../api/client'
+import { ExternalResource, CreateExternalResource, UpdateExternalResource, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'

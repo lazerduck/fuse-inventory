@@ -67,6 +67,7 @@
 
           <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator>
             <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
               data-tour-id="nav-applications">
               <q-item-section avatar>
                 <q-icon name="apps" />
@@ -77,6 +78,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.AccountsRead)"
               data-tour-id="nav-accounts">
               <q-item-section avatar>
                 <q-icon name="vpn_key" />
@@ -87,6 +89,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.IdentitiesRead)"
               data-tour-id="nav-identities">
               <q-item-section avatar>
                 <q-icon name="badge" />
@@ -97,6 +100,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.DataStoresRead)"
               data-tour-id="nav-data-stores">
               <q-item-section avatar>
                 <q-icon name="storage" />
@@ -107,6 +111,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.PlatformsRead)"
               data-tour-id="nav-platforms">
               <q-item-section avatar>
                 <q-icon name="dns" />
@@ -117,6 +122,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.EnvironmentsRead)"
               data-tour-id="nav-environments">
               <q-item-section avatar>
                 <q-icon name="cloud" />
@@ -127,6 +133,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ExternalResourcesRead)"
               data-tour-id="nav-external-resources">
               <q-item-section avatar>
                 <q-icon name="link" />
@@ -148,14 +155,16 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="bg-primary text-white">
+            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.PositionsRead)">
               <q-item-section avatar>
                 <q-icon name="people" />
               </q-item-section>
               <q-item-section>Positions</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="bg-primary text-white">
+            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)">
               <q-item-section avatar>
                 <q-icon name="assignment_ind" />
               </q-item-section>
@@ -164,7 +173,8 @@
           </q-expansion-item>
 
           <q-expansion-item label="Insights" icon="insights" dense expand-separator>
-            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white">
+            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.RisksRead)">
               <q-item-section avatar>
                 <q-icon name="warning" />
               </q-item-section>
@@ -196,6 +206,7 @@
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator>
             <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
+              v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
               <q-item-section avatar>
                 <q-icon name="cloud_sync" />
@@ -206,6 +217,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
+              v-if="fuseStore.canRead"
               data-tour-id="nav-secret-providers">
               <q-item-section avatar>
                 <q-icon name="vpn_key" />
@@ -216,6 +228,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+              v-if="fuseStore.canRead"
               data-tour-id="nav-sql-integrations">
               <q-item-section avatar>
                 <q-icon name="storage" />
@@ -257,7 +270,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'roles' }" active-class="bg-primary text-white"
-              v-if="fuseStore.isAdmin"
+              v-if="fuseStore.hasPermission(Permission.RolesRead)"
               data-tour-id="nav-roles">
               <q-item-section avatar>
                 <q-icon name="admin_panel_settings" />
@@ -268,6 +281,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.AuditLogsView)"
               data-tour-id="nav-audit-logs">
               <q-item-section avatar>
                 <q-icon name="history" />
@@ -317,7 +331,7 @@ import { useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
-import { LoginSecurityUser } from './api/client'
+import { LoginSecurityUser, Permission } from './api/client'
 import { getErrorMessage } from './utils/error'
 import { useOnboardingStore } from './stores/OnboardingStore'
 import { useOnboardingTour } from './composables/useOnboardingTour'

@@ -9,7 +9,7 @@
         color="primary"
         label="Create Responsibility Type"
         icon="add"
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesCreate)"
         @click="openCreateDialog"
       />
     </div>
@@ -18,11 +18,11 @@
       {{ typeError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.ResponsibilitiesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view responsibility types. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -48,7 +48,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesRead)"
               @click="openEditDialog(props.row)"
             />
             <q-btn
@@ -58,7 +58,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -73,6 +73,7 @@
       v-model="isDialogOpen"
       :responsibility-type="selectedType"
       :loading="isAnyPending"
+      :disabled="selectedType ? !fuseStore.hasPermission(Permission.ResponsibilitiesUpdate) : !fuseStore.hasPermission(Permission.ResponsibilitiesCreate)"
       @save="handleSave"
     />
   </div>
@@ -83,7 +84,7 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { ResponsibilityType, CreateResponsibilityType, UpdateResponsibilityType } from '../api/client'
+import { ResponsibilityType, CreateResponsibilityType, UpdateResponsibilityType, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { getErrorMessage } from '../utils/error'

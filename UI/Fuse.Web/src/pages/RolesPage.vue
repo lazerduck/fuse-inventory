@@ -10,7 +10,7 @@
           color="primary"
           label="Create Role"
           icon="add"
-          :disable="!isAdmin"
+          :disable="!fuseStore.hasPermission(Permission.RolesCreate)"
           @click="openCreateDialog"
         />
       </div>
@@ -20,11 +20,11 @@
       {{ roleError }}
     </q-banner>
 
-    <q-banner v-if="!isAdmin" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.RolesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to manage roles. Only administrators can access this feature.
     </q-banner>
 
-    <q-card v-if="isAdmin" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.RolesRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -71,7 +71,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="isDefaultRole(props.row.id)"
+              :disable="isDefaultRole(props.row.id) || !fuseStore.hasPermission(Permission.RolesUpdate)"
               @click="editRole(props.row)"
             >
               <q-tooltip v-if="isDefaultRole(props.row.id)">Default roles cannot be edited</q-tooltip>
@@ -83,7 +83,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="isDefaultRole(props.row.id)"
+              :disable="isDefaultRole(props.row.id) || !fuseStore.hasPermission(Permission.RolesDelete)"
               @click="confirmDelete(props.row)"
             >
               <q-tooltip v-if="isDefaultRole(props.row.id)">Default roles cannot be deleted</q-tooltip>
@@ -221,7 +221,7 @@ import { Dialog, Notify, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useRoles } from '../composables/useRoles'
-import { CreateRole, UpdateRole, RoleInfo, SecurityRole, Permission } from '../api/client'
+import { CreateRole, UpdateRole, RoleInfo, Permission } from '../api/client'
 import { getErrorMessage } from '../utils/error'
 import PermissionSelector from '../components/roles/PermissionSelector.vue'
 
@@ -246,7 +246,6 @@ const roleForm = ref({
 
 const { data, isLoading } = useRoles()
 const roles = computed(() => data.value ?? [])
-const isAdmin = computed(() => fuseStore.currentUser?.role === SecurityRole.Admin)
 
 // Default role IDs
 const DEFAULT_ADMIN_ROLE_ID = '00000000-0000-0000-0000-000000000001'

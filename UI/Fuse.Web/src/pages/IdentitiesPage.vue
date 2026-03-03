@@ -9,7 +9,7 @@
         color="primary" 
         label="Create Identity" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.IdentitiesCreate)"
         @click="router.push('/identities/create')" 
       />
     </div>
@@ -18,18 +18,19 @@
       {{ identityError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.IdentitiesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view identities. Please log in with appropriate credentials.
     </q-banner>
 
     <IdentitiesTable
-      v-if="fuseStore.canRead"
+      v-if="fuseStore.hasPermission(Permission.IdentitiesRead)"
       :identities="identities"
       :loading="isLoading"
       :pagination="pagination"
       :tag-info-lookup="tagInfoLookup"
       :owner-instance-resolver="resolveOwnerInstance"
-      :can-modify="fuseStore.canModify"
+      :can-modify="fuseStore.hasPermission(Permission.IdentitiesRead)"
+      :can-delete="fuseStore.hasPermission(Permission.IdentitiesDelete)"
       @edit="(identity) => router.push(`/identities/${identity.id}/edit`)"
       @delete="confirmDelete"
     />
@@ -42,7 +43,7 @@ import { computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
-import { Identity } from '../api/client'
+import { Identity, Permission } from '../api/client'
 import IdentitiesTable from '../components/identities/IdentitiesTable.vue'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

@@ -9,6 +9,7 @@ import {
   CreateAccount,
   DependencyAuthKind,
   Grant,
+  Permission,
   Privilege,
   SecretBinding,
   SecretBindingKind,
@@ -405,7 +406,11 @@ export function useAccountEdit() {
     }
   }
 
-  const canModify = computed(() => fuseStore.canModify)
+  const canModify = computed(() => 
+    isEditMode.value 
+      ? fuseStore.hasPermission(Permission.AccountsUpdate)
+      : fuseStore.hasPermission(Permission.AccountsCreate)
+  )
 
   return {
     accountId,

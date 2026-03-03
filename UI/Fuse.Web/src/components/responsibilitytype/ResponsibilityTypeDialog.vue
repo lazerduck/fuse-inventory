@@ -30,7 +30,7 @@
         <q-separator />
         <q-card-actions align="right">
           <q-btn flat label="Cancel" @click="closeDialog" />
-          <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" />
+          <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" :disable="disabled" />
         </q-card-actions>
       </q-form>
     </q-card>
@@ -49,6 +49,7 @@ interface ResponsibilityTypeFormModel {
 interface Props {
   responsibilityType?: ResponsibilityType | null
   loading?: boolean
+  disabled?: boolean
 }
 
 interface Emits {
@@ -60,7 +61,8 @@ const model = defineModel<boolean>({ required: true })
 
 const props = withDefaults(defineProps<Props>(), {
   responsibilityType: null,
-  loading: false
+  loading: false,
+  disabled: false
 })
 
 const emit = defineEmits<Emits>()

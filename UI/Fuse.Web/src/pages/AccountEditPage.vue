@@ -16,11 +16,11 @@
       {{ loadError }}
     </q-banner>
 
-    <q-banner v-if="!canModify" dense class="bg-orange-1 text-orange-9 q-mb-md">
-      You do not have permission to {{ isEditMode ? 'edit' : 'create' }} accounts.
+    <q-banner v-if="!canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      You do not have permission to {{ isEditMode ? 'view' : 'create' }} accounts.
     </q-banner>
 
-    <q-card v-if="canModify && !loadError" class="content-card">
+    <q-card v-if="canRead && !loadError" class="content-card">
       <q-card-section>
         <div class="text-h6 q-mb-md">Account Details</div>
         <div v-if="isLoadingInitialData" class="row items-center justify-center q-pa-lg">
@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'
-import { Grant, CloneTarget, CloneAccount, TargetKind } from '../api/client'
+import { Grant, CloneTarget, CloneAccount, TargetKind, Permission } from '../api/client'
 import AccountForm from '../components/accounts/AccountForm.vue'
 import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
 import AccountSqlStatusSection from '../components/accounts/AccountSqlStatusSection.vue'
@@ -158,6 +158,7 @@ import { useAccountEdit } from './account-edit/composables/useAccountEdit'
 import { useAccountGrants, type GrantFormInput } from './account-edit/composables/useAccountGrants'
 import { useAccountSecretOperations } from './account-edit/composables/useAccountSecretOperations'
 import { useFuseClient } from '../composables/useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { getErrorMessage } from '../utils/error'
 
@@ -186,6 +187,9 @@ const {
   currentSqlIntegrationId,
   selectedProvider
 } = useAccountEdit()
+
+const fuseStore = useFuseStore()
+const canRead = computed(() => fuseStore.hasPermission(Permission.AccountsRead))
 
 const secretFields = computed(() => form.value.secret)
 

@@ -61,7 +61,7 @@
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="emit('cancel')" />
         <q-btn v-if="showDelete" flat label="Delete Application" color="negative" class="q-mr-auto" @click="emit('delete')" />
-        <q-btn color="primary" type="submit" label="Save" :loading="loading" />
+        <q-btn color="primary" type="submit" label="Save" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -89,6 +89,7 @@ interface Props {
   initialValue?: Partial<Application> | null
   loading?: boolean
   showDelete?: boolean
+  disabled?: boolean
 }
 
 interface Emits {
@@ -100,7 +101,8 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   initialValue: null,
   loading: false,
-  showDelete: true
+  showDelete: true,
+  disabled: false
 })
 const emit = defineEmits<Emits>()
 
