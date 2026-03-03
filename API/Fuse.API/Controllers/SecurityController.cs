@@ -16,10 +16,12 @@ namespace Fuse.API.Controllers
     public class SecurityController : ControllerBase
     {
         private readonly ISecurityService _securityService;
+        private readonly IPermissionService _permissionService;
 
-        public SecurityController(ISecurityService securityService)
+        public SecurityController(ISecurityService securityService, IPermissionService permissionService)
         {
             _securityService = securityService;
+            _permissionService = permissionService;
         }
 
         [HttpGet("state")]
@@ -52,7 +54,7 @@ namespace Fuse.API.Controllers
             var currentUser = await GetCurrentUserAsync();
             if (currentUser is null)
                 return Unauthorized(new { error = "Authentication required." });
-            if (currentUser.Role != SecurityRole.Admin)
+            if (!await _permissionService.IsUserAdminAsync(currentUser, HttpContext.RequestAborted))
                 return Forbid();
 
             var merged = command with { RequestedBy = currentUser.Id };

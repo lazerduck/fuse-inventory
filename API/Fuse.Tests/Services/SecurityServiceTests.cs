@@ -153,7 +153,7 @@ public class SecurityServiceTests
     var user = result.Value!;
     Assert.NotEqual(Guid.Empty, user.Id);
     Assert.Equal("admin", user.UserName);
-    Assert.Equal(SecurityRole.Admin, user.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, user.RoleIds);
     Assert.False(string.IsNullOrEmpty(user.PasswordHash));
     Assert.False(string.IsNullOrEmpty(user.PasswordSalt));
     Assert.InRange(user.CreatedAt, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
@@ -177,7 +177,7 @@ public class SecurityServiceTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_SubsequentUser_RequiresAdmin()
+    public async Task CreateUserAsync_SubsequentUser_RequiresAuthentication()
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
@@ -188,11 +188,11 @@ public class SecurityServiceTests
 
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
-    Assert.Contains("Only administrators can create users", result.Error);
+    Assert.Contains("Authentication is required", result.Error);
     }
 
     [Fact]
-    public async Task CreateUserAsync_SubsequentUser_NonAdminRequester_ReturnsUnauthorized()
+    public async Task CreateUserAsync_SubsequentUser_AuthenticatedRequester_Succeeds()
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
@@ -200,11 +200,13 @@ public class SecurityServiceTests
         var auditService = new FakeAuditService();
         var service = new SecurityService(store, auditService);
 
+        // Permission checks are now handled by SecurityMiddleware; the service only
+        // verifies that the requester is an authenticated, existing user.
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = reader.Id };
         var result = await service.CreateUserAsync(command);
 
-    Assert.False(result.IsSuccess);
-    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.True(result.IsSuccess);
+    Assert.Equal("newuser", result.Value!.UserName);
     }
 
     [Fact]
@@ -350,7 +352,7 @@ public class SecurityServiceTests
     Assert.InRange(session.ExpiresAt, DateTime.UtcNow.AddDays(30).AddSeconds(-5), DateTime.UtcNow.AddDays(30).AddSeconds(5));
     Assert.Equal(userId, session.User.Id);
     Assert.Equal("admin", session.User.UserName);
-    Assert.Equal(SecurityRole.Admin, session.User.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, session.User.RoleIds!);
     }
 
     [Fact]
@@ -498,7 +500,7 @@ public class SecurityServiceTests
 
     Assert.NotNull(user);
     Assert.Equal("admin", user!.UserName);
-    Assert.Equal(SecurityRole.Admin, user.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, user.RoleIds);
     }
 
     [Fact]
@@ -890,7 +892,7 @@ public class SecurityServiceTests
 
         var res = await service.UpdateUser(new UpdateUser(user.Id, SecurityRole.Admin), default);
     Assert.True(res.IsSuccess);
-    Assert.Equal(SecurityRole.Admin, res.Value!.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, res.Value!.RoleIds);
     }
 
     [Fact]

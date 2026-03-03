@@ -16,8 +16,8 @@ public class PermissionService : IPermissionService
     private readonly ISecurityService _securityService;
 
     // Predefined role IDs for default roles
-    public static readonly Guid DefaultAdminRoleId = new Guid("00000000-0000-0000-0000-000000000001");
-    public static readonly Guid DefaultReaderRoleId = new Guid("00000000-0000-0000-0000-000000000002");
+    public static readonly Guid DefaultAdminRoleId = BuiltInRoles.AdminRoleId;
+    public static readonly Guid DefaultReaderRoleId = BuiltInRoles.ReaderRoleId;
 
     // Mapping of controller actions to required permissions
     // Key format: "ControllerName.ActionName.HttpMethod" (e.g., "Application.GetAll.GET")
@@ -154,8 +154,8 @@ public class PermissionService : IPermissionService
 
     public async Task<IReadOnlyList<Permission>> GetUserPermissionsAsync(SecurityUser user, CancellationToken cancellationToken = default)
     {
-        // If user has legacy Admin role, give all permissions
-        if (user.Role == SecurityRole.Admin)
+        // If user has legacy Admin role or is assigned to the built-in Admin role, give all permissions
+        if (user.Role == SecurityRole.Admin || user.RoleIds.Contains(DefaultAdminRoleId))
         {
             return GetAllPermissions();
         }
