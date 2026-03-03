@@ -235,11 +235,11 @@ public sealed class SecurityService : ISecurityService
                 ? BuiltInRoles.AdminRoleId
                 : BuiltInRoles.ReaderRoleId;
             // Swap out any existing built-in role; preserve any custom roles
-            var customRoleIds = user.RoleIds
+            var updatedRoleIds = user.RoleIds
                 .Where(id => id != BuiltInRoles.AdminRoleId && id != BuiltInRoles.ReaderRoleId)
+                .Append(newBuiltInRoleId)
                 .ToList();
-            customRoleIds.Add(newBuiltInRoleId);
-            updatedUser = user with { RoleIds = customRoleIds, UpdatedAt = DateTime.UtcNow };
+            updatedUser = user with { RoleIds = updatedRoleIds, UpdatedAt = DateTime.UtcNow };
         }
         else
         {

@@ -69,8 +69,8 @@ using (var scope = app.Services.CreateScope())
     // Migrate any legacy users that have no built-in role in their RoleIds yet
     var currentState = await store.GetAsync();
     var usersNeedingMigration = currentState.Security.Users.Where(u =>
-        u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId) ||
-        u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId)).ToList();
+        (u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId)) ||
+        (u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))).ToList();
 
     if (usersNeedingMigration.Any())
     {
