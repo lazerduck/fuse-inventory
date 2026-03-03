@@ -205,6 +205,17 @@
           </q-expansion-item>
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator>
+            <q-item clickable v-ripple :to="{ name: 'kumaDashboard' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ApplicationsRead) && hasKumaIntegration"
+              data-tour-id="nav-kuma-dashboard">
+              <q-item-section avatar>
+                <q-icon name="monitor_heart" />
+              </q-item-section>
+              <q-item-section>
+                Service Health Dashboard
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
@@ -338,6 +349,7 @@ import { useOnboardingTour } from './composables/useOnboardingTour'
 import { useEnvironments } from './composables/useEnvironments'
 import { useDataStores } from './composables/useDataStores'
 import { useApplications } from './composables/useApplications'
+import { useKumaIntegrations } from './composables/useKumaIntegrations'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
 
 const leftDrawerOpen = ref(true)
@@ -349,6 +361,9 @@ const { startTour } = useOnboardingTour()
 const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const applicationsQuery = useApplications()
+const kumaIntegrationsQuery = useKumaIntegrations()
+
+const hasKumaIntegration = computed(() => (kumaIntegrationsQuery.data.value ?? []).length > 0)
 
 const showLoginDialog = ref(false)
 const loginLoading = ref(false)
