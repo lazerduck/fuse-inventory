@@ -419,6 +419,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             .GetProperty("roleIds")
             .EnumerateArray()
             .Select(item => item.GetString())
+            .OfType<string>()
             .Where(item => Guid.TryParse(item, out _))
             .Select(Guid.Parse)
             .ToHashSet();

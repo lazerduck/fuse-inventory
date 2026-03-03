@@ -28,6 +28,10 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     // Token for a user that belongs to an empty custom role (no permissions at all)
     private string? _noPermissionsToken;
 
+    // Track created usernames and role names for cleanup
+    private readonly HashSet<string> _createdUsernames = new();
+    private readonly HashSet<string> _createdRoleNames = new();
+
     public PermissionGrantsAccessTests(ApiIntegrationFixture apiFixture)
     {
         _apiFixture = apiFixture;
@@ -225,6 +229,27 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         var adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "initialAdmin", "InitialPassword123!");
         _adminClient = _apiFixture.CreateAuthenticatedClient(adminToken);
 
+        // Clean up any stale test data from previous runs
+        try
+        {
+            var users = await _adminClient.ApiSecurityAccountsGetAsync();
+            foreach (var user in users.Where(u => u.UserName.StartsWith("pgtst_")))
+            {
+                await _adminClient.ApiSecurityAccountsDeleteAsync(user.Id);
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
+
+        try
+        {
+            var roles = await _adminClient.ApiRoleGetAsync();
+            foreach (var role in roles.Where(r => r.Name.StartsWith("role-pgtst_")))
+            {
+                await _adminClient.ApiRoleDeleteAsync(role.Id);
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
+
         // Ensure the site is fully restricted so all permission gates are active
         try
         {
@@ -254,7 +279,39 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        if (_adminClient == null) return;
+
+        // Clean up test users
+        try
+        {
+            var users = await _adminClient.ApiSecurityAccountsGetAsync();
+            foreach (var username in _createdUsernames)
+            {
+                var user = users.FirstOrDefault(u => u.UserName == username);
+                if (user != null)
+                    await _adminClient.ApiSecurityAccountsDeleteAsync(user.Id);
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
+
+        // Clean up test roles
+        try
+        {
+            var roles = await _adminClient.ApiRoleGetAsync();
+            foreach (var roleName in _createdRoleNames)
+            {
+                var role = roles.FirstOrDefault(r => r.Name == roleName);
+                if (role != null)
+                    await _adminClient.ApiRoleDeleteAsync(role.Id);
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
+
+        _createdUsernames.Clear();
+        _createdRoleNames.Clear();
+    }
 
     // ---------------------------------------------------------------------------
     // Helpers
@@ -266,9 +323,12 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     /// </summary>
     private async Task<string> SetupPermissionUserAsync(string username, IReadOnlyList<Permission> permissions)
     {
+        _createdUsernames.Add(username);
+
         // Create or retrieve the role
         Guid? roleId = null;
         var roleName = $"role-{username}";
+        _createdRoleNames.Add(roleName);
 
         var apiPermissions = permissions
             .Select(p => (ApiClient.Permission)Enum.Parse(typeof(ApiClient.Permission), p.ToString()))

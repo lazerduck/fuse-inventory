@@ -88,12 +88,14 @@ public sealed class SecurityService : ISecurityService
         }
         else
         {
+            // Permission check (UsersCreate or Admin) is enforced by SecurityMiddleware.
+            // Here we only verify the requester is a known, authenticated user.
             if (command.RequestedBy is not Guid requesterId)
-                return Result<SecurityUser>.Failure("Only administrators can create users.", ErrorType.Unauthorized);
+                return Result<SecurityUser>.Failure("Authentication is required to create users.", ErrorType.Unauthorized);
 
             var requester = state.Users.FirstOrDefault(u => u.Id == requesterId);
-            if (requester is null || !IsUserAdmin(requester, state))
-                return Result<SecurityUser>.Failure("Only administrators can create users.", ErrorType.Unauthorized);
+            if (requester is null)
+                return Result<SecurityUser>.Failure("Authentication is required to create users.", ErrorType.Unauthorized);
         }
 
         var salt = GenerateSalt();

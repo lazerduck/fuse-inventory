@@ -177,7 +177,7 @@ public class SecurityServiceTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_SubsequentUser_RequiresAdmin()
+    public async Task CreateUserAsync_SubsequentUser_RequiresAuthentication()
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(users: new[] { admin });
@@ -188,11 +188,11 @@ public class SecurityServiceTests
 
     Assert.False(result.IsSuccess);
     Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
-    Assert.Contains("Only administrators can create users", result.Error);
+    Assert.Contains("Authentication is required", result.Error);
     }
 
     [Fact]
-    public async Task CreateUserAsync_SubsequentUser_NonAdminRequester_ReturnsUnauthorized()
+    public async Task CreateUserAsync_SubsequentUser_AuthenticatedRequester_Succeeds()
     {
         var admin = new SecurityUser(Guid.NewGuid(), "admin", "hash", "salt", SecurityRole.Admin, DateTime.UtcNow, DateTime.UtcNow);
         var reader = new SecurityUser(Guid.NewGuid(), "reader", "hash", "salt", SecurityRole.Reader, DateTime.UtcNow, DateTime.UtcNow);
@@ -200,11 +200,13 @@ public class SecurityServiceTests
         var auditService = new FakeAuditService();
         var service = new SecurityService(store, auditService);
 
+        // Permission checks are now handled by SecurityMiddleware; the service only
+        // verifies that the requester is an authenticated, existing user.
         var command = new CreateSecurityUser("newuser", "password", SecurityRole.Reader) { RequestedBy = reader.Id };
         var result = await service.CreateUserAsync(command);
 
-    Assert.False(result.IsSuccess);
-    Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
+    Assert.True(result.IsSuccess);
+    Assert.Equal("newuser", result.Value!.UserName);
     }
 
     [Fact]
