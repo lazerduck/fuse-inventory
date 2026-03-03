@@ -137,7 +137,7 @@ public sealed class SecurityMiddleware
 
             if (!permissionHandled)
             {
-                if (!await AuthorizeAsync(requirement, user, context, cancellationToken))
+                if (!await AuthorizeAsync(requirement, user, context, permissionService, cancellationToken))
                     return;
             }
         }
@@ -145,7 +145,7 @@ public sealed class SecurityMiddleware
         await _next(context);
     }
 
-    private static async Task<bool> AuthorizeAsync(AccessRequirement requirement, SecurityUser? user, HttpContext context, CancellationToken cancellationToken)
+    private static async Task<bool> AuthorizeAsync(AccessRequirement requirement, SecurityUser? user, HttpContext context, IPermissionService permissionService, CancellationToken cancellationToken)
     {
         if (requirement == AccessRequirement.Public)
             return true;
@@ -168,9 +168,7 @@ public sealed class SecurityMiddleware
                 return false;
             }
 
-            // Note: This legacy access requirement check still uses direct role check
-            // because it's only used during the transition period before full permission migration
-            if (user.Role != SecurityRole.Admin)
+            if (!await permissionService.IsUserAdminAsync(user, cancellationToken))
             {
                 await WriteForbiddenAsync(context, cancellationToken);
                 return false;
@@ -265,13 +263,13 @@ public sealed class SecurityMiddleware
             }
 
             if (HttpMethods.IsGet(method))
-                return await permissionService.HasPermissionAsync(user, Permission.UsersRead, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.UsersRead, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsPost(method))
-                return await permissionService.HasPermissionAsync(user, Permission.UsersCreate, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.UsersCreate, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsPatch(method) || HttpMethods.IsPut(method))
-                return await permissionService.HasPermissionAsync(user, Permission.UsersUpdate, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.UsersUpdate, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsDelete(method))
-                return await permissionService.HasPermissionAsync(user, Permission.UsersDelete, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.UsersDelete, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
         }
 
         // Role management endpoints
@@ -283,17 +281,17 @@ public sealed class SecurityMiddleware
                 return true;
 
             if (HttpMethods.IsGet(method))
-                return await permissionService.HasPermissionAsync(user, Permission.RolesRead, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.RolesRead, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsPost(method))
-                return await permissionService.HasPermissionAsync(user, Permission.RolesCreate, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.RolesCreate, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsPatch(method) || HttpMethods.IsPut(method))
-                return await permissionService.HasPermissionAsync(user, Permission.RolesUpdate, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.RolesUpdate, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsDelete(method))
-                return await permissionService.HasPermissionAsync(user, Permission.RolesDelete, cancellationToken) || user.Role == SecurityRole.Admin;
+                return await permissionService.HasPermissionAsync(user, Permission.RolesDelete, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
         }
 
         // All other security endpoints require admin role (fallback)
-        return user.Role == SecurityRole.Admin;
+        return await permissionService.IsUserAdminAsync(user, cancellationToken);
     }
 
     private static bool TryGetPasswordResetTargetUserId(PathString path, out Guid targetUserId)

@@ -153,7 +153,7 @@ public class SecurityServiceTests
     var user = result.Value!;
     Assert.NotEqual(Guid.Empty, user.Id);
     Assert.Equal("admin", user.UserName);
-    Assert.Equal(SecurityRole.Admin, user.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, user.RoleIds);
     Assert.False(string.IsNullOrEmpty(user.PasswordHash));
     Assert.False(string.IsNullOrEmpty(user.PasswordSalt));
     Assert.InRange(user.CreatedAt, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
@@ -350,7 +350,7 @@ public class SecurityServiceTests
     Assert.InRange(session.ExpiresAt, DateTime.UtcNow.AddDays(30).AddSeconds(-5), DateTime.UtcNow.AddDays(30).AddSeconds(5));
     Assert.Equal(userId, session.User.Id);
     Assert.Equal("admin", session.User.UserName);
-    Assert.Equal(SecurityRole.Admin, session.User.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, session.User.RoleIds!);
     }
 
     [Fact]
@@ -498,7 +498,7 @@ public class SecurityServiceTests
 
     Assert.NotNull(user);
     Assert.Equal("admin", user!.UserName);
-    Assert.Equal(SecurityRole.Admin, user.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, user.RoleIds);
     }
 
     [Fact]
@@ -890,7 +890,7 @@ public class SecurityServiceTests
 
         var res = await service.UpdateUser(new UpdateUser(user.Id, SecurityRole.Admin), default);
     Assert.True(res.IsSuccess);
-    Assert.Equal(SecurityRole.Admin, res.Value!.Role);
+    Assert.Contains(BuiltInRoles.AdminRoleId, res.Value!.RoleIds);
     }
 
     [Fact]

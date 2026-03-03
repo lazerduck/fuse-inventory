@@ -4,6 +4,7 @@ using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Models;
 using Fuse.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +63,30 @@ using (var scope = app.Services.CreateScope())
         await store.UpdateAsync(s => s with
         {
             Security = s.Security with { Roles = allRoles }
+        });
+    }
+
+    // Migrate any legacy users that have no built-in role in their RoleIds yet
+    var currentState = await store.GetAsync();
+    var usersNeedingMigration = currentState.Security.Users.Where(u =>
+        u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId) ||
+        u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId)).ToList();
+
+    if (usersNeedingMigration.Any())
+    {
+        await store.UpdateAsync(s => s with
+        {
+            Security = s.Security with
+            {
+                Users = s.Security.Users.Select(u =>
+                {
+                    if (u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))
+                        return u with { RoleIds = u.RoleIds.Append(BuiltInRoles.AdminRoleId).ToList() };
+                    if (u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))
+                        return u with { RoleIds = u.RoleIds.Append(BuiltInRoles.ReaderRoleId).ToList() };
+                    return u;
+                }).ToList()
+            }
         });
     }
 }

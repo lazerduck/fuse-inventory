@@ -20,6 +20,13 @@ public enum SecurityRole
     Admin
 }
 
+// Well-known IDs for the built-in roles so both model and service layers share them
+public static class BuiltInRoles
+{
+    public static readonly Guid AdminRoleId = new Guid("00000000-0000-0000-0000-000000000001");
+    public static readonly Guid ReaderRoleId = new Guid("00000000-0000-0000-0000-000000000002");
+}
+
 // Permission categories for organizing permissions
 public enum PermissionCategory
 {
@@ -241,7 +248,7 @@ public record SecurityState
     public IReadOnlyList<Role> Roles { get; init; } = Array.Empty<Role>();
 
     [JsonIgnore]
-    public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin);
+    public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId));
 }
 
 public record SecurityUserInfo(Guid Id, string UserName, SecurityRole Role, IReadOnlyList<Guid>? RoleIds, DateTime CreatedAt, DateTime UpdatedAt);

@@ -119,7 +119,7 @@ public static class SnapshotValidator
             TagsMustExist(er.TagIds, $"ExternalResource {er.Id}");
 
         // Security Users
-        if (s.Security.Users.Count > 0 && !s.Security.Users.Any(u => u.Role == SecurityRole.Admin))
+        if (s.Security.Users.Count > 0 && !s.Security.Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId)))
             errs.Add("At least one admin user is required for security settings.");
 
         var duplicateUsers = s.Security.Users

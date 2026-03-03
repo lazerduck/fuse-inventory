@@ -44,7 +44,7 @@ public sealed class SecurityService : ISecurityService
         if (state.Settings.Level == command.Level)
             return Result<SecuritySettings>.Success(state.Settings);
 
-        if (command.Level != SecurityLevel.None && !state.Users.Any(u => u.Role == SecurityRole.Admin))
+        if (command.Level != SecurityLevel.None && !state.Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId)))
             return Result<SecuritySettings>.Failure("An administrator account is required before enabling restrictions.", ErrorType.Validation);
 
         var updated = new SecuritySettings(command.Level, DateTime.UtcNow);
@@ -98,8 +98,11 @@ public sealed class SecurityService : ISecurityService
 
         var salt = GenerateSalt();
         var hash = HashPassword(command.Password, salt);
-        var legacyRole = command.Role ?? SecurityRole.Reader;
-        var user = new SecurityUser(Guid.NewGuid(), command.UserName.Trim(), hash, salt, legacyRole, now, now);
+        var builtInRoleId = (command.Role ?? SecurityRole.Reader) == SecurityRole.Admin
+            ? BuiltInRoles.AdminRoleId
+            : BuiltInRoles.ReaderRoleId;
+        // Always store Reader as the legacy role – access is determined by RoleIds
+        var user = new SecurityUser(Guid.NewGuid(), command.UserName.Trim(), hash, salt, SecurityRole.Reader, new[] { builtInRoleId }, now, now);
 
         await _store.UpdateAsync(s => s with
         {
@@ -224,10 +227,24 @@ public sealed class SecurityService : ISecurityService
             return Result<SecurityUser>.Failure("User not found", ErrorType.NotFound);
         }
 
-        // Only update role if a new value is provided, otherwise keep existing
-        var updatedUser = command.Role.HasValue 
-            ? user with { Role = command.Role.Value }
-            : user;
+        // When a role change is requested, update the built-in role in RoleIds rather than the legacy field
+        SecurityUser updatedUser;
+        if (command.Role.HasValue)
+        {
+            var newBuiltInRoleId = command.Role.Value == SecurityRole.Admin
+                ? BuiltInRoles.AdminRoleId
+                : BuiltInRoles.ReaderRoleId;
+            // Swap out any existing built-in role; preserve any custom roles
+            var customRoleIds = user.RoleIds
+                .Where(id => id != BuiltInRoles.AdminRoleId && id != BuiltInRoles.ReaderRoleId)
+                .ToList();
+            customRoleIds.Add(newBuiltInRoleId);
+            updatedUser = user with { RoleIds = customRoleIds, UpdatedAt = DateTime.UtcNow };
+        }
+        else
+        {
+            updatedUser = user;
+        }
         
         await _store.UpdateAsync(s => s with
         {
