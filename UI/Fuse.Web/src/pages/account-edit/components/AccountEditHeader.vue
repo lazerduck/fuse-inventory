@@ -7,6 +7,14 @@
     <div class="flex q-gutter-sm">
       <q-btn flat label="Cancel" @click="$emit('cancel')" />
       <q-btn
+        v-if="showClone"
+        flat
+        color="secondary"
+        icon="content_copy"
+        label="Clone across environments"
+        @click="$emit('clone')"
+      />
+      <q-btn
         color="primary"
         :label="primaryLabel"
         :loading="isSaving"
@@ -24,6 +32,7 @@ interface Props {
   primaryLabel: string
   isSaving: boolean
   canModify: boolean
+  showClone?: boolean
 }
 
 defineProps<Props>()
@@ -31,5 +40,6 @@ defineProps<Props>()
 defineEmits<{
   (e: 'cancel'): void
   (e: 'save'): void
+  (e: 'clone'): void
 }>()
 </script>

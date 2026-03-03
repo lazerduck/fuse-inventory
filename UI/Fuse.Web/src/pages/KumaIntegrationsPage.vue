@@ -5,7 +5,7 @@
         <h1>Kuma Integrations</h1>
         <p class="subtitle">Manage Uptime Kuma integration endpoints and credentials.</p>
       </div>
-      <q-btn color="primary" label="Add Integration" icon="add" :disable="!fuseStore.canModify"
+      <q-btn color="primary" label="Add Integration" icon="add" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
         @click="openCreateDialog" />
     </div>
 
@@ -41,9 +41,9 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" :disable="!fuseStore.canModify"
+            <q-btn flat dense round icon="edit" color="primary" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
               @click="openEditDialog(props.row)" />
-            <q-btn flat dense round icon="delete" color="negative" class="q-ml-xs" :disable="!fuseStore.canModify"
+            <q-btn flat dense round icon="delete" color="negative" class="q-ml-xs" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsDelete)"
               @click="confirmDelete(props.row)" />
           </q-td>
         </template>
@@ -55,7 +55,9 @@
 
     <q-dialog v-model="isFormDialogOpen" persistent>
       <KumaIntegrationForm :mode="selectedIntegration ? 'edit' : 'create'" :initial-value="selectedIntegration"
-        :loading="formLoading" @submit="handleFormSubmit" @cancel="closeFormDialog" />
+        :loading="formLoading"
+        :disabled="selectedIntegration ? !fuseStore.hasPermission(Permission.KumaIntegrationsCreate) : !fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
+        @submit="handleFormSubmit" @cancel="closeFormDialog" />
     </q-dialog>
   </div>
 </template>
@@ -65,7 +67,7 @@ import { computed, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { KumaIntegrationResponse, CreateKumaIntegration, UpdateKumaIntegration } from '../api/client'
+import { KumaIntegrationResponse, CreateKumaIntegration, UpdateKumaIntegration, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'

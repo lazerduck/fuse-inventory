@@ -32,6 +32,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "secretProviderAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecretProviderResponse>))]
         public async Task<ActionResult<IEnumerable<SecretProviderResponse>>> GetSecretProviders()
         {
@@ -49,6 +50,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(OperationId = "secretProviderGET")]
         [ProducesResponseType(200, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<SecretProviderResponse>> GetSecretProviderById([FromRoute] Guid id)
@@ -70,6 +72,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost]
+        [SwaggerOperation(OperationId = "secretProviderPOST")]
         [ProducesResponseType(201, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<SecretProviderResponse>> CreateSecretProvider([FromBody] CreateSecretProvider command)
@@ -94,6 +97,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [SwaggerOperation(OperationId = "secretProviderPUT")]
         [ProducesResponseType(200, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -124,6 +128,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(OperationId = "secretProviderDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -142,6 +147,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("test-connection")]
+        [SwaggerOperation(OperationId = "testConnection")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> TestConnection([FromBody] TestSecretProviderConnection command)
@@ -155,6 +161,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("{providerId}/secrets")]
+        [SwaggerOperation(OperationId = "secretsAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecretMetadataResponse>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -178,6 +185,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("{providerId}/secrets")]
+        [SwaggerOperation(OperationId = "secrets")]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -198,22 +206,25 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("{providerId}/secrets/{secretName}/rotate")]
+        [SwaggerOperation(OperationId = "rotate")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> RotateSecret([FromRoute] Guid providerId, [FromRoute] string secretName, [FromBody] RotateSecret command)
         {
             var merged = command with { ProviderId = providerId, SecretName = secretName };
+            var securityState = await _securityService.GetSecurityStateAsync();
             var (userName, userId) = GetUserInfo();
 
             if (userId is null)
             {
-                return StatusCode(403, new { error = "Authentication required for secret reveal operation." });
+                return StatusCode(403, new { error = "Authentication required for secret rotate operation." });
             }
-            
-            if (!IsAdmin())
+
+            var user = securityState.Users.FirstOrDefault(u => u.Id == userId);
+            if (!await _permissionService.IsUserAdminAsync(user))
             {
-                return StatusCode(403, new { error = "Admin role required for secret reveal operation." });
+                return StatusCode(403, new { error = "Admin role required for secret rotate operation." });
             }
 
             var result = await _secretOperationService.RotateSecretAsync(merged, userName, userId);
@@ -229,6 +240,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("{providerId}/secrets/{secretName}/reveal")]
+        [SwaggerOperation(OperationId = "reveal")]
         [ProducesResponseType(200, Type = typeof(SecretValueResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(403)]

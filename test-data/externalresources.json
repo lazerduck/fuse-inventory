@@ -1,0 +1,40 @@
+[
+  {
+    "id": "912339c2-4657-4f13-8fe4-2ae910cf3f53",
+    "name": "Stripe",
+    "description": null,
+    "resourceUri": "stripe.com",
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:10:28.8469333Z",
+    "updatedAt": "2026-02-25T20:10:28.8469333Z"
+  },
+  {
+    "id": "425855d9-1ed1-4f7a-a618-b3b24db57fae",
+    "name": "test-stripe",
+    "description": null,
+    "resourceUri": "test.stripe.com",
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:10:40.3804915Z",
+    "updatedAt": "2026-02-25T20:10:40.3804915Z"
+  },
+  {
+    "id": "0a4c44d1-709e-4b1c-b2fa-9cab2d24dc88",
+    "name": "Email-provider",
+    "description": null,
+    "resourceUri": null,
+    "tagIds": [],
+    "createdAt": "2026-02-25T20:11:46.3974729Z",
+    "updatedAt": "2026-02-25T20:11:46.3974729Z"
+  },
+  {
+    "id": "83488f4f-92b7-4fae-9a37-dd819e7415e4",
+    "name": "MailDev",
+    "description": null,
+    "resourceUri": null,
+    "tagIds": [
+      "b8314daa-7fe8-433f-9739-916673f40ca4"
+    ],
+    "createdAt": "2026-02-25T20:12:03.9004078Z",
+    "updatedAt": "2026-02-25T20:12:03.9004078Z"
+  }
+]

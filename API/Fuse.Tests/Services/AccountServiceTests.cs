@@ -661,4 +661,107 @@ public class AccountServiceTests
         Assert.Equal(account.Id, migratedDep.AccountId);
         Assert.Equal(originalUpdatedAt, migratedApp.UpdatedAt);
     }
+
+    [Fact]
+    public async Task GetAccountCloneTargets_ApplicationTarget_ReturnsSiblings()
+    {
+        var env1Id = Guid.NewGuid();
+        var env2Id = Guid.NewGuid();
+        var inst1Id = Guid.NewGuid();
+        var inst2Id = Guid.NewGuid();
+        var inst1 = new ApplicationInstance(inst1Id, env1Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var inst2 = new ApplicationInstance(inst2Id, env2Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst1, inst2 }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), inst1Id, TargetKind.Application, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, apps: new[] { app });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountCloneTargetsAsync(account.Id);
+
+        Assert.True(result.IsSuccess);
+        var target = Assert.Single(result.Value!);
+        Assert.Equal(inst2Id, target.Id);
+    }
+
+    [Fact]
+    public async Task GetAccountCloneTargets_DataStoreTarget_ReturnsSameKind()
+    {
+        var envId = Guid.NewGuid();
+        var ds1 = new DataStore(Guid.NewGuid(), "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var ds2 = new DataStore(Guid.NewGuid(), "DS2", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var ds3 = new DataStore(Guid.NewGuid(), "DS3", null, "redis", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "user", null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, ds: new[] { ds1, ds2, ds3 });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountCloneTargetsAsync(account.Id);
+
+        Assert.True(result.IsSuccess);
+        var target = Assert.Single(result.Value!);
+        Assert.Equal(ds2.Id, target.Id);
+    }
+
+    [Fact]
+    public async Task GetAccountCloneTargets_ExternalTarget_ReturnsEmpty()
+    {
+        var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, res: new[] { res });
+        var service = CreateService(store);
+
+        var result = await service.GetAccountCloneTargetsAsync(account.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value!);
+    }
+
+    [Fact]
+    public async Task CloneAccount_ApplicationTarget_Success()
+    {
+        var env1Id = Guid.NewGuid();
+        var env2Id = Guid.NewGuid();
+        var inst1Id = Guid.NewGuid();
+        var inst2Id = Guid.NewGuid();
+        var inst1 = new ApplicationInstance(inst1Id, env1Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var inst2 = new ApplicationInstance(inst2Id, env2Id, null, null, null, null, null, Array.Empty<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst1, inst2 }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), inst1Id, TargetKind.Application, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, apps: new[] { app });
+        var service = CreateService(store);
+
+        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { inst2Id }));
+
+        Assert.True(result.IsSuccess);
+        var cloned = Assert.Single(result.Value!);
+        Assert.NotEqual(account.Id, cloned.Id);
+        Assert.Equal(inst2Id, cloned.TargetId);
+        Assert.Equal(TargetKind.Application, cloned.TargetKind);
+        Assert.Equal(2, (await service.GetAccountsAsync()).Count);
+    }
+
+    [Fact]
+    public async Task CloneAccount_ExternalTarget_ReturnsValidation()
+    {
+        var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), res.Id, TargetKind.External, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, res: new[] { res });
+        var service = CreateService(store);
+
+        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { Guid.NewGuid() }));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CloneAccount_SourceNotFound()
+    {
+        var store = NewStore();
+        var service = CreateService(store);
+
+        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(Guid.NewGuid(), new[] { Guid.NewGuid() }));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
 }

@@ -9,7 +9,7 @@
         color="primary"
         label="Create Data Store"
         icon="add"
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.DataStoresCreate)"
         @click="openCreateDialog"
         data-tour-id="create-data-store"
       />
@@ -19,11 +19,11 @@
       {{ dataStoreError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.DataStoresRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view data stores. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.DataStoresRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -79,7 +79,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.DataStoresRead)"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
@@ -89,7 +89,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.DataStoresDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -105,6 +105,7 @@
         :mode="selectedDataStore ? 'edit' : 'create'"
         :initial-value="selectedDataStore"
         :loading="formLoading"
+        :disabled="selectedDataStore ? !fuseStore.hasPermission(Permission.DataStoresUpdate) : !fuseStore.hasPermission(Permission.DataStoresCreate)"
         @submit="handleFormSubmit"
         @cancel="closeFormDialog"
       />
@@ -117,7 +118,7 @@ import { computed, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { DataStore, CreateDataStore, UpdateDataStore } from '../api/client'
+import { DataStore, CreateDataStore, UpdateDataStore, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'

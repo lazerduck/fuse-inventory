@@ -20,4 +20,8 @@ public interface IAccountService
 
     // SQL Status
     Task<Result<AccountSqlStatusResponse>> GetAccountSqlStatusAsync(Guid accountId, CancellationToken ct = default);
+
+    // Clone
+    Task<Result<IReadOnlyList<CloneTarget>>> GetAccountCloneTargetsAsync(Guid id);
+    Task<Result<IReadOnlyList<Account>>> CloneAccountAsync(CloneAccount command);
 }

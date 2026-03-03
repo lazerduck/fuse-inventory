@@ -46,3 +46,8 @@ public record DeleteIdentityAssignment(
     Guid IdentityId,
     Guid AssignmentId
 );
+
+public record CloneIdentity(
+    Guid SourceId,
+    IReadOnlyList<Guid> TargetOwnerInstanceIds
+);

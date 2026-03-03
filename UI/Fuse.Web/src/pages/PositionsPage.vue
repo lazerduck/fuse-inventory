@@ -9,7 +9,7 @@
         color="primary"
         label="Create Position"
         icon="add"
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.PositionsCreate)"
         @click="openCreateDialog"
       />
     </div>
@@ -18,11 +18,11 @@
       {{ positionError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.PositionsRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view positions. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.PositionsRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -61,7 +61,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.PositionsRead)"
               @click="openEditDialog(props.row)"
             />
             <q-btn
@@ -71,7 +71,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.PositionsDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -86,6 +86,7 @@
       v-model="isDialogOpen"
       :position="selectedPosition"
       :loading="isAnyPending"
+      :disabled="selectedPosition ? !fuseStore.hasPermission(Permission.PositionsUpdate) : !fuseStore.hasPermission(Permission.PositionsCreate)"
       @save="handleSave"
     />
   </div>
@@ -96,7 +97,7 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { Position, CreatePosition, UpdatePosition } from '../api/client'
+import { Position, CreatePosition, UpdatePosition, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'

@@ -132,8 +132,7 @@ public sealed class SecurityService : ISecurityService
         if (user is null)
             return Result<LoginSession>.Failure("Invalid credentials.", ErrorType.Unauthorized);
 
-        var computed = HashPassword(command.Password, user.PasswordSalt);
-        if (!CryptographicOperations.FixedTimeEquals(Convert.FromBase64String(user.PasswordHash), Convert.FromBase64String(computed)))
+        if (!VerifyPassword(command.Password, user.PasswordHash, user.PasswordSalt))
             return Result<LoginSession>.Failure("Invalid credentials.", ErrorType.Unauthorized);
 
         var token = Guid.NewGuid().ToString("N");
@@ -470,6 +469,14 @@ public sealed class SecurityService : ISecurityService
         return Convert.ToBase64String(derived);
     }
 
+    private static bool VerifyPassword(string password, string storedHash, string storedSalt)
+    {
+        var computed = HashPassword(password, storedSalt);
+        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            Convert.FromBase64String(storedHash),
+            Convert.FromBase64String(computed));
+    }
+
     private record SessionRecord(string Token, Guid UserId, DateTime ExpiresAt);
 
     /// <summary>
@@ -489,5 +496,80 @@ public sealed class SecurityService : ISecurityService
             return true;
 
         return false;
+    }
+
+    public async Task<Result> ResetPasswordAsync(ResetPassword command, CancellationToken ct = default)
+    {
+        if (command is null || command.TargetUserId == default)
+            return Result.Failure("Target user Id must be provided.", ErrorType.Validation);
+
+        if (string.IsNullOrWhiteSpace(command.NewPassword))
+            return Result.Failure("New password cannot be empty.", ErrorType.Validation);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+
+        var targetUser = state.Users.FirstOrDefault(u => u.Id == command.TargetUserId);
+        if (targetUser is null)
+            return Result.Failure("User not found.", ErrorType.NotFound);
+
+        var isSelfReset = command.RequestedBy == command.TargetUserId;
+
+        if (isSelfReset)
+        {
+            // Self-reset: validate current password
+            if (string.IsNullOrWhiteSpace(command.CurrentPassword))
+                return Result.Failure("Current password is required to reset your own password.", ErrorType.Validation);
+
+            if (!VerifyPassword(command.CurrentPassword, targetUser.PasswordHash, targetUser.PasswordSalt))
+                return Result.Failure("Current password is incorrect.", ErrorType.Unauthorized);
+        }
+        else
+        {
+            // Admin reset: requester must be admin, target must not be admin
+            if (command.RequestedBy is not Guid requesterId)
+                return Result.Failure("Authentication required.", ErrorType.Unauthorized);
+
+            var requester = state.Users.FirstOrDefault(u => u.Id == requesterId);
+            if (!IsUserAdmin(requester, state))
+                return Result.Failure("Only administrators can reset other users' passwords.", ErrorType.Unauthorized);
+
+            if (IsUserAdmin(targetUser, state))
+                return Result.Failure("Administrators cannot reset the password of another administrator.", ErrorType.Validation);
+        }
+
+        var newSalt = GenerateSalt();
+        var newHash = HashPassword(command.NewPassword, newSalt);
+
+        var updatedUser = targetUser with
+        {
+            PasswordHash = newHash,
+            PasswordSalt = newSalt,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with
+            {
+                Users = s.Security.Users.Select(u => u.Id == command.TargetUserId ? updatedUser : u).ToList()
+            }
+        }, ct);
+
+        var requesterUser = isSelfReset
+            ? targetUser
+            : state.Users.FirstOrDefault(u => u.Id == command.RequestedBy);
+
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.PasswordReset,
+            AuditArea.Security,
+            requesterUser?.UserName ?? "Unknown",
+            command.RequestedBy,
+            targetUser.Id,
+            new { TargetUserName = targetUser.UserName, ResetBy = requesterUser?.UserName ?? "Unknown", IsSelfReset = isSelfReset }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
+        return Result.Success();
     }
 }

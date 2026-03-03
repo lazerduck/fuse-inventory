@@ -572,4 +572,98 @@ public class AccountService : IAccountService
 
         return Result<IReadOnlyList<Grant>>.Success(normalized);
     }
+
+    public async Task<Result<IReadOnlyList<CloneTarget>>> GetAccountCloneTargetsAsync(Guid id)
+    {
+        var store = await _fuseStore.GetAsync();
+        var account = store.Accounts.FirstOrDefault(a => a.Id == id);
+        if (account is null)
+            return Result<IReadOnlyList<CloneTarget>>.Failure($"Account with ID '{id}' not found.", ErrorType.NotFound);
+
+        if (account.TargetKind == TargetKind.External)
+            return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+        var envLookup = store.Environments.ToDictionary(e => e.Id, e => e.Name);
+
+        if (account.TargetKind == TargetKind.Application)
+        {
+            var ownerApp = store.Applications.FirstOrDefault(a => a.Instances.Any(i => i.Id == account.TargetId));
+            if (ownerApp is null)
+                return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+            var targets = ownerApp.Instances
+                .Where(i => i.Id != account.TargetId)
+                .Select(i =>
+                {
+                    var envName = i.EnvironmentId != Guid.Empty && envLookup.TryGetValue(i.EnvironmentId, out var n) ? n : i.EnvironmentId.ToString();
+                    return new CloneTarget(i.Id, $"{ownerApp.Name} — {envName}", envName);
+                })
+                .ToList();
+
+            return Result<IReadOnlyList<CloneTarget>>.Success(targets);
+        }
+
+        if (account.TargetKind == TargetKind.DataStore)
+        {
+            var sourceDs = store.DataStores.FirstOrDefault(d => d.Id == account.TargetId);
+            if (sourceDs is null)
+                return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+            var targets = store.DataStores
+                .Where(d => d.Id != account.TargetId && d.Kind == sourceDs.Kind)
+                .Select(d =>
+                {
+                    var envName = d.EnvironmentId != Guid.Empty && envLookup.TryGetValue(d.EnvironmentId, out var n) ? n : d.EnvironmentId.ToString();
+                    return new CloneTarget(d.Id, $"{d.Name} — {envName}", envName);
+                })
+                .ToList();
+
+            return Result<IReadOnlyList<CloneTarget>>.Success(targets);
+        }
+
+        return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+    }
+
+    public async Task<Result<IReadOnlyList<Account>>> CloneAccountAsync(CloneAccount command)
+    {
+        var store = await _fuseStore.GetAsync();
+        var source = store.Accounts.FirstOrDefault(a => a.Id == command.SourceId);
+        if (source is null)
+            return Result<IReadOnlyList<Account>>.Failure($"Account with ID '{command.SourceId}' not found.", ErrorType.NotFound);
+
+        if (source.TargetKind == TargetKind.External)
+            return Result<IReadOnlyList<Account>>.Failure("Cannot clone an account targeting an external resource.", ErrorType.Validation);
+
+        if (command.TargetIds is null || command.TargetIds.Count == 0)
+            return Result<IReadOnlyList<Account>>.Failure("At least one target must be specified.", ErrorType.Validation);
+
+        var created = new List<Account>();
+        var now = DateTime.UtcNow;
+
+        foreach (var targetId in command.TargetIds)
+        {
+            var targetExists = source.TargetKind switch
+            {
+                TargetKind.Application => store.Applications.SelectMany(a => a.Instances).Any(i => i.Id == targetId)
+                    || store.Applications.Any(a => a.Id == targetId),
+                TargetKind.DataStore => store.DataStores.Any(d => d.Id == targetId),
+                _ => false
+            };
+            if (!targetExists)
+                return Result<IReadOnlyList<Account>>.Failure($"Target '{source.TargetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
+
+            var cloned = source with
+            {
+                Id = Guid.NewGuid(),
+                TargetId = targetId,
+                Grants = source.Grants.Select(g => g with { Id = Guid.NewGuid() }).ToList(),
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            created.Add(cloned);
+        }
+
+        await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Concat(created).ToList() });
+        return Result<IReadOnlyList<Account>>.Success(created);
+    }
 }

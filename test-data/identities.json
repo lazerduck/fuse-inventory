@@ -1,0 +1,122 @@
+[
+  {
+    "id": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5",
+    "name": "company\\Orders",
+    "kind": "AzureManagedIdentity",
+    "notes": null,
+    "ownerInstanceId": "3ac36dc7-aa46-4bb0-95b6-55889b26fd5b",
+    "assignments": [
+      {
+        "id": "f3bb8d2d-eefb-4ce7-94be-02c99c65f657",
+        "targetKind": "DataStore",
+        "targetId": "15b7f880-7728-4c7c-85e5-2554e1533075",
+        "role": "Owner",
+        "notes": null
+      },
+      {
+        "id": "97253880-8e07-43f5-8f1a-fa57ef088ba3",
+        "targetKind": "Application",
+        "targetId": "97228858-2bab-47a5-a4c0-27a64b705d5a",
+        "role": "PaymentManager",
+        "notes": "Needs to create and check for payment"
+      },
+      {
+        "id": "0a7d3221-8430-44c3-970d-b2ea372ca567",
+        "targetKind": "Application",
+        "targetId": "c55ed07e-2e05-4740-adcd-34cc27c366e3",
+        "role": "InventoryChecker",
+        "notes": "Check we have inventory for an order to be created"
+      },
+      {
+        "id": "f525d4ca-39fb-4dba-8b62-80bc4e0c2dd5",
+        "targetKind": "Application",
+        "targetId": "e355cdfb-e997-4232-87ac-e82326e917ac",
+        "role": "SendUpdates",
+        "notes": "Trigger emails about the progress of orders"
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:35:58.608851Z",
+    "updatedAt": "2026-02-25T19:39:25.5988995Z"
+  },
+  {
+    "id": "d7cb1c4a-dafe-4873-8aff-688d6e457398",
+    "name": "company\\Orders",
+    "kind": "AzureManagedIdentity",
+    "notes": null,
+    "ownerInstanceId": "10caf851-7378-4fa1-806b-11accf80cefe",
+    "assignments": [
+      {
+        "id": "9707ace3-96ee-4ce4-a44a-8bd92795d25c",
+        "targetKind": "Application",
+        "targetId": "b3ec895a-72ce-405c-9817-0e795f7d5f83",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "d4f99485-86d9-4a29-b51a-a4ae0b2ab70f",
+        "targetKind": "Application",
+        "targetId": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "1d6fe56e-fdbf-47d9-9462-f2832c4f461d",
+        "targetKind": "Application",
+        "targetId": "9c8f3651-cda5-4119-a779-d6a0446e8405",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "219529bb-734f-4397-8dd4-c1cf946bca92",
+        "targetKind": "DataStore",
+        "targetId": "2b113de5-619e-4075-b9f2-4e59856f3d92",
+        "role": null,
+        "notes": null
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:41:19.8110308Z",
+    "updatedAt": "2026-02-25T19:43:03.4011127Z"
+  },
+  {
+    "id": "28eb941b-db03-480c-86f4-45dc04d9ec6d",
+    "name": "company\\Orders",
+    "kind": "AzureManagedIdentity",
+    "notes": null,
+    "ownerInstanceId": "79ba1a62-d10f-4985-aec7-98cb39ae7e34",
+    "assignments": [
+      {
+        "id": "ce87282b-8fa7-4524-8b5f-d6ce3feb03ad",
+        "targetKind": "Application",
+        "targetId": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "d829fa1a-b78c-4f4b-b6a9-abc9e7b5911a",
+        "targetKind": "Application",
+        "targetId": "b4d5e5b7-087d-4539-a60d-42e6b1c2ecf2",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "c594a778-c0c7-4765-855a-c1e576e7f3c2",
+        "targetKind": "Application",
+        "targetId": "9c8f3651-cda5-4119-a779-d6a0446e8405",
+        "role": null,
+        "notes": null
+      },
+      {
+        "id": "bef1f142-06f5-4fd1-8624-9cd3f441672d",
+        "targetKind": "DataStore",
+        "targetId": "2b113de5-619e-4075-b9f2-4e59856f3d92",
+        "role": null,
+        "notes": null
+      }
+    ],
+    "tagIds": [],
+    "createdAt": "2026-02-25T19:41:29.4163913Z",
+    "updatedAt": "2026-02-25T20:05:52.3692314Z"
+  }
+]

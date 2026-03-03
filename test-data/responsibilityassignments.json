@@ -1,0 +1,98 @@
+[
+  {
+    "id": "8181c905-0dcc-4a54-9fb0-ee672ed1fd67",
+    "positionId": "77aa1da1-b7cb-4e4f-8985-aa3c840868f6",
+    "responsibilityTypeId": "45253180-0565-4f4e-b214-20ee319575eb",
+    "applicationId": "4772b2cc-b955-4cc3-be44-756145fca633",
+    "scope": "All",
+    "environmentId": null,
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:26:35.3072373Z",
+    "updatedAt": "2026-02-25T20:26:35.3072373Z"
+  },
+  {
+    "id": "12548356-83e7-47c1-a218-ab8eb2cedf5f",
+    "positionId": "c7ed2b04-eaec-4f98-84f2-862458cd5c18",
+    "responsibilityTypeId": "4cc078c7-b83c-4dbf-8001-6ced3fa6ba2e",
+    "applicationId": "4772b2cc-b955-4cc3-be44-756145fca633",
+    "scope": "All",
+    "environmentId": null,
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:26:50.4798212Z",
+    "updatedAt": "2026-02-25T20:26:50.4798212Z"
+  },
+  {
+    "id": "eb88ba0f-3290-40d9-a3f9-ade7ff651cb4",
+    "positionId": "2b546f8b-467e-4d57-9f42-cd1ab54b9d73",
+    "responsibilityTypeId": "22798772-716c-4c15-9811-af8b51dbe368",
+    "applicationId": "4772b2cc-b955-4cc3-be44-756145fca633",
+    "scope": "All",
+    "environmentId": null,
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:27:08.8416651Z",
+    "updatedAt": "2026-02-25T20:27:08.8416651Z"
+  },
+  {
+    "id": "8f7d6df0-180f-4c34-8b8e-a8f782f56111",
+    "positionId": "4ba3ddb5-7936-4804-bc9c-12865c6d4c58",
+    "responsibilityTypeId": "4cc078c7-b83c-4dbf-8001-6ced3fa6ba2e",
+    "applicationId": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "scope": "Environment",
+    "environmentId": "20090afa-118e-478d-b17b-5512f3af9bf6",
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:27:35.6150449Z",
+    "updatedAt": "2026-02-25T20:27:35.6150449Z"
+  },
+  {
+    "id": "bcccc48f-805a-45b3-9168-ccc9307fa37e",
+    "positionId": "c7ed2b04-eaec-4f98-84f2-862458cd5c18",
+    "responsibilityTypeId": "4cc078c7-b83c-4dbf-8001-6ced3fa6ba2e",
+    "applicationId": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "scope": "Environment",
+    "environmentId": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:27:49.9673696Z",
+    "updatedAt": "2026-02-25T20:27:49.9673696Z"
+  },
+  {
+    "id": "30e9d2d0-dd8e-403e-967e-5b638e972a9f",
+    "positionId": "c7ed2b04-eaec-4f98-84f2-862458cd5c18",
+    "responsibilityTypeId": "4cc078c7-b83c-4dbf-8001-6ced3fa6ba2e",
+    "applicationId": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "scope": "Environment",
+    "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:27:59.5712165Z",
+    "updatedAt": "2026-02-25T20:27:59.5712165Z"
+  },
+  {
+    "id": "eaa0a6e2-daf6-47c2-b53a-1a3874f0db8a",
+    "positionId": "77aa1da1-b7cb-4e4f-8985-aa3c840868f6",
+    "responsibilityTypeId": "22798772-716c-4c15-9811-af8b51dbe368",
+    "applicationId": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "scope": "All",
+    "environmentId": null,
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:28:11.2359338Z",
+    "updatedAt": "2026-02-25T20:28:11.2359338Z"
+  },
+  {
+    "id": "0a9f017d-cdda-4f85-9bf9-42a188b099df",
+    "positionId": "6ed1c1d0-7d4a-4e46-9a31-175d52a07e61",
+    "responsibilityTypeId": "45253180-0565-4f4e-b214-20ee319575eb",
+    "applicationId": "397228ea-e84d-4835-8e83-1bf2af138d10",
+    "scope": "All",
+    "environmentId": null,
+    "notes": null,
+    "primary": false,
+    "createdAt": "2026-02-25T20:28:17.8912785Z",
+    "updatedAt": "2026-02-25T20:28:17.8912785Z"
+  }
+]

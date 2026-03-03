@@ -7,10 +7,19 @@
       </div>
       <div class="flex q-gutter-sm">
         <q-btn flat label="Cancel" @click="handleCancel" />
+        <q-btn
+          v-if="isEditMode && identity?.ownerInstanceId"
+          flat
+          color="secondary"
+          icon="content_copy"
+          label="Clone across environments"
+          @click="openCloneDialog"
+        />
         <q-btn 
           color="primary" 
           :label="isEditMode ? 'Save Changes' : 'Create Identity'" 
           :loading="isSaving"
+          :disable="isEditMode ? !fuseStore.hasPermission(Permission.IdentitiesUpdate) : !fuseStore.hasPermission(Permission.IdentitiesCreate)"
           @click="handleSave"
         />
       </div>
@@ -20,11 +29,11 @@
       {{ loadError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canModify" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.IdentitiesRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to {{ isEditMode ? 'edit' : 'create' }} identities.
     </q-banner>
 
-    <q-card v-if="fuseStore.canModify && !loadError" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.IdentitiesRead) && !loadError" class="content-card">
       <q-card-section>
         <div class="text-h6 q-mb-md">Identity Details</div>
         <div v-if="isLoading" class="row items-center justify-center q-pa-lg">
@@ -45,16 +54,21 @@
         <IdentityAssignmentsSection
           :assignments="isEditMode ? (identity?.assignments ?? []) : form.assignments"
           :disable-actions="assignmentMutationPending"
+          :owner-instance-dependencies="ownerInstanceDependencies"
+          :current-identity-id="identityId"
+          :has-owner-instance="!!identity?.ownerInstanceId"
+          :disable-dependency-actions="dependencyMutationPending"
           @add="openAssignmentDialog()"
           @edit="({ assignment }) => openAssignmentDialog(assignment)"
           @delete="({ assignment }) => confirmAssignmentDelete(assignment)"
+          @apply-dependency="({ assignment }) => applyDependency(assignment)"
+          @replace-dependency="({ assignment, existingDeps }) => confirmReplaceDependency(assignment, existingDeps)"
         />
       </q-card-section>
     </q-card>
 
     <!-- Assignment Dialog -->
-    <q-dialog v-model="isAssignmentDialogOpen" persistent>
-      <q-card class="form-dialog">
+    <q-dialog v-model="isAssignmentDialogOpen" persistent>      <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">{{ assignmentDialogTitle }}</div>
           <q-btn flat round dense icon="close" @click="closeAssignmentDialog" />
@@ -105,6 +119,50 @@
         </q-form>
       </q-card>
     </q-dialog>
+
+    <!-- Clone Dialog -->
+    <q-dialog v-model="isCloneDialogOpen" persistent>
+      <q-card style="min-width: 480px">
+        <q-card-section class="dialog-header">
+          <div class="text-h6">Clone across environments</div>
+          <q-btn flat round dense icon="close" @click="isCloneDialogOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <div v-if="isCloneTargetsLoading" class="row items-center justify-center q-pa-md">
+            <q-spinner color="primary" size="2em" />
+          </div>
+          <div v-else-if="cloneTargets.length === 0" class="text-grey-6 q-pa-sm">
+            No other environments found for this identity's application.
+          </div>
+          <div v-else>
+            <p class="q-mb-sm text-body2">Select the environments to clone this identity into:</p>
+            <q-list>
+              <q-item v-for="target in cloneTargets" :key="target.id" tag="label" dense>
+                <q-item-section side>
+                  <q-checkbox v-model="selectedCloneTargetIds" :val="target.id!" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ target.label }}</q-item-label>
+                  <q-item-label caption>{{ target.environmentName }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" @click="isCloneDialogOpen = false" />
+          <q-btn
+            color="primary"
+            label="Clone"
+            :loading="isCloning"
+            :disable="selectedCloneTargetIds.length === 0"
+            @click="handleClone"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -120,7 +178,14 @@ import {
   UpdateIdentity,
   CreateIdentityAssignment,
   UpdateIdentityAssignment,
-  TargetKind
+  TargetKind,
+  ApplicationInstanceDependency,
+  CreateApplicationDependency,
+  UpdateApplicationDependency,
+  DependencyAuthKind,
+  CloneTarget,
+  CloneIdentity,
+  Permission
 } from '../api/client'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'
@@ -367,7 +432,188 @@ const assignmentMutationPending = computed(
 
 const assignmentDialogLoading = computed(() => assignmentMutationPending.value)
 
+// Owner instance dependency resolution
+const ownerAppId = computed<string | null>(() => {
+  const ownerInstId = identity.value?.ownerInstanceId
+  if (!ownerInstId) return null
+  for (const app of applicationsQuery.data.value ?? []) {
+    if (app.instances?.some((inst) => inst.id === ownerInstId)) return app.id ?? null
+  }
+  return null
+})
+
+const ownerInstanceDependencies = computed<readonly ApplicationInstanceDependency[]>(() => {
+  const ownerInstId = identity.value?.ownerInstanceId
+  if (!ownerInstId) return []
+  for (const app of applicationsQuery.data.value ?? []) {
+    const inst = app.instances?.find((i) => i.id === ownerInstId)
+    if (inst) return inst.dependencies ?? []
+  }
+  return []
+})
+
+const createDependencyMutation = useMutation({
+  mutationFn: ({
+    appId,
+    instanceId,
+    payload
+  }: {
+    appId: string
+    instanceId: string
+    payload: CreateApplicationDependency
+  }) => client.dependenciesPOST(appId, instanceId, payload),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    Notify.create({ type: 'positive', message: 'Dependency applied' })
+  },
+  onError: (err) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to apply dependency') })
+  }
+})
+
+const updateDependencyMutation = useMutation({
+  mutationFn: ({
+    appId,
+    instanceId,
+    dependencyId,
+    payload
+  }: {
+    appId: string
+    instanceId: string
+    dependencyId: string
+    payload: UpdateApplicationDependency
+  }) => client.dependenciesPUT(appId, instanceId, dependencyId, payload),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['applications'] })
+    Notify.create({ type: 'positive', message: 'Dependency updated' })
+  },
+  onError: (err) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update dependency') })
+  }
+})
+
+const dependencyMutationPending = computed(
+  () => createDependencyMutation.isPending.value || updateDependencyMutation.isPending.value
+)
+
+function applyDependency(assignment: IdentityAssignment) {
+  const appId = ownerAppId.value
+  const instanceId = identity.value?.ownerInstanceId
+  const currentId = identityId.value
+  if (!appId || !instanceId || !currentId || !assignment.targetId) return
+
+  Dialog.create({
+    title: 'Apply dependency',
+    message: `Add a dependency from the owner instance to "${assignment.targetId}" using this identity as authentication?`,
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    const payload = Object.assign(new CreateApplicationDependency(), {
+      applicationId: appId,
+      instanceId,
+      targetId: assignment.targetId,
+      targetKind: assignment.targetKind,
+      authKind: DependencyAuthKind.Identity,
+      identityId: currentId
+    })
+    createDependencyMutation.mutate({ appId, instanceId, payload })
+  })
+}
+
+function confirmReplaceDependency(
+  assignment: IdentityAssignment,
+  existingDeps: ApplicationInstanceDependency[]
+) {
+  const appId = ownerAppId.value
+  const instanceId = identity.value?.ownerInstanceId
+  const currentId = identityId.value
+  if (!appId || !instanceId || !currentId || !assignment.targetId) return
+
+  const depToReplace = existingDeps[0]
+  if (!depToReplace?.id) return
+
+  Dialog.create({
+    title: 'Replace existing dependency',
+    message: `Update the existing dependency to "${assignment.targetId}" to use this identity as authentication? This will replace its current auth setting.`,
+    cancel: {
+      label: 'Add as another instead',
+      flat: true,
+      color: 'primary'
+    },
+    ok: {
+      label: 'Replace',
+      color: 'warning'
+    },
+    persistent: true
+  })
+    .onOk(() => {
+      const payload = Object.assign(new UpdateApplicationDependency(), {
+        applicationId: appId,
+        instanceId,
+        dependencyId: depToReplace.id,
+        targetId: depToReplace.targetId,
+        targetKind: depToReplace.targetKind,
+        port: depToReplace.port,
+        authKind: DependencyAuthKind.Identity,
+        identityId: currentId,
+        accountId: undefined
+      })
+      updateDependencyMutation.mutate({
+        appId,
+        instanceId,
+        dependencyId: depToReplace.id!,
+        payload
+      })
+    })
+    .onCancel(() => {
+      applyDependency(assignment)
+    })
+}
+
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+
+// Clone across environments
+const isCloneDialogOpen = ref(false)
+const selectedCloneTargetIds = ref<string[]>([])
+const cloneTargets = ref<CloneTarget[]>([])
+const isCloneTargetsLoading = ref(false)
+
+const cloneMutation = useMutation({
+  mutationFn: ({ id, payload }: { id: string; payload: CloneIdentity }) =>
+    client.identityClone(id, payload),
+  onSuccess: (created) => {
+    queryClient.invalidateQueries({ queryKey: ['identities'] })
+    isCloneDialogOpen.value = false
+    Notify.create({ type: 'positive', message: `Cloned to ${created.length} environment${created.length !== 1 ? 's' : ''}` })
+  },
+  onError: (err) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to clone identity') })
+  }
+})
+
+const isCloning = computed(() => cloneMutation.isPending.value)
+
+async function openCloneDialog() {
+  if (!identityId.value) return
+  isCloneDialogOpen.value = true
+  selectedCloneTargetIds.value = []
+  isCloneTargetsLoading.value = true
+  try {
+    cloneTargets.value = await client.identityCloneTargets(identityId.value)
+  } catch {
+    cloneTargets.value = []
+  } finally {
+    isCloneTargetsLoading.value = false
+  }
+}
+
+function handleClone() {
+  if (!identityId.value || selectedCloneTargetIds.value.length === 0) return
+  const payload = Object.assign(new CloneIdentity(), {
+    targetOwnerInstanceIds: [...selectedCloneTargetIds.value]
+  })
+  cloneMutation.mutate({ id: identityId.value, payload })
+}
 
 function handleCancel() {
   router.push('/identities')

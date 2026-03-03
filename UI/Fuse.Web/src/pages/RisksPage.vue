@@ -9,7 +9,7 @@
         color="primary"
         label="Create Risk"
         icon="add"
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.RisksCreate)"
         @click="navigateToCreate"
       />
     </div>
@@ -18,11 +18,11 @@
       {{ risksError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.RisksRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view risks. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="fuseStore.hasPermission(Permission.RisksRead)" class="content-card">
       <q-table
         flat
         bordered
@@ -107,7 +107,7 @@
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.RisksRead)"
               @click="navigateToEdit(props.row)"
             />
             <q-btn
@@ -117,7 +117,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!fuseStore.hasPermission(Permission.RisksDelete)"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -145,6 +145,7 @@ import { useIdentities } from '../composables/useIdentities'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import type { Risk } from '../api/client'
+import { Permission } from '../api/client'
 
 const router = useRouter()
 const $q = useQuasar()

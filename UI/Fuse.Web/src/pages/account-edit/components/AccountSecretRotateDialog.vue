@@ -17,11 +17,29 @@
           <q-input
             v-model="secretValue"
             label="New Secret Value"
-            type="password"
+            :type="showValue ? 'text' : 'password'"
             dense
             outlined
             required
-          />
+          >
+            <template #append>
+              <q-btn flat dense round :icon="showValue ? 'visibility_off' : 'visibility'" @click="showValue = !showValue" />
+            </template>
+          </q-input>
+          <div class="q-mt-sm">
+            <q-btn
+              flat
+              dense
+              icon="autorenew"
+              label="Generate Password"
+              color="secondary"
+              :loading="isGenerating"
+              @click="handleGenerate"
+            />
+            <div v-if="secretValue" class="text-caption text-grey-6 q-mt-xs">
+              Note the password above – you will need to apply it to the system using this secret.
+            </div>
+          </div>
         </q-card-section>
         <q-separator />
         <q-card-actions align="right">
@@ -40,7 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { Notify } from 'quasar'
+import { useFuseClient } from '../../../composables/useFuseClient'
+import { getErrorMessage } from '../../../utils/error'
 
 interface Props {
   modelValue: boolean
@@ -56,6 +77,10 @@ const emit = defineEmits<{
   (e: 'submit'): void
 }>()
 
+const client = useFuseClient()
+const isGenerating = ref(false)
+const showValue = ref(false)
+
 const dialogVisible = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value)
@@ -69,5 +94,18 @@ const secretValue = computed({
 function handleCancel() {
   emit('cancel')
   dialogVisible.value = false
+}
+
+async function handleGenerate() {
+  isGenerating.value = true
+  showValue.value = true
+  try {
+    const response = await client.passwordGeneratorGenerate()
+    emit('update:newSecretValue', response.password ?? '')
+  } catch (err) {
+    Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to generate password') })
+  } finally {
+    isGenerating.value = false
+  }
 }
 </script>

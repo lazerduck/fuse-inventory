@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Services;
 
@@ -262,4 +263,68 @@ public class IdentityService : IIdentityService
         TargetKind.External => s.ExternalResources.Any(r => r.Id == id),
         _ => false
     };
+
+    public async Task<Result<IReadOnlyList<CloneTarget>>> GetIdentityCloneTargetsAsync(Guid id)
+    {
+        var store = await _fuseStore.GetAsync();
+        var identity = store.Identities.FirstOrDefault(i => i.Id == id);
+        if (identity is null)
+            return Result<IReadOnlyList<CloneTarget>>.Failure($"Identity with ID '{id}' not found.", ErrorType.NotFound);
+
+        if (identity.OwnerInstanceId is not Guid ownerInstanceId)
+            return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+        var ownerApp = store.Applications.FirstOrDefault(a => a.Instances.Any(i => i.Id == ownerInstanceId));
+        if (ownerApp is null)
+            return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+        var envLookup = store.Environments.ToDictionary(e => e.Id, e => e.Name);
+        var targets = ownerApp.Instances
+            .Where(i => i.Id != ownerInstanceId)
+            .Select(i =>
+            {
+                var envName = i.EnvironmentId != Guid.Empty && envLookup.TryGetValue(i.EnvironmentId, out var n) ? n : i.EnvironmentId.ToString();
+                return new CloneTarget(i.Id, $"{ownerApp.Name} — {envName}", envName);
+            })
+            .ToList();
+
+        return Result<IReadOnlyList<CloneTarget>>.Success(targets);
+    }
+
+    public async Task<Result<IReadOnlyList<Identity>>> CloneIdentityAsync(CloneIdentity command)
+    {
+        var store = await _fuseStore.GetAsync();
+        var source = store.Identities.FirstOrDefault(i => i.Id == command.SourceId);
+        if (source is null)
+            return Result<IReadOnlyList<Identity>>.Failure($"Identity with ID '{command.SourceId}' not found.", ErrorType.NotFound);
+
+        if (source.OwnerInstanceId is null)
+            return Result<IReadOnlyList<Identity>>.Failure("Cannot clone an identity without an owner instance.", ErrorType.Validation);
+
+        if (command.TargetOwnerInstanceIds is null || command.TargetOwnerInstanceIds.Count == 0)
+            return Result<IReadOnlyList<Identity>>.Failure("At least one target instance must be specified.", ErrorType.Validation);
+
+        var allInstances = store.Applications.SelectMany(a => a.Instances).ToList();
+        var created = new List<Identity>();
+        var now = DateTime.UtcNow;
+
+        foreach (var targetInstanceId in command.TargetOwnerInstanceIds)
+        {
+            if (!allInstances.Any(i => i.Id == targetInstanceId))
+                return Result<IReadOnlyList<Identity>>.Failure($"Target instance with ID '{targetInstanceId}' not found.", ErrorType.Validation);
+
+            var cloned = source with
+            {
+                Id = Guid.NewGuid(),
+                OwnerInstanceId = targetInstanceId,
+                Assignments = Array.Empty<IdentityAssignment>(),
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            created.Add(cloned);
+        }
+
+        await _fuseStore.UpdateAsync(s => s with { Identities = s.Identities.Concat(created).ToList() });
+        return Result<IReadOnlyList<Identity>>.Success(created);
+    }
 }

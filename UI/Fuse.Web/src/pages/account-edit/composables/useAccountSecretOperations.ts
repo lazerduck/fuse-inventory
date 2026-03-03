@@ -37,14 +37,14 @@ export function useAccountSecretOperations(options: UseAccountSecretOperationsOp
     () =>
       showSecretOperations.value &&
       hasCapability(options.selectedProvider.value, 'Rotate') &&
-      fuseStore.userRole === 'Admin'
+      fuseStore.isAdmin
   )
 
   const canRevealSecret = computed(
     () =>
       showSecretOperations.value &&
       hasCapability(options.selectedProvider.value, 'Read') &&
-      fuseStore.userRole === 'Admin'
+      fuseStore.isAdmin
   )
 
   const rotateSecretMutation = useMutation({

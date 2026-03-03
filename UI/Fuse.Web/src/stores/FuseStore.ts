@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { useFuseClient } from "../composables/useFuseClient";
 import { useAuthToken } from "../composables/useAuthToken";
-import { LogoutSecurityUser, SecurityRole } from "../api/client";
+import { LogoutSecurityUser, SecurityRole, Permission } from "../api/client";
 import { type SecurityUserInfo, SecurityLevel, type LoginSecurityUser } from "../api/client";
 
 // Default Admin Role ID (matches PermissionService.DefaultAdminRoleId)
@@ -15,7 +15,8 @@ export const useFuseStore = defineStore("fuse", {
     requireSetup: false as boolean,
     securityLevel: null as SecurityLevel | null,
     currentUser: null as SecurityUserInfo | null,
-    sessionToken: null as string | null
+    sessionToken: null as string | null,
+    userPermissions: null as Permission[] | null
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
@@ -27,6 +28,22 @@ export const useFuseStore = defineStore("fuse", {
     },
     userRole: (state) => state.currentUser?.role ?? null,
     userName: (state) => state.currentUser?.userName ?? null,
+    hasPermission: (state) => (permission: Permission): boolean => {
+      // No security restrictions
+      if (state.securityLevel === SecurityLevel.None) return true;
+      // Must be logged in
+      if (!state.currentUser) return false;
+      // Legacy admin role gets all permissions
+      if (state.currentUser.role === SecurityRole.Admin) return true;
+      // Default admin role gets all permissions
+      if (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false) return true;
+      // Check granular permissions if loaded
+      if (state.userPermissions !== null) {
+        return state.userPermissions.includes(permission);
+      }
+      // Permissions not loaded yet, deny
+      return false;
+    },
     canModify: (state) => {
       switch (state.securityLevel) {
         case SecurityLevel.None:
@@ -35,8 +52,13 @@ export const useFuseStore = defineStore("fuse", {
         case SecurityLevel.FullyRestricted:
           if (!state.currentUser) return false;
           // Check if user has legacy Admin role OR is assigned to the default Admin role
-          return state.currentUser.role === SecurityRole.Admin ||
-                 (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false);
+          if (state.currentUser.role === SecurityRole.Admin ||
+              (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false)) return true;
+          // Check if user has any write permissions
+          if (state.userPermissions !== null) {
+            return state.userPermissions.length > 0;
+          }
+          return false;
         default:
           return false;
       }
@@ -54,11 +76,53 @@ export const useFuseStore = defineStore("fuse", {
     }
   },
   actions: {
+    invalidateAuth() {
+      clearToken();
+      this.sessionToken = null;
+      this.currentUser = null;
+      this.userPermissions = null;
+    },
+    async resolveUserPermissions() {
+      if (!this.currentUser?.roleIds?.length) {
+        this.userPermissions = [];
+        return;
+      }
+      try {
+        const roleIds = [...new Set(this.currentUser.roleIds ?? [])];
+        const roleResults = await Promise.allSettled(
+          roleIds.map((id) => fuseClient().roleGET(id))
+        );
+
+        const permissions: Permission[] = [];
+        for (const result of roleResults) {
+          if (result.status !== "fulfilled") {
+            continue;
+          }
+
+          for (const perm of (result.value.permissions ?? [])) {
+            if (!permissions.includes(perm as Permission)) {
+              permissions.push(perm as Permission);
+            }
+          }
+        }
+
+        this.userPermissions = permissions;
+      } catch {
+        this.userPermissions = [];
+      }
+    },
     async fetchStatus() {
       const status = await fuseClient().state();
       this.requireSetup = status.requiresSetup || false;
       this.securityLevel = status.level || null;
       this.currentUser = status.currentUser || null;
+
+      if (!this.currentUser) {
+        this.sessionToken = null;
+        this.userPermissions = null;
+      } else {
+        await this.resolveUserPermissions();
+      }
     },
     async login(credentials: LoginSecurityUser) {
       const session = await fuseClient().login(credentials);
@@ -87,6 +151,7 @@ export const useFuseStore = defineStore("fuse", {
       clearToken();
       this.sessionToken = null;
       this.currentUser = null;
+      this.userPermissions = null;
       
       // Refresh status after logout
       await this.fetchStatus();
@@ -108,9 +173,7 @@ export const useFuseStore = defineStore("fuse", {
           }
         } catch (error) {
           // Token is invalid or expired
-          clearToken();
-          this.sessionToken = null;
-          this.currentUser = null;
+          this.invalidateAuth();
         }
       } else {
         // No token, just fetch status

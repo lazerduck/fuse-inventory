@@ -86,6 +86,21 @@ The application will be available at:
 docker-compose up -d
 ```
 
+### 🧪 Demo / Testing
+
+The `test-data/` directory contains a complete mock environment pre-configured for demonstration and testing purposes:
+
+```bash
+# Start with demo data already loaded
+docker-compose up -d
+```
+
+**Demo Account:**
+- **Username**: Admin
+- **Password**: Password
+
+The demo environment includes sample configurations for accounts, applications, environments, datastores, and more.
+
 ---
 
 ## 🔐 Security

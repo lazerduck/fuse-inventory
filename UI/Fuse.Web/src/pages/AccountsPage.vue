@@ -9,7 +9,7 @@
         color="primary" 
         label="Create Account" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!fuseStore.hasPermission(Permission.AccountsCreate)"
         @click="router.push('/accounts/create')" 
       />
     </div>
@@ -18,18 +18,19 @@
       {{ accountError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!fuseStore.hasPermission(Permission.AccountsRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view accounts. Please log in with appropriate credentials.
     </q-banner>
 
     <AccountsTable
-      v-if="fuseStore.canRead"
+      v-if="fuseStore.hasPermission(Permission.AccountsRead)"
       :accounts="accounts"
       :loading="isLoading"
       :pagination="pagination"
       :tag-info-lookup="tagInfoLookup"
       :target-resolver="resolveTargetName"
-      :can-modify="fuseStore.canModify"
+      :can-modify="fuseStore.hasPermission(Permission.AccountsRead)"
+      :can-delete="fuseStore.hasPermission(Permission.AccountsDelete)"
       @edit="(account) => router.push(`/accounts/${account.id}/edit`)"
       @delete="confirmDelete"
     />
@@ -42,7 +43,7 @@ import { computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
-import { Account, TargetKind } from '../api/client'
+import { Account, TargetKind, Permission } from '../api/client'
 import AccountsTable from '../components/accounts/AccountsTable.vue'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'

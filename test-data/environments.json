@@ -1,0 +1,32 @@
+[
+  {
+    "id": "20090afa-118e-478d-b17b-5512f3af9bf6",
+    "name": "Production",
+    "description": "The live/production environment that customers see",
+    "tagIds": [],
+    "autoCreateInstances": true,
+    "baseUriTemplate": "https://{appname}.company.com",
+    "healthUriTemplate": "https://{appname}.company.com/health",
+    "openApiUriTemplate": null
+  },
+  {
+    "id": "ad00fb84-3b52-4508-b012-ce918fc11f48",
+    "name": "PreProd",
+    "description": "The environment for final testing and validation prior to release to prod",
+    "tagIds": [],
+    "autoCreateInstances": true,
+    "baseUriTemplate": "https://{appname}.preprod.company.com",
+    "healthUriTemplate": "https://{appname}.preprod.company.com/health",
+    "openApiUriTemplate": "https://{appname}.preprod.company.com/swagger"
+  },
+  {
+    "id": "e093dd85-0618-428c-8bd4-83e706e717c3",
+    "name": "Development",
+    "description": "The environment where newly developed code is deployed",
+    "tagIds": [],
+    "autoCreateInstances": true,
+    "baseUriTemplate": "https://{appname}.dev.company.com",
+    "healthUriTemplate": "https://{appname}.dev.company.com/health",
+    "openApiUriTemplate": "https://{appname}.dev.company.com/swagger"
+  }
+]

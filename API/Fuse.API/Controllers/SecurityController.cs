@@ -23,6 +23,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("state")]
+        [SwaggerOperation(OperationId = "state")]
         [ProducesResponseType(200)]
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
@@ -41,6 +42,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("settings")]
+        [SwaggerOperation(OperationId = "settings")]
         [ProducesResponseType(200, Type = typeof(SecuritySettings))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -68,6 +70,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("accounts")]
+        [SwaggerOperation(OperationId = "accountsPOST")]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -101,6 +104,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("login")]
+        [SwaggerOperation(OperationId = "login")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -120,6 +124,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("logout")]
+        [SwaggerOperation(OperationId = "logout")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Logout([FromBody] LogoutSecurityUser command)
@@ -132,6 +137,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("accounts")]
+        [SwaggerOperation(OperationId = "accountsAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserResponse>))]
         public async Task<IActionResult> GetAccounts()
         {
@@ -141,6 +147,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPatch("accounts/{Id}")]
+        [SwaggerOperation(OperationId = "accountsPATCH")]
         [ProducesResponseType(200, Type = typeof(SecurityUserResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -175,6 +182,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpDelete("accounts/{Id}")]
+        [SwaggerOperation(OperationId = "accountsDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -207,6 +215,7 @@ namespace Fuse.API.Controllers
         }
 
         [HttpPost("accounts/{userId}/roles")]
+        [SwaggerOperation(OperationId = "roles")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -235,6 +244,40 @@ namespace Fuse.API.Controllers
         }
 
 
+        [HttpPost("accounts/{id}/reset-password")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ResetPassword([FromRoute] Guid id, [FromBody] ResetPasswordRequest request)
+        {
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser is null)
+                return Unauthorized(new { error = "Authentication required." });
+
+            var command = new ResetPassword(id, request.NewPassword)
+            {
+                RequestedBy = currentUser.Id,
+                CurrentPassword = request.CurrentPassword
+            };
+
+            var result = await _securityService.ResetPasswordAsync(command, HttpContext.RequestAborted);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.Validation => BadRequest(new { error = result.Error }),
+                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+
+            return NoContent();
+        }
+
+
         private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -259,6 +302,12 @@ namespace Fuse.API.Controllers
             public bool RequiresSetup { get; set; }
             public bool HasUsers { get; set; }
             public SecurityUserInfo? CurrentUser { get; set; }
+        }
+
+        public class ResetPasswordRequest
+        {
+            public string NewPassword { get; set; } = string.Empty;
+            public string? CurrentPassword { get; set; }
         }
     }
 }

@@ -207,7 +207,7 @@
               color="primary" 
               type="submit" 
               :loading="loading" 
-              :disable="testLoading || !hasSuccessfulTest"
+              :disable="testLoading || !hasSuccessfulTest || disabled"
             />
           </div>
         </div>
@@ -230,7 +230,8 @@ import { parseSqlPermissions } from '../../utils/sqlPermissions'
 const props = defineProps<{ 
   mode: 'create' | 'edit'
   initialValue?: any
-  loading: boolean 
+  loading: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits(['submit', 'cancel'])
 

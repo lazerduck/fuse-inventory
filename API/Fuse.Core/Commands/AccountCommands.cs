@@ -48,3 +48,8 @@ public record DeleteAccountGrant(
     Guid AccountId,
     Guid GrantId
 );
+
+public record CloneAccount(
+    Guid SourceId,
+    IReadOnlyList<Guid> TargetIds
+);
