@@ -88,18 +88,24 @@ export const useFuseStore = defineStore("fuse", {
         return;
       }
       try {
-        const roles = await fuseClient().roleAll();
-        const userRoleIds = new Set(this.currentUser.roleIds ?? []);
+        const roleIds = [...new Set(this.currentUser.roleIds ?? [])];
+        const roleResults = await Promise.allSettled(
+          roleIds.map((id) => fuseClient().roleGET(id))
+        );
+
         const permissions: Permission[] = [];
-        for (const role of roles) {
-          if (role.id && userRoleIds.has(role.id)) {
-            for (const perm of (role.permissions ?? [])) {
-              if (!permissions.includes(perm as Permission)) {
-                permissions.push(perm as Permission);
-              }
+        for (const result of roleResults) {
+          if (result.status !== "fulfilled") {
+            continue;
+          }
+
+          for (const perm of (result.value.permissions ?? [])) {
+            if (!permissions.includes(perm as Permission)) {
+              permissions.push(perm as Permission);
             }
           }
         }
+
         this.userPermissions = permissions;
       } catch {
         this.userPermissions = [];
