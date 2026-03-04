@@ -50,6 +50,7 @@ import { useEnvironments } from '../composables/useEnvironments';
 import { usePlatforms } from '../composables/usePlatforms';
 import { useDataStores } from '../composables/useDataStores';
 import { useExternalResources } from '../composables/useExternalResources';
+import { useMessageBrokers } from '../composables/useMessageBrokers';
 
 const graphEl = ref<HTMLDivElement | null>(null)
 
@@ -62,13 +63,15 @@ const environmentStore = useEnvironments();
 const platformsStore = usePlatforms()
 const dataStore = useDataStores();
 const externalServicesStore = useExternalResources();
+const messageBrokersStore = useMessageBrokers();
 
 const isLoading = computed(() => 
   applicationStore.isLoading.value ||
   environmentStore.isLoading.value ||
   platformsStore.isLoading.value ||
   dataStore.isLoading.value ||
-  externalServicesStore.isLoading.value
+  externalServicesStore.isLoading.value ||
+  messageBrokersStore.isLoading.value
 );
 
 // Selected environment IDs for filtering (multi-select)
@@ -96,6 +99,7 @@ function refreshGraph() {
   const environments = environmentStore.data.value ?? []
   const dataStores = dataStore.data.value ?? []
   const externals = externalServicesStore.data.value ?? []
+  const messageBrokers = messageBrokersStore.data.value ?? []
   const applications = applicationStore.data.value ?? []
 
   // Flatten application instances
@@ -123,6 +127,12 @@ function refreshGraph() {
     if (!ds?.id) continue
     if (ds.environmentId && !selectedSet.has(ds.environmentId)) continue
     nodes.push({ data: { id: `ds-${ds.id}`, label: ds.name || ds.id, parent: ds.environmentId ? `env-${ds.environmentId}` : undefined, type: 'datastore' } })
+  }
+
+  for (const mb of messageBrokers) {
+    if (!mb?.id) continue
+    if (mb.environmentId && !selectedSet.has(mb.environmentId)) continue
+    nodes.push({ data: { id: `mb-${mb.id}`, label: mb.name || mb.id, parent: mb.environmentId ? `env-${mb.environmentId}` : undefined, type: 'messageBroker' } })
   }
 
   // External nodes are added later only if referenced by edges
@@ -158,9 +168,11 @@ function refreshGraph() {
           break
         case 'Application':
           targetPrefix = 'appi'
-          break;
+          break
+        case 'MessageBroker':
+          targetPrefix = 'mb'
+          break
         default:
-          // Skip kinds we don't visualize yet (e.g., Application)
           continue
       }
       const targetNodeId = `${targetPrefix}-${dep.targetId}`
@@ -277,6 +289,9 @@ function handleNodeDoubleClick(nodeId: string) {
       router.push({ name: 'externalResources' })
       // TODO: Navigate to specific external resource when edit page exists
       break
+    case 'mb':
+      router.push({ name: 'messageBrokers' })
+      break
   }
 }
 
@@ -304,6 +319,7 @@ onMounted(() => {
       { selector: '[type="appInstance"]', style: { 'background-color': '#0080ff' }},
       { selector: '[type="datastore"]', style: { 'background-color': '#8b5cf6' }},
       { selector: '[type="external"]', style: { 'background-color': '#10b981' }},
+      { selector: '[type="messageBroker"]', style: { 'background-color': '#f59e0b' }},
       { selector: ':parent', style: { 'padding': '20px', 'border-width': '2px', 'background-opacity': 0.12 } },
       { selector: 'edge', style: { 
         'width': 2, 

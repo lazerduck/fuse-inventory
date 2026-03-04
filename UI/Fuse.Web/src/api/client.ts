@@ -290,6 +290,33 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @return OK
+     */
+    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @return No Content
+     */
+    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     identityAll(signal?: AbortSignal): Promise<Identity[]>;
 
     /**
@@ -3418,6 +3445,224 @@ export class FuseApiClient implements IFuseApiClient {
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]> {
+        let url_ = this.baseUrl + "/api/MessageBroker";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerAll(_response);
+        });
+    }
+
+    protected processMessageBrokerAll(response: Response): Promise<MessageBroker[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Array.isArray(resultData200) ? [] as any : null as any;
+            if (resultData200)
+                result200!.push(...resultData200.map((item: any) => MessageBroker.fromJS(item)));
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker[]>(null as any);
+    }
+
+    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerPOST(_response);
+        });
+    }
+
+    protected processMessageBrokerPOST(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = MessageBroker.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            return throwException("Conflict", status, _responseText, _headers);
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            return throwException("Bad Request", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerGET(_response);
+        });
+    }
+
+    protected processMessageBrokerGET(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = MessageBroker.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            return throwException("Not Found", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerPUT(_response);
+        });
+    }
+
+    protected processMessageBrokerPUT(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = MessageBroker.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            return throwException("Not Found", status, _responseText, _headers);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            return throwException("Conflict", status, _responseText, _headers);
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            return throwException("Bad Request", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerDELETE(_response);
+        });
+    }
+
+    protected processMessageBrokerDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            return throwException("Not Found", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -11271,6 +11516,210 @@ export interface IExternalResource {
     updatedAt?: Date;
 }
 
+export class MessageBroker implements IMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): MessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new MessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export class CreateMessageBroker implements ICreateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: ICreateMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CreateMessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateMessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICreateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
+export class UpdateMessageBroker implements IUpdateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdateMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateMessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateMessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+}
+
 export class GeneratePasswordResponse implements IGeneratePasswordResponse {
     password?: string | undefined;
 
@@ -12034,6 +12483,10 @@ export enum Permission {
     RolesCreate = "RolesCreate",
     RolesUpdate = "RolesUpdate",
     RolesDelete = "RolesDelete",
+    MessageBrokersRead = "MessageBrokersRead",
+    MessageBrokersCreate = "MessageBrokersCreate",
+    MessageBrokersUpdate = "MessageBrokersUpdate",
+    MessageBrokersDelete = "MessageBrokersDelete",
 }
 
 export class Platform implements IPlatform {
@@ -13827,6 +14280,7 @@ export enum TargetKind {
     Application = "Application",
     DataStore = "DataStore",
     External = "External",
+    MessageBroker = "MessageBroker",
 }
 
 export class TestSecretProviderConnection implements ITestSecretProviderConnection {

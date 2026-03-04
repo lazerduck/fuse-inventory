@@ -142,6 +142,17 @@
                 External Resources
               </q-item-section>
             </q-item>
+
+            <q-item clickable v-ripple :to="{ name: 'messageBrokers' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.MessageBrokersRead)"
+              data-tour-id="nav-message-brokers">
+              <q-item-section avatar>
+                <q-icon name="swap_horiz" />
+              </q-item-section>
+              <q-item-section>
+                Message Brokers
+              </q-item-section>
+            </q-item>
           </q-expansion-item>
 
           <q-expansion-item label="Classification" icon="category" dense expand-separator>
