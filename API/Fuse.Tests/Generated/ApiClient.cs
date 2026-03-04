@@ -16685,6 +16685,18 @@ namespace Fuse.Tests.ApiClient
         [System.Runtime.Serialization.EnumMember(Value = @"RolesDelete")]
         RolesDelete = 59,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersRead")]
+        MessageBrokersRead = 60,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersCreate")]
+        MessageBrokersCreate = 61,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersUpdate")]
+        MessageBrokersUpdate = 62,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersDelete")]
+        MessageBrokersDelete = 63,
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -17612,6 +17624,9 @@ namespace Fuse.Tests.ApiClient
 
         [System.Runtime.Serialization.EnumMember(Value = @"External")]
         External = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBroker")]
+        MessageBroker = 3,
 
     }
 

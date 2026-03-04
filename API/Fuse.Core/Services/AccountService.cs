@@ -162,6 +162,7 @@ public class AccountService : IAccountService
                 || store.Applications.Any(a => a.Id == targetId),
             TargetKind.DataStore => store.DataStores.Any(d => d.Id == targetId),
             TargetKind.External => store.ExternalResources.Any(r => r.Id == targetId),
+            TargetKind.MessageBroker => store.MessageBrokers.Any(m => m.Id == targetId),
             _ => false
         };
         if (!targetExists)

@@ -1,6 +1,6 @@
 namespace Fuse.Core.Models;
 
-public enum TargetKind { Application, DataStore, External }
+public enum TargetKind { Application, DataStore, External, MessageBroker }
 
 public enum DependencyAuthKind { None, Account, Identity }
 
