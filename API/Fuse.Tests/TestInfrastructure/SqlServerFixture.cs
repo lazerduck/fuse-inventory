@@ -14,16 +14,30 @@ public class SqlServerCollection : ICollectionFixture<SqlServerFixture>
 public class SqlServerFixture : IAsyncLifetime
 {
     private readonly MsSqlContainer _container;
+    private readonly bool _reuseContainer;
 
     public string MasterConnectionString => _container.GetConnectionString();
 
     public SqlServerFixture()
     {
-        _container = new MsSqlBuilder()
+        _reuseContainer = string.Equals(
+            Environment.GetEnvironmentVariable("FUSE_TESTCONTAINERS_REUSE"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+
+        var builder = new MsSqlBuilder()
             .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
             .WithPassword("YourStrong@Passw0rd")
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
-            .Build();
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433));
+
+        if (_reuseContainer)
+        {
+            builder = builder
+                .WithName("fuse-tests-mssql")
+                .WithReuse(true);
+        }
+
+        _container = builder.Build();
     }
 
     public async Task InitializeAsync()
@@ -69,6 +83,11 @@ public class SqlServerFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        if (_reuseContainer)
+        {
+            return;
+        }
+
         await _container.DisposeAsync();
     }
 

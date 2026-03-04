@@ -15,8 +15,7 @@ namespace Fuse.Tests.TestInfrastructure;
 /// </summary>
 [CollectionDefinition("ApiAuthCollection")]
 public class ApiAuthCollection 
-    : ICollectionFixture<SqlServerFixture>, 
-      ICollectionFixture<ApiIntegrationFixture>
+    : ICollectionFixture<ApiIntegrationFixture>
 {
 }
 
