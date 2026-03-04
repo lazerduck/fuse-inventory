@@ -107,7 +107,7 @@ public class MessageBrokerServiceTests
     {
         var store = NewStore();
         var service = new MessageBrokerService(store, new TagLookupService(store));
-        var result = await service.CreateMessageBrokerAsync(new CreateMessageBroker("Broker", null, "RabbitMQ", EnvId, null, new HashSet<Guid> { Guid.NewGuid() }));
+        var result = await service.CreateMessageBrokerAsync(new CreateMessageBroker("Broker", null, "RabbitMQ", EnvId, null, TagIds: new HashSet<Guid> { Guid.NewGuid() }));
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
     }
@@ -200,5 +200,63 @@ public class MessageBrokerServiceTests
         var found = await service.GetMessageBrokerByIdAsync(broker.Id);
         Assert.NotNull(found);
         Assert.Equal("MyBroker", found!.Name);
+    }
+
+    [Fact]
+    public async Task CreateMessageBroker_WithQueues_PersistsQueues()
+    {
+        var store = NewStore();
+        var service = new MessageBrokerService(store, new TagLookupService(store));
+        var queues = new List<BrokerQueueInput>
+        {
+            new BrokerQueueInput("orders-queue", "Handles order events"),
+            new BrokerQueueInput("notifications-queue", null)
+        };
+        var result = await service.CreateMessageBrokerAsync(new CreateMessageBroker("Broker", null, "RabbitMQ", EnvId, null, Queues: queues));
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.Queues);
+        Assert.Equal(2, result.Value!.Queues!.Count);
+        Assert.Contains(result.Value!.Queues!, q => q.Name == "orders-queue" && q.Description == "Handles order events");
+        Assert.Contains(result.Value!.Queues!, q => q.Name == "notifications-queue" && q.Description == null);
+    }
+
+    [Fact]
+    public async Task CreateMessageBroker_WithTopics_PersistsTopics()
+    {
+        var store = NewStore();
+        var service = new MessageBrokerService(store, new TagLookupService(store));
+        var topics = new List<BrokerTopicInput>
+        {
+            new BrokerTopicInput("user-events", "Fan-out to multiple consumers", new List<string> { "PaymentService", "EmailService" }),
+            new BrokerTopicInput("audit-log", null)
+        };
+        var result = await service.CreateMessageBrokerAsync(new CreateMessageBroker("Broker", null, "Kafka", EnvId, null, Topics: topics));
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.Topics);
+        Assert.Equal(2, result.Value!.Topics!.Count);
+        var userEvents = result.Value!.Topics!.First(t => t.Name == "user-events");
+        Assert.Equal(2, userEvents.Subscribers!.Count);
+        Assert.Contains("PaymentService", userEvents.Subscribers!);
+    }
+
+    [Fact]
+    public async Task UpdateMessageBroker_ReplacesQueuesAndTopics()
+    {
+        var broker = new MessageBroker(
+            Guid.NewGuid(), "Broker", null, "RabbitMQ", EnvId, null,
+            new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow,
+            Queues: new List<BrokerQueue> { new BrokerQueue(Guid.NewGuid(), "old-queue", null) },
+            Topics: null
+        );
+        var store = NewStore(brokers: new[] { broker });
+        var service = new MessageBrokerService(store, new TagLookupService(store));
+
+        var newQueues = new List<BrokerQueueInput> { new BrokerQueueInput("new-queue", "Updated") };
+        var newTopics = new List<BrokerTopicInput> { new BrokerTopicInput("events", null, new List<string> { "ConsumerA" }) };
+
+        var result = await service.UpdateMessageBrokerAsync(new UpdateMessageBroker(broker.Id, "Broker", null, "RabbitMQ", EnvId, null, newQueues, newTopics));
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value!.Queues!, q => q.Name == "new-queue");
+        Assert.Single(result.Value!.Topics!, t => t.Name == "events");
     }
 }

@@ -49,6 +49,45 @@
         <code class="connection-uri">{{ messageBroker.connectionUri }}</code>
       </section>
 
+      <!-- Queues -->
+      <section v-if="(messageBroker.queues ?? []).length > 0" class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="inbox" size="20px" />
+          Queues
+        </h3>
+        <div class="channel-list">
+          <div v-for="queue in messageBroker.queues" :key="queue.id" class="channel-item">
+            <div class="channel-item-name">{{ queue.name }}</div>
+            <div v-if="queue.description" class="channel-item-desc">{{ queue.description }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Topics -->
+      <section v-if="(messageBroker.topics ?? []).length > 0" class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="alt_route" size="20px" />
+          Topics
+        </h3>
+        <div class="channel-list">
+          <div v-for="topic in messageBroker.topics" :key="topic.id" class="channel-item">
+            <div class="channel-item-name">{{ topic.name }}</div>
+            <div v-if="topic.description" class="channel-item-desc">{{ topic.description }}</div>
+            <div v-if="(topic.subscribers ?? []).length > 0" class="channel-subscribers">
+              <span class="subscribers-label">Subscribers:</span>
+              <q-badge
+                v-for="subscriber in topic.subscribers"
+                :key="subscriber"
+                :label="subscriber"
+                color="teal"
+                outline
+                class="subscriber-badge"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Tags -->
       <section v-if="resolvedTags.length > 0" class="detail-section">
         <h3 class="section-subtitle">
@@ -329,5 +368,47 @@ function goBack() {
   margin: 0;
   color: var(--fuse-text-muted);
   font-size: 0.9rem;
+}
+
+.channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.channel-item {
+  padding: 0.5rem 0.75rem;
+  background: var(--fuse-panel-bg, #f8f8f8);
+  border: 1px solid var(--fuse-panel-border, #e0e0e0);
+  border-radius: 6px;
+}
+
+.channel-item-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.channel-item-desc {
+  color: var(--fuse-text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.1rem;
+}
+
+.channel-subscribers {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.subscribers-label {
+  font-size: 0.8rem;
+  color: var(--fuse-text-muted);
+  font-weight: 500;
+}
+
+.subscriber-badge {
+  font-size: 0.75rem;
 }
 </style>

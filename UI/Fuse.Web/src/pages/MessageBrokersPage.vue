@@ -111,23 +111,14 @@ import { computed, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { MessageBroker, CreateMessageBroker, UpdateMessageBroker, Permission } from '../api/client'
+import { MessageBroker, CreateMessageBroker, UpdateMessageBroker, BrokerQueueInput, BrokerTopicInput, Permission } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
 import { useEnvironments } from '../composables/useEnvironments'
 import { getErrorMessage } from '../utils/error'
-import MessageBrokerForm from '../components/messageBrokers/MessageBrokerForm.vue'
+import MessageBrokerForm, { type MessageBrokerFormModel } from '../components/messageBrokers/MessageBrokerForm.vue'
 import TagChip from '../components/tags/TagChip.vue'
-
-interface MessageBrokerFormModel {
-  name: string
-  kind: string
-  environmentId: string | null
-  connectionUri: string
-  description: string
-  tagIds: string[]
-}
 
 const client = useFuseClient()
 const queryClient = useQueryClient()
@@ -220,6 +211,19 @@ const deleteMutation = useMutation({
 const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
 function handleSubmit(model: MessageBrokerFormModel) {
+  const queues = model.queues
+    .filter(q => q.name.trim())
+    .map(q => Object.assign(new BrokerQueueInput(), { name: q.name, description: q.description || undefined }))
+  const topics = model.topics
+    .filter(t => t.name.trim())
+    .map(t => Object.assign(new BrokerTopicInput(), {
+      name: t.name,
+      description: t.description || undefined,
+      subscribers: t.subscribersText
+        ? t.subscribersText.split(',').map(s => s.trim()).filter(Boolean)
+        : undefined
+    }))
+
   if (dialogMode.value === 'create') {
     const payload = Object.assign(new CreateMessageBroker(), {
       name: model.name || undefined,
@@ -227,6 +231,8 @@ function handleSubmit(model: MessageBrokerFormModel) {
       environmentId: model.environmentId || undefined,
       connectionUri: model.connectionUri || undefined,
       description: model.description || undefined,
+      queues: queues.length ? queues : undefined,
+      topics: topics.length ? topics : undefined,
       tagIds: model.tagIds.length ? [...model.tagIds] : undefined
     })
     createMutation.mutate(payload)
@@ -237,6 +243,8 @@ function handleSubmit(model: MessageBrokerFormModel) {
       environmentId: model.environmentId || undefined,
       connectionUri: model.connectionUri || undefined,
       description: model.description || undefined,
+      queues: queues.length ? queues : undefined,
+      topics: topics.length ? topics : undefined,
       tagIds: model.tagIds.length ? [...model.tagIds] : undefined
     })
     updateMutation.mutate({ id: selectedBroker.value.id, payload })

@@ -55,7 +55,9 @@ public class MessageBrokerService : IMessageBrokerService
             ConnectionUri: command.ConnectionUri,
             TagIds: tagIds,
             CreatedAt: now,
-            UpdatedAt: now
+            UpdatedAt: now,
+            Queues: command.Queues?.Select(q => new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
+            Topics: command.Topics?.Select(t => new BrokerTopic(Guid.NewGuid(), t.Name, t.Description, t.Subscribers ?? new List<string>())).ToList()
         );
 
         await _fuseStore.UpdateAsync(s => s with { MessageBrokers = s.MessageBrokers.Append(broker).ToList() });
@@ -96,7 +98,9 @@ public class MessageBrokerService : IMessageBrokerService
             EnvironmentId = command.EnvironmentId,
             ConnectionUri = command.ConnectionUri,
             TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            Queues = command.Queues?.Select(q => new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
+            Topics = command.Topics?.Select(t => new BrokerTopic(Guid.NewGuid(), t.Name, t.Description, t.Subscribers ?? new List<string>())).ToList()
         };
 
         await _fuseStore.UpdateAsync(s => s with { MessageBrokers = s.MessageBrokers.Select(m => m.Id == command.Id ? updated : m).ToList() });

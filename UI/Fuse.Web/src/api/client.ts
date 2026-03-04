@@ -11516,6 +11516,198 @@ export interface IExternalResource {
     updatedAt?: Date;
 }
 
+export class BrokerQueue implements IBrokerQueue {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IBrokerQueue) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+        }
+    }
+
+    static fromJS(data: any): BrokerQueue {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerQueue();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IBrokerQueue {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class BrokerTopic implements IBrokerTopic {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+
+    constructor(data?: IBrokerTopic) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["subscribers"])) {
+                this.subscribers = [] as any;
+                for (let item of _data["subscribers"])
+                    this.subscribers!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): BrokerTopic {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerTopic();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.subscribers)) {
+            data["subscribers"] = [];
+            for (let item of this.subscribers)
+                data["subscribers"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IBrokerTopic {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+}
+
+export class BrokerQueueInput implements IBrokerQueueInput {
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IBrokerQueueInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+        }
+    }
+
+    static fromJS(data: any): BrokerQueueInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerQueueInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IBrokerQueueInput {
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class BrokerTopicInput implements IBrokerTopicInput {
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+
+    constructor(data?: IBrokerTopicInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["subscribers"])) {
+                this.subscribers = [] as any;
+                for (let item of _data["subscribers"])
+                    this.subscribers!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): BrokerTopicInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerTopicInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.subscribers)) {
+            data["subscribers"] = [];
+            for (let item of this.subscribers)
+                data["subscribers"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IBrokerTopicInput {
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+}
+
 export class MessageBroker implements IMessageBroker {
     id?: string;
     name?: string | undefined;
@@ -11526,6 +11718,8 @@ export class MessageBroker implements IMessageBroker {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    queues?: BrokerQueue[] | undefined;
+    topics?: BrokerTopic[] | undefined;
 
     constructor(data?: IMessageBroker) {
         if (data) {
@@ -11551,6 +11745,16 @@ export class MessageBroker implements IMessageBroker {
             }
             this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
             this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueue.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopic.fromJS(item));
+            }
         }
     }
 
@@ -11576,6 +11780,16 @@ export class MessageBroker implements IMessageBroker {
         }
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item.toJSON());
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item.toJSON());
+        }
         return data;
     }
 }
@@ -11590,6 +11804,8 @@ export interface IMessageBroker {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    queues?: BrokerQueue[] | undefined;
+    topics?: BrokerTopic[] | undefined;
 }
 
 export class CreateMessageBroker implements ICreateMessageBroker {
@@ -11598,6 +11814,8 @@ export class CreateMessageBroker implements ICreateMessageBroker {
     kind?: string | undefined;
     environmentId?: string;
     connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
     tagIds?: string[] | undefined;
 
     constructor(data?: ICreateMessageBroker) {
@@ -11616,6 +11834,16 @@ export class CreateMessageBroker implements ICreateMessageBroker {
             this.kind = _data["kind"];
             this.environmentId = _data["environmentId"];
             this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueueInput.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopicInput.fromJS(item));
+            }
             if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["tagIds"])
@@ -11638,6 +11866,16 @@ export class CreateMessageBroker implements ICreateMessageBroker {
         data["kind"] = this.kind;
         data["environmentId"] = this.environmentId;
         data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item.toJSON());
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item.toJSON());
+        }
         if (Array.isArray(this.tagIds)) {
             data["tagIds"] = [];
             for (let item of this.tagIds)
@@ -11653,6 +11891,8 @@ export interface ICreateMessageBroker {
     kind?: string | undefined;
     environmentId?: string;
     connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
     tagIds?: string[] | undefined;
 }
 
@@ -11662,6 +11902,8 @@ export class UpdateMessageBroker implements IUpdateMessageBroker {
     kind?: string | undefined;
     environmentId?: string;
     connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
     tagIds?: string[] | undefined;
 
     constructor(data?: IUpdateMessageBroker) {
@@ -11680,6 +11922,16 @@ export class UpdateMessageBroker implements IUpdateMessageBroker {
             this.kind = _data["kind"];
             this.environmentId = _data["environmentId"];
             this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueueInput.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopicInput.fromJS(item));
+            }
             if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["tagIds"])
@@ -11702,6 +11954,16 @@ export class UpdateMessageBroker implements IUpdateMessageBroker {
         data["kind"] = this.kind;
         data["environmentId"] = this.environmentId;
         data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item.toJSON());
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item.toJSON());
+        }
         if (Array.isArray(this.tagIds)) {
             data["tagIds"] = [];
             for (let item of this.tagIds)
@@ -11717,6 +11979,8 @@ export interface IUpdateMessageBroker {
     kind?: string | undefined;
     environmentId?: string;
     connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
     tagIds?: string[] | undefined;
 }
 
