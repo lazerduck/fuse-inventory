@@ -115,6 +115,8 @@ const defaultKindOptions = [
   'Azure Cosmos DB',
   'Elasticsearch',
   'Redis',
+  'RabbitMQ',
+  'Service Bus',
   'Other'
 ]
 
