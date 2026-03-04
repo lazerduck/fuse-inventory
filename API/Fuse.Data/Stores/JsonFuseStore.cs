@@ -41,11 +41,11 @@ public sealed class JsonFuseStore : IFuseStore
         try
         {
             _cache = new Snapshot(
-                Applications: await ReadApplicationsWithMigrationAsync("applications.json", ct),
+                Applications: await ReadAsync<Application>("applications.json", ct),
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
                 Platforms: await ReadAsync<Platform>("platforms.json", ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
-                Accounts: await ReadAccountsWithMigrationAsync("accounts.json", ct),
+                Accounts: await ReadAsync<Account>("accounts.json", ct),
                 Identities: await ReadAsync<Identity>("identities.json", ct),
                 Tags: await ReadAsync<Tag>("tags.json", ct),
                 Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
@@ -59,60 +59,6 @@ public sealed class JsonFuseStore : IFuseStore
                 Security: await ReadSecurityAsync("security.json", ct),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct)
             );
-
-            // Temporary migration: convert application-target dependencies to instance-target dependencies.
-            bool hasChange = false;
-            var migratedApps = _cache.Applications
-                .Select(app =>
-                {
-                    bool appChanged = false;
-                    var migratedInstances = app.Instances
-                        .Select(inst =>
-                        {
-                            bool instChanged = false;
-                            var migratedDeps = new List<ApplicationInstanceDependency>(inst.Dependencies.Count);
-                            foreach (var dep in inst.Dependencies)
-                            {
-                                if (dep.TargetKind == TargetKind.Application)
-                                {
-                                    // dep.TargetId may be an Application ID – switch to an instance ID
-                                    var referencedApp = _cache.Applications.FirstOrDefault(a => a.Id == dep.TargetId);
-                                    var targetInstanceId = referencedApp?.Instances
-                                        .FirstOrDefault(ii => ii.EnvironmentId == inst.EnvironmentId)?.Id
-                                        ?? referencedApp?.Instances.FirstOrDefault()?.Id;
-
-                                    if (targetInstanceId is Guid iid && iid != dep.TargetId)
-                                    {
-                                        migratedDeps.Add(dep with { TargetId = iid });
-                                        instChanged = true;
-                                        continue;
-                                    }
-                                }
-                                migratedDeps.Add(dep);
-                            }
-
-                            if (instChanged)
-                            {
-                                appChanged = true;
-                                hasChange = true;
-                                return inst with { Dependencies = migratedDeps, UpdatedAt = DateTime.UtcNow };
-                            }
-                            return inst;
-                        })
-                        .ToList();
-
-                    if (appChanged)
-                    {
-                        return app with { Instances = migratedInstances, UpdatedAt = DateTime.UtcNow };
-                    }
-                    return app;
-                })
-                .ToList();
-
-            if (hasChange)
-            {
-                _cache = _cache with { Applications = migratedApps };
-            }
 
             var errors = SnapshotValidator.Validate(_cache);
             if (errors.Count > 0)
@@ -132,24 +78,45 @@ public sealed class JsonFuseStore : IFuseStore
             if (errors.Count > 0)
                 throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
 
-            await WriteAsync("applications.json", snapshot.Applications, ct);
-            await WriteAsync("datastores.json", snapshot.DataStores, ct);
-            await WriteAsync("platforms.json", snapshot.Platforms, ct);
-            await WriteAsync("externalresources.json", snapshot.ExternalResources, ct);
-            await WriteAsync("accounts.json", snapshot.Accounts, ct);
-            await WriteAsync("identities.json", snapshot.Identities, ct);
-            await WriteAsync("tags.json", snapshot.Tags, ct);
-            await WriteAsync("environments.json", snapshot.Environments, ct);
-            await WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct);
-            await WriteAsync("secretproviders.json", snapshot.SecretProviders, ct);
-            await WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct);
-            await WriteAsync("positions.json", snapshot.Positions, ct);
-            await WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct);
-            await WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct);
-            await WriteAsync("risks.json", snapshot.Risks, ct);
-            await WriteAsync("security.json", snapshot.Security, ct);
-            if (snapshot.PasswordGeneratorConfig is not null)
-                await WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct);
+            var writeTasks = new List<Task>();
+
+            if(_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
+                writeTasks.Add(WriteAsync("applications.json", snapshot.Applications, ct));
+            if(_cache is null || !ReferenceEquals(_cache.DataStores, snapshot.DataStores))
+                writeTasks.Add(WriteAsync("datastores.json", snapshot.DataStores, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Platforms, snapshot.Platforms))
+                writeTasks.Add(WriteAsync("platforms.json", snapshot.Platforms, ct));
+            if(_cache is null || !ReferenceEquals(_cache.ExternalResources, snapshot.ExternalResources))
+                writeTasks.Add(WriteAsync("externalresources.json", snapshot.ExternalResources, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Accounts, snapshot.Accounts))
+                writeTasks.Add(WriteAsync("accounts.json", snapshot.Accounts, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Identities, snapshot.Identities))
+                writeTasks.Add(WriteAsync("identities.json", snapshot.Identities, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Tags, snapshot.Tags))
+                writeTasks.Add(WriteAsync("tags.json", snapshot.Tags, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Environments, snapshot.Environments))
+                writeTasks.Add(WriteAsync("environments.json", snapshot.Environments, ct));
+            if(_cache is null || !ReferenceEquals(_cache.KumaIntegrations, snapshot.KumaIntegrations))
+                writeTasks.Add(WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct));
+            if(_cache is null || !ReferenceEquals(_cache.SecretProviders, snapshot.SecretProviders))
+                writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
+            if(_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
+                writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
+                writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
+            if(_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
+                writeTasks.Add(WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct));
+            if(_cache is null || !ReferenceEquals(_cache.ResponsibilityAssignments, snapshot.ResponsibilityAssignments))
+                writeTasks.Add(WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
+                writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
+            if(_cache is null || !ReferenceEquals(_cache.Security, snapshot.Security))
+                writeTasks.Add(WriteAsync("security.json", snapshot.Security, ct));
+            if(snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
+                writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
+
+            if(writeTasks.Count > 0)
+                await Task.WhenAll(writeTasks);
 
             _cache = snapshot; // swap the in-memory snapshot
             Changed?.Invoke(snapshot);
@@ -213,137 +180,5 @@ public sealed class JsonFuseStore : IFuseStore
             await JsonSerializer.SerializeAsync(fs, value, Json, ct);
         }
         File.Move(tmp, path, overwrite: true);
-    }
-
-    private async Task<IReadOnlyList<Account>> ReadAccountsWithMigrationAsync(string file, CancellationToken ct)
-    {
-        var path = Path.Combine(_options.DataDirectory, file);
-        if (!File.Exists(path)) return Array.Empty<Account>();
-
-        await using var fs = File.OpenRead(path);
-        using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
-
-        var accounts = new List<Account>();
-        
-        foreach (var element in doc.RootElement.EnumerateArray())
-        {
-            // Check if this is a legacy account with secretRef field instead of secretBinding
-            var hasLegacySecretRef = element.TryGetProperty("secretRef", out var secretRefProp);
-            var hasSecretBinding = element.TryGetProperty("secretBinding", out _);
-
-            Account account;
-            
-            if (hasLegacySecretRef && !hasSecretBinding)
-            {
-                // Legacy format: deserialize and migrate
-                var legacySecretRef = secretRefProp.GetString() ?? string.Empty;
-                
-                // Deserialize the account (it will have a default SecretBinding)
-                var tempAccount = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json);
-                if (tempAccount is null) continue;
-
-                // Create the migrated account with proper SecretBinding
-                var binding = new SecretBinding(
-                    Kind: SecretBindingKind.PlainReference,
-                    PlainReference: legacySecretRef,
-                    AzureKeyVault: null
-                );
-
-                account = tempAccount with 
-                { 
-                    SecretBinding = binding,
-                    UpdatedAt = DateTime.UtcNow
-                };
-            }
-            else
-            {
-                // New format: deserialize normally
-                account = JsonSerializer.Deserialize<Account>(element.GetRawText(), Json)!;
-            }
-
-            accounts.Add(account);
-        }
-
-        return accounts;
-    }
-
-    private async Task<IReadOnlyList<Application>> ReadApplicationsWithMigrationAsync(string file, CancellationToken ct)
-    {
-        var path = Path.Combine(_options.DataDirectory, file);
-        if (!File.Exists(path)) return Array.Empty<Application>();
-
-        await using var fs = File.OpenRead(path);
-        using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
-
-        var applications = new List<Application>();
-        
-        foreach (var appElement in doc.RootElement.EnumerateArray())
-        {
-            var application = JsonSerializer.Deserialize<Application>(appElement.GetRawText(), Json);
-            if (application is null) continue;
-
-            // Migration: Dependencies created before authKind was added will have authKind=None (default).
-            // If a dependency has an accountId or identityId set but authKind is None, we need to migrate
-            // to the appropriate authKind to preserve the intended behavior.
-            // Note: authKind=None is valid for dependencies that don't require authentication.
-            var needsMigration = false;
-            var migratedInstances = new List<ApplicationInstance>();
-
-            foreach (var inst in application.Instances)
-            {
-                var migratedDeps = new List<ApplicationInstanceDependency>();
-                var instNeedsMigration = false;
-
-                foreach (var dep in inst.Dependencies)
-                {
-                    // Only migrate if authKind is None but a credential is set
-                    if (dep.AuthKind == DependencyAuthKind.None)
-                    {
-                        if (dep.IdentityId is not null)
-                        {
-                            // Has identityId, migrate to Identity authKind
-                            migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Identity });
-                            instNeedsMigration = true;
-                        }
-                        else if (dep.AccountId is not null)
-                        {
-                            // Has accountId, migrate to Account authKind
-                            migratedDeps.Add(dep with { AuthKind = DependencyAuthKind.Account });
-                            instNeedsMigration = true;
-                        }
-                        else
-                        {
-                            // No credentials set, keep authKind=None (valid state)
-                            migratedDeps.Add(dep);
-                        }
-                    }
-                    else
-                    {
-                        migratedDeps.Add(dep);
-                    }
-                }
-
-                if (instNeedsMigration)
-                {
-                    needsMigration = true;
-                    migratedInstances.Add(inst with { Dependencies = migratedDeps, UpdatedAt = DateTime.UtcNow });
-                }
-                else
-                {
-                    migratedInstances.Add(inst);
-                }
-            }
-
-            if (needsMigration)
-            {
-                applications.Add(application with { Instances = migratedInstances, UpdatedAt = DateTime.UtcNow });
-            }
-            else
-            {
-                applications.Add(application);
-            }
-        }
-
-        return applications;
     }
 }

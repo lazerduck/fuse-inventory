@@ -27,10 +27,8 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
 
     // Token for a user that belongs to an empty custom role (no permissions at all)
     private string? _noPermissionsToken;
-
-    // Track created usernames and role names for cleanup
-    private readonly HashSet<string> _createdUsernames = new();
-    private readonly HashSet<string> _createdRoleNames = new();
+    private HttpClient? _noPermissionsClient;
+    private readonly Dictionary<string, HttpClient> _permittedClients = new();
 
     public PermissionGrantsAccessTests(ApiIntegrationFixture apiFixture)
     {
@@ -117,7 +115,9 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         if (!_permittedTokens.TryGetValue(permKey, out var token) || string.IsNullOrEmpty(token))
             throw new XunitException($"Test setup failed: could not obtain token for permission '{permKey}'");
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        if (!_permittedClients.TryGetValue(permKey, out var client))
+            throw new XunitException($"Test setup failed: no client for permission '{permKey}'");
+
         var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), endpoint));
         var status = (int)response.StatusCode;
 
@@ -141,7 +141,9 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         if (!_permittedTokens.TryGetValue(permKey, out var token) || string.IsNullOrEmpty(token))
             throw new XunitException($"Test setup failed: could not obtain token for permission '{permKey}'");
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        if (!_permittedClients.TryGetValue(permKey, out var client))
+            throw new XunitException($"Test setup failed: no client for permission '{permKey}'");
+
         var request = new HttpRequestMessage(new HttpMethod(method), endpoint)
         {
             Content = JsonContent.Create(requestBody)
@@ -170,11 +172,10 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         string permKey, string method, string endpoint)
     {
         _ = permKey; // the endpoint is what matters here
-        if (string.IsNullOrEmpty(_noPermissionsToken))
+        if (_noPermissionsClient is null)
             throw new XunitException("Test setup failed: no-permissions user token is missing");
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(_noPermissionsToken);
-        var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), endpoint));
+        var response = await _noPermissionsClient.SendAsync(new HttpRequestMessage(new HttpMethod(method), endpoint));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -189,15 +190,14 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         string permKey, string method, string endpoint, object requestBody)
     {
         _ = permKey;
-        if (string.IsNullOrEmpty(_noPermissionsToken))
+        if (_noPermissionsClient is null)
             throw new XunitException("Test setup failed: no-permissions user token is missing");
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(_noPermissionsToken);
         var request = new HttpRequestMessage(new HttpMethod(method), endpoint)
         {
             Content = JsonContent.Create(requestBody)
         };
-        var response = await client.SendAsync(request);
+        var response = await _noPermissionsClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -229,27 +229,6 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         var adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "initialAdmin", "InitialPassword123!");
         _adminClient = _apiFixture.CreateAuthenticatedClient(adminToken);
 
-        // Clean up any stale test data from previous runs
-        try
-        {
-            var users = await _adminClient.ApiSecurityAccountsGetAsync();
-            foreach (var user in users.Where(u => u.UserName.StartsWith("pgtst_")))
-            {
-                await _adminClient.ApiSecurityAccountsDeleteAsync(user.Id);
-            }
-        }
-        catch { /* Ignore cleanup errors */ }
-
-        try
-        {
-            var roles = await _adminClient.ApiRoleGetAsync();
-            foreach (var role in roles.Where(r => r.Name.StartsWith("role-pgtst_")))
-            {
-                await _adminClient.ApiRoleDeleteAsync(role.Id);
-            }
-        }
-        catch { /* Ignore cleanup errors */ }
-
         // Ensure the site is fully restricted so all permission gates are active
         try
         {
@@ -262,6 +241,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
 
         // Create a user with NO permissions (assigned to an empty custom role)
         _noPermissionsToken = await SetupPermissionUserAsync("pgtst_noperm", Array.Empty<Permission>());
+        _noPermissionsClient = _apiFixture.CreateAuthenticatedHttpClient(_noPermissionsToken);
 
         // Create one user per permission we want to verify
         var allCases = ReadPermissionEndpointCases.Concat(WritePermissionEndpointCases)
@@ -273,44 +253,26 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
             if (!Enum.TryParse<Permission>(permKey, out var permission))
                 continue;
 
-            _permittedTokens[permKey] = await SetupPermissionUserAsync(
+            var token = await SetupPermissionUserAsync(
                 $"pgtst_{permKey.ToLowerInvariant()}",
                 new[] { permission });
+            _permittedTokens[permKey] = token;
+            _permittedClients[permKey] = _apiFixture.CreateAuthenticatedHttpClient(token);
         }
     }
 
     public async Task DisposeAsync()
     {
-        if (_adminClient == null) return;
+        _noPermissionsClient?.Dispose();
+        _noPermissionsClient = null;
 
-        // Clean up test users
-        try
+        foreach (var client in _permittedClients.Values)
         {
-            var users = await _adminClient.ApiSecurityAccountsGetAsync();
-            foreach (var username in _createdUsernames)
-            {
-                var user = users.FirstOrDefault(u => u.UserName == username);
-                if (user != null)
-                    await _adminClient.ApiSecurityAccountsDeleteAsync(user.Id);
-            }
+            client.Dispose();
         }
-        catch { /* Ignore cleanup errors */ }
+        _permittedClients.Clear();
 
-        // Clean up test roles
-        try
-        {
-            var roles = await _adminClient.ApiRoleGetAsync();
-            foreach (var roleName in _createdRoleNames)
-            {
-                var role = roles.FirstOrDefault(r => r.Name == roleName);
-                if (role != null)
-                    await _adminClient.ApiRoleDeleteAsync(role.Id);
-            }
-        }
-        catch { /* Ignore cleanup errors */ }
-
-        _createdUsernames.Clear();
-        _createdRoleNames.Clear();
+        await Task.CompletedTask;
     }
 
     // ---------------------------------------------------------------------------
@@ -323,12 +285,9 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     /// </summary>
     private async Task<string> SetupPermissionUserAsync(string username, IReadOnlyList<Permission> permissions)
     {
-        _createdUsernames.Add(username);
-
         // Create or retrieve the role
         Guid? roleId = null;
         var roleName = $"role-{username}";
-        _createdRoleNames.Add(roleName);
 
         var apiPermissions = permissions
             .Select(p => (ApiClient.Permission)Enum.Parse(typeof(ApiClient.Permission), p.ToString()))

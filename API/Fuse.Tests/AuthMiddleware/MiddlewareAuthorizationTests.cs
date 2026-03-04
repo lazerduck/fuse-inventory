@@ -18,6 +18,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
 {
     private readonly ApiIntegrationFixture _apiFixture;
     private readonly Dictionary<string, string> _userTokens = new();
+    private readonly Dictionary<string, HttpClient> _httpClients = new();
     private FuseApiClient? _adminClient;
 
     public MiddlewareAuthorizationTests(ApiIntegrationFixture apiFixture)
@@ -109,6 +110,12 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
 
     public Task DisposeAsync()
     {
+        foreach (var client in _httpClients.Values)
+        {
+            client.Dispose();
+        }
+        _httpClients.Clear();
+
         // No cleanup needed - WebApplicationFactory lifecycle is managed by xUnit
         return Task.CompletedTask;
     }
@@ -148,7 +155,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("admin", token);
         var response = await AuthTestHelpers.ExecuteEndpointTestAsync(client, test);
 
         // Admin should not get 403 Forbidden (may get 404 if resource doesn't exist)
@@ -178,7 +185,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient(scenario.ScenarioId, token);
         HttpResponseMessage response;
         
         try
@@ -231,7 +238,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("reader-user", token);
 
         // Reader should be able to GET
         var getResponse = await client.GetAsync("/api/account");
@@ -260,7 +267,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         // Admin should have access
         if (_userTokens.TryGetValue("admin", out var adminToken) && !string.IsNullOrEmpty(adminToken))
         {
-            var adminClient = _apiFixture.CreateAuthenticatedHttpClient(adminToken);
+            var adminClient = GetOrCreateClient("admin", adminToken);
             var response = await adminClient.GetAsync("/api/audit");
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         }
@@ -268,7 +275,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         // No-permissions user should be denied
         if (_userTokens.TryGetValue("no-permissions-user", out var noPermToken) && !string.IsNullOrEmpty(noPermToken))
         {
-            var noPermClient = _apiFixture.CreateAuthenticatedHttpClient(noPermToken);
+            var noPermClient = GetOrCreateClient("no-permissions-user", noPermToken);
             var response = await noPermClient.GetAsync("/api/audit");
             Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         }
@@ -283,7 +290,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         // Admin should have access
         if (_userTokens.TryGetValue("admin", out var adminToken) && !string.IsNullOrEmpty(adminToken))
         {
-            var adminClient = _apiFixture.CreateAuthenticatedHttpClient(adminToken);
+            var adminClient = GetOrCreateClient("admin", adminToken);
             var response = await adminClient.GetAsync("/api/config/export");
             Assert.NotEqual(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         }
@@ -291,7 +298,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         // Reader should NOT have access
         if (_userTokens.TryGetValue("reader-user", out var readerToken) && !string.IsNullOrEmpty(readerToken))
         {
-            var readerClient = _apiFixture.CreateAuthenticatedHttpClient(readerToken);
+            var readerClient = GetOrCreateClient("reader-user", readerToken);
             var response = await readerClient.GetAsync("/api/config/export");
             Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
         }
@@ -305,7 +312,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("no-permissions-user", token);
         var stateResponse = await client.GetAsync("/api/security/state");
         stateResponse.EnsureSuccessStatusCode();
 
@@ -338,7 +345,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("no-permissions-user", token);
         var stateResponse = await client.GetAsync("/api/security/state");
         stateResponse.EnsureSuccessStatusCode();
 
@@ -377,7 +384,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("no-permissions-user", token);
         var stateResponse = await client.GetAsync("/api/security/state");
         stateResponse.EnsureSuccessStatusCode();
 
@@ -407,7 +414,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        var client = GetOrCreateClient("no-permissions-user", token);
         var stateResponse = await client.GetAsync("/api/security/state");
         stateResponse.EnsureSuccessStatusCode();
 
@@ -460,5 +467,17 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         }
 
         return testCases;
+    }
+
+    private HttpClient GetOrCreateClient(string key, string token)
+    {
+        if (_httpClients.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
+
+        var client = _apiFixture.CreateAuthenticatedHttpClient(token);
+        _httpClients[key] = client;
+        return client;
     }
 }
