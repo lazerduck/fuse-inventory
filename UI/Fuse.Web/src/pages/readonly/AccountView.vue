@@ -158,6 +158,7 @@ import { useAccounts } from '../../composables/useAccounts'
 import { useApplications } from '../../composables/useApplications'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
+import { useMessageBrokers } from '../../composables/useMessageBrokers'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
 import { AuthKind, DependencyAuthKind, SecretBindingKind, TargetKind, type TagColor } from '../../api/client'
@@ -171,12 +172,13 @@ const { data: accountsData, isLoading: accountsLoading } = useAccounts()
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { data: dataStoresData, isLoading: dataStoresLoading } = useDataStores()
 const { data: externalResourcesData, isLoading: externalLoading } = useExternalResources()
+const { data: messageBrokersData, isLoading: messageBrokersLoading } = useMessageBrokers()
 const { lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
 
 const isLoading = computed(() =>
   accountsLoading.value || appsLoading.value || dataStoresLoading.value ||
-  externalLoading.value || envsLoading.value || tagsLoading.value
+  externalLoading.value || messageBrokersLoading.value || envsLoading.value || tagsLoading.value
 )
 
 // Find the account by ID
@@ -250,6 +252,8 @@ const targetTypeLabel = computed(() => {
       return 'External Resource'
     case TargetKind.Application:
       return 'Instance'
+    case TargetKind.MessageBroker:
+      return 'Message Broker'
     default:
       return 'Unknown'
   }
@@ -263,6 +267,8 @@ const targetIcon = computed(() => {
       return 'hub'
     case TargetKind.Application:
       return 'layers'
+    case TargetKind.MessageBroker:
+      return 'dns'
     default:
       return 'help'
   }
@@ -294,6 +300,10 @@ function resolveTargetName(targetKind: TargetKind | undefined, targetId: string 
       }
       return targetId
     }
+    case TargetKind.MessageBroker: {
+      const broker = messageBrokersData.value?.find((mb) => mb.id === targetId)
+      return broker?.name ?? targetId
+    }
     default:
       return targetId
   }
@@ -314,6 +324,8 @@ const targetRoute = computed(() => {
       return `/view/external/${targetId}`
     case TargetKind.Application:
       return `/view/instance/${targetId}`
+    case TargetKind.MessageBroker:
+      return `/view/message-broker/${targetId}`
     default:
       return null
   }
@@ -451,7 +463,7 @@ const lowerContext = computed<LowerItem[]>(() => {
   const route = targetRoute.value
 
   if (targetId && route) {
-    let targetType: 'datastore' | 'external' | 'instance'
+    let targetType: 'datastore' | 'external' | 'instance' | 'messagebroker'
     switch (account.value?.targetKind) {
       case TargetKind.DataStore:
         targetType = 'datastore'
@@ -461,6 +473,9 @@ const lowerContext = computed<LowerItem[]>(() => {
         break
       case TargetKind.Application:
         targetType = 'instance'
+        break
+      case TargetKind.MessageBroker:
+        targetType = 'messagebroker'
         break
       default:
         targetType = 'datastore'

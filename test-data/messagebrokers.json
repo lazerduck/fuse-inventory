@@ -1,0 +1,23 @@
+[
+  {
+    "id": "d83f355a-f577-4280-966d-dc62a6943ab8",
+    "name": "rabbitMQ",
+    "description": null,
+    "kind": "RabbitMQ",
+    "environmentId": "e093dd85-0618-428c-8bd4-83e706e717c3",
+    "connectionUri": null,
+    "tagIds": [
+      "b8314daa-7fe8-433f-9739-916673f40ca4"
+    ],
+    "createdAt": "2026-03-05T20:00:42.5386321Z",
+    "updatedAt": "2026-03-05T20:16:46.2813473Z",
+    "queues": [
+      {
+        "id": "4b5cb184-ce6a-43ff-892f-6d41ecc23fa6",
+        "name": "Test",
+        "description": "The test queue"
+      }
+    ],
+    "topics": null
+  }
+]

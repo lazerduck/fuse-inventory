@@ -51,6 +51,7 @@ import { useTags } from '../composables/useTags'
 import { useApplications } from '../composables/useApplications'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
+import { useMessageBrokers } from '../composables/useMessageBrokers'
 import { getErrorMessage } from '../utils/error'
 
 const client = useFuseClient()
@@ -61,6 +62,7 @@ const tagsStore = useTags()
 const applicationsQuery = useApplications()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
+const messageBrokersQuery = useMessageBrokers()
 
 const pagination = { rowsPerPage: 10 }
 
@@ -115,6 +117,8 @@ function resolveTargetName(account: Account) {
       return dataStoresQuery.data.value?.find((item) => item.id === targetId)?.name ?? targetId
     case TargetKind.External:
       return externalResourcesQuery.data.value?.find((item) => item.id === targetId)?.name ?? targetId
+    case TargetKind.MessageBroker:
+      return messageBrokersQuery.data.value?.find((item) => item.id === targetId)?.name ?? targetId
     default:
       return targetId
   }

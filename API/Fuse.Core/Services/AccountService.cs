@@ -622,6 +622,24 @@ public class AccountService : IAccountService
             return Result<IReadOnlyList<CloneTarget>>.Success(targets);
         }
 
+        if (account.TargetKind == TargetKind.MessageBroker)
+        {
+            var sourceBroker = store.MessageBrokers.FirstOrDefault(m => m.Id == account.TargetId);
+            if (sourceBroker is null)
+                return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
+
+            var targets = store.MessageBrokers
+                .Where(m => m.Id != account.TargetId && string.Equals(m.Kind, sourceBroker.Kind, StringComparison.OrdinalIgnoreCase))
+                .Select(m =>
+                {
+                    var envName = m.EnvironmentId != Guid.Empty && envLookup.TryGetValue(m.EnvironmentId, out var n) ? n : m.EnvironmentId.ToString();
+                    return new CloneTarget(m.Id, $"{m.Name} — {envName}", envName);
+                })
+                .ToList();
+
+            return Result<IReadOnlyList<CloneTarget>>.Success(targets);
+        }
+
         return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
     }
 
@@ -648,6 +666,7 @@ public class AccountService : IAccountService
                 TargetKind.Application => store.Applications.SelectMany(a => a.Instances).Any(i => i.Id == targetId)
                     || store.Applications.Any(a => a.Id == targetId),
                 TargetKind.DataStore => store.DataStores.Any(d => d.Id == targetId),
+                TargetKind.MessageBroker => store.MessageBrokers.Any(m => m.Id == targetId),
                 _ => false
             };
             if (!targetExists)

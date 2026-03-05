@@ -10,7 +10,9 @@
       "passwordHash": "4VoO7NoLa694uXtUyfDMEr8O4ikvqRaMXULrrg7dRGA=",
       "passwordSalt": "dLsuTdI0v9kNZahq\u002Bmp56Q==",
       "role": "Admin",
-      "roleIds": [],
+      "roleIds": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
       "createdAt": "2026-02-25T18:43:04.2040353Z",
       "updatedAt": "2026-02-25T18:43:04.2040353Z"
     }
@@ -128,10 +130,11 @@
         "ExternalResourcesUpdate",
         "ExternalResourcesDelete",
         "RisksRead",
-        "RisksCreate"
+        "RisksCreate",
+        "MessageBrokersRead"
       ],
       "createdAt": "2026-02-25T21:15:54.4292897Z",
-      "updatedAt": "2026-02-25T21:15:54.4292897Z"
+      "updatedAt": "2026-03-05T20:32:06.0393264Z"
     }
   ]
 }

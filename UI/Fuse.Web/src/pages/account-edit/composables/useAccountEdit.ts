@@ -28,6 +28,7 @@ import { useApplications } from '../../../composables/useApplications'
 import { useDataStores } from '../../../composables/useDataStores'
 import { useEnvironments } from '../../../composables/useEnvironments'
 import { useExternalResources } from '../../../composables/useExternalResources'
+import { useMessageBrokers } from '../../../composables/useMessageBrokers'
 import { useSecretProviders } from '../../../composables/useSecretProviders'
 import { useSecretProviderSecrets } from '../../../composables/useSecretProviderSecrets'
 import { useSqlIntegrations } from '../../../composables/useSqlIntegrations'
@@ -66,6 +67,7 @@ export function useAccountEdit() {
   const applicationsQuery = useApplications()
   const dataStoresQuery = useDataStores()
   const externalResourcesQuery = useExternalResources()
+  const messageBrokersQuery = useMessageBrokers()
   const environmentsQuery = useEnvironments()
   const secretProvidersQuery = useSecretProviders()
   const sqlIntegrationsQuery = useSqlIntegrations()
@@ -142,6 +144,15 @@ export function useAccountEdit() {
         .filter((item) => !!item.id)
         .map((item) => ({ label: item.name ?? item.id!, value: item.id! }))
     }
+    if (kind === TargetKind.MessageBroker) {
+      const envLookup = environmentsQuery.lookup.value
+      return (messageBrokersQuery.data.value ?? [])
+        .filter((item) => !!item.id)
+        .map((item) => {
+          const envName = item.environmentId ? envLookup[item.environmentId] ?? item.environmentId : '—'
+          return { label: `${item.name ?? item.id!} — ${envName}`, value: item.id! }
+        })
+    }
     return (externalResourcesQuery.data.value ?? [])
       .filter((item) => !!item.id)
       .map((item) => ({ label: item.name ?? item.id!, value: item.id! }))
@@ -204,6 +215,7 @@ export function useAccountEdit() {
       applicationsQuery.data.value,
       dataStoresQuery.data.value,
       externalResourcesQuery.data.value,
+      messageBrokersQuery.data.value,
       environmentsQuery.data.value
     ],
     () => ensureTarget()

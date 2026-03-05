@@ -200,6 +200,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useApplications } from '../composables/useApplications'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
+import { useMessageBrokers } from '../composables/useMessageBrokers'
 import { useEnvironments } from '../composables/useEnvironments'
 import { getErrorMessage } from '../utils/error'
 
@@ -211,6 +212,7 @@ const fuseStore = useFuseStore()
 const applicationsQuery = useApplications()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
+const messageBrokersQuery = useMessageBrokers()
 const environmentsQuery = useEnvironments()
 
 const identityId = computed(() => route.params.id as string | undefined)
@@ -291,6 +293,20 @@ const targetOptions = computed<TargetOption[]>(() => {
     return (dataStoresQuery.data.value ?? [])
       .filter((item) => !!item.id)
       .map((item) => ({ label: item.name ?? item.id!, value: item.id!, targetKind: TargetKind.DataStore }))
+  }
+
+  if (kind === TargetKind.MessageBroker) {
+    const envLookup = environmentsQuery.lookup.value
+    return (messageBrokersQuery.data.value ?? [])
+      .filter((item) => !!item.id)
+      .map((item) => {
+        const envName = item.environmentId ? envLookup[item.environmentId] ?? item.environmentId : '—'
+        return {
+          label: `${item.name ?? item.id!} — ${envName}`,
+          value: item.id!,
+          targetKind: TargetKind.MessageBroker
+        }
+      })
   }
   
   return (externalResourcesQuery.data.value ?? [])
@@ -747,6 +763,8 @@ function formatTargetKindLabel(kind: TargetKind): string {
       return 'Data Store'
     case TargetKind.External:
       return 'External Resource'
+    case TargetKind.MessageBroker:
+      return 'Message Broker'
     default:
       return String(kind)
   }
