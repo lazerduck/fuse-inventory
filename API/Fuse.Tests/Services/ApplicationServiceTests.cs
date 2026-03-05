@@ -321,6 +321,46 @@ public class ApplicationServiceTests
     }
 
     [Fact]
+    public async Task Dependency_Create_AllowsMessageBrokerTarget()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var broker = new MessageBroker(
+            Id: Guid.NewGuid(),
+            Name: "Broker",
+            Description: null,
+            Kind: "Kafka",
+            EnvironmentId: env.Id,
+            ConnectionUri: null,
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow
+        );
+
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(),
+            new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
+            Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, messageBrokers: new[] { broker });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+        var inst = app.Instances.Single();
+
+        var result = await service.CreateDependencyAsync(new CreateApplicationDependency(
+            ApplicationId: app.Id,
+            InstanceId: inst.Id,
+            TargetId: broker.Id,
+            TargetKind: TargetKind.MessageBroker,
+            Port: null,
+            AuthKind: DependencyAuthKind.None,
+            AccountId: null,
+            IdentityId: null
+        ));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TargetKind.MessageBroker, result.Value!.TargetKind);
+        Assert.Equal(broker.Id, result.Value!.TargetId);
+    }
+
+    [Fact]
     public async Task Dependency_AccountMustTargetSameResource()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
@@ -401,7 +441,8 @@ public class ApplicationServiceTests
         IEnumerable<Platform>? platforms = null,
         IEnumerable<DataStore>? dataStores = null,
         IEnumerable<ExternalResource>? resources = null,
-        IEnumerable<Account>? accounts = null)
+        IEnumerable<Account>? accounts = null,
+        IEnumerable<MessageBroker>? messageBrokers = null)
     {
         var snapshot = new Snapshot(
             Applications: (apps ?? Array.Empty<Application>()).ToArray(),
@@ -416,6 +457,7 @@ public class ApplicationServiceTests
                 SecretProviders: Array.Empty<SecretProvider>(),
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
                 Risks: Array.Empty<Risk>(),
+                MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);

@@ -13,6 +13,7 @@ export type EntityType =
   | 'account'
   | 'identity'
   | 'datastore'
+  | 'messagebroker'
   | 'external'
   | 'environment'
   | 'platform'
@@ -35,6 +36,7 @@ export const entityTypeConfig: Record<EntityType, EntityTypeConfig> = {
   account: { label: 'Account', icon: 'vpn_key' },
   identity: { label: 'Identity', icon: 'badge' },
   datastore: { label: 'Data Store', icon: 'storage' },
+  messagebroker: { label: 'Message Broker', icon: 'dns' },
   external: { label: 'External Resource', icon: 'hub' },
   environment: { label: 'Environment', icon: 'cloud' },
   platform: { label: 'Platform', icon: 'computer' }

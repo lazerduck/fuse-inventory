@@ -278,6 +278,7 @@ public class ConfigService : IConfigService
                 ResponsibilityTypes: current.ResponsibilityTypes,
                 ResponsibilityAssignments: current.ResponsibilityAssignments,
                 Risks: current.Risks,
+                MessageBrokers: current.MessageBrokers,
                 Security: current.Security,
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig
             );

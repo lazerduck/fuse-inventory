@@ -80,6 +80,14 @@ public class PermissionService : IPermissionService
         ["ExternalResource.Update.PATCH"] = Permission.ExternalResourcesUpdate,
         ["ExternalResource.Delete.DELETE"] = Permission.ExternalResourcesDelete,
 
+        // MessageBroker Controller
+        ["MessageBroker.GetAll.GET"] = Permission.MessageBrokersRead,
+        ["MessageBroker.Get.GET"] = Permission.MessageBrokersRead,
+        ["MessageBroker.Create.POST"] = Permission.MessageBrokersCreate,
+        ["MessageBroker.Update.PUT"] = Permission.MessageBrokersUpdate,
+        ["MessageBroker.Update.PATCH"] = Permission.MessageBrokersUpdate,
+        ["MessageBroker.Delete.DELETE"] = Permission.MessageBrokersDelete,
+
         // Position Controller
         ["Position.GetAll.GET"] = Permission.PositionsRead,
         ["Position.Get.GET"] = Permission.PositionsRead,
@@ -249,6 +257,7 @@ public class PermissionService : IPermissionService
             Permission.PlatformsRead,
             Permission.EnvironmentsRead,
             Permission.ExternalResourcesRead,
+            Permission.MessageBrokersRead,
             Permission.PositionsRead,
             Permission.ResponsibilitiesRead,
             Permission.RisksRead,

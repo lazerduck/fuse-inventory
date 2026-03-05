@@ -91,5 +91,23 @@
     "createdAt": "2026-02-25T19:34:52.1774728Z",
     "updatedAt": "2026-02-25T19:35:13.0251355Z",
     "secretRef": ""
+  },
+  {
+    "id": "177110b5-ee71-4f43-9c45-61859582791c",
+    "targetId": "d83f355a-f577-4280-966d-dc62a6943ab8",
+    "targetKind": "MessageBroker",
+    "authKind": "UserPassword",
+    "secretBinding": {
+      "kind": "None",
+      "plainReference": null,
+      "azureKeyVault": null
+    },
+    "userName": "test",
+    "parameters": null,
+    "grants": [],
+    "tagIds": [],
+    "createdAt": "2026-03-05T20:32:23.4061782Z",
+    "updatedAt": "2026-03-05T20:32:23.4061782Z",
+    "secretRef": ""
   }
 ]

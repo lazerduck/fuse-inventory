@@ -75,6 +75,11 @@ const router = createRouter({
       component: () => import('./pages/ExternalResourcesPage.vue')
     },
     {
+      path: '/message-brokers',
+      name: 'messageBrokers',
+      component: () => import('./pages/MessageBrokersPage.vue')
+    },
+    {
       path: '/tags',
       name: 'tags',
       component: () => import('./pages/TagsPage.vue')
@@ -199,6 +204,11 @@ const router = createRouter({
       path: '/view/external/:id',
       name: 'viewExternal',
       component: () => import('./pages/readonly/ExternalView.vue')
+    },
+    {
+      path: '/view/message-broker/:id',
+      name: 'viewMessageBroker',
+      component: () => import('./pages/readonly/MessageBrokerView.vue')
     },
     {
       path: '/view/platform/:id',

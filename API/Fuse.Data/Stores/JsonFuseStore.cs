@@ -56,6 +56,7 @@ public sealed class JsonFuseStore : IFuseStore
                 ResponsibilityTypes: await ReadAsync<ResponsibilityType>("responsibilitytypes.json", ct),
                 ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
                 Risks: await ReadAsync<Risk>("risks.json", ct),
+                MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct)
             );
@@ -110,6 +111,8 @@ public sealed class JsonFuseStore : IFuseStore
                 writeTasks.Add(WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct));
             if(_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
                 writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
+            if(_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
+                writeTasks.Add(WriteAsync("messagebrokers.json", snapshot.MessageBrokers, ct));
             if(_cache is null || !ReferenceEquals(_cache.Security, snapshot.Security))
                 writeTasks.Add(WriteAsync("security.json", snapshot.Security, ct));
             if(snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
