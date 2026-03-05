@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
@@ -11,7 +10,6 @@ public sealed class SecurityService : ISecurityService
 {
     private readonly IFuseStore _store;
     private readonly IAuditService _auditService;
-    private readonly ConcurrentDictionary<string, SessionRecord> _sessions = new();
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromDays(30);
 
     public SecurityService(IFuseStore store, IAuditService auditService)
@@ -144,7 +142,14 @@ public sealed class SecurityService : ISecurityService
         var expires = DateTime.UtcNow.Add(SessionLifetime);
         var info = new SecurityUserInfo(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
 
-        _sessions[token] = new SessionRecord(token, user.Id, expires);
+        var persistedSession = new PersistedSession(token, user.Id, expires);
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with
+            {
+                Sessions = s.Security.Sessions.Append(persistedSession).ToList()
+            }
+        }, ct);
         
         // Audit log
         var auditLog = AuditHelper.CreateLog(
@@ -165,10 +170,21 @@ public sealed class SecurityService : ISecurityService
         if (command is null || string.IsNullOrWhiteSpace(command.Token))
             return Result.Failure("Invalid logout request.");
 
-        if (_sessions.TryRemove(command.Token, out var session))
+        var snapshot = _store.Current ?? await _store.GetAsync();
+        var session = snapshot.Security.Sessions.FirstOrDefault(s => s.Token == command.Token);
+
+        if (session is not null)
         {
+            await _store.UpdateAsync(s => s with
+            {
+                Security = s.Security with
+                {
+                    Sessions = s.Security.Sessions.Where(x => x.Token != command.Token).ToList()
+                }
+            });
+
             // Get user info for audit log
-            var snapshot = _store.Current ?? await _store.GetAsync();
+            snapshot = _store.Current ?? await _store.GetAsync();
             var user = snapshot.Security.Users.FirstOrDefault(u => u.Id == session.UserId);
             
             if (user != null)
@@ -194,23 +210,40 @@ public sealed class SecurityService : ISecurityService
         if (string.IsNullOrWhiteSpace(token))
             return null;
 
-        if (!_sessions.TryGetValue(token, out var session))
+        var snapshot = _store.Current ?? await _store.GetAsync(ct);
+        var session = snapshot.Security.Sessions.FirstOrDefault(s => s.Token == token);
+
+        if (session is null)
             return null;
 
         var now = DateTime.UtcNow;
         if (session.ExpiresAt <= now)
         {
-            _sessions.TryRemove(token, out _);
+            await _store.UpdateAsync(s => s with
+            {
+                Security = s.Security with
+                {
+                    Sessions = s.Security.Sessions.Where(x => x.Token != token).ToList()
+                }
+            }, ct);
             return null;
         }
 
         if (refresh)
         {
             var updated = session with { ExpiresAt = now.Add(SessionLifetime) };
-            _sessions[token] = updated;
+            await _store.UpdateAsync(s => s with
+            {
+                Security = s.Security with
+                {
+                    Sessions = s.Security.Sessions
+                        .Select(x => x.Token == token ? updated : x)
+                        .ToList()
+                }
+            }, ct);
         }
 
-        var snapshot = _store.Current ?? await _store.GetAsync(ct);
+        snapshot = _store.Current ?? await _store.GetAsync(ct);
         return snapshot.Security.Users.FirstOrDefault(u => u.Id == session.UserId);
     }
 
@@ -495,8 +528,6 @@ public sealed class SecurityService : ISecurityService
             Convert.FromBase64String(storedHash),
             Convert.FromBase64String(computed));
     }
-
-    private record SessionRecord(string Token, Guid UserId, DateTime ExpiresAt);
 
     /// <summary>
     /// Check if a user is an administrator (has admin legacy role or is assigned to the default Admin role)
