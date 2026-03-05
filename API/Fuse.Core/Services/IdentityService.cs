@@ -261,6 +261,7 @@ public class IdentityService : IIdentityService
             || s.Applications.Any(a => a.Id == id),
         TargetKind.DataStore => s.DataStores.Any(d => d.Id == id),
         TargetKind.External => s.ExternalResources.Any(r => r.Id == id),
+        TargetKind.MessageBroker => s.MessageBrokers.Any(m => m.Id == id),
         _ => false
     };
 

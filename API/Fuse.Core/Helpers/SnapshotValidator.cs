@@ -26,6 +26,7 @@ public static class SnapshotValidator
         var apps = s.Applications.ToDictionary(x => x.Id);
         var dataStores = s.DataStores.ToDictionary(x => x.Id);
         var externals = s.ExternalResources.ToDictionary(x => x.Id);
+        var messageBrokers = s.MessageBrokers.ToDictionary(x => x.Id);
         var identities = s.Identities.ToDictionary(x => x.Id);
         var accounts = s.Accounts.ToDictionary(x => x.Id);
 
@@ -37,6 +38,7 @@ public static class SnapshotValidator
             TargetKind.Application => apps.SelectMany(app => app.Value.Instances).Any(inst => inst.Id == id),
             TargetKind.DataStore => dataStores.ContainsKey(id),
             TargetKind.External => externals.ContainsKey(id),
+            TargetKind.MessageBroker => messageBrokers.ContainsKey(id),
             _ => false
         };
 
@@ -117,6 +119,14 @@ public static class SnapshotValidator
         // ExternalResources
         foreach (var er in s.ExternalResources)
             TagsMustExist(er.TagIds, $"ExternalResource {er.Id}");
+
+        // MessageBrokers
+        foreach (var mb in s.MessageBrokers)
+        {
+            if (!envs.ContainsKey(mb.EnvironmentId))
+                errs.Add($"MessageBroker {mb.Id}: environment {mb.EnvironmentId} not found");
+            TagsMustExist(mb.TagIds, $"MessageBroker {mb.Id}");
+        }
 
         // Security Users
         if (s.Security.Users.Count > 0 && !s.Security.Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId)))

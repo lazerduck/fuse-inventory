@@ -170,6 +170,15 @@ const permissionCategories = computed(() => [
     ]
   },
   {
+    name: 'Message Brokers',
+    permissions: [
+      Permission.MessageBrokersRead,
+      Permission.MessageBrokersCreate,
+      Permission.MessageBrokersUpdate,
+      Permission.MessageBrokersDelete
+    ]
+  },
+  {
     name: 'Positions',
     permissions: [
       Permission.PositionsRead,

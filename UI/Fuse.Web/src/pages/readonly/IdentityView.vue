@@ -147,6 +147,7 @@ import { useIdentities } from '../../composables/useIdentities'
 import { useApplications } from '../../composables/useApplications'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
+import { useMessageBrokers } from '../../composables/useMessageBrokers'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
 import { DependencyAuthKind, IdentityKind, TargetKind, type IdentityAssignment, type TagColor } from '../../api/client'
@@ -160,12 +161,13 @@ const { data: identitiesData, isLoading: identitiesLoading } = useIdentities()
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { data: dataStoresData, isLoading: dataStoresLoading } = useDataStores()
 const { data: externalResourcesData, isLoading: externalLoading } = useExternalResources()
+const { data: messageBrokersData, isLoading: messageBrokersLoading } = useMessageBrokers()
 const { lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
 
 const isLoading = computed(() =>
   identitiesLoading.value || appsLoading.value || dataStoresLoading.value ||
-  externalLoading.value || envsLoading.value || tagsLoading.value
+  externalLoading.value || messageBrokersLoading.value || envsLoading.value || tagsLoading.value
 )
 
 // Find the identity by ID
@@ -273,6 +275,10 @@ function resolveTargetName(targetKind: TargetKind | undefined, targetId: string 
       }
       return targetId
     }
+    case TargetKind.MessageBroker: {
+      const broker = messageBrokersData.value?.find((mb) => mb.id === targetId)
+      return broker?.name ?? targetId
+    }
     default:
       return targetId
   }
@@ -290,6 +296,8 @@ function getAssignmentTargetRoute(assignment: IdentityAssignment): string | null
       return `/view/external/${targetId}`
     case TargetKind.Application:
       return `/view/instance/${targetId}`
+    case TargetKind.MessageBroker:
+      return `/view/message-broker/${targetId}`
     default:
       return null
   }
@@ -395,7 +403,7 @@ const lowerContext = computed<LowerItem[]>(() => {
     const targetName = resolveTargetName(assignment.targetKind, targetId)
     const route = getAssignmentTargetRoute(assignment)
 
-    let targetType: 'datastore' | 'external' | 'instance'
+    let targetType: 'datastore' | 'external' | 'instance' | 'messagebroker'
     switch (assignment.targetKind) {
       case TargetKind.DataStore:
         targetType = 'datastore'
@@ -405,6 +413,9 @@ const lowerContext = computed<LowerItem[]>(() => {
         break
       case TargetKind.Application:
         targetType = 'instance'
+        break
+      case TargetKind.MessageBroker:
+        targetType = 'messagebroker'
         break
       default:
         targetType = 'datastore'

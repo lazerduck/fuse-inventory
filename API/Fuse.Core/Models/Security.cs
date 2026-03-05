@@ -37,6 +37,7 @@ public enum PermissionCategory
     Platforms,
     Environments,
     ExternalResources,
+    MessageBrokers,
     Positions,
     Responsibilities,
     Risks,
@@ -91,6 +92,12 @@ public enum Permission
     ExternalResourcesCreate,
     ExternalResourcesUpdate,
     ExternalResourcesDelete,
+
+    // Message Brokers
+    MessageBrokersRead,
+    MessageBrokersCreate,
+    MessageBrokersUpdate,
+    MessageBrokersDelete,
 
     // Positions + Responsibilities
     PositionsRead,

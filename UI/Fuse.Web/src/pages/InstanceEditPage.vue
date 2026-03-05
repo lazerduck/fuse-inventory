@@ -268,6 +268,7 @@ import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
+import { useMessageBrokers } from '../composables/useMessageBrokers'
 import { getErrorMessage } from '../utils/error'
 
 interface SelectOption<T = string> {
@@ -339,6 +340,7 @@ const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
 const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
+const messageBrokersQuery = useMessageBrokers()
 
 const environmentLookup = environmentsStore.lookup
 
@@ -516,7 +518,8 @@ watch(
     dependencyForm.targetKind,
     applicationsData.value,
     dataStoresQuery.data.value,
-    externalResourcesQuery.data.value
+    externalResourcesQuery.data.value,
+    messageBrokersQuery.data.value
   ],
   () => {
     ensureDependencyTarget()
@@ -812,6 +815,17 @@ function getDependencyTargetOptions(kind: TargetKind): SelectOption<string>[] {
       return (externalResourcesQuery.data.value ?? [])
         .filter((resource) => !!resource.id)
         .map((resource) => ({ label: resource.name ?? resource.id!, value: resource.id! }))
+    case TargetKind.MessageBroker:
+      return (messageBrokersQuery.data.value ?? [])
+        .filter((broker) => !!broker.id)
+        .map((broker) => {
+          const label = broker.name ?? broker.id!
+          if (!environmentLocked.value) {
+            const envName = environmentLookup.value[broker.environmentId ?? ''] ?? '—'
+            return { label: `${label} — ${envName}`, value: broker.id! }
+          }
+          return { label, value: broker.id! }
+        })
     default:
       return []
   }
@@ -836,6 +850,8 @@ function targetLabel(kind: TargetKind | undefined, id: string | null) {
       return dataStoresQuery.data.value?.find((store) => store.id === id)?.name ?? id
     case TargetKind.External:
       return externalResourcesQuery.data.value?.find((resource) => resource.id === id)?.name ?? id
+    case TargetKind.MessageBroker:
+      return messageBrokersQuery.data.value?.find((broker) => broker.id === id)?.name ?? id
     default:
       return id
   }

@@ -30,6 +30,7 @@ public class AccountServiceTests
         IEnumerable<Application>? apps = null,
         IEnumerable<DataStore>? ds = null,
         IEnumerable<ExternalResource>? res = null,
+        IEnumerable<MessageBroker>? messageBrokers = null,
         IEnumerable<SqlIntegration>? sqlIntegrations = null)
     {
         var snapshot = new Snapshot(
@@ -48,6 +49,7 @@ public class AccountServiceTests
             ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
+            MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -716,6 +718,46 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task GetAccountCloneTargets_MessageBrokerTarget_ReturnsSameKind()
+    {
+        var env1 = new EnvironmentInfo(Guid.NewGuid(), "Dev", null, new HashSet<Guid>());
+        var env2 = new EnvironmentInfo(Guid.NewGuid(), "Prod", null, new HashSet<Guid>());
+        var broker1 = new MessageBroker(Guid.NewGuid(), "Broker 1", null, "Kafka", env1.Id, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var broker2 = new MessageBroker(Guid.NewGuid(), "Broker 2", null, "Kafka", env2.Id, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var broker3 = new MessageBroker(Guid.NewGuid(), "Broker 3", null, "RabbitMQ", env2.Id, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), broker1.Id, TargetKind.MessageBroker, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var snapshot = new Snapshot(
+            Applications: Array.Empty<Application>(),
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: new[] { account },
+            Identities: Array.Empty<Identity>(),
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { env1, env2 },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Risks: Array.Empty<Risk>(),
+            MessageBrokers: new[] { broker1, broker2, broker3 },
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+
+        var store = new InMemoryFuseStore(snapshot);
+        var service = CreateService(store);
+
+        var result = await service.GetAccountCloneTargetsAsync(account.Id);
+
+        Assert.True(result.IsSuccess);
+        var target = Assert.Single(result.Value!);
+        Assert.Equal(broker2.Id, target.Id);
+    }
+
+    [Fact]
     public async Task CloneAccount_ApplicationTarget_Success()
     {
         var env1Id = Guid.NewGuid();
@@ -763,5 +805,23 @@ public class AccountServiceTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CloneAccount_MessageBrokerTarget_Success()
+    {
+        var broker1 = new MessageBroker(Guid.NewGuid(), "Broker 1", null, "Kafka", Guid.NewGuid(), null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var broker2 = new MessageBroker(Guid.NewGuid(), "Broker 2", null, "Kafka", Guid.NewGuid(), null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(Guid.NewGuid(), broker1.Id, TargetKind.MessageBroker, AuthKind.ApiKey, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), null, null, Array.Empty<Grant>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(accounts: new[] { account }, messageBrokers: new[] { broker1, broker2 });
+        var service = CreateService(store);
+
+        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { broker2.Id }));
+
+        Assert.True(result.IsSuccess);
+        var cloned = Assert.Single(result.Value!);
+        Assert.NotEqual(account.Id, cloned.Id);
+        Assert.Equal(broker2.Id, cloned.TargetId);
+        Assert.Equal(TargetKind.MessageBroker, cloned.TargetKind);
     }
 }

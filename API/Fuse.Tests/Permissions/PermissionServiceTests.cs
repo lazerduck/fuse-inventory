@@ -245,6 +245,7 @@ public class PermissionServiceTests
             Permission.PlatformsRead,
             Permission.EnvironmentsRead,
             Permission.ExternalResourcesRead,
+            Permission.MessageBrokersRead,
             Permission.PositionsRead,
             Permission.ResponsibilitiesRead,
             Permission.RisksRead,

@@ -74,16 +74,25 @@
             "authKind": "None",
             "accountId": null,
             "identityId": null
+          },
+          {
+            "id": "604e635e-00d7-45fe-bc0b-8323c6316b63",
+            "targetId": "d83f355a-f577-4280-966d-dc62a6943ab8",
+            "targetKind": "MessageBroker",
+            "port": null,
+            "authKind": "Account",
+            "accountId": "177110b5-ee71-4f43-9c45-61859582791c",
+            "identityId": null
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:13:21.0390747Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-03-05T20:32:39.3644615Z"
       }
     ],
     "pipelines": [],
     "createdAt": "2026-02-25T19:13:21.0045183Z",
-    "updatedAt": "2026-02-25T20:18:09.3421822Z"
+    "updatedAt": "2026-03-05T20:32:39.3646067Z"
   },
   {
     "id": "56b7a0b0-b9ec-4fde-a71a-f0adc1eb6994",

@@ -26,7 +26,8 @@ public class IdentityServiceTests
         IEnumerable<Identity>? identities = null,
         IEnumerable<Application>? apps = null,
         IEnumerable<DataStore>? ds = null,
-        IEnumerable<ExternalResource>? res = null)
+        IEnumerable<ExternalResource>? res = null,
+        IEnumerable<MessageBroker>? messageBrokers = null)
     {
         var snapshot = new Snapshot(
             Applications: (apps ?? Array.Empty<Application>()).ToArray(),
@@ -40,6 +41,8 @@ public class IdentityServiceTests
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: Array.Empty<SecretProvider>(),
             SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Risks: Array.Empty<Risk>(),
+            MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
         );
         return new InMemoryFuseStore(snapshot);
@@ -295,6 +298,39 @@ public class IdentityServiceTests
 
         var updatedIdentity = await service.GetIdentityByIdAsync(identity.Id);
         Assert.Single(updatedIdentity!.Assignments);
+    }
+
+    [Fact]
+    public async Task CreateAssignment_MessageBrokerTarget_Success()
+    {
+        var envId = Guid.NewGuid();
+        var brokerId = Guid.NewGuid();
+        var broker = new MessageBroker(
+            Id: brokerId,
+            Name: "Broker",
+            Description: null,
+            Kind: "Kafka",
+            EnvironmentId: envId,
+            ConnectionUri: null,
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow
+        );
+        var identity = new Identity(Guid.NewGuid(), "Identity", IdentityKind.AzureManagedIdentity, null, null, Array.Empty<IdentityAssignment>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(identities: new[] { identity }, messageBrokers: new[] { broker });
+        var service = CreateService(store);
+
+        var result = await service.CreateAssignment(new CreateIdentityAssignment(
+            identity.Id,
+            TargetKind.MessageBroker,
+            brokerId,
+            "Producer",
+            "Can produce messages"
+        ));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TargetKind.MessageBroker, result.Value!.TargetKind);
+        Assert.Equal(brokerId, result.Value.TargetId);
     }
 
     [Fact]
