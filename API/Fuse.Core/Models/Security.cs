@@ -230,6 +230,24 @@ public record SecurityUser
     public DateTime UpdatedAt { get; init; }
 }
 
+public record PersistedSession
+{
+    public PersistedSession()
+    {
+    }
+
+    public PersistedSession(string token, Guid userId, DateTime expiresAt)
+    {
+        Token = token;
+        UserId = userId;
+        ExpiresAt = expiresAt;
+    }
+
+    public string Token { get; init; } = string.Empty;
+    public Guid UserId { get; init; }
+    public DateTime ExpiresAt { get; init; }
+}
+
 public record SecurityState
 {
     public SecurityState()
@@ -241,6 +259,7 @@ public record SecurityState
         Settings = settings;
         Users = users;
         Roles = Array.Empty<Role>();
+        Sessions = Array.Empty<PersistedSession>();
     }
 
     public SecurityState(SecuritySettings settings, IReadOnlyList<SecurityUser> users, IReadOnlyList<Role> roles)
@@ -248,11 +267,13 @@ public record SecurityState
         Settings = settings;
         Users = users;
         Roles = roles;
+        Sessions = Array.Empty<PersistedSession>();
     }
 
     public SecuritySettings Settings { get; init; } = new(SecurityLevel.None, DateTime.UtcNow);
     public IReadOnlyList<SecurityUser> Users { get; init; } = Array.Empty<SecurityUser>();
     public IReadOnlyList<Role> Roles { get; init; } = Array.Empty<Role>();
+    public IReadOnlyList<PersistedSession> Sessions { get; init; } = Array.Empty<PersistedSession>();
 
     [JsonIgnore]
     public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId));

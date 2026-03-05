@@ -581,6 +581,27 @@ public class SecurityServiceTests
     Assert.Null(user2);
     }
 
+    [Fact]
+    public async Task ValidateSessionAsync_SessionPersistsAfterServiceRestart()
+    {
+        // Arrange: first service instance creates a session
+        var store = NewStore();
+        var auditService = new FakeAuditService();
+        var service1 = new SecurityService(store, auditService);
+
+        await service1.CreateUserAsync(new CreateSecurityUser("admin", "password123", SecurityRole.Admin));
+        var loginResult = await service1.LoginAsync(new LoginSecurityUser("admin", "password123"));
+        var token = loginResult.Value!.Token;
+
+        // Act: second service instance (simulating restart) uses the same store
+        var service2 = new SecurityService(store, auditService);
+        var user = await service2.ValidateSessionAsync(token, refresh: false);
+
+        // Assert: session is still valid
+    Assert.NotNull(user);
+    Assert.Equal("admin", user!.UserName);
+    }
+
     #endregion
 
     #region UpdateSecuritySettingsAsync Tests
