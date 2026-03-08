@@ -1,7 +1,7 @@
 <template>
   <div class="inventory-navigator">
     <q-select
-      v-if="showEnvironment"
+      v-if="showEnvironment && kind === 'applications'"
       v-model="selectedEnvironmentId"
       :options="environmentOptions"
       label="Environment"
@@ -26,6 +26,19 @@
       :disable="applicationOptions.length <= 1"
       @update:model-value="onApplicationChange"
     />
+    <q-select
+      v-if="kind === 'accounts'"
+      v-model="selectedAccountId"
+      :options="accountOptions"
+      label="Account"
+      dense
+      outlined
+      emit-value
+      map-options
+      class="navigator-select"
+      :disable="accountOptions.length <= 1"
+      @update:model-value="onAccountChange"
+    />
   </div>
 </template>
 
@@ -36,13 +49,14 @@ import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useEnvironments } from '../composables/useEnvironments'
 
-type InventoryKind = 'applications'
+type InventoryKind = 'applications' | 'accounts'
 
 interface Props {
   kind: InventoryKind
   showEnvironment?: boolean
   applicationId?: string
   instanceId?: string
+  accountId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -55,7 +69,14 @@ const environmentsStore = useEnvironments()
 
 const { data: applicationsData } = useQuery({
   queryKey: ['applications'],
-  queryFn: () => client.applicationAll()
+  queryFn: () => client.applicationAll(),
+  enabled: computed(() => props.kind === 'applications')
+})
+
+const { data: accountsData } = useQuery({
+  queryKey: ['accounts'],
+  queryFn: () => client.accountAll(),
+  enabled: computed(() => props.kind === 'accounts')
 })
 
 const application = computed(() =>
@@ -68,6 +89,7 @@ const instance = computed(() =>
 
 const selectedEnvironmentId = ref<string | null>(null)
 const selectedApplicationId = ref<string | null>(null)
+const selectedAccountId = ref<string | null>(null)
 
 watch(
   () => instance.value?.environmentId,
@@ -81,6 +103,14 @@ watch(
   () => props.applicationId,
   (appId) => {
     selectedApplicationId.value = appId ?? null
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.accountId,
+  (accId) => {
+    selectedAccountId.value = accId ?? null
   },
   { immediate: true }
 )
@@ -114,6 +144,17 @@ const applicationOptions = computed(() => {
     .filter((opt) => !!opt.value)
 })
 
+const accountOptions = computed(() => {
+  const accounts = accountsData.value ?? []
+  return accounts
+    .sort((a, b) => (a.userName ?? '').localeCompare(b.userName ?? ''))
+    .map((acc) => ({
+      label: acc.userName ?? acc.id ?? 'Unknown',
+      value: acc.id ?? ''
+    }))
+    .filter((opt) => !!opt.value)
+})
+
 function onEnvironmentChange(envId: string) {
   const targetInstance = application.value?.instances?.find(
     (inst) => inst.environmentId === envId
@@ -137,6 +178,15 @@ function onApplicationChange(appId: string) {
     })
   }
 }
+
+function onAccountChange(accId: string) {
+  if (accId) {
+    router.push({
+      name: 'accountEdit',
+      params: { id: accId }
+    })
+  }
+}
 </script>
 
 <style scoped>
@@ -149,5 +199,13 @@ function onApplicationChange(appId: string) {
 
 .navigator-select {
   min-width: 160px;
+}
+
+.navigator-select :deep(.q-field__label) {
+  font-size: 0.75rem;
+}
+
+.navigator-select :deep(.q-field__native) {
+  font-size: 0.875rem;
 }
 </style>

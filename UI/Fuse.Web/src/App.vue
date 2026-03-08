@@ -7,6 +7,18 @@
           Fuse Inventory
         </q-toolbar-title>
 
+        <q-spacer />
+        
+        <InventoryNavigator
+          v-if="showInventoryNavigator"
+          :kind="navigatorKind"
+          :show-environment="route.name === 'instanceEdit'"
+          :application-id="route.params.applicationId as string"
+          :instance-id="route.params.instanceId as string"
+          :account-id="route.params.id as string"
+          class="q-mr-md"
+        />
+
         <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
 
         <q-btn dense flat round icon="help_outline">
@@ -349,7 +361,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
@@ -362,10 +374,12 @@ import { useDataStores } from './composables/useDataStores'
 import { useApplications } from './composables/useApplications'
 import { useKumaIntegrations } from './composables/useKumaIntegrations'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
+import InventoryNavigator from './components/InventoryNavigator.vue'
 
 const leftDrawerOpen = ref(true)
 const fuseStore = useFuseStore()
 const router = useRouter()
+const route = useRoute()
 const onboardingStore = useOnboardingStore()
 const { startTour } = useOnboardingTour()
 
@@ -375,6 +389,16 @@ const applicationsQuery = useApplications()
 const kumaIntegrationsQuery = useKumaIntegrations()
 
 const hasKumaIntegration = computed(() => (kumaIntegrationsQuery.data.value ?? []).length > 0)
+
+const showInventoryNavigator = computed(() => 
+  route.name === 'instanceEdit' || route.name === 'accountEdit'
+)
+
+const navigatorKind = computed(() => {
+  if (route.name === 'instanceEdit') return 'applications'
+  if (route.name === 'accountEdit') return 'accounts'
+  return 'applications'
+})
 
 const showLoginDialog = ref(false)
 const loginLoading = ref(false)
@@ -540,5 +564,10 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+h1 {
+  margin-top: 0.15rem;
+  margin-bottom: 0.15rem;
 }
 </style>

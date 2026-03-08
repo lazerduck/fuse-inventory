@@ -1,7 +1,7 @@
 <template>
   <div class="page-header">
     <div>
-      <h1>{{ title }}</h1>
+      <h1 class="page-title">{{ title }}</h1>
       <p class="subtitle">{{ subtitle }}</p>
     </div>
     <div class="flex q-gutter-sm">
@@ -43,3 +43,7 @@ defineEmits<{
   (e: 'clone'): void
 }>()
 </script>
+
+<style scoped>
+@import '../../../styles/pages.css';
+</style>

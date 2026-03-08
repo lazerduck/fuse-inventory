@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>{{ pageTitle }}</h1>
+        <h1 class="page-title">{{ pageTitle }}</h1>
         <p class="subtitle">{{ pageSubtitle }}</p>
       </div>
       <div class="header-actions">
@@ -478,8 +478,9 @@ function handleCancel() {
 </script>
 
 <style scoped>
+@import '../styles/pages.css';
+
 .page-container {
-  padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
 }

@@ -13,13 +13,17 @@
   align-items: center;
 }
 
-.page-header h1 {
+.page-header h1,
+.page-title {
   margin: 0 0 0.25rem 0;
+  font-size: 3rem;
+  font-weight: 500;
 }
 
 .subtitle {
   margin: 0;
-  padding-top: 5px;;
+  padding-top: 5px;
+  font-size: 0.875rem;
   color: var(--fuse-text-muted);
 }
 
