@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "id": "9c00ca6d-8b5c-4ac4-85e4-268b284c1259",
+    "title": "Duplicate protection",
+    "description": "The API does not automatically notice and warn about duplicate orders",
+    "impact": "Medium",
+    "likelihood": "Medium",
+    "status": "Identified",
+    "ownerPositionId": "77aa1da1-b7cb-4e4f-8985-aa3c840868f6",
+    "approverPositionId": "6ed1c1d0-7d4a-4e46-9a31-175d52a07e61",
+    "targetType": "Application",
+    "targetId": "56b7a0b0-b9ec-4fde-a71a-f0adc1eb6994",
+    "mitigation": "Upon identification automated emails will be sent so users can cancel prior to dispatch",
+    "reviewDate": null,
+    "approvalDate": null,
+    "tagIds": [],
+    "notes": null,
+    "createdAt": "2026-03-08T20:23:16.3520123Z",
+    "updatedAt": "2026-03-08T20:23:16.3520123Z"
+  }
+]
