@@ -1,1 +1,0 @@
-import{b as n,c as s,a4 as a}from"./index-RXYbHkcy.js";function i(){const e=a(),u=n({queryKey:["accounts"],queryFn:()=>e.accountAll()}),o=s(()=>{const c={};for(const t of u.data.value??[])t.id&&(c[t.id]=t.targetId??t.id);return c});return{...u,lookup:o}}export{i as u};
