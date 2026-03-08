@@ -75,6 +75,26 @@ export interface IFuseApiClient {
     grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void>;
 
     /**
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param entityType (optional) 
+     * @param entityId (optional) 
+     * @param userId (optional) 
+     * @param userName (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
+
+    /**
      * @return OK
      */
     applicationAll(signal?: AbortSignal): Promise<Application[]>;
@@ -290,33 +310,6 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
-
-    /**
-     * @param body (optional) 
-     * @return Created
-     */
-    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
-
-    /**
-     * @return OK
-     */
-    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker>;
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
-
-    /**
-     * @return No Content
-     */
-    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void>;
-
-    /**
-     * @return OK
-     */
     identityAll(signal?: AbortSignal): Promise<Identity[]>;
 
     /**
@@ -395,6 +388,33 @@ export interface IFuseApiClient {
      * @return No Content
      */
     kumaIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @return OK
+     */
+    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
+
+    /**
+     * @return No Content
+     */
+    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -800,6 +820,11 @@ export interface IFuseApiClient {
      * @return No Content
      */
     tagDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    undoChange(versionId: string, signal?: AbortSignal): Promise<UndoChangeResult>;
 }
 
 export class FuseApiClient implements IFuseApiClient {
@@ -1452,6 +1477,138 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param startTime (optional) 
+     * @param endTime (optional) 
+     * @param entityType (optional) 
+     * @param entityId (optional) 
+     * @param userId (optional) 
+     * @param userName (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
+        let url_ = this.baseUrl + "/api/Activity?";
+        if (startTime === null)
+            throw new globalThis.Error("The parameter 'startTime' cannot be null.");
+        else if (startTime !== undefined)
+            url_ += "startTime=" + encodeURIComponent(startTime ? "" + startTime.toISOString() : "") + "&";
+        if (endTime === null)
+            throw new globalThis.Error("The parameter 'endTime' cannot be null.");
+        else if (endTime !== undefined)
+            url_ += "endTime=" + encodeURIComponent(endTime ? "" + endTime.toISOString() : "") + "&";
+        if (entityType === null)
+            throw new globalThis.Error("The parameter 'entityType' cannot be null.");
+        else if (entityType !== undefined)
+            url_ += "entityType=" + encodeURIComponent("" + entityType) + "&";
+        if (entityId === null)
+            throw new globalThis.Error("The parameter 'entityId' cannot be null.");
+        else if (entityId !== undefined)
+            url_ += "entityId=" + encodeURIComponent("" + entityId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url_ += "userId=" + encodeURIComponent("" + userId) + "&";
+        if (userName === null)
+            throw new globalThis.Error("The parameter 'userName' cannot be null.");
+        else if (userName !== undefined)
+            url_ += "userName=" + encodeURIComponent("" + userName) + "&";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processActivity(_response);
+        });
+    }
+
+    protected processActivity(response: Response): Promise<ActivityFeedResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ActivityFeedResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ActivityFeedResult>(null as any);
+    }
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
+        let url_ = this.baseUrl + "/api/Activity/{entityType}/{entityId}?";
+        if (entityType === undefined || entityType === null)
+            throw new globalThis.Error("The parameter 'entityType' must be defined.");
+        url_ = url_.replace("{entityType}", encodeURIComponent("" + entityType));
+        if (entityId === undefined || entityId === null)
+            throw new globalThis.Error("The parameter 'entityId' must be defined.");
+        url_ = url_.replace("{entityId}", encodeURIComponent("" + entityId));
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processActivityByEntity(_response);
+        });
+    }
+
+    protected processActivityByEntity(response: Response): Promise<ActivityFeedResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ActivityFeedResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ActivityFeedResult>(null as any);
     }
 
     /**
@@ -3454,224 +3611,6 @@ export class FuseApiClient implements IFuseApiClient {
         return Promise.resolve<void>(null as any);
     }
 
-    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]> {
-        let url_ = this.baseUrl + "/api/MessageBroker";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMessageBrokerAll(_response);
-        });
-    }
-
-    protected processMessageBrokerAll(response: Response): Promise<MessageBroker[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = Array.isArray(resultData200) ? [] as any : null as any;
-            if (resultData200)
-                result200!.push(...resultData200.map((item: any) => MessageBroker.fromJS(item)));
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<MessageBroker[]>(null as any);
-    }
-
-    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
-        let url_ = this.baseUrl + "/api/MessageBroker";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMessageBrokerPOST(_response);
-        });
-    }
-
-    protected processMessageBrokerPOST(response: Response): Promise<MessageBroker> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result201 = MessageBroker.fromJS(resultData201);
-            return result201;
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            return throwException("Conflict", status, _responseText, _headers);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            return throwException("Bad Request", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<MessageBroker>(null as any);
-    }
-
-    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker> {
-        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMessageBrokerGET(_response);
-        });
-    }
-
-    protected processMessageBrokerGET(response: Response): Promise<MessageBroker> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = MessageBroker.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("Not Found", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<MessageBroker>(null as any);
-    }
-
-    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
-        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMessageBrokerPUT(_response);
-        });
-    }
-
-    protected processMessageBrokerPUT(response: Response): Promise<MessageBroker> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = MessageBroker.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("Not Found", status, _responseText, _headers);
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            return throwException("Conflict", status, _responseText, _headers);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            return throwException("Bad Request", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<MessageBroker>(null as any);
-    }
-
-    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMessageBrokerDELETE(_response);
-        });
-    }
-
-    protected processMessageBrokerDELETE(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("Not Found", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
     /**
      * @return OK
      */
@@ -4437,6 +4376,267 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     protected processKumaIntegrationDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]> {
+        let url_ = this.baseUrl + "/api/MessageBroker";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerAll(_response);
+        });
+    }
+
+    protected processMessageBrokerAll(response: Response): Promise<MessageBroker[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MessageBroker.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerPOST(_response);
+        });
+    }
+
+    protected processMessageBrokerPOST(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = MessageBroker.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerGET(_response);
+        });
+    }
+
+    protected processMessageBrokerGET(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = MessageBroker.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerPUT(_response);
+        });
+    }
+
+    protected processMessageBrokerPUT(response: Response): Promise<MessageBroker> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = MessageBroker.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MessageBroker>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    messageBrokerDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/MessageBroker/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMessageBrokerDELETE(_response);
+        });
+    }
+
+    protected processMessageBrokerDELETE(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 204) {
@@ -7389,7 +7589,17 @@ export class FuseApiClient implements IFuseApiClient {
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
-            return throwException("Unauthorized", status, _responseText, _headers);
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, _responseText, _headers, result403);
             });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
@@ -8448,6 +8658,61 @@ export class FuseApiClient implements IFuseApiClient {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    /**
+     * @return OK
+     */
+    undoChange(versionId: string, signal?: AbortSignal): Promise<UndoChangeResult> {
+        let url_ = this.baseUrl + "/api/Undo/{versionId}";
+        if (versionId === undefined || versionId === null)
+            throw new globalThis.Error("The parameter 'versionId' must be defined.");
+        url_ = url_.replace("{versionId}", encodeURIComponent("" + versionId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUndoChange(_response);
+        });
+    }
+
+    protected processUndoChange(response: Response): Promise<UndoChangeResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = UndoChangeResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<UndoChangeResult>(null as any);
+    }
 }
 
 export class Account implements IAccount {
@@ -8624,6 +8889,138 @@ export interface IAccountSqlStatusResponse {
     statusSummary?: string | undefined;
     permissionComparisons?: SqlPermissionComparison[] | undefined;
     errorMessage?: string | undefined;
+}
+
+export class ActivityFeedItem implements IActivityFeedItem {
+    versionId?: string;
+    entityId?: string;
+    entityType?: EntityType;
+    version?: number;
+    timestamp?: Date;
+    action?: AuditAction;
+    area?: AuditArea;
+    userName?: string | undefined;
+    userId?: string | undefined;
+    canUndo?: boolean;
+    changeDescription?: string | undefined;
+
+    constructor(data?: IActivityFeedItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.versionId = _data["versionId"];
+            this.entityId = _data["entityId"];
+            this.entityType = _data["entityType"];
+            this.version = _data["version"];
+            this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
+            this.action = _data["action"];
+            this.area = _data["area"];
+            this.userName = _data["userName"];
+            this.userId = _data["userId"];
+            this.canUndo = _data["canUndo"];
+            this.changeDescription = _data["changeDescription"];
+        }
+    }
+
+    static fromJS(data: any): ActivityFeedItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new ActivityFeedItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["versionId"] = this.versionId;
+        data["entityId"] = this.entityId;
+        data["entityType"] = this.entityType;
+        data["version"] = this.version;
+        data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        data["action"] = this.action;
+        data["area"] = this.area;
+        data["userName"] = this.userName;
+        data["userId"] = this.userId;
+        data["canUndo"] = this.canUndo;
+        data["changeDescription"] = this.changeDescription;
+        return data;
+    }
+}
+
+export interface IActivityFeedItem {
+    versionId?: string;
+    entityId?: string;
+    entityType?: EntityType;
+    version?: number;
+    timestamp?: Date;
+    action?: AuditAction;
+    area?: AuditArea;
+    userName?: string | undefined;
+    userId?: string | undefined;
+    canUndo?: boolean;
+    changeDescription?: string | undefined;
+}
+
+export class ActivityFeedResult implements IActivityFeedResult {
+    items?: ActivityFeedItem[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+
+    constructor(data?: IActivityFeedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["items"])) {
+                this.items = [] as any;
+                for (let item of _data["items"])
+                    this.items!.push(ActivityFeedItem.fromJS(item));
+            }
+            this.totalCount = _data["totalCount"];
+            this.page = _data["page"];
+            this.pageSize = _data["pageSize"];
+        }
+    }
+
+    static fromJS(data: any): ActivityFeedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ActivityFeedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["items"] = [];
+            for (let item of this.items)
+                data["items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["totalCount"] = this.totalCount;
+        data["page"] = this.page;
+        data["pageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IActivityFeedResult {
+    items?: ActivityFeedItem[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
 }
 
 export class Application implements IApplication {
@@ -9060,6 +9457,7 @@ export enum AuditAction {
     SecurityUserLogin = "SecurityUserLogin",
     SecurityUserLogout = "SecurityUserLogout",
     SecuritySettingsUpdated = "SecuritySettingsUpdated",
+    PasswordReset = "PasswordReset",
     RoleCreated = "RoleCreated",
     RoleUpdated = "RoleUpdated",
     RoleDeleted = "RoleDeleted",
@@ -9093,6 +9491,13 @@ export enum AuditAction {
     RiskCreated = "RiskCreated",
     RiskUpdated = "RiskUpdated",
     RiskDeleted = "RiskDeleted",
+    MessageBrokerCreated = "MessageBrokerCreated",
+    MessageBrokerUpdated = "MessageBrokerUpdated",
+    MessageBrokerDeleted = "MessageBrokerDeleted",
+    IdentityCreated = "IdentityCreated",
+    IdentityUpdated = "IdentityUpdated",
+    IdentityDeleted = "IdentityDeleted",
+    ChangeReverted = "ChangeReverted",
 }
 
 export enum AuditArea {
@@ -9292,6 +9697,198 @@ export interface IAzureKeyVaultBinding {
     providerId?: string;
     secretName?: string | undefined;
     version?: string | undefined;
+}
+
+export class BrokerQueue implements IBrokerQueue {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IBrokerQueue) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+        }
+    }
+
+    static fromJS(data: any): BrokerQueue {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerQueue();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IBrokerQueue {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class BrokerQueueInput implements IBrokerQueueInput {
+    name?: string | undefined;
+    description?: string | undefined;
+
+    constructor(data?: IBrokerQueueInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+        }
+    }
+
+    static fromJS(data: any): BrokerQueueInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerQueueInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IBrokerQueueInput {
+    name?: string | undefined;
+    description?: string | undefined;
+}
+
+export class BrokerTopic implements IBrokerTopic {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+
+    constructor(data?: IBrokerTopic) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["subscribers"])) {
+                this.subscribers = [] as any;
+                for (let item of _data["subscribers"])
+                    this.subscribers!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): BrokerTopic {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerTopic();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.subscribers)) {
+            data["subscribers"] = [];
+            for (let item of this.subscribers)
+                data["subscribers"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IBrokerTopic {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+}
+
+export class BrokerTopicInput implements IBrokerTopicInput {
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
+
+    constructor(data?: IBrokerTopicInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            if (Array.isArray(_data["subscribers"])) {
+                this.subscribers = [] as any;
+                for (let item of _data["subscribers"])
+                    this.subscribers!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): BrokerTopicInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new BrokerTopicInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        if (Array.isArray(this.subscribers)) {
+            data["subscribers"] = [];
+            for (let item of this.subscribers)
+                data["subscribers"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IBrokerTopicInput {
+    name?: string | undefined;
+    description?: string | undefined;
+    subscribers?: string[] | undefined;
 }
 
 export enum BulkPasswordSource {
@@ -10514,6 +11111,94 @@ export interface ICreateKumaIntegration {
     apiKey?: string | undefined;
 }
 
+export class CreateMessageBroker implements ICreateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: ICreateMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueueInput.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopicInput.fromJS(item));
+            }
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): CreateMessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateMessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ICreateMessageBroker {
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
+    tagIds?: string[] | undefined;
+}
+
 export class CreatePlatform implements ICreatePlatform {
     displayName?: string | undefined;
     dnsName?: string | undefined;
@@ -11376,6 +12061,28 @@ export interface IDriftResolutionOperation {
     errorMessage?: string | undefined;
 }
 
+export enum EntityType {
+    Application = "Application",
+    Account = "Account",
+    DataStore = "DataStore",
+    Environment = "Environment",
+    ExternalResource = "ExternalResource",
+    Platform = "Platform",
+    Tag = "Tag",
+    KumaIntegration = "KumaIntegration",
+    SecretProvider = "SecretProvider",
+    SqlIntegration = "SqlIntegration",
+    Position = "Position",
+    ResponsibilityType = "ResponsibilityType",
+    ResponsibilityAssignment = "ResponsibilityAssignment",
+    Risk = "Risk",
+    MessageBroker = "MessageBroker",
+    Identity = "Identity",
+    SecurityUser = "SecurityUser",
+    SecurityRole = "SecurityRole",
+    PasswordGeneratorConfig = "PasswordGeneratorConfig",
+}
+
 export class EnvironmentInfo implements IEnvironmentInfo {
     id?: string;
     name?: string | undefined;
@@ -11514,474 +12221,6 @@ export interface IExternalResource {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
-}
-
-export class BrokerQueue implements IBrokerQueue {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-
-    constructor(data?: IBrokerQueue) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-        }
-    }
-
-    static fromJS(data: any): BrokerQueue {
-        data = typeof data === 'object' ? data : {};
-        let result = new BrokerQueue();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["name"] = this.name;
-        data["description"] = this.description;
-        return data;
-    }
-}
-
-export interface IBrokerQueue {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-}
-
-export class BrokerTopic implements IBrokerTopic {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    subscribers?: string[] | undefined;
-
-    constructor(data?: IBrokerTopic) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            if (Array.isArray(_data["subscribers"])) {
-                this.subscribers = [] as any;
-                for (let item of _data["subscribers"])
-                    this.subscribers!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): BrokerTopic {
-        data = typeof data === 'object' ? data : {};
-        let result = new BrokerTopic();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["name"] = this.name;
-        data["description"] = this.description;
-        if (Array.isArray(this.subscribers)) {
-            data["subscribers"] = [];
-            for (let item of this.subscribers)
-                data["subscribers"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IBrokerTopic {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    subscribers?: string[] | undefined;
-}
-
-export class BrokerQueueInput implements IBrokerQueueInput {
-    name?: string | undefined;
-    description?: string | undefined;
-
-    constructor(data?: IBrokerQueueInput) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.description = _data["description"];
-        }
-    }
-
-    static fromJS(data: any): BrokerQueueInput {
-        data = typeof data === 'object' ? data : {};
-        let result = new BrokerQueueInput();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["description"] = this.description;
-        return data;
-    }
-}
-
-export interface IBrokerQueueInput {
-    name?: string | undefined;
-    description?: string | undefined;
-}
-
-export class BrokerTopicInput implements IBrokerTopicInput {
-    name?: string | undefined;
-    description?: string | undefined;
-    subscribers?: string[] | undefined;
-
-    constructor(data?: IBrokerTopicInput) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.description = _data["description"];
-            if (Array.isArray(_data["subscribers"])) {
-                this.subscribers = [] as any;
-                for (let item of _data["subscribers"])
-                    this.subscribers!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): BrokerTopicInput {
-        data = typeof data === 'object' ? data : {};
-        let result = new BrokerTopicInput();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["description"] = this.description;
-        if (Array.isArray(this.subscribers)) {
-            data["subscribers"] = [];
-            for (let item of this.subscribers)
-                data["subscribers"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IBrokerTopicInput {
-    name?: string | undefined;
-    description?: string | undefined;
-    subscribers?: string[] | undefined;
-}
-
-export class MessageBroker implements IMessageBroker {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    tagIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-    queues?: BrokerQueue[] | undefined;
-    topics?: BrokerTopic[] | undefined;
-
-    constructor(data?: IMessageBroker) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.kind = _data["kind"];
-            this.environmentId = _data["environmentId"];
-            this.connectionUri = _data["connectionUri"];
-            if (Array.isArray(_data["tagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["tagIds"])
-                    this.tagIds!.push(item);
-            }
-            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
-            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
-            if (Array.isArray(_data["queues"])) {
-                this.queues = [] as any;
-                for (let item of _data["queues"])
-                    this.queues!.push(BrokerQueue.fromJS(item));
-            }
-            if (Array.isArray(_data["topics"])) {
-                this.topics = [] as any;
-                for (let item of _data["topics"])
-                    this.topics!.push(BrokerTopic.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): MessageBroker {
-        data = typeof data === 'object' ? data : {};
-        let result = new MessageBroker();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["name"] = this.name;
-        data["description"] = this.description;
-        data["kind"] = this.kind;
-        data["environmentId"] = this.environmentId;
-        data["connectionUri"] = this.connectionUri;
-        if (Array.isArray(this.tagIds)) {
-            data["tagIds"] = [];
-            for (let item of this.tagIds)
-                data["tagIds"].push(item);
-        }
-        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        if (Array.isArray(this.queues)) {
-            data["queues"] = [];
-            for (let item of this.queues)
-                data["queues"].push(item.toJSON());
-        }
-        if (Array.isArray(this.topics)) {
-            data["topics"] = [];
-            for (let item of this.topics)
-                data["topics"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IMessageBroker {
-    id?: string;
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    tagIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-    queues?: BrokerQueue[] | undefined;
-    topics?: BrokerTopic[] | undefined;
-}
-
-export class CreateMessageBroker implements ICreateMessageBroker {
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    queues?: BrokerQueueInput[] | undefined;
-    topics?: BrokerTopicInput[] | undefined;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: ICreateMessageBroker) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.kind = _data["kind"];
-            this.environmentId = _data["environmentId"];
-            this.connectionUri = _data["connectionUri"];
-            if (Array.isArray(_data["queues"])) {
-                this.queues = [] as any;
-                for (let item of _data["queues"])
-                    this.queues!.push(BrokerQueueInput.fromJS(item));
-            }
-            if (Array.isArray(_data["topics"])) {
-                this.topics = [] as any;
-                for (let item of _data["topics"])
-                    this.topics!.push(BrokerTopicInput.fromJS(item));
-            }
-            if (Array.isArray(_data["tagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["tagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): CreateMessageBroker {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateMessageBroker();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["description"] = this.description;
-        data["kind"] = this.kind;
-        data["environmentId"] = this.environmentId;
-        data["connectionUri"] = this.connectionUri;
-        if (Array.isArray(this.queues)) {
-            data["queues"] = [];
-            for (let item of this.queues)
-                data["queues"].push(item.toJSON());
-        }
-        if (Array.isArray(this.topics)) {
-            data["topics"] = [];
-            for (let item of this.topics)
-                data["topics"].push(item.toJSON());
-        }
-        if (Array.isArray(this.tagIds)) {
-            data["tagIds"] = [];
-            for (let item of this.tagIds)
-                data["tagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface ICreateMessageBroker {
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    queues?: BrokerQueueInput[] | undefined;
-    topics?: BrokerTopicInput[] | undefined;
-    tagIds?: string[] | undefined;
-}
-
-export class UpdateMessageBroker implements IUpdateMessageBroker {
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    queues?: BrokerQueueInput[] | undefined;
-    topics?: BrokerTopicInput[] | undefined;
-    tagIds?: string[] | undefined;
-
-    constructor(data?: IUpdateMessageBroker) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.kind = _data["kind"];
-            this.environmentId = _data["environmentId"];
-            this.connectionUri = _data["connectionUri"];
-            if (Array.isArray(_data["queues"])) {
-                this.queues = [] as any;
-                for (let item of _data["queues"])
-                    this.queues!.push(BrokerQueueInput.fromJS(item));
-            }
-            if (Array.isArray(_data["topics"])) {
-                this.topics = [] as any;
-                for (let item of _data["topics"])
-                    this.topics!.push(BrokerTopicInput.fromJS(item));
-            }
-            if (Array.isArray(_data["tagIds"])) {
-                this.tagIds = [] as any;
-                for (let item of _data["tagIds"])
-                    this.tagIds!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): UpdateMessageBroker {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateMessageBroker();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["description"] = this.description;
-        data["kind"] = this.kind;
-        data["environmentId"] = this.environmentId;
-        data["connectionUri"] = this.connectionUri;
-        if (Array.isArray(this.queues)) {
-            data["queues"] = [];
-            for (let item of this.queues)
-                data["queues"].push(item.toJSON());
-        }
-        if (Array.isArray(this.topics)) {
-            data["topics"] = [];
-            for (let item of this.topics)
-                data["topics"].push(item.toJSON());
-        }
-        if (Array.isArray(this.tagIds)) {
-            data["tagIds"] = [];
-            for (let item of this.tagIds)
-                data["tagIds"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IUpdateMessageBroker {
-    name?: string | undefined;
-    description?: string | undefined;
-    kind?: string | undefined;
-    environmentId?: string;
-    connectionUri?: string | undefined;
-    queues?: BrokerQueueInput[] | undefined;
-    topics?: BrokerTopicInput[] | undefined;
-    tagIds?: string[] | undefined;
 }
 
 export class GeneratePasswordResponse implements IGeneratePasswordResponse {
@@ -12627,6 +12866,106 @@ export interface ILogoutSecurityUser {
     token?: string | undefined;
 }
 
+export class MessageBroker implements IMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+    queues?: BrokerQueue[] | undefined;
+    topics?: BrokerTopic[] | undefined;
+
+    constructor(data?: IMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueue.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopic.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new MessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    tagIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+    queues?: BrokerQueue[] | undefined;
+    topics?: BrokerTopic[] | undefined;
+}
+
 export enum MonitorStatus {
     Down = "Down",
     Up = "Up",
@@ -12715,6 +13054,10 @@ export enum Permission {
     ExternalResourcesCreate = "ExternalResourcesCreate",
     ExternalResourcesUpdate = "ExternalResourcesUpdate",
     ExternalResourcesDelete = "ExternalResourcesDelete",
+    MessageBrokersRead = "MessageBrokersRead",
+    MessageBrokersCreate = "MessageBrokersCreate",
+    MessageBrokersUpdate = "MessageBrokersUpdate",
+    MessageBrokersDelete = "MessageBrokersDelete",
     PositionsRead = "PositionsRead",
     PositionsCreate = "PositionsCreate",
     PositionsUpdate = "PositionsUpdate",
@@ -12739,6 +13082,24 @@ export enum Permission {
     ConfigurationExport = "ConfigurationExport",
     ConfigurationImport = "ConfigurationImport",
     AuditLogsView = "AuditLogsView",
+    ActivityRead = "ActivityRead",
+    ApplicationsUndo = "ApplicationsUndo",
+    AccountsUndo = "AccountsUndo",
+    IdentitiesUndo = "IdentitiesUndo",
+    DataStoresUndo = "DataStoresUndo",
+    PlatformsUndo = "PlatformsUndo",
+    EnvironmentsUndo = "EnvironmentsUndo",
+    ExternalResourcesUndo = "ExternalResourcesUndo",
+    MessageBrokersUndo = "MessageBrokersUndo",
+    TagsUndo = "TagsUndo",
+    PositionsUndo = "PositionsUndo",
+    ResponsibilitiesUndo = "ResponsibilitiesUndo",
+    RisksUndo = "RisksUndo",
+    SecretProvidersUndo = "SecretProvidersUndo",
+    SqlIntegrationsUndo = "SqlIntegrationsUndo",
+    KumaIntegrationsUndo = "KumaIntegrationsUndo",
+    SecurityUndo = "SecurityUndo",
+    ConfigurationUndo = "ConfigurationUndo",
     UsersRead = "UsersRead",
     UsersCreate = "UsersCreate",
     UsersUpdate = "UsersUpdate",
@@ -12747,10 +13108,6 @@ export enum Permission {
     RolesCreate = "RolesCreate",
     RolesUpdate = "RolesUpdate",
     RolesDelete = "RolesDelete",
-    MessageBrokersRead = "MessageBrokersRead",
-    MessageBrokersCreate = "MessageBrokersCreate",
-    MessageBrokersUpdate = "MessageBrokersUpdate",
-    MessageBrokersDelete = "MessageBrokersDelete",
 }
 
 export class Platform implements IPlatform {
@@ -12977,6 +13334,46 @@ export interface IProblemDetails {
     instance?: string | undefined;
 
     [key: string]: any;
+}
+
+export class ResetPasswordRequest implements IResetPasswordRequest {
+    newPassword?: string | undefined;
+    currentPassword?: string | undefined;
+
+    constructor(data?: IResetPasswordRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.newPassword = _data["newPassword"];
+            this.currentPassword = _data["currentPassword"];
+        }
+    }
+
+    static fromJS(data: any): ResetPasswordRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResetPasswordRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["newPassword"] = this.newPassword;
+        data["currentPassword"] = this.currentPassword;
+        return data;
+    }
+}
+
+export interface IResetPasswordRequest {
+    newPassword?: string | undefined;
+    currentPassword?: string | undefined;
 }
 
 export class ResolveDriftResponse implements IResolveDriftResponse {
@@ -14627,6 +15024,58 @@ export interface ITestSqlConnection {
     connectionString?: string | undefined;
 }
 
+export class UndoChangeResult implements IUndoChangeResult {
+    versionId?: string;
+    entityId?: string;
+    entityType?: EntityType;
+    restoredFromVersion?: number;
+    message?: string | undefined;
+
+    constructor(data?: IUndoChangeResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.versionId = _data["versionId"];
+            this.entityId = _data["entityId"];
+            this.entityType = _data["entityType"];
+            this.restoredFromVersion = _data["restoredFromVersion"];
+            this.message = _data["message"];
+        }
+    }
+
+    static fromJS(data: any): UndoChangeResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new UndoChangeResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["versionId"] = this.versionId;
+        data["entityId"] = this.entityId;
+        data["entityType"] = this.entityType;
+        data["restoredFromVersion"] = this.restoredFromVersion;
+        data["message"] = this.message;
+        return data;
+    }
+}
+
+export interface IUndoChangeResult {
+    versionId?: string;
+    entityId?: string;
+    entityType?: EntityType;
+    restoredFromVersion?: number;
+    message?: string | undefined;
+}
+
 export class UpdateAccount implements IUpdateAccount {
     id?: string;
     targetId?: string;
@@ -15455,6 +15904,98 @@ export interface IUpdateKumaIntegration {
     apiKey?: string | undefined;
 }
 
+export class UpdateMessageBroker implements IUpdateMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
+    tagIds?: string[] | undefined;
+
+    constructor(data?: IUpdateMessageBroker) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.description = _data["description"];
+            this.kind = _data["kind"];
+            this.environmentId = _data["environmentId"];
+            this.connectionUri = _data["connectionUri"];
+            if (Array.isArray(_data["queues"])) {
+                this.queues = [] as any;
+                for (let item of _data["queues"])
+                    this.queues!.push(BrokerQueueInput.fromJS(item));
+            }
+            if (Array.isArray(_data["topics"])) {
+                this.topics = [] as any;
+                for (let item of _data["topics"])
+                    this.topics!.push(BrokerTopicInput.fromJS(item));
+            }
+            if (Array.isArray(_data["tagIds"])) {
+                this.tagIds = [] as any;
+                for (let item of _data["tagIds"])
+                    this.tagIds!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateMessageBroker {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateMessageBroker();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["kind"] = this.kind;
+        data["environmentId"] = this.environmentId;
+        data["connectionUri"] = this.connectionUri;
+        if (Array.isArray(this.queues)) {
+            data["queues"] = [];
+            for (let item of this.queues)
+                data["queues"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.topics)) {
+            data["topics"] = [];
+            for (let item of this.topics)
+                data["topics"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.tagIds)) {
+            data["tagIds"] = [];
+            for (let item of this.tagIds)
+                data["tagIds"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IUpdateMessageBroker {
+    id?: string;
+    name?: string | undefined;
+    description?: string | undefined;
+    kind?: string | undefined;
+    environmentId?: string;
+    connectionUri?: string | undefined;
+    queues?: BrokerQueueInput[] | undefined;
+    topics?: BrokerTopicInput[] | undefined;
+    tagIds?: string[] | undefined;
+}
+
 export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
     allowedCharacters?: string | undefined;
     length?: number;
@@ -16133,46 +16674,6 @@ export interface IUpdateUser {
     id?: string;
     role?: SecurityRole;
     requestedBy?: string | undefined;
-}
-
-export class ResetPasswordRequest implements IResetPasswordRequest {
-    newPassword!: string;
-    currentPassword?: string | undefined;
-
-    constructor(data?: IResetPasswordRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.newPassword = _data["NewPassword"];
-            this.currentPassword = _data["CurrentPassword"];
-        }
-    }
-
-    static fromJS(data: any): ResetPasswordRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new ResetPasswordRequest();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["NewPassword"] = this.newPassword;
-        data["CurrentPassword"] = this.currentPassword;
-        return data;
-    }
-}
-
-export interface IResetPasswordRequest {
-    newPassword: string;
-    currentPassword?: string | undefined;
 }
 
 export interface FileParameter {

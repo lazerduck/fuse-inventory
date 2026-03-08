@@ -137,6 +137,24 @@ namespace Fuse.Tests.ApiClient
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(System.DateTimeOffset? startTime, System.DateTimeOffset? endTime, EntityType? entityType, System.Guid? entityId, System.Guid? userId, string userName, int? page, int? pageSize);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(System.DateTimeOffset? startTime, System.DateTimeOffset? endTime, EntityType? entityType, System.Guid? entityId, System.Guid? userId, string userName, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(EntityType entityType, System.Guid entityId, int? page, int? pageSize);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(EntityType entityType, System.Guid entityId, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<Application>> ApiApplicationGetAsync();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -602,6 +620,51 @@ namespace Fuse.Tests.ApiClient
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task ApiKumaIntegrationDeleteAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<MessageBroker>> ApiMessageBrokerGetAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<MessageBroker>> ApiMessageBrokerGetAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPostAsync(CreateMessageBroker body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPostAsync(CreateMessageBroker body, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerGetAsync(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerGetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPutAsync(System.Guid id, UpdateMessageBroker body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPutAsync(System.Guid id, UpdateMessageBroker body, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ApiMessageBrokerDeleteAsync(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ApiMessageBrokerDeleteAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -1089,6 +1152,15 @@ namespace Fuse.Tests.ApiClient
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task ApiSecurityAccountsRolesAsync(System.Guid userId, AssignRolesToUser body, System.Threading.CancellationToken cancellationToken);
 
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ApiSecurityAccountsResetPasswordAsync(System.Guid id, ResetPasswordRequest body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ApiSecurityAccountsResetPasswordAsync(System.Guid id, ResetPasswordRequest body, System.Threading.CancellationToken cancellationToken);
+
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<SqlIntegrationResponse>> ApiSqlIntegrationGetAsync();
@@ -1259,6 +1331,15 @@ namespace Fuse.Tests.ApiClient
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task ApiTagDeleteAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<UndoChangeResult> ApiUndoAsync(System.Guid versionId);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<UndoChangeResult> ApiUndoAsync(System.Guid versionId, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -2440,6 +2521,215 @@ namespace Fuse.Tests.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(System.DateTimeOffset? startTime, System.DateTimeOffset? endTime, EntityType? entityType, System.Guid? entityId, System.Guid? userId, string userName, int? page, int? pageSize)
+        {
+            return ApiActivityGetAsync(startTime, endTime, entityType, entityId, userId, userName, page, pageSize, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(System.DateTimeOffset? startTime, System.DateTimeOffset? endTime, EntityType? entityType, System.Guid? entityId, System.Guid? userId, string userName, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/Activity"
+                    urlBuilder_.Append("api/Activity");
+                    urlBuilder_.Append('?');
+                    if (startTime != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("startTime")).Append('=').Append(System.Uri.EscapeDataString(startTime.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (endTime != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("endTime")).Append('=').Append(System.Uri.EscapeDataString(endTime.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (entityType != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("entityType")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(entityType, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (entityId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("entityId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(entityId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (userId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("userId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(userId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (userName != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("userName")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(userName, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (page != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("page")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(page, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (pageSize != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("pageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ActivityFeedResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(EntityType entityType, System.Guid entityId, int? page, int? pageSize)
+        {
+            return ApiActivityGetAsync(entityType, entityId, page, pageSize, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ActivityFeedResult> ApiActivityGetAsync(EntityType entityType, System.Guid entityId, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        {
+            if (entityType == null)
+                throw new System.ArgumentNullException("entityType");
+
+            if (entityId == null)
+                throw new System.ArgumentNullException("entityId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/Activity/{entityType}/{entityId}"
+                    urlBuilder_.Append("api/Activity/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(entityType, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append('/');
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(entityId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append('?');
+                    if (page != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("page")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(page, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (pageSize != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("pageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ActivityFeedResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
                         }
                         else
                         {
@@ -7406,6 +7696,480 @@ namespace Fuse.Tests.ApiClient
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
                     // Operation Path: "api/KumaIntegration/{id}"
                     urlBuilder_.Append("api/KumaIntegration/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<MessageBroker>> ApiMessageBrokerGetAsync()
+        {
+            return ApiMessageBrokerGetAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<MessageBroker>> ApiMessageBrokerGetAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/MessageBroker"
+                    urlBuilder_.Append("api/MessageBroker");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<MessageBroker>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPostAsync(CreateMessageBroker body)
+        {
+            return ApiMessageBrokerPostAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPostAsync(CreateMessageBroker body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/MessageBroker"
+                    urlBuilder_.Append("api/MessageBroker");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 201)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<MessageBroker>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerGetAsync(System.Guid id)
+        {
+            return ApiMessageBrokerGetAsync(id, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerGetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/MessageBroker/{id}"
+                    urlBuilder_.Append("api/MessageBroker/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<MessageBroker>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPutAsync(System.Guid id, UpdateMessageBroker body)
+        {
+            return ApiMessageBrokerPutAsync(id, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<MessageBroker> ApiMessageBrokerPutAsync(System.Guid id, UpdateMessageBroker body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/MessageBroker/{id}"
+                    urlBuilder_.Append("api/MessageBroker/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<MessageBroker>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task ApiMessageBrokerDeleteAsync(System.Guid id)
+        {
+            return ApiMessageBrokerDeleteAsync(id, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task ApiMessageBrokerDeleteAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/MessageBroker/{id}"
+                    urlBuilder_.Append("api/MessageBroker/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -12692,6 +13456,127 @@ namespace Fuse.Tests.ApiClient
             }
         }
 
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task ApiSecurityAccountsResetPasswordAsync(System.Guid id, ResetPasswordRequest body)
+        {
+            return ApiSecurityAccountsResetPasswordAsync(id, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task ApiSecurityAccountsResetPasswordAsync(System.Guid id, ResetPasswordRequest body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/Security/accounts/{id}/reset-password"
+                    urlBuilder_.Append("api/Security/accounts/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/reset-password");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<SqlIntegrationResponse>> ApiSqlIntegrationGetAsync()
@@ -14596,6 +15481,109 @@ namespace Fuse.Tests.ApiClient
             }
         }
 
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<UndoChangeResult> ApiUndoAsync(System.Guid versionId)
+        {
+            return ApiUndoAsync(versionId, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<UndoChangeResult> ApiUndoAsync(System.Guid versionId, System.Threading.CancellationToken cancellationToken)
+        {
+            if (versionId == null)
+                throw new System.ArgumentNullException("versionId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/Undo/{versionId}"
+                    urlBuilder_.Append("api/Undo/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(versionId, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<UndoChangeResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
         protected struct ObjectResponseResult<T>
         {
             public ObjectResponseResult(T responseObject, string responseText)
@@ -14797,6 +15785,66 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("errorMessage", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ErrorMessage { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ActivityFeedItem
+    {
+
+        [Newtonsoft.Json.JsonProperty("versionId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid VersionId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public EntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int Version { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("timestamp", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset Timestamp { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public AuditAction Action { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("area", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public AuditArea Area { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("userName", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string UserName { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("userId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? UserId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("canUndo", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool CanUndo { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("changeDescription", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ChangeDescription { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ActivityFeedResult
+    {
+
+        [Newtonsoft.Json.JsonProperty("items", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<ActivityFeedItem> Items { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("totalCount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int TotalCount { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int Page { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("pageSize", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int PageSize { get; set; }
 
     }
 
@@ -15061,104 +16109,128 @@ namespace Fuse.Tests.ApiClient
         [System.Runtime.Serialization.EnumMember(Value = @"SecuritySettingsUpdated")]
         SecuritySettingsUpdated = 32,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"PasswordReset")]
+        PasswordReset = 33,
+
         [System.Runtime.Serialization.EnumMember(Value = @"RoleCreated")]
-        RoleCreated = 33,
+        RoleCreated = 34,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RoleUpdated")]
-        RoleUpdated = 34,
+        RoleUpdated = 35,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RoleDeleted")]
-        RoleDeleted = 35,
+        RoleDeleted = 36,
 
         [System.Runtime.Serialization.EnumMember(Value = @"UserRolesAssigned")]
-        UserRolesAssigned = 36,
+        UserRolesAssigned = 37,
 
         [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationCreated")]
-        KumaIntegrationCreated = 37,
+        KumaIntegrationCreated = 38,
 
         [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationUpdated")]
-        KumaIntegrationUpdated = 38,
+        KumaIntegrationUpdated = 39,
 
         [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationDeleted")]
-        KumaIntegrationDeleted = 39,
+        KumaIntegrationDeleted = 40,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretProviderCreated")]
-        SecretProviderCreated = 40,
+        SecretProviderCreated = 41,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretProviderUpdated")]
-        SecretProviderUpdated = 41,
+        SecretProviderUpdated = 42,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretProviderDeleted")]
-        SecretProviderDeleted = 42,
+        SecretProviderDeleted = 43,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretProviderTested")]
-        SecretProviderTested = 43,
+        SecretProviderTested = 44,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretCreated")]
-        SecretCreated = 44,
+        SecretCreated = 45,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretRotated")]
-        SecretRotated = 45,
+        SecretRotated = 46,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SecretRevealed")]
-        SecretRevealed = 46,
+        SecretRevealed = 47,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ConfigImported")]
-        ConfigImported = 47,
+        ConfigImported = 48,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ConfigExported")]
-        ConfigExported = 48,
+        ConfigExported = 49,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegrationDriftResolved")]
-        SqlIntegrationDriftResolved = 49,
+        SqlIntegrationDriftResolved = 50,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlAccountCreated")]
-        SqlAccountCreated = 50,
+        SqlAccountCreated = 51,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegrationBulkResolved")]
-        SqlIntegrationBulkResolved = 51,
+        SqlIntegrationBulkResolved = 52,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlPermissionsImported")]
-        SqlPermissionsImported = 52,
+        SqlPermissionsImported = 53,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlOrphanPrincipalImported")]
-        SqlOrphanPrincipalImported = 53,
+        SqlOrphanPrincipalImported = 54,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionCreated")]
-        PositionCreated = 54,
+        PositionCreated = 55,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionUpdated")]
-        PositionUpdated = 55,
+        PositionUpdated = 56,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionDeleted")]
-        PositionDeleted = 56,
+        PositionDeleted = 57,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeCreated")]
-        ResponsibilityTypeCreated = 57,
+        ResponsibilityTypeCreated = 58,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeUpdated")]
-        ResponsibilityTypeUpdated = 58,
+        ResponsibilityTypeUpdated = 59,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeDeleted")]
-        ResponsibilityTypeDeleted = 59,
+        ResponsibilityTypeDeleted = 60,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentCreated")]
-        ResponsibilityAssignmentCreated = 60,
+        ResponsibilityAssignmentCreated = 61,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentUpdated")]
-        ResponsibilityAssignmentUpdated = 61,
+        ResponsibilityAssignmentUpdated = 62,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentDeleted")]
-        ResponsibilityAssignmentDeleted = 62,
+        ResponsibilityAssignmentDeleted = 63,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskCreated")]
-        RiskCreated = 63,
+        RiskCreated = 64,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskUpdated")]
-        RiskUpdated = 64,
+        RiskUpdated = 65,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskDeleted")]
-        RiskDeleted = 65,
+        RiskDeleted = 66,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerCreated")]
+        MessageBrokerCreated = 67,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerUpdated")]
+        MessageBrokerUpdated = 68,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerDeleted")]
+        MessageBrokerDeleted = 69,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"IdentityCreated")]
+        IdentityCreated = 70,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"IdentityUpdated")]
+        IdentityUpdated = 71,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"IdentityDeleted")]
+        IdentityDeleted = 72,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ChangeReverted")]
+        ChangeReverted = 73,
 
     }
 
@@ -15314,6 +16386,66 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Version { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BrokerQueue
+    {
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BrokerQueueInput
+    {
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BrokerTopic
+    {
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("subscribers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<string> Subscribers { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BrokerTopicInput
+    {
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("subscribers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<string> Subscribers { get; set; }
 
     }
 
@@ -15775,6 +16907,36 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateMessageBroker
+    {
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("kind", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Kind { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("environmentId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EnvironmentId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("connectionUri", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Uri ConnectionUri { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("queues", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerQueueInput> Queues { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("topics", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerTopicInput> Topics { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tagIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> TagIds { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreatePlatform
     {
 
@@ -16138,6 +17300,69 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum EntityType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Application")]
+        Application = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Account")]
+        Account = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"DataStore")]
+        DataStore = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Environment")]
+        Environment = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ExternalResource")]
+        ExternalResource = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Platform")]
+        Platform = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Tag")]
+        Tag = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegration")]
+        KumaIntegration = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SecretProvider")]
+        SecretProvider = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegration")]
+        SqlIntegration = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Position")]
+        Position = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityType")]
+        ResponsibilityType = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignment")]
+        ResponsibilityAssignment = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Risk")]
+        Risk = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBroker")]
+        MessageBroker = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Identity")]
+        Identity = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SecurityUser")]
+        SecurityUser = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SecurityRole")]
+        SecurityRole = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PasswordGeneratorConfig")]
+        PasswordGeneratorConfig = 18,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EnvironmentInfo
     {
 
@@ -16442,6 +17667,45 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MessageBroker
+    {
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("kind", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Kind { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("environmentId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EnvironmentId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("connectionUri", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Uri ConnectionUri { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tagIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> TagIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset CreatedAt { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("updatedAt", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset UpdatedAt { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("queues", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerQueue> Queues { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("topics", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerTopic> Topics { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum MonitorStatus
     {
 
@@ -16589,113 +17853,167 @@ namespace Fuse.Tests.ApiClient
         [System.Runtime.Serialization.EnumMember(Value = @"ExternalResourcesDelete")]
         ExternalResourcesDelete = 27,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"PositionsRead")]
-        PositionsRead = 28,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"PositionsCreate")]
-        PositionsCreate = 29,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"PositionsUpdate")]
-        PositionsUpdate = 30,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"PositionsDelete")]
-        PositionsDelete = 31,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesRead")]
-        ResponsibilitiesRead = 32,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesCreate")]
-        ResponsibilitiesCreate = 33,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesUpdate")]
-        ResponsibilitiesUpdate = 34,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesDelete")]
-        ResponsibilitiesDelete = 35,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RisksRead")]
-        RisksRead = 36,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RisksCreate")]
-        RisksCreate = 37,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RisksUpdate")]
-        RisksUpdate = 38,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RisksDelete")]
-        RisksDelete = 39,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RisksApprove")]
-        RisksApprove = 40,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultSecretsView")]
-        AzureKeyVaultSecretsView = 41,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultConnectionsCreate")]
-        AzureKeyVaultConnectionsCreate = 42,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultConnectionsDelete")]
-        AzureKeyVaultConnectionsDelete = 43,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"SqlConnectionsCreate")]
-        SqlConnectionsCreate = 44,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"SqlConnectionsDelete")]
-        SqlConnectionsDelete = 45,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"SqlGrantsApply")]
-        SqlGrantsApply = 46,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationsCreate")]
-        KumaIntegrationsCreate = 47,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationsDelete")]
-        KumaIntegrationsDelete = 48,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ConfigurationExport")]
-        ConfigurationExport = 49,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"ConfigurationImport")]
-        ConfigurationImport = 50,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"AuditLogsView")]
-        AuditLogsView = 51,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"UsersRead")]
-        UsersRead = 52,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"UsersCreate")]
-        UsersCreate = 53,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"UsersUpdate")]
-        UsersUpdate = 54,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"UsersDelete")]
-        UsersDelete = 55,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RolesRead")]
-        RolesRead = 56,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RolesCreate")]
-        RolesCreate = 57,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RolesUpdate")]
-        RolesUpdate = 58,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"RolesDelete")]
-        RolesDelete = 59,
-
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersRead")]
-        MessageBrokersRead = 60,
+        MessageBrokersRead = 28,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersCreate")]
-        MessageBrokersCreate = 61,
+        MessageBrokersCreate = 29,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersUpdate")]
-        MessageBrokersUpdate = 62,
+        MessageBrokersUpdate = 30,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersDelete")]
-        MessageBrokersDelete = 63,
+        MessageBrokersDelete = 31,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PositionsRead")]
+        PositionsRead = 32,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PositionsCreate")]
+        PositionsCreate = 33,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PositionsUpdate")]
+        PositionsUpdate = 34,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PositionsDelete")]
+        PositionsDelete = 35,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesRead")]
+        ResponsibilitiesRead = 36,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesCreate")]
+        ResponsibilitiesCreate = 37,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesUpdate")]
+        ResponsibilitiesUpdate = 38,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesDelete")]
+        ResponsibilitiesDelete = 39,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksRead")]
+        RisksRead = 40,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksCreate")]
+        RisksCreate = 41,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksUpdate")]
+        RisksUpdate = 42,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksDelete")]
+        RisksDelete = 43,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksApprove")]
+        RisksApprove = 44,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultSecretsView")]
+        AzureKeyVaultSecretsView = 45,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultConnectionsCreate")]
+        AzureKeyVaultConnectionsCreate = 46,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AzureKeyVaultConnectionsDelete")]
+        AzureKeyVaultConnectionsDelete = 47,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SqlConnectionsCreate")]
+        SqlConnectionsCreate = 48,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SqlConnectionsDelete")]
+        SqlConnectionsDelete = 49,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SqlGrantsApply")]
+        SqlGrantsApply = 50,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationsCreate")]
+        KumaIntegrationsCreate = 51,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationsDelete")]
+        KumaIntegrationsDelete = 52,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ConfigurationExport")]
+        ConfigurationExport = 53,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ConfigurationImport")]
+        ConfigurationImport = 54,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AuditLogsView")]
+        AuditLogsView = 55,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ActivityRead")]
+        ActivityRead = 56,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ApplicationsUndo")]
+        ApplicationsUndo = 57,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AccountsUndo")]
+        AccountsUndo = 58,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"IdentitiesUndo")]
+        IdentitiesUndo = 59,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"DataStoresUndo")]
+        DataStoresUndo = 60,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PlatformsUndo")]
+        PlatformsUndo = 61,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"EnvironmentsUndo")]
+        EnvironmentsUndo = 62,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ExternalResourcesUndo")]
+        ExternalResourcesUndo = 63,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokersUndo")]
+        MessageBrokersUndo = 64,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"TagsUndo")]
+        TagsUndo = 65,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"PositionsUndo")]
+        PositionsUndo = 66,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilitiesUndo")]
+        ResponsibilitiesUndo = 67,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RisksUndo")]
+        RisksUndo = 68,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SecretProvidersUndo")]
+        SecretProvidersUndo = 69,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegrationsUndo")]
+        SqlIntegrationsUndo = 70,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"KumaIntegrationsUndo")]
+        KumaIntegrationsUndo = 71,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SecurityUndo")]
+        SecurityUndo = 72,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ConfigurationUndo")]
+        ConfigurationUndo = 73,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UsersRead")]
+        UsersRead = 74,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UsersCreate")]
+        UsersCreate = 75,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UsersUpdate")]
+        UsersUpdate = 76,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UsersDelete")]
+        UsersDelete = 77,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RolesRead")]
+        RolesRead = 78,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RolesCreate")]
+        RolesCreate = 79,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RolesUpdate")]
+        RolesUpdate = 80,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"RolesDelete")]
+        RolesDelete = 81,
 
     }
 
@@ -16835,6 +18153,18 @@ namespace Fuse.Tests.ApiClient
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ResetPasswordRequest
+    {
+
+        [Newtonsoft.Json.JsonProperty("newPassword", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string NewPassword { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("currentPassword", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string CurrentPassword { get; set; }
 
     }
 
@@ -17656,6 +18986,28 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UndoChangeResult
+    {
+
+        [Newtonsoft.Json.JsonProperty("versionId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid VersionId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public EntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("restoredFromVersion", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int RestoredFromVersion { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Message { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UpdateAccount
     {
 
@@ -17988,6 +19340,39 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("apiKey", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ApiKey { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UpdateMessageBroker
+    {
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Description { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("kind", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Kind { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("environmentId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EnvironmentId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("connectionUri", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Uri ConnectionUri { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("queues", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerQueueInput> Queues { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("topics", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<BrokerTopicInput> Topics { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tagIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> TagIds { get; set; }
 
     }
 
