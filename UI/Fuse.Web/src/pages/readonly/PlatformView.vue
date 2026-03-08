@@ -96,6 +96,9 @@
         <q-icon name="info" size="24px" color="grey-6" />
         <p class="empty-message">No instances are associated with this platform.</p>
       </section>
+
+      <!-- Risks -->
+      <RiskSection :risks="platformRisks.risks" :aggregation="platformRisks.aggregation" />
     </div>
   </ReadOnlyShell>
 </template>
@@ -109,6 +112,8 @@ import { usePlatforms } from '../../composables/usePlatforms'
 import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
+import { useRiskAggregation } from '../../composables/useRiskAggregation'
+import RiskSection from '../../components/readonly/RiskSection.vue'
 import { PlatformKind, type TagColor } from '../../api/client'
 
 const route = useRoute()
@@ -120,6 +125,9 @@ const { data: platformsData, isLoading: platformsLoading } = usePlatforms()
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+// Risks for this platform
+const platformRisks = useRiskAggregation('Platform', id)
+
 
 const isLoading = computed(() =>
   platformsLoading.value || appsLoading.value || envsLoading.value || tagsLoading.value

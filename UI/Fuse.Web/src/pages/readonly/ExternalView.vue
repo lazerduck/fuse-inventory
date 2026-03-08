@@ -66,6 +66,9 @@
         <q-icon name="info" size="24px" color="grey-6" />
         <p class="empty-message">No accounts belong to this resource and nothing depends on it.</p>
       </section>
+
+      <!-- Risks -->
+      <RiskSection :risks="externalRisks.risks" :aggregation="externalRisks.aggregation" />
     </div>
   </ReadOnlyShell>
 </template>
@@ -79,6 +82,8 @@ import { useExternalResources } from '../../composables/useExternalResources'
 import { useAccounts } from '../../composables/useAccounts'
 import { useApplications } from '../../composables/useApplications'
 import { useTags } from '../../composables/useTags'
+import { useRiskAggregation } from '../../composables/useRiskAggregation'
+import RiskSection from '../../components/readonly/RiskSection.vue'
 import { TargetKind, type TagColor } from '../../api/client'
 
 const route = useRoute()
@@ -90,6 +95,9 @@ const { data: externalResourcesData, isLoading: resourcesLoading } = useExternal
 const { data: accountsData, isLoading: accountsLoading } = useAccounts()
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+// Risks for this external resource
+const externalRisks = useRiskAggregation('ExternalResource', id)
+
 
 const isLoading = computed(() =>
   resourcesLoading.value || accountsLoading.value || appsLoading.value || tagsLoading.value

@@ -214,6 +214,21 @@ const router = createRouter({
       path: '/view/platform/:id',
       name: 'viewPlatform',
       component: () => import('./pages/readonly/PlatformView.vue')
+        },
+        {
+          path: '/view/risk/:id',
+          name: 'viewRisk',
+          component: () => import('./pages/readonly/RiskView.vue')
+        },
+        {
+          path: '/view/position/:id',
+          name: 'viewPosition',
+          component: () => import('./pages/readonly/PositionView.vue')
+        },
+        {
+          path: '/view/tag/:id',
+          name: 'viewTag',
+          component: () => import('./pages/readonly/TagView.vue')
     }
   ]
 })

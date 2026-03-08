@@ -92,6 +92,9 @@
           />
         </div>
       </section>
+
+      <!-- Risks -->
+      <RiskSection :risks="datastoreRisks.risks" :aggregation="datastoreRisks.aggregation" />
     </div>
   </ReadOnlyShell>
 </template>
@@ -107,6 +110,8 @@ import { usePlatforms } from '../../composables/usePlatforms'
 import { useAccounts } from '../../composables/useAccounts'
 import { useApplications } from '../../composables/useApplications'
 import { useTags } from '../../composables/useTags'
+import { useRiskAggregation } from '../../composables/useRiskAggregation'
+import RiskSection from '../../components/readonly/RiskSection.vue'
 import { TargetKind, type TagColor } from '../../api/client'
 
 const route = useRoute()
@@ -120,6 +125,9 @@ const { lookup: platformLookup, isLoading: platformsLoading } = usePlatforms()
 const { data: accountsData, isLoading: accountsLoading } = useAccounts()
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+// Risks for this datastore
+const datastoreRisks = useRiskAggregation('DataStore', id)
+
 
 const isLoading = computed(() =>
   dataStoresLoading.value || envsLoading.value || platformsLoading.value ||

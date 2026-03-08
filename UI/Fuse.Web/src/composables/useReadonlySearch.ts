@@ -6,6 +6,10 @@ import { useDataStores } from './useDataStores'
 import { useExternalResources } from './useExternalResources'
 import { useEnvironments } from './useEnvironments'
 import { usePlatforms } from './usePlatforms'
+import { useRisks } from './useRisks'
+import { useMessageBrokers } from './useMessageBrokers'
+import { usePositions } from './usePositions'
+import { useTags } from './useTags'
 
 export type SearchResultType = 
   | 'app' 
@@ -16,6 +20,10 @@ export type SearchResultType =
   | 'datastore' 
   | 'external'
   | 'platform'
+  | 'risk'
+  | 'messagebroker'
+  | 'position'
+  | 'tag'
 
 export interface SearchResult {
   id: string
@@ -40,7 +48,11 @@ const typeConfig: Record<SearchResultType, { label: string; icon: string }> = {
   identity: { label: 'Identities', icon: 'badge' },
   datastore: { label: 'Data Stores', icon: 'storage' },
   external: { label: 'External Resources', icon: 'hub' },
-  platform: { label: 'Platforms', icon: 'computer' }
+  platform: { label: 'Platforms', icon: 'computer' },
+  risk: { label: 'Risks', icon: 'warning' },
+  messagebroker: { label: 'Message Brokers', icon: 'swap_horiz' },
+  position: { label: 'Positions', icon: 'work' },
+  tag: { label: 'Tags', icon: 'label' }
 }
 
 function fuzzyMatch(text: string, query: string): boolean {
@@ -64,6 +76,10 @@ export function useReadonlySearch() {
   const externalResourcesQuery = useExternalResources()
   const environmentsQuery = useEnvironments()
   const platformsQuery = usePlatforms()
+  const risksQuery = useRisks()
+  const messageBrokersQuery = useMessageBrokers()
+  const positionsQuery = usePositions()
+  const tagsQuery = useTags()
 
   const isLoading = computed(() => 
     applicationsQuery.isLoading.value ||
@@ -72,7 +88,11 @@ export function useReadonlySearch() {
     dataStoresQuery.isLoading.value ||
     externalResourcesQuery.isLoading.value ||
     environmentsQuery.isLoading.value ||
-    platformsQuery.isLoading.value
+    platformsQuery.isLoading.value ||
+    risksQuery.risksLoading.value ||
+    messageBrokersQuery.isLoading.value ||
+    positionsQuery.isLoading.value ||
+    tagsQuery.isLoading.value
   )
 
   const environmentLookup = computed<Record<string, string>>(() => {
@@ -277,6 +297,72 @@ export function useReadonlySearch() {
       }
     }
 
+    // Search risks
+    const risks = risksQuery.risks.value ?? []
+    for (const risk of risks) {
+      if (!risk.id) continue
+      
+      if (fuzzyMatch(risk.title ?? '', query) || fuzzyMatch(risk.description ?? '', query)) {
+        const impactBadge = risk.impact ? `${risk.impact} Impact` : undefined
+        results.push({
+          id: risk.id,
+          type: 'risk',
+          name: risk.title ?? 'Unnamed Risk',
+          subtitle: impactBadge,
+          route: `/view/risk/${risk.id}`
+        })
+      }
+    }
+
+    // Search message brokers
+    const messageBrokers = messageBrokersQuery.data.value ?? []
+    for (const broker of messageBrokers) {
+      if (!broker.id) continue
+      
+      const envName = environmentLookup.value[broker.environmentId ?? ''] ?? undefined
+      if (fuzzyMatch(broker.name ?? '', query) || fuzzyMatch(broker.description ?? '', query)) {
+        results.push({
+          id: broker.id,
+          type: 'messagebroker',
+          name: broker.name ?? 'Unnamed Message Broker',
+          subtitle: envName ? `${broker.kind ?? 'Message Broker'} in ${envName}` : broker.kind ?? undefined,
+          route: `/view/message-broker/${broker.id}`
+        })
+      }
+    }
+
+    // Search positions
+    const positions = positionsQuery.data.value ?? []
+    for (const position of positions) {
+      if (!position.id) continue
+      
+      if (fuzzyMatch(position.name ?? '', query) || fuzzyMatch(position.description ?? '', query)) {
+        results.push({
+          id: position.id,
+          type: 'position',
+          name: position.name ?? 'Unnamed Position',
+          subtitle: position.description ?? undefined,
+          route: `/view/position/${position.id}`
+        })
+      }
+    }
+
+    // Search tags
+    const tags = tagsQuery.data.value ?? []
+    for (const tag of tags) {
+      if (!tag.id) continue
+      
+      if (fuzzyMatch(tag.name ?? '', query) || fuzzyMatch(tag.description ?? '', query)) {
+        results.push({
+          id: tag.id,
+          type: 'tag',
+          name: tag.name ?? 'Unnamed Tag',
+          subtitle: tag.description ?? undefined,
+          route: `/view/tag/${tag.id}`
+        })
+      }
+    }
+
     return results
   })
 
@@ -292,7 +378,7 @@ export function useReadonlySearch() {
     }
 
     // Order by type
-    const typeOrder: SearchResultType[] = ['app', 'instance', 'platform', 'datastore', 'external', 'account', 'identity', 'dependency']
+    const typeOrder: SearchResultType[] = ['app', 'instance', 'platform', 'datastore', 'messagebroker', 'external', 'risk', 'account', 'identity', 'position', 'tag', 'dependency']
     
     for (const type of typeOrder) {
       const results = resultsByType.get(type)

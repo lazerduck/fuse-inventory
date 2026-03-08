@@ -119,7 +119,11 @@ const typeConfig: Record<SearchResultType, { label: string; icon: string }> = {
   identity: { label: 'Identity', icon: 'badge' },
   datastore: { label: 'Data Store', icon: 'storage' },
   external: { label: 'External', icon: 'hub' },
-  platform: { label: 'Platform', icon: 'computer' }
+  platform: { label: 'Platform', icon: 'computer' },
+  risk: { label: 'Risk', icon: 'warning' },
+  messagebroker: { label: 'Message Broker', icon: 'swap_horiz' },
+  position: { label: 'Position', icon: 'work' },
+  tag: { label: 'Tag', icon: 'label' }
 }
 
 function getIconForType(type: SearchResultType): string {

@@ -4,8 +4,15 @@
       <div>
         <h1>Documentation Mode</h1>
         <p class="subtitle">
-          Search across your entire inventory to explore applications, instances, accounts, and more.
+          Search across applications, instances, dependencies, risks, platforms, datastores, brokers, tags, and governance roles.
         </p>
+        <div class="entity-chips">
+          <q-chip dense outline icon="apps" color="primary">Applications</q-chip>
+          <q-chip dense outline icon="warning" color="negative">Risks</q-chip>
+          <q-chip dense outline icon="work" color="secondary">Positions</q-chip>
+          <q-chip dense outline icon="label" color="teal">Tags</q-chip>
+          <q-chip dense outline icon="swap_horiz" color="orange">Message Brokers</q-chip>
+        </div>
       </div>
     </section>
 
@@ -14,7 +21,7 @@
         v-model="searchQuery"
         :is-loading="isLoading"
         :show-search-button="true"
-        placeholder="Search applications, instances, platforms, accounts, data stores..."
+        placeholder="Search apps, risks, positions, tags, brokers, datastores, identities..."
         @search="handleSearch"
         @clear="handleClear"
       />
@@ -95,6 +102,13 @@ watch(searchQuery, (newQuery) => {
   font-size: 0.9375rem;
   color: var(--fuse-text-muted);
   max-width: 60ch;
+}
+
+.entity-chips {
+  margin-top: 0.875rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .search-section {

@@ -17,6 +17,9 @@ export type EntityType =
   | 'external'
   | 'environment'
   | 'platform'
+  | 'risk'
+  | 'position'
+  | 'tag'
 
 /**
  * Configuration for entity type display.
@@ -39,7 +42,10 @@ export const entityTypeConfig: Record<EntityType, EntityTypeConfig> = {
   messagebroker: { label: 'Message Broker', icon: 'dns' },
   external: { label: 'External Resource', icon: 'hub' },
   environment: { label: 'Environment', icon: 'cloud' },
-  platform: { label: 'Platform', icon: 'computer' }
+  platform: { label: 'Platform', icon: 'computer' },
+  risk: { label: 'Risk', icon: 'warning' },
+  position: { label: 'Position', icon: 'work' },
+  tag: { label: 'Tag', icon: 'label' }
 }
 
 /**

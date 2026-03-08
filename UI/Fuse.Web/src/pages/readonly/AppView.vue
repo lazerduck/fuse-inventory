@@ -119,6 +119,42 @@
           </div>
         </div>
       </section>
+
+      <!-- Risks -->
+      <section v-if="appRisks.risks.value.length > 0" class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="warning" size="20px" />
+          Risks
+          <q-badge v-if="appRisks.aggregation.value.total > 0" :label="appRisks.aggregation.value.total" color="grey-6" class="risk-count-badge" />
+        </h3>
+        <div v-if="appRisks.aggregation.value.total > 0" class="risk-summary">
+          <span v-if="appRisks.aggregation.value.critical > 0" class="risk-stat critical">
+            {{ appRisks.aggregation.value.critical }} Critical
+          </span>
+          <span v-if="appRisks.aggregation.value.high > 0" class="risk-stat high">
+            {{ appRisks.aggregation.value.high }} High
+          </span>
+          <span v-if="appRisks.aggregation.value.medium > 0" class="risk-stat medium">
+            {{ appRisks.aggregation.value.medium }} Medium
+          </span>
+          <span v-if="appRisks.aggregation.value.low > 0" class="risk-stat low">
+            {{ appRisks.aggregation.value.low }} Low
+          </span>
+        </div>
+        <div class="risk-list">
+          <router-link
+            v-for="risk in appRisks.risks.value"
+            :key="risk.id"
+            :to="`/view/risk/${risk.id}`"
+            class="risk-item"
+          >
+            <q-icon name="warning" size="18px" :color="getRiskImpactColor(risk.impact)" />
+            <span class="risk-title">{{ risk.title }}</span>
+            <q-badge :label="risk.impact" :color="getRiskImpactColor(risk.impact)" outline class="risk-badge" />
+            <q-icon name="chevron_right" size="16px" />
+          </router-link>
+        </div>
+      </section>
     </div>
   </ReadOnlyShell>
 </template>
@@ -131,6 +167,7 @@ import type { HigherItem, LowerItem } from '../../types/readonly'
 import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
+import { useRiskAggregation } from '../../composables/useRiskAggregation'
 import type { TagColor } from '../../api/client'
 
 const route = useRoute()
@@ -141,6 +178,9 @@ const id = computed(() => route.params.id as string)
 const { data: applicationsData, isLoading: appsLoading } = useApplications()
 const { data: environmentsData, lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+
+// Risks for this application
+const appRisks = useRiskAggregation('Application', id)
 
 const isLoading = computed(() => appsLoading.value || envsLoading.value || tagsLoading.value)
 
@@ -181,6 +221,22 @@ function getTagColor(color: TagColor | undefined): string {
     Gray: 'grey'
   }
   return colorMap[color] ?? 'grey'
+}
+
+// Map risk impact to color
+function getRiskImpactColor(impact: string | undefined): string {
+  switch (impact) {
+    case 'Critical':
+      return 'negative'
+    case 'High':
+      return 'orange'
+    case 'Medium':
+      return 'warning'
+    case 'Low':
+      return 'positive'
+    default:
+      return 'grey'
+  }
 }
 
 // Higher context: Empty for applications (no parent entities)
@@ -359,5 +415,78 @@ function goBack() {
 
 .pipeline-link:hover {
   text-decoration: underline;
+}
+
+.risk-count-badge {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.risk-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--fuse-panel-bg);
+  border-radius: 6px;
+}
+
+.risk-stat {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.risk-stat.critical {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.risk-stat.high {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.risk-stat.medium {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.risk-stat.low {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.risk-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--fuse-panel-bg);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+}
+
+.risk-item:hover {
+  background: var(--fuse-hover-bg);
+}
+
+.risk-title {
+  flex: 1;
+  font-weight: 500;
+}
+
+.risk-badge {
+  font-size: 0.75rem;
 }
 </style>

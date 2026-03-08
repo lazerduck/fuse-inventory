@@ -6,13 +6,13 @@ import { Risk, CreateRisk, UpdateRisk } from '../api/client'
 
 export function useRisks() {
   const client = useFuseClient()
-  
-  const { data: risks = [], isLoading: risksLoading } = useQuery({
+
+  const query = useQuery({
     queryKey: ['risks'],
     queryFn: () => client.riskAll()
   })
 
-  return { risks, risksLoading }
+  return { risks: query.data, risksLoading: query.isLoading }
 }
 
 export function useRisksByTarget(targetType: string | Ref<string>, targetId: string | Ref<string>) {
