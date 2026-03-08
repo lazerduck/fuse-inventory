@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Risks</h1>
+        <h1 class="page-title">Risks</h1>
         <p class="subtitle">Manage risks across all inventory targets.</p>
       </div>
       <q-btn
@@ -363,25 +363,5 @@ function confirmDelete(risk: Risk) {
 </script>
 
 <style scoped>
-.page-container {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.subtitle {
-  margin: 4px 0 0 0;
-  color: rgba(0, 0, 0, 0.6);
-}
-
-.content-card {
-  margin-top: 16px;
-}
+@import '../styles/pages.css';
 </style>
