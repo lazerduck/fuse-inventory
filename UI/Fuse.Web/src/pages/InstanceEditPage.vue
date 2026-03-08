@@ -8,6 +8,12 @@
           <p class="subtitle">Manage instance details and dependencies.</p>
         </div>
       </div>
+      <InventoryNavigator
+        kind="applications"
+        :show-environment="true"
+        :application-id="applicationId"
+        :instance-id="instanceId"
+      />
     </div>
 
     <q-banner v-if="errorMessage" dense class="bg-red-1 text-negative q-mb-md">
@@ -264,6 +270,7 @@ import {
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import TagSelect from '../components/tags/TagSelect.vue'
+import InventoryNavigator from '../components/InventoryNavigator.vue'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
 import { useDataStores } from '../composables/useDataStores'
