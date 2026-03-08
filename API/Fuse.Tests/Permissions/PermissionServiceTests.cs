@@ -105,6 +105,9 @@ public class PermissionServiceTests
         new object[] { "Audit", "GetAll", "GET", Permission.AuditLogsView },
         new object[] { "Audit", "Get", "GET", Permission.AuditLogsView },
 
+        new object[] { "Activity", "GetAll", "GET", Permission.ActivityRead },
+        new object[] { "Activity", "Get", "GET", Permission.ActivityRead },
+
         new object[] { "Security", "GetAccounts", "GET", Permission.UsersRead },
         new object[] { "Security", "CreateAccount", "POST", Permission.UsersCreate },
         new object[] { "Security", "UpdateUser", "PATCH", Permission.UsersUpdate },
@@ -249,6 +252,7 @@ public class PermissionServiceTests
             Permission.PositionsRead,
             Permission.ResponsibilitiesRead,
             Permission.RisksRead,
+            Permission.ActivityRead,
             Permission.UsersRead,
             Permission.RolesRead
         };

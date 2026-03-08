@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
@@ -14,7 +15,7 @@ public sealed class SecurityMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, ISecurityService securityService, IPermissionService permissionService)
+    public async Task InvokeAsync(HttpContext context, ISecurityService securityService, IPermissionService permissionService, IVersionHistoryService versionHistoryService)
     {
         var cancellationToken = context.RequestAborted;
         var path = context.Request.Path;
@@ -118,6 +119,23 @@ public sealed class SecurityMiddleware
                 }
             }
 
+            // Undo endpoint requires entity-specific undo permission
+            if (path.StartsWithSegments("/api/undo", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(context.Request.Method))
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+
+                if (!await HasUndoPermissionAsync(path, user, permissionService, versionHistoryService, cancellationToken)
+                    && !await permissionService.IsUserAdminAsync(user, cancellationToken))
+                {
+                    await WriteForbiddenAsync(context, cancellationToken);
+                    return;
+                }
+            }
+
             // Enforce granular permissions for CRUD endpoints
             var crudPermission = GetRequiredCrudPermission(path, context.Request.Method, permissionService);
             var permissionHandled = false;
@@ -150,6 +168,47 @@ public sealed class SecurityMiddleware
         }
 
         await _next(context);
+    }
+
+    private static async Task<bool> HasUndoPermissionAsync(
+        PathString path,
+        SecurityUser user,
+        IPermissionService permissionService,
+        IVersionHistoryService versionHistoryService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUndoVersionId(path, out var versionId))
+            return true;
+
+        var version = await versionHistoryService.GetVersionByIdAsync(versionId, cancellationToken);
+        if (version is null)
+        {
+            // Let controller return not found for unknown versions.
+            return true;
+        }
+
+        var requiredPermission = UndoPermissionMapper.ToPermission(version.EntityType);
+        return await permissionService.HasPermissionAsync(user, requiredPermission, cancellationToken);
+    }
+
+    private static bool TryGetUndoVersionId(PathString path, out Guid versionId)
+    {
+        versionId = Guid.Empty;
+        var pathStr = path.Value;
+        if (string.IsNullOrWhiteSpace(pathStr))
+            return false;
+
+        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 3)
+            return false;
+
+        if (!segments[0].Equals("api", StringComparison.OrdinalIgnoreCase) ||
+            !segments[1].Equals("undo", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return Guid.TryParse(segments[2], out versionId);
     }
 
     private static async Task<bool> AuthorizeAsync(AccessRequirement requirement, SecurityUser? user, HttpContext context, IPermissionService permissionService, CancellationToken cancellationToken)
@@ -462,6 +521,7 @@ public sealed class SecurityMiddleware
             ["secretprovider"] = "SecretProvider",
             ["sqlintegration"] = "SqlIntegration",
             ["kumaintegration"] = "KumaIntegration",
+            ["activity"] = "Activity",
             ["config"] = "Config",
             ["audit"] = "Audit",
             ["tag"] = "Tag",

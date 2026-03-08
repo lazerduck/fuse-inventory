@@ -43,6 +43,8 @@ public enum PermissionCategory
     Risks,
     Security,
     Audit,
+    Activity,
+    Undo,
     Configuration,
     Secrets,
     Integrations
@@ -137,6 +139,28 @@ public enum Permission
 
     // Audit
     AuditLogsView,
+
+    // Activity feed
+    ActivityRead,
+
+    // Undo by entity area
+    ApplicationsUndo,
+    AccountsUndo,
+    IdentitiesUndo,
+    DataStoresUndo,
+    PlatformsUndo,
+    EnvironmentsUndo,
+    ExternalResourcesUndo,
+    MessageBrokersUndo,
+    TagsUndo,
+    PositionsUndo,
+    ResponsibilitiesUndo,
+    RisksUndo,
+    SecretProvidersUndo,
+    SqlIntegrationsUndo,
+    KumaIntegrationsUndo,
+    SecurityUndo,
+    ConfigurationUndo,
 
     // Security & User Management
     UsersRead,

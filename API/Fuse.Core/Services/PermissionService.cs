@@ -142,6 +142,10 @@ public class PermissionService : IPermissionService
         ["Audit.GetAll.GET"] = Permission.AuditLogsView,
         ["Audit.Get.GET"] = Permission.AuditLogsView,
 
+        // Activity Controller
+        ["Activity.GetAll.GET"] = Permission.ActivityRead,
+        ["Activity.Get.GET"] = Permission.ActivityRead,
+
         // Security Controller - User Management
         ["Security.GetAccounts.GET"] = Permission.UsersRead,
         ["Security.CreateAccount.POST"] = Permission.UsersCreate,
@@ -261,6 +265,7 @@ public class PermissionService : IPermissionService
             Permission.PositionsRead,
             Permission.ResponsibilitiesRead,
             Permission.RisksRead,
+            Permission.ActivityRead,
             Permission.UsersRead,
             Permission.RolesRead
         };
