@@ -116,7 +116,10 @@ public enum AuditAction
     // Identity actions
     IdentityCreated,
     IdentityUpdated,
-    IdentityDeleted
+    IdentityDeleted,
+
+    // Undo actions
+    ChangeReverted
 }
 
 /// <summary>

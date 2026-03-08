@@ -59,5 +59,9 @@ public static class FuseCodeModule
         
         // Register Snapshot Change Tracker for automatic version history
         services.AddSingleton<SnapshotChangeTracker>();
+
+        // Register change history services
+        services.AddScoped<IUndoService, UndoService>();
+        services.AddScoped<IActivityFeedService, ActivityFeedService>();
     }
 }
