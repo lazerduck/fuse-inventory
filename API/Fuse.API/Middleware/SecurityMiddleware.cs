@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Services;
 
 namespace Fuse.API.Middleware;
 
@@ -27,6 +28,12 @@ public sealed class SecurityMiddleware
 
         if (user is not null)
             AttachPrincipal(context, user);
+
+        // Set user context for change tracking (flows via AsyncLocal)
+        SnapshotChangeTracker.SetUserContext(
+            user?.UserName ?? "anonymous",
+            user?.Id
+        );
 
         var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase) ||
                      path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||

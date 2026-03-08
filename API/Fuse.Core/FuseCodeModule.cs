@@ -56,5 +56,8 @@ public static class FuseCodeModule
         services.AddSingleton<SqlPermissionsCacheService>();
         services.AddHostedService(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
         services.AddSingleton<ISqlPermissionsCache>(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
+        
+        // Register Snapshot Change Tracker for automatic version history
+        services.AddSingleton<SnapshotChangeTracker>();
     }
 }

@@ -5,6 +5,7 @@ using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Services;
 using Fuse.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,6 +90,10 @@ using (var scope = app.Services.CreateScope())
             }
         });
     }
+    
+    // Wire up SnapshotChangeTracker to IFuseStore.Changed event
+    var versionHistoryService = scope.ServiceProvider.GetRequiredService<IVersionHistoryService>();
+    SnapshotChangeTracker.RegisterWithStore(store, versionHistoryService, await store.GetAsync());
 }
 
 // Configure the HTTP request pipeline.

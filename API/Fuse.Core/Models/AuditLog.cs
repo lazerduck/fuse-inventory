@@ -106,7 +106,17 @@ public enum AuditAction
     // Risk actions
     RiskCreated,
     RiskUpdated,
-    RiskDeleted
+    RiskDeleted,
+    
+    // MessageBroker actions
+    MessageBrokerCreated,
+    MessageBrokerUpdated,
+    MessageBrokerDeleted,
+    
+    // Identity actions
+    IdentityCreated,
+    IdentityUpdated,
+    IdentityDeleted
 }
 
 /// <summary>

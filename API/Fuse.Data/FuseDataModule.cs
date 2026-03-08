@@ -17,5 +17,8 @@ public static class FuseDataModule
         
         services.AddSingleton<IAuditService>(_ =>
             new LiteDbAuditService(dataDirectory));
+        
+        services.AddSingleton<IVersionHistoryService>(_ =>
+            new LiteDbVersionHistoryService(dataDirectory));
     }
 }
