@@ -65,6 +65,13 @@
           @replace-dependency="({ assignment, existingDeps }) => confirmReplaceDependency(assignment, existingDeps)"
         />
       </q-card-section>
+
+      <template v-if="isEditMode && identityId">
+        <q-separator />
+        <q-card-section>
+          <EntityHistoryTab :entity-type="EntityType.Identity" :entity-id="identityId" />
+        </q-card-section>
+      </template>
     </q-card>
 
     <!-- Assignment Dialog -->
@@ -185,8 +192,10 @@ import {
   DependencyAuthKind,
   CloneTarget,
   CloneIdentity,
-  Permission
+  Permission,
+  EntityType
 } from '../api/client'
+import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'
 import type {

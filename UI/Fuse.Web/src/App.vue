@@ -206,6 +206,16 @@
               </q-item-section>
             </q-item>
 
+            <q-item clickable v-ripple :to="{ name: 'activities' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ActivityRead)">
+              <q-item-section avatar>
+                <q-icon name="timeline" />
+              </q-item-section>
+              <q-item-section>
+                Activities
+              </q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
               data-tour-id="nav-view">
               <q-item-section avatar>

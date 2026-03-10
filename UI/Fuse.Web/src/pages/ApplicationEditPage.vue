@@ -42,6 +42,7 @@
       <q-tab name="ownership" label="Ownership" />
       <q-tab name="pipelines" label="Pipelines" />
       <q-tab name="risks" label="Risks" />
+      <q-tab name="history" label="History" />
     </q-tabs>
 
     <q-tab-panels v-model="activeTab" animated>
@@ -213,6 +214,10 @@
           @delete="handleDeleteRisk"
         />
       </q-tab-panel>
+
+      <q-tab-panel name="history" class="q-pa-none">
+        <EntityHistoryTab :entity-type="EntityType.Application" :entity-id="applicationId" />
+      </q-tab-panel>
     </q-tab-panels>
 
     <q-dialog v-model="isInstanceDialogOpen" persistent>
@@ -249,6 +254,7 @@ import {
   ApplicationPipeline,
   CreateApplicationInstance,
   CreateApplicationPipeline,
+  EntityType,
   UpdateApplication,
   UpdateApplicationPipeline,
   Risk,
@@ -264,6 +270,7 @@ import { getErrorMessage } from '../utils/error'
 import ApplicationDetailsForm from '../components/applications/ApplicationDetailsForm.vue'
 import ApplicationInstanceForm from '../components/applications/ApplicationInstanceForm.vue'
 import ApplicationPipelineForm from '../components/applications/ApplicationPipelineForm.vue'
+import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import ResponsibilityAssignmentTable from '../components/responsibilityassignment/ResponsibilityAssignmentTable.vue'
 import RisksSection from '../components/risks/RisksSection.vue'
 

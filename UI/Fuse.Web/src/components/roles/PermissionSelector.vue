@@ -105,14 +105,15 @@ const activeTab = ref('all')
 
 const allPermissions = computed(() => Object.values(Permission))
 
-const permissionCategories = computed(() => [
+const basePermissionCategories = computed(() => [
   {
     name: 'Applications',
     permissions: [
       Permission.ApplicationsRead,
       Permission.ApplicationsCreate,
       Permission.ApplicationsUpdate,
-      Permission.ApplicationsDelete
+      Permission.ApplicationsDelete,
+      Permission.ApplicationsUndo
     ]
   },
   {
@@ -121,7 +122,8 @@ const permissionCategories = computed(() => [
       Permission.AccountsRead,
       Permission.AccountsCreate,
       Permission.AccountsUpdate,
-      Permission.AccountsDelete
+      Permission.AccountsDelete,
+      Permission.AccountsUndo
     ]
   },
   {
@@ -130,7 +132,8 @@ const permissionCategories = computed(() => [
       Permission.IdentitiesRead,
       Permission.IdentitiesCreate,
       Permission.IdentitiesUpdate,
-      Permission.IdentitiesDelete
+      Permission.IdentitiesDelete,
+      Permission.IdentitiesUndo
     ]
   },
   {
@@ -139,7 +142,8 @@ const permissionCategories = computed(() => [
       Permission.DataStoresRead,
       Permission.DataStoresCreate,
       Permission.DataStoresUpdate,
-      Permission.DataStoresDelete
+      Permission.DataStoresDelete,
+      Permission.DataStoresUndo
     ]
   },
   {
@@ -237,9 +241,10 @@ const permissionCategories = computed(() => [
     ]
   },
   {
-    name: 'Audit',
+    name: 'Audit & Activity',
     permissions: [
-      Permission.AuditLogsView
+      Permission.AuditLogsView,
+      Permission.ActivityRead
     ]
   },
   {
@@ -256,6 +261,23 @@ const permissionCategories = computed(() => [
     ]
   }
 ])
+
+const permissionCategories = computed(() => {
+  const categorized = new Set(basePermissionCategories.value.flatMap((category) => category.permissions))
+  const uncategorized = allPermissions.value.filter((permission) => !categorized.has(permission))
+
+  if (!uncategorized.length) {
+    return basePermissionCategories.value
+  }
+
+  return [
+    ...basePermissionCategories.value,
+    {
+      name: 'Other',
+      permissions: uncategorized
+    }
+  ]
+})
 
 function isSelected(permission: Permission): boolean {
   return props.modelValue?.includes(permission) || false

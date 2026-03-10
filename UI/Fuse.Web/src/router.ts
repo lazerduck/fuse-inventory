@@ -150,6 +150,11 @@ const router = createRouter({
       component: () => import('./pages/AuditLogsPage.vue')
     },
     {
+      path: '/activities',
+      name: 'activities',
+      component: () => import('./pages/ActivitiesPage.vue')
+    },
+    {
       path: '/risks',
       name: 'risks',
       component: () => import('./pages/RisksPage.vue')

@@ -143,7 +143,50 @@ public class AccountService : IAccountService
         if (!store.Accounts.Any(a => a.Id == command.Id))
             return Result.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Where(x => x.Id != command.Id).ToList() });
+        await _fuseStore.UpdateAsync(s =>
+        {
+            var updatedApps = s.Applications.Select(app =>
+            {
+                var instancesModified = false;
+                var updatedInstances = app.Instances.Select(inst =>
+                {
+                    var depsModified = false;
+                    var updatedDeps = inst.Dependencies.Select(dep =>
+                    {
+                        if (dep.AccountId == command.Id && dep.AuthKind == DependencyAuthKind.Account)
+                        {
+                            depsModified = true;
+                            // Clear dangling account references to keep the snapshot valid.
+                            return dep with { AccountId = null, AuthKind = DependencyAuthKind.None };
+                        }
+
+                        return dep;
+                    }).ToList();
+
+                    if (depsModified)
+                    {
+                        instancesModified = true;
+                        return inst with { Dependencies = updatedDeps, UpdatedAt = DateTime.UtcNow };
+                    }
+
+                    return inst;
+                }).ToList();
+
+                if (instancesModified)
+                {
+                    return app with { Instances = updatedInstances, UpdatedAt = DateTime.UtcNow };
+                }
+
+                return app;
+            }).ToList();
+
+            return s with
+            {
+                Accounts = s.Accounts.Where(x => x.Id != command.Id).ToList(),
+                Applications = updatedApps
+            };
+        });
+
         return Result.Success();
     }
 

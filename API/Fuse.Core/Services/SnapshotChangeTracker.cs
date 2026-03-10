@@ -245,7 +245,14 @@ public class SnapshotChangeTracker
             if (!oldDict.ContainsKey(entityId))
             {
                 // Created
-                await SaveVersionAsync(entityId, entityType, newEntity, DetermineCreateAction(entityType), userContext);
+                var createAction = DetermineCreateAction(entityType);
+                await SaveVersionAsync(
+                    entityId,
+                    entityType,
+                    newEntity,
+                    createAction,
+                    userContext,
+                    BuildChangeDescription(entityType, createAction, entityId, newEntity));
             }
             else
             {
@@ -254,7 +261,14 @@ public class SnapshotChangeTracker
                 if (!EntitiesEqual(oldEntity, newEntity))
                 {
                     // Updated
-                    await SaveVersionAsync(entityId, entityType, newEntity, DetermineUpdateAction(entityType), userContext);
+                    var updateAction = DetermineUpdateAction(entityType);
+                    await SaveVersionAsync(
+                        entityId,
+                        entityType,
+                        newEntity,
+                        updateAction,
+                        userContext,
+                        BuildUpdateDescription(entityType, entityId, oldEntity, newEntity));
                 }
             }
         }
@@ -265,7 +279,14 @@ public class SnapshotChangeTracker
             if (!newDict.ContainsKey(entityId))
             {
                 // Deleted - store null snapshot to indicate deletion
-                await SaveVersionAsync(entityId, entityType, null, DetermineDeleteAction(entityType), userContext);
+                var deleteAction = DetermineDeleteAction(entityType);
+                await SaveVersionAsync(
+                    entityId,
+                    entityType,
+                    null,
+                    deleteAction,
+                    userContext,
+                    BuildChangeDescription(entityType, deleteAction, entityId, oldEntity));
             }
         }
     }
@@ -273,7 +294,13 @@ public class SnapshotChangeTracker
     /// <summary>
     /// Save a version of an entity
     /// </summary>
-    private async Task SaveVersionAsync(Guid entityId, EntityType entityType, object? entity, AuditAction action, UserContext userContext)
+    private async Task SaveVersionAsync(
+        Guid entityId,
+        EntityType entityType,
+        object? entity,
+        AuditAction action,
+        UserContext userContext,
+        string? changeDescription = null)
     {
         // Get the next version number for this entity
         var latestVersion = await _versionHistoryService.GetLatestVersionAsync(entityId, entityType);
@@ -289,7 +316,7 @@ public class SnapshotChangeTracker
             action: action,
             userName: userContext.UserName,
             userId: userContext.UserId,
-            changeDescription: null
+            changeDescription: changeDescription ?? BuildChangeDescription(entityType, action, entityId, entity)
         );
 
         await _versionHistoryService.SaveVersionAsync(version);
@@ -304,6 +331,144 @@ public class SnapshotChangeTracker
         var json2 = JsonSerializer.Serialize(entity2, ComparisonOptions);
         return json1 == json2;
     }
+
+    private string BuildUpdateDescription(EntityType entityType, Guid entityId, object oldEntity, object newEntity)
+    {
+        var entityName = GetEntityDisplayName(newEntity) ?? GetEntityDisplayName(oldEntity);
+        var entityLabel = string.IsNullOrWhiteSpace(entityName)
+            ? $"{entityType} {entityId}"
+            : $"{entityType} '{entityName}'";
+
+        try
+        {
+            using var oldJson = JsonDocument.Parse(JsonSerializer.Serialize(oldEntity, oldEntity.GetType(), ComparisonOptions));
+            using var newJson = JsonDocument.Parse(JsonSerializer.Serialize(newEntity, newEntity.GetType(), ComparisonOptions));
+
+            if (oldJson.RootElement.ValueKind != JsonValueKind.Object || newJson.RootElement.ValueKind != JsonValueKind.Object)
+                return $"Updated {entityLabel}";
+
+            var oldProps = oldJson.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value);
+            var changedFields = new List<string>();
+
+            foreach (var property in newJson.RootElement.EnumerateObject())
+            {
+                if (ShouldIgnoreDiffField(property.Name))
+                    continue;
+
+                var newValue = property.Value;
+                oldProps.TryGetValue(property.Name, out var oldValue);
+
+                if (!IsSimpleDiffValue(newValue) || !IsSimpleDiffValue(oldValue))
+                    continue;
+
+                if (!JsonElement.DeepEquals(oldValue, newValue))
+                    changedFields.Add(ToDisplayFieldName(property.Name));
+            }
+
+            if (changedFields.Count == 0)
+                return $"Updated {entityLabel}";
+
+            if (changedFields.Count == 1)
+                return $"Updated {entityLabel}: {changedFields[0]} changed";
+
+            var preview = string.Join(", ", changedFields.Take(3));
+            return changedFields.Count <= 3
+                ? $"Updated {entityLabel}: changed {preview}"
+                : $"Updated {entityLabel}: changed {preview} and more";
+        }
+        catch
+        {
+            return $"Updated {entityLabel}";
+        }
+    }
+
+    private string BuildChangeDescription(EntityType entityType, AuditAction action, Guid entityId, object? entity)
+    {
+        var entityName = GetEntityDisplayName(entity);
+        var entityLabel = string.IsNullOrWhiteSpace(entityName)
+            ? $"{entityType} {entityId}"
+            : $"{entityType} '{entityName}'";
+
+        return action switch
+        {
+            AuditAction.ApplicationCreated or
+            AuditAction.AccountCreated or
+            AuditAction.DataStoreCreated or
+            AuditAction.EnvironmentCreated or
+            AuditAction.ExternalResourceCreated or
+            AuditAction.PlatformCreated or
+            AuditAction.TagCreated or
+            AuditAction.KumaIntegrationCreated or
+            AuditAction.SecretProviderCreated or
+            AuditAction.PositionCreated or
+            AuditAction.ResponsibilityTypeCreated or
+            AuditAction.ResponsibilityAssignmentCreated or
+            AuditAction.RiskCreated or
+            AuditAction.MessageBrokerCreated or
+            AuditAction.IdentityCreated or
+            AuditAction.SecurityUserCreated or
+            AuditAction.RoleCreated
+                => $"Created {entityLabel}",
+
+            AuditAction.ApplicationDeleted or
+            AuditAction.AccountDeleted or
+            AuditAction.DataStoreDeleted or
+            AuditAction.EnvironmentDeleted or
+            AuditAction.ExternalResourceDeleted or
+            AuditAction.PlatformDeleted or
+            AuditAction.TagDeleted or
+            AuditAction.KumaIntegrationDeleted or
+            AuditAction.SecretProviderDeleted or
+            AuditAction.PositionDeleted or
+            AuditAction.ResponsibilityTypeDeleted or
+            AuditAction.ResponsibilityAssignmentDeleted or
+            AuditAction.RiskDeleted or
+            AuditAction.MessageBrokerDeleted or
+            AuditAction.IdentityDeleted or
+            AuditAction.SecurityUserDeleted or
+            AuditAction.RoleDeleted
+                => $"Deleted {entityType} {entityId}",
+
+            _ => $"Updated {entityLabel}"
+        };
+    }
+
+    private static string? GetEntityDisplayName(object? entity)
+    {
+        if (entity is null)
+            return null;
+
+        var type = entity.GetType();
+        var candidateProperties = new[] { "Name", "Title", "UserName", "Description" };
+
+        foreach (var propertyName in candidateProperties)
+        {
+            var property = type.GetProperty(propertyName);
+            var value = property?.GetValue(entity) as string;
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return null;
+    }
+
+    private static bool ShouldIgnoreDiffField(string propertyName)
+    {
+        var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "id",
+            "createdAt",
+            "updatedAt"
+        };
+
+        return ignored.Contains(propertyName);
+    }
+
+    private static bool IsSimpleDiffValue(JsonElement element)
+        => element.ValueKind is JsonValueKind.Null or JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False;
+
+    private static string ToDisplayFieldName(string propertyName)
+        => string.Concat(propertyName.Select((ch, idx) => idx > 0 && char.IsUpper(ch) ? $" {ch}" : ch.ToString())).ToLowerInvariant();
 
     /// <summary>
     /// Determine the appropriate AuditAction for entity creation based on entity type

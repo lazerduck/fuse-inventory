@@ -188,6 +188,42 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task DeleteAccount_ClearsDependencyReferences()
+    {
+        var envId = Guid.NewGuid();
+        var ds1 = new DataStore(Guid.NewGuid(), "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var account = new Account(
+            Id: Guid.NewGuid(),
+            TargetId: ds1.Id,
+            TargetKind: TargetKind.DataStore,
+            AuthKind: AuthKind.ApiKey,
+            SecretBinding: new SecretBinding(SecretBindingKind.PlainReference, "secret:ref", null),
+            UserName: null,
+            Parameters: null,
+            Grants: new List<Grant>(),
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow
+        );
+
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), ds1.Id, TargetKind.DataStore, 1234, DependencyAuthKind.Account, account.Id, null);
+        var instance = new ApplicationInstance(Guid.NewGuid(), envId, null, null, null, null, null, new List<ApplicationInstanceDependency> { dep }, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { instance }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(accounts: new[] { account }, ds: new[] { ds1 }, apps: new[] { app });
+        var service = CreateService(store);
+
+        var result = await service.DeleteAccountAsync(new DeleteAccount(account.Id));
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(await service.GetAccountsAsync());
+
+        var depAfter = store.Current!.Applications.Single().Instances.Single().Dependencies.Single();
+        Assert.Null(depAfter.AccountId);
+        Assert.Equal(DependencyAuthKind.None, depAfter.AuthKind);
+    }
+
+    [Fact]
     public async Task CreateAccount_GrantWithoutPrivileges_ReturnsValidation()
     {
         var res = new ExternalResource(Guid.NewGuid(), "Res", null, new Uri("http://x"), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);

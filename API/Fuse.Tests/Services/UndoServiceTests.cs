@@ -70,6 +70,152 @@ public class UndoServiceTests
         Assert.Contains(audit.Logs, l => l.Action == AuditAction.ChangeReverted && l.EntityId == appId);
     }
 
+    [Fact]
+    public async Task UndoChangeAsync_ApplicationRestore_PreservesExternallyReferencedInstances()
+    {
+        var appId = Guid.NewGuid();
+        var envId = Guid.NewGuid();
+        var referencedInstanceId = Guid.NewGuid();
+        var extraInstanceId = Guid.NewGuid();
+
+        var referencedInstance = new ApplicationInstance(
+            referencedInstanceId,
+            envId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            Array.Empty<ApplicationInstanceDependency>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow);
+
+        var extraInstance = new ApplicationInstance(
+            extraInstanceId,
+            envId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            Array.Empty<ApplicationInstanceDependency>(),
+            new HashSet<Guid>(),
+            DateTime.UtcNow,
+            DateTime.UtcNow);
+
+        var oldAppVersion = new Application(
+            Id: appId,
+            Name: "Order Manager",
+            Version: "1",
+            Description: null,
+            Owner: null,
+            Notes: "old notes",
+            Framework: "dotnet",
+            RepositoryUri: null,
+            Icon: null,
+            TagIds: new HashSet<Guid>(),
+            Instances: new[] { extraInstance },
+            Pipelines: Array.Empty<ApplicationPipeline>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow);
+
+        var currentAppVersion = oldAppVersion with
+        {
+            Notes = "new notes",
+            Instances = new[] { referencedInstance, extraInstance },
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var dependentApp = new Application(
+            Id: Guid.NewGuid(),
+            Name: "Dependent",
+            Version: "1",
+            Description: null,
+            Owner: null,
+            Notes: null,
+            Framework: "dotnet",
+            RepositoryUri: null,
+            Icon: null,
+            TagIds: new HashSet<Guid>(),
+            Instances: new[]
+            {
+                new ApplicationInstance(
+                    Guid.NewGuid(),
+                    envId,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    new[]
+                    {
+                        new ApplicationInstanceDependency(
+                            Guid.NewGuid(),
+                            referencedInstanceId,
+                            TargetKind.Application,
+                            null,
+                            DependencyAuthKind.None,
+                            null,
+                            null)
+                    },
+                    new HashSet<Guid>(),
+                    DateTime.UtcNow,
+                    DateTime.UtcNow)
+            },
+            Pipelines: Array.Empty<ApplicationPipeline>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow);
+
+        var identity = new Identity(
+            Id: Guid.NewGuid(),
+            Name: "identity",
+            Kind: IdentityKind.Custom,
+            Notes: null,
+            OwnerInstanceId: referencedInstanceId,
+            Assignments: Array.Empty<IdentityAssignment>(),
+            TagIds: new HashSet<Guid>(),
+            CreatedAt: DateTime.UtcNow,
+            UpdatedAt: DateTime.UtcNow);
+
+        var snapshot = new Snapshot(
+            Applications: new[] { currentAppVersion, dependentApp },
+            DataStores: Array.Empty<DataStore>(),
+            Platforms: Array.Empty<Platform>(),
+            ExternalResources: Array.Empty<ExternalResource>(),
+            Accounts: Array.Empty<Account>(),
+            Identities: new[] { identity },
+            Tags: Array.Empty<Tag>(),
+            Environments: new[] { new EnvironmentInfo(envId, "env", null, new HashSet<Guid>()) },
+            KumaIntegrations: Array.Empty<KumaIntegration>(),
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Risks: Array.Empty<Risk>(),
+            MessageBrokers: Array.Empty<MessageBroker>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+        );
+
+        var store = new InMemoryFuseStore(snapshot);
+        var versionService = new InMemoryVersionHistoryService();
+
+        var v1Entry = CreateVersion(appId, EntityType.Application, 1, EntityExtractor.SerializeEntity(oldAppVersion), AuditAction.ApplicationUpdated);
+        var v2Entry = CreateVersion(appId, EntityType.Application, 2, EntityExtractor.SerializeEntity(currentAppVersion), AuditAction.ApplicationUpdated);
+        versionService.Add(v1Entry);
+        versionService.Add(v2Entry);
+
+        var service = new UndoService(versionService, store, new FakeAuditService(), new FakeCurrentUser());
+
+        var result = await service.UndoChangeAsync(v2Entry.Id);
+
+        Assert.True(result.IsSuccess);
+        var app = (await store.GetAsync()).Applications.Single(a => a.Id == appId);
+        Assert.Equal("old notes", app.Notes);
+        Assert.Contains(app.Instances, i => i.Id == referencedInstanceId);
+    }
+
     private static Application CreateApp(Guid id, string version)
     {
         return new Application(

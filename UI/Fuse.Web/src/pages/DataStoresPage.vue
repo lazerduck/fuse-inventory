@@ -86,6 +86,16 @@
               flat
               dense
               round
+              icon="history"
+              color="info"
+              class="q-ml-xs"
+              :disable="!props.row.id"
+              @click="openHistoryDialog(props.row)"
+            />
+            <q-btn
+              flat
+              dense
+              round
               icon="delete"
               color="negative"
               class="q-ml-xs"
@@ -110,6 +120,26 @@
         @cancel="closeFormDialog"
       />
     </q-dialog>
+
+    <q-dialog v-model="isHistoryDialogOpen">
+      <q-card style="min-width: 900px; max-width: 95vw">
+        <q-card-section class="dialog-header">
+          <div>
+            <div class="text-h6">Data Store History</div>
+            <div class="text-caption text-grey-7">Recent changes for {{ historyDataStoreName }}</div>
+          </div>
+          <q-btn flat round dense icon="close" @click="closeHistoryDialog" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <EntityHistoryTab
+            v-if="historyDataStoreId"
+            :entity-type="EntityType.DataStore"
+            :entity-id="historyDataStoreId"
+          />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -118,7 +148,7 @@ import { computed, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { DataStore, CreateDataStore, UpdateDataStore, Permission } from '../api/client'
+import { DataStore, CreateDataStore, UpdateDataStore, Permission, EntityType } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'
@@ -127,6 +157,7 @@ import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import DataStoreForm from '../components/dataStore/DataStoreForm.vue'
 import { useDataStores } from '../composables/useDataStores'
+import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import TagChip from '../components/tags/TagChip.vue'
 
 interface DataStoreFormModel {
@@ -169,6 +200,9 @@ const columns: QTableColumn<DataStore>[] = [
 
 const isFormDialogOpen = ref(false)
 const selectedDataStore = ref<DataStore | null>(null)
+const isHistoryDialogOpen = ref(false)
+const historyDataStoreId = ref<string | null>(null)
+const historyDataStoreName = ref('this data store')
 
 function openCreateDialog() {
   selectedDataStore.value = null
@@ -184,6 +218,19 @@ function openEditDialog(store: DataStore) {
 function closeFormDialog() {
   selectedDataStore.value = null
   isFormDialogOpen.value = false
+}
+
+function openHistoryDialog(store: DataStore) {
+  if (!store.id) return
+  historyDataStoreId.value = store.id
+  historyDataStoreName.value = store.name ?? store.id
+  isHistoryDialogOpen.value = true
+}
+
+function closeHistoryDialog() {
+  isHistoryDialogOpen.value = false
+  historyDataStoreId.value = null
+  historyDataStoreName.value = 'this data store'
 }
 
 const createMutation = useMutation({

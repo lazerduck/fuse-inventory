@@ -57,7 +57,11 @@ public sealed class UndoService : IUndoService
 
         try
         {
-            await _fuseStore.UpdateAsync(s => EntityExtractor.SetEntity(s, target.EntityType, target.EntityId, restoredEntity), ct);
+            await _fuseStore.UpdateAsync(s =>
+            {
+                var updated = EntityExtractor.SetEntity(s, target.EntityType, target.EntityId, restoredEntity);
+                return ReconcileUndoReferences(s, updated, target.EntityType, target.EntityId, restoredEntity);
+            }, ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -91,5 +95,77 @@ public sealed class UndoService : IUndoService
         );
 
         return Result<UndoChangeResult>.Success(result);
+    }
+
+    private static Snapshot ReconcileUndoReferences(
+        Snapshot original,
+        Snapshot updated,
+        EntityType entityType,
+        Guid entityId,
+        object? restoredEntity)
+    {
+        if (entityType != EntityType.Application || restoredEntity is not Application)
+            return updated;
+
+        var currentApp = original.Applications.FirstOrDefault(a => a.Id == entityId);
+        var restoredApp = updated.Applications.FirstOrDefault(a => a.Id == entityId);
+        if (currentApp is null || restoredApp is null)
+            return updated;
+
+        var currentInstancesById = currentApp.Instances
+            .Where(i => i.Id != Guid.Empty)
+            .ToDictionary(i => i.Id, i => i);
+        if (currentInstancesById.Count == 0)
+            return updated;
+
+        var restoredInstanceIds = restoredApp.Instances.Select(i => i.Id).ToHashSet();
+
+        // Preserve instance IDs still referenced by other entities so undo does not break integrity.
+        var externallyReferenced = new HashSet<Guid>();
+
+        foreach (var app in original.Applications)
+        {
+            foreach (var instance in app.Instances)
+            {
+                foreach (var dependency in instance.Dependencies)
+                {
+                    if (dependency.TargetKind == TargetKind.Application &&
+                        currentInstancesById.ContainsKey(dependency.TargetId) &&
+                        !restoredInstanceIds.Contains(dependency.TargetId))
+                    {
+                        externallyReferenced.Add(dependency.TargetId);
+                    }
+                }
+            }
+        }
+
+        foreach (var identity in original.Identities)
+        {
+            if (identity.OwnerInstanceId is Guid ownerInstanceId &&
+                currentInstancesById.ContainsKey(ownerInstanceId) &&
+                !restoredInstanceIds.Contains(ownerInstanceId))
+            {
+                externallyReferenced.Add(ownerInstanceId);
+            }
+        }
+
+        if (externallyReferenced.Count == 0)
+            return updated;
+
+        var mergedInstances = restoredApp.Instances.ToList();
+        foreach (var instanceId in externallyReferenced)
+        {
+            if (currentInstancesById.TryGetValue(instanceId, out var currentInstance))
+            {
+                mergedInstances.Add(currentInstance);
+            }
+        }
+
+        var reconciledApp = restoredApp with { Instances = mergedInstances, UpdatedAt = DateTime.UtcNow };
+        var reconciledApplications = updated.Applications
+            .Select(a => a.Id == reconciledApp.Id ? reconciledApp : a)
+            .ToList();
+
+        return updated with { Applications = reconciledApplications };
     }
 }

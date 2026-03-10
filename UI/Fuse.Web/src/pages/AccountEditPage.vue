@@ -64,6 +64,13 @@
         @rotate="openRotateDialog"
         @reveal="openRevealDialog"
       />
+
+      <template v-if="isEditMode && accountId">
+        <q-separator />
+        <q-card-section>
+          <EntityHistoryTab :entity-type="EntityType.Account" :entity-id="accountId" />
+        </q-card-section>
+      </template>
     </q-card>
 
     <AccountGrantsDialog
@@ -145,10 +152,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'
-import { Grant, CloneTarget, CloneAccount, TargetKind, Permission } from '../api/client'
+import { Grant, CloneTarget, CloneAccount, TargetKind, Permission, EntityType } from '../api/client'
 import AccountForm from '../components/accounts/AccountForm.vue'
 import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
 import AccountSqlStatusSection from '../components/accounts/AccountSqlStatusSection.vue'
+import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import AccountEditHeader from './account-edit/components/AccountEditHeader.vue'
 import AccountGrantsDialog from './account-edit/components/AccountGrantsDialog.vue'
 import AccountSecretOperationsSection from './account-edit/components/AccountSecretOperationsSection.vue'
