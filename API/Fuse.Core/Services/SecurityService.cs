@@ -651,6 +651,16 @@ public sealed class SecurityService : ISecurityService
             Security = s.Security with { ApiKeys = s.Security.ApiKeys.Append(apiKey).ToList() }
         }, ct);
 
+        var auditLog = AuditHelper.CreateLog(
+            AuditAction.ApiKeyCreated,
+            AuditArea.Security,
+            requester.UserName,
+            requester.Id,
+            apiKey.Id,
+            new { apiKey.Name, RoleIds = apiKey.RoleIds }
+        );
+        await _auditService.LogAsync(auditLog, ct);
+
         var info = new ApiKeyInfo(apiKey.Id, apiKey.Name, apiKey.UserId, apiKey.RoleIds, apiKey.CreatedAt, apiKey.UpdatedAt);
         return Result<ApiKeyCreatedResult>.Success(new ApiKeyCreatedResult(info, rawKey));
     }
@@ -692,6 +702,16 @@ public sealed class SecurityService : ISecurityService
             }
         }, ct);
 
+        var regenAuditLog = AuditHelper.CreateLog(
+            AuditAction.ApiKeyRegenerated,
+            AuditArea.Security,
+            requester.UserName,
+            requester.Id,
+            updated.Id,
+            new { updated.Name }
+        );
+        await _auditService.LogAsync(regenAuditLog, ct);
+
         var info = new ApiKeyInfo(updated.Id, updated.Name, updated.UserId, updated.RoleIds, updated.CreatedAt, updated.UpdatedAt);
         return Result<ApiKeyCreatedResult>.Success(new ApiKeyCreatedResult(info, rawKey));
     }
@@ -725,6 +745,16 @@ public sealed class SecurityService : ISecurityService
                 ApiKeys = s.Security.ApiKeys.Where(k => k.Id != command.Id).ToList()
             }
         }, ct);
+
+        var deleteAuditLog = AuditHelper.CreateLog(
+            AuditAction.ApiKeyDeleted,
+            AuditArea.Security,
+            requester.UserName,
+            requester.Id,
+            existing.Id,
+            new { existing.Name }
+        );
+        await _auditService.LogAsync(deleteAuditLog, ct);
 
         return Result.Success();
     }
