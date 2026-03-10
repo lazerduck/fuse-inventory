@@ -622,4 +622,137 @@ public sealed class SecurityService : ISecurityService
 
         return Result.Success();
     }
+
+    public async Task<Result<ApiKeyCreatedResult>> CreateApiKeyAsync(CreateApiKey command, CancellationToken ct = default)
+    {
+        if (command is null)
+            return Result<ApiKeyCreatedResult>.Failure("Invalid API key command.");
+        if (string.IsNullOrWhiteSpace(command.Name))
+            return Result<ApiKeyCreatedResult>.Failure("API key name cannot be empty.", ErrorType.Validation);
+        if (command.RequestedBy is not Guid userId)
+            return Result<ApiKeyCreatedResult>.Failure("Authentication is required to create API keys.", ErrorType.Unauthorized);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+
+        var requester = state.Users.FirstOrDefault(u => u.Id == userId);
+        if (requester is null)
+            return Result<ApiKeyCreatedResult>.Failure("Authentication is required to create API keys.", ErrorType.Unauthorized);
+
+        var rawKey = GenerateApiKey();
+        var salt = GenerateSalt();
+        var hash = HashPassword(rawKey, salt);
+        var now = DateTime.UtcNow;
+
+        var apiKey = new ApiKey(Guid.NewGuid(), command.Name.Trim(), hash, salt, userId, command.RoleIds ?? Array.Empty<Guid>(), now, now);
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with { ApiKeys = s.Security.ApiKeys.Append(apiKey).ToList() }
+        }, ct);
+
+        var info = new ApiKeyInfo(apiKey.Id, apiKey.Name, apiKey.UserId, apiKey.RoleIds, apiKey.CreatedAt, apiKey.UpdatedAt);
+        return Result<ApiKeyCreatedResult>.Success(new ApiKeyCreatedResult(info, rawKey));
+    }
+
+    public async Task<Result<ApiKeyCreatedResult>> RegenerateApiKeyAsync(RegenerateApiKey command, CancellationToken ct = default)
+    {
+        if (command is null || command.Id == default)
+            return Result<ApiKeyCreatedResult>.Failure("API key ID must be provided.", ErrorType.Validation);
+        if (command.RequestedBy is not Guid userId)
+            return Result<ApiKeyCreatedResult>.Failure("Authentication is required.", ErrorType.Unauthorized);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+
+        var existing = state.ApiKeys.FirstOrDefault(k => k.Id == command.Id);
+        if (existing is null)
+            return Result<ApiKeyCreatedResult>.Failure("API key not found.", ErrorType.NotFound);
+
+        var requester = state.Users.FirstOrDefault(u => u.Id == userId);
+        if (requester is null)
+            return Result<ApiKeyCreatedResult>.Failure("Authentication is required.", ErrorType.Unauthorized);
+
+        // Only owner or admin can regenerate
+        if (existing.UserId != userId && !IsUserAdmin(requester, state))
+            return Result<ApiKeyCreatedResult>.Failure("You do not have permission to regenerate this API key.", ErrorType.Unauthorized);
+
+        var rawKey = GenerateApiKey();
+        var salt = GenerateSalt();
+        var hash = HashPassword(rawKey, salt);
+        var now = DateTime.UtcNow;
+
+        var updated = existing with { KeyHash = hash, KeySalt = salt, UpdatedAt = now };
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with
+            {
+                ApiKeys = s.Security.ApiKeys.Select(k => k.Id == command.Id ? updated : k).ToList()
+            }
+        }, ct);
+
+        var info = new ApiKeyInfo(updated.Id, updated.Name, updated.UserId, updated.RoleIds, updated.CreatedAt, updated.UpdatedAt);
+        return Result<ApiKeyCreatedResult>.Success(new ApiKeyCreatedResult(info, rawKey));
+    }
+
+    public async Task<Result> DeleteApiKeyAsync(DeleteApiKey command, CancellationToken ct = default)
+    {
+        if (command is null || command.Id == default)
+            return Result.Failure("API key ID must be provided.", ErrorType.Validation);
+        if (command.RequestedBy is not Guid userId)
+            return Result.Failure("Authentication is required.", ErrorType.Unauthorized);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+
+        var existing = state.ApiKeys.FirstOrDefault(k => k.Id == command.Id);
+        if (existing is null)
+            return Result.Failure("API key not found.", ErrorType.NotFound);
+
+        var requester = state.Users.FirstOrDefault(u => u.Id == userId);
+        if (requester is null)
+            return Result.Failure("Authentication is required.", ErrorType.Unauthorized);
+
+        // Only owner or admin can delete
+        if (existing.UserId != userId && !IsUserAdmin(requester, state))
+            return Result.Failure("You do not have permission to delete this API key.", ErrorType.Unauthorized);
+
+        await _store.UpdateAsync(s => s with
+        {
+            Security = s.Security with
+            {
+                ApiKeys = s.Security.ApiKeys.Where(k => k.Id != command.Id).ToList()
+            }
+        }, ct);
+
+        return Result.Success();
+    }
+
+    public async Task<(SecurityUser? User, ApiKey? Key)> ValidateApiKeyAsync(string rawKey, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(rawKey))
+            return (null, null);
+
+        var snapshot = await _store.GetAsync(ct);
+        var state = snapshot.Security;
+
+        foreach (var apiKey in state.ApiKeys)
+        {
+            if (VerifyPassword(rawKey, apiKey.KeyHash, apiKey.KeySalt))
+            {
+                var user = state.Users.FirstOrDefault(u => u.Id == apiKey.UserId);
+                return (user, apiKey);
+            }
+        }
+
+        return (null, null);
+    }
+
+    private static string GenerateApiKey()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return "fuse_" + Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+    }
 }

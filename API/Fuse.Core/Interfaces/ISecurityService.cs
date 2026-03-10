@@ -21,4 +21,10 @@ public interface ISecurityService
     Task<Result> DeleteRoleAsync(DeleteRole command, CancellationToken ct = default);
     Task<Result<SecurityUser>> AssignRolesToUserAsync(AssignRolesToUser command, CancellationToken ct = default);
     Task<Result> ResetPasswordAsync(ResetPassword command, CancellationToken ct = default);
+
+    // API key management
+    Task<Result<ApiKeyCreatedResult>> CreateApiKeyAsync(CreateApiKey command, CancellationToken ct = default);
+    Task<Result<ApiKeyCreatedResult>> RegenerateApiKeyAsync(RegenerateApiKey command, CancellationToken ct = default);
+    Task<Result> DeleteApiKeyAsync(DeleteApiKey command, CancellationToken ct = default);
+    Task<(SecurityUser? User, ApiKey? Key)> ValidateApiKeyAsync(string rawKey, CancellationToken ct = default);
 }

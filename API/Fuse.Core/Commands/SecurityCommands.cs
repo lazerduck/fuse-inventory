@@ -54,3 +54,18 @@ public record ResetPassword(Guid TargetUserId, string NewPassword)
     public Guid? RequestedBy { get; init; }
     public string? CurrentPassword { get; init; }
 }
+
+public record CreateApiKey(string Name, IReadOnlyList<Guid> RoleIds)
+{
+    public Guid? RequestedBy { get; init; }
+}
+
+public record RegenerateApiKey(Guid Id)
+{
+    public Guid? RequestedBy { get; init; }
+}
+
+public record DeleteApiKey(Guid Id)
+{
+    public Guid? RequestedBy { get; init; }
+}

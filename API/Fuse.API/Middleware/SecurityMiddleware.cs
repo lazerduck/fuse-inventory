@@ -20,11 +20,28 @@ public sealed class SecurityMiddleware
         var cancellationToken = context.RequestAborted;
         var path = context.Request.Path;
         var state = await securityService.GetSecurityStateAsync(cancellationToken);
-        var token = ExtractToken(context.Request);
+
+        // Prefer x-api-key over Bearer token when both are present
+        var apiKeyHeader = ExtractApiKey(context.Request);
         SecurityUser? user = null;
-        if (token is not null)
+
+        if (apiKeyHeader is not null)
         {
-            user = await securityService.ValidateSessionAsync(token, refresh: true, cancellationToken);
+            var (apiKeyUser, apiKey) = await securityService.ValidateApiKeyAsync(apiKeyHeader, cancellationToken);
+            if (apiKeyUser is not null && apiKey is not null)
+            {
+                // For API key auth we create a synthetic user that has the key's role IDs
+                user = apiKeyUser with { RoleIds = apiKey.RoleIds };
+            }
+        }
+
+        if (user is null)
+        {
+            var token = ExtractToken(context.Request);
+            if (token is not null)
+            {
+                user = await securityService.ValidateSessionAsync(token, refresh: true, cancellationToken);
+            }
         }
 
         if (user is not null)
@@ -38,7 +55,8 @@ public sealed class SecurityMiddleware
 
         var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase) ||
                      path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||
-                     path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase);
+                     path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase) ||
+                     path.StartsWithSegments("/api/apikeys", StringComparison.OrdinalIgnoreCase);
         var requiresSetup = state.RequiresSetup;
 
         if (requiresSetup && !IsSetupAllowed(path, context.Request.Method))
@@ -287,6 +305,15 @@ public sealed class SecurityMiddleware
         return null;
     }
 
+    private static string? ExtractApiKey(HttpRequest request)
+    {
+        if (!request.Headers.TryGetValue("x-api-key", out var values))
+            return null;
+
+        var key = values.FirstOrDefault();
+        return string.IsNullOrWhiteSpace(key) ? null : key.Trim();
+    }
+
     private static bool IsSetupAllowed(PathString path, string method)
     {
         if (path.StartsWithSegments("/api/security/state", StringComparison.OrdinalIgnoreCase))
@@ -354,6 +381,16 @@ public sealed class SecurityMiddleware
                 return await permissionService.HasPermissionAsync(user, Permission.RolesUpdate, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
             if (HttpMethods.IsDelete(method))
                 return await permissionService.HasPermissionAsync(user, Permission.RolesDelete, cancellationToken) || await permissionService.IsUserAdminAsync(user, cancellationToken);
+        }
+
+        // API key management endpoints - users can manage their own keys
+        if (path.StartsWithSegments("/api/apikeys", StringComparison.OrdinalIgnoreCase))
+        {
+            if (user is null)
+                return false;
+
+            // Any authenticated user can create, list, regenerate, delete their own API keys
+            return true;
         }
 
         // All other security endpoints require admin role (fallback)

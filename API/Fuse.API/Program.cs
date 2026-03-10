@@ -7,6 +7,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Data;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,27 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.EnableAnnotations();
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Name = "x-api-key",
+        Type = SecuritySchemeType.ApiKey,
+        Description = "API key authentication using the x-api-key header"
+    });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Bearer token authentication"
+    });
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("ApiKey", doc), new List<string>() },
+        { new OpenApiSecuritySchemeReference("Bearer", doc), new List<string>() }
+    });
 });
 
 // Configure CORS for development
