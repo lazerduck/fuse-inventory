@@ -56,7 +56,7 @@ public sealed class SecurityMiddleware
         var isSecurityEndpoint = path.StartsWithSegments("/api/security", StringComparison.OrdinalIgnoreCase) ||
                      path.StartsWithSegments("/api/roles", StringComparison.OrdinalIgnoreCase) ||
                      path.StartsWithSegments("/api/role", StringComparison.OrdinalIgnoreCase) ||
-                     path.StartsWithSegments("/api/apikeys", StringComparison.OrdinalIgnoreCase);
+                     path.StartsWithSegments("/api/apikey", StringComparison.OrdinalIgnoreCase);
         var requiresSetup = state.RequiresSetup;
 
         if (requiresSetup && !IsSetupAllowed(path, context.Request.Method))
@@ -384,7 +384,7 @@ public sealed class SecurityMiddleware
         }
 
         // API key management endpoints - users can manage their own keys
-        if (path.StartsWithSegments("/api/apikeys", StringComparison.OrdinalIgnoreCase))
+        if (path.StartsWithSegments("/api/apikey", StringComparison.OrdinalIgnoreCase))
         {
             if (user is null)
                 return false;
