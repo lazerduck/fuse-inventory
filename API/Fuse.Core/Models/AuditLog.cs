@@ -61,6 +61,11 @@ public enum AuditAction
     RoleDeleted,
     UserRolesAssigned,
     
+    // API Key actions
+    ApiKeyCreated,
+    ApiKeyRegenerated,
+    ApiKeyDeleted,
+    
     // KumaIntegration actions
     KumaIntegrationCreated,
     KumaIntegrationUpdated,

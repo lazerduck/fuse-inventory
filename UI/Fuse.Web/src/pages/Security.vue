@@ -88,6 +88,49 @@
         </q-card-section>
       </q-card>
 
+      <!-- API Keys Section -->
+      <q-card v-if="fuseStore.isLoggedIn" class="content-card q-mb-md">
+        <q-card-section class="q-pa-none">
+          <div class="q-pa-md" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="text-h6">API Keys</div>
+            <q-btn color="primary" label="Create API Key" icon="add" @click="openCreateApiKeyDialog" />
+          </div>
+          <q-separator />
+          <div v-if="apiKeys.length === 0" class="q-pa-md text-grey-7">No API keys created yet.</div>
+          <q-list v-else separator>
+            <q-item v-for="key in apiKeys" :key="key.id" class="q-py-sm">
+              <q-item-section>
+                <q-item-label><strong>{{ key.name }}</strong></q-item-label>
+                <q-item-label caption>
+                  Roles:
+                  <q-chip
+                    v-for="roleId in key.roleIds"
+                    :key="roleId"
+                    dense
+                    color="primary"
+                    text-color="white"
+                    size="xs"
+                    class="q-ml-xs"
+                  >{{ getRoleName(roleId) }}</q-chip>
+                  <span v-if="!key.roleIds?.length" class="text-grey">No roles</span>
+                  &nbsp;·&nbsp; Created {{ key.createdAt ? new Date(key.createdAt).toLocaleDateString() : '—' }}
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <div class="row q-gutter-xs">
+                  <q-btn flat dense round icon="refresh" color="warning" @click="confirmRegenerate(key)">
+                    <q-tooltip>Regenerate key</q-tooltip>
+                  </q-btn>
+                  <q-btn flat dense round icon="delete" color="negative" @click="confirmDeleteApiKey(key)">
+                    <q-tooltip>Delete key</q-tooltip>
+                  </q-btn>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
       <!-- Admin Only: User Accounts Table -->
       <q-card v-if="fuseStore.hasPermission(Permission.UsersRead)" class="content-card">
         <q-card-section class="q-pa-none">
@@ -299,17 +342,93 @@
           </q-card-actions>
         </q-card>
       </q-dialog>
+
+      <!-- Create API Key Dialog -->
+      <q-dialog v-model="isCreateApiKeyDialogOpen" persistent>
+        <q-card style="min-width: 420px">
+          <q-card-section>
+            <div class="text-h6">Create API Key</div>
+          </q-card-section>
+          <q-card-section class="q-pt-none">
+            <q-input
+              v-model="apiKeyForm.name"
+              label="Key Name"
+              outlined
+              dense
+              class="q-mb-md"
+              placeholder="e.g. CI Pipeline Key"
+            />
+            <div class="text-subtitle2 q-mb-xs">Assign Roles</div>
+            <q-select
+              v-model="apiKeyForm.roleIds"
+              :options="availableRolesForSelect"
+              label="Roles"
+              outlined
+              dense
+              multiple
+              emit-value
+              map-options
+              use-chips
+            />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Cancel" color="grey" @click="closeCreateApiKeyDialog" />
+            <q-btn
+              flat
+              label="Create"
+              color="primary"
+              :loading="createApiKeyMutation.isPending.value"
+              :disable="!apiKeyForm.name"
+              @click="handleCreateApiKey"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Show API Key Dialog (shown once after create/regenerate) -->
+      <q-dialog v-model="isShowApiKeyDialogOpen" persistent>
+        <q-card style="min-width: 480px">
+          <q-card-section>
+            <div class="text-h6">Your API Key</div>
+          </q-card-section>
+          <q-card-section class="q-pt-none">
+            <q-banner class="bg-warning text-white q-mb-md" dense>
+              <template #avatar><q-icon name="warning" /></template>
+              Copy this key now — it will not be shown again.
+            </q-banner>
+            <q-input
+              :model-value="generatedApiKey"
+              readonly
+              outlined
+              dense
+              label="API Key"
+            >
+              <template #append>
+                <q-btn flat dense round icon="content_copy" @click="copyApiKey">
+                  <q-tooltip>Copy to clipboard</q-tooltip>
+                </q-btn>
+              </template>
+            </q-input>
+            <p class="text-body2 text-grey-7 q-mt-sm">
+              Include this key in API requests using the <code>x-api-key</code> header.
+            </p>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Close" color="primary" @click="closeShowApiKeyDialog" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { Notify, QTable, type QTableColumn, Dialog } from 'quasar'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo, Permission } from '../api/client'
+import { CreateApiKey, CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo, Permission, ApiKeyInfo } from '../api/client'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
 import ResetPasswordDialog from '../components/security/ResetPasswordDialog.vue'
@@ -322,6 +441,12 @@ const queryClient = useQueryClient()
 const client = useFuseClient()
 
 const pagination = { rowsPerPage: 10 }
+
+// API Key state
+const isCreateApiKeyDialogOpen = ref(false)
+const isShowApiKeyDialogOpen = ref(false)
+const generatedApiKey = ref('')
+const apiKeyForm = ref<{ name: string; roleIds: string[] }>({ name: '', roleIds: [] })
 
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
@@ -339,6 +464,17 @@ const { data: rolesData } = useRoles()
 
 const users = computed(() => data.value ?? [])
 const availableRoles = computed(() => rolesData.value ?? [])
+const availableRolesForSelect = computed(() =>
+  availableRoles.value.map(r => ({ label: r.name || r.id || '', value: r.id || '' }))
+)
+
+// API Keys query
+const { data: apiKeysData } = useQuery({
+  queryKey: ['apiKeys'],
+  queryFn: () => client.apiKeyAll(),
+  enabled: computed(() => fuseStore.isLoggedIn)
+})
+const apiKeys = computed(() => apiKeysData.value ?? [])
 
 const isAdmin = computed(() => fuseStore.isAdmin)
 
@@ -624,6 +760,100 @@ function getRoleName(roleId: string): string {
   const role = availableRoles.value.find(r => r.id === roleId)
   if (role?.name) return role.name
   return roleId && roleId.length >= 8 ? roleId.substring(0, 8) : 'Unknown'
+}
+
+// API Key functions
+function openCreateApiKeyDialog() {
+  apiKeyForm.value = { name: '', roleIds: [] }
+  isCreateApiKeyDialogOpen.value = true
+}
+
+function closeCreateApiKeyDialog() {
+  isCreateApiKeyDialogOpen.value = false
+}
+
+function closeShowApiKeyDialog() {
+  generatedApiKey.value = ''
+  isShowApiKeyDialogOpen.value = false
+}
+
+function copyApiKey() {
+  copyToClipboard(generatedApiKey.value).then(() => {
+    Notify.create({ type: 'positive', message: 'API key copied to clipboard' })
+  }).catch(() => {
+    Notify.create({ type: 'warning', message: 'Could not copy to clipboard' })
+  })
+}
+
+const createApiKeyMutation = useMutation({
+  mutationFn: (payload: CreateApiKey) => client.apiKeyPOST(payload),
+  onSuccess: (result) => {
+    Notify.create({ type: 'positive', message: 'API key created' })
+    closeCreateApiKeyDialog()
+    generatedApiKey.value = result.plainTextKey || ''
+    isShowApiKeyDialogOpen.value = true
+    queryClient.invalidateQueries({ queryKey: ['apiKeys'] })
+  },
+  onError: (err) => {
+    const errorMsg = getErrorMessage(err, 'Unable to create API key')
+    Notify.create({ type: 'negative', message: errorMsg })
+  }
+})
+
+function handleCreateApiKey() {
+  const payload = Object.assign(new CreateApiKey(), {
+    name: apiKeyForm.value.name,
+    roleIds: apiKeyForm.value.roleIds
+  })
+  createApiKeyMutation.mutate(payload)
+}
+
+const regenerateApiKeyMutation = useMutation({
+  mutationFn: (id: string) => client.apiKeyRegenerate(id),
+  onSuccess: (result) => {
+    Notify.create({ type: 'positive', message: 'API key regenerated' })
+    generatedApiKey.value = result.plainTextKey || ''
+    isShowApiKeyDialogOpen.value = true
+    queryClient.invalidateQueries({ queryKey: ['apiKeys'] })
+  },
+  onError: (err) => {
+    const errorMsg = getErrorMessage(err, 'Unable to regenerate API key')
+    Notify.create({ type: 'negative', message: errorMsg })
+  }
+})
+
+function confirmRegenerate(key: ApiKeyInfo) {
+  Dialog.create({
+    title: 'Regenerate API Key',
+    message: `Regenerate "${key.name}"? The old key will immediately stop working.`,
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    if (key.id) regenerateApiKeyMutation.mutate(key.id)
+  })
+}
+
+const deleteApiKeyMutation = useMutation({
+  mutationFn: (id: string) => client.apiKeyDELETE(id),
+  onSuccess: () => {
+    Notify.create({ type: 'positive', message: 'API key deleted' })
+    queryClient.invalidateQueries({ queryKey: ['apiKeys'] })
+  },
+  onError: (err) => {
+    const errorMsg = getErrorMessage(err, 'Unable to delete API key')
+    Notify.create({ type: 'negative', message: errorMsg })
+  }
+})
+
+function confirmDeleteApiKey(key: ApiKeyInfo) {
+  Dialog.create({
+    title: 'Delete API Key',
+    message: `Delete "${key.name}"? This cannot be undone.`,
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    if (key.id) deleteApiKeyMutation.mutate(key.id)
+  })
 }
 </script>
 

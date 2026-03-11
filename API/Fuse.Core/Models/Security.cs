@@ -272,6 +272,34 @@ public record PersistedSession
     public DateTime ExpiresAt { get; init; }
 }
 
+public record ApiKey
+{
+    public ApiKey()
+    {
+    }
+
+    public ApiKey(Guid id, string name, string keyHash, string keySalt, Guid userId, IReadOnlyList<Guid> roleIds, DateTime createdAt, DateTime updatedAt)
+    {
+        Id = id;
+        Name = name;
+        KeyHash = keyHash;
+        KeySalt = keySalt;
+        UserId = userId;
+        RoleIds = roleIds;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
+    }
+
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string KeyHash { get; init; } = string.Empty;
+    public string KeySalt { get; init; } = string.Empty;
+    public Guid UserId { get; init; }
+    public IReadOnlyList<Guid> RoleIds { get; init; } = Array.Empty<Guid>();
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
+
 public record SecurityState
 {
     public SecurityState()
@@ -284,6 +312,7 @@ public record SecurityState
         Users = users;
         Roles = Array.Empty<Role>();
         Sessions = Array.Empty<PersistedSession>();
+        ApiKeys = Array.Empty<ApiKey>();
     }
 
     public SecurityState(SecuritySettings settings, IReadOnlyList<SecurityUser> users, IReadOnlyList<Role> roles)
@@ -292,12 +321,14 @@ public record SecurityState
         Users = users;
         Roles = roles;
         Sessions = Array.Empty<PersistedSession>();
+        ApiKeys = Array.Empty<ApiKey>();
     }
 
     public SecuritySettings Settings { get; init; } = new(SecurityLevel.None, DateTime.UtcNow);
     public IReadOnlyList<SecurityUser> Users { get; init; } = Array.Empty<SecurityUser>();
     public IReadOnlyList<Role> Roles { get; init; } = Array.Empty<Role>();
     public IReadOnlyList<PersistedSession> Sessions { get; init; } = Array.Empty<PersistedSession>();
+    public IReadOnlyList<ApiKey> ApiKeys { get; init; } = Array.Empty<ApiKey>();
 
     [JsonIgnore]
     public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId));
@@ -308,3 +339,7 @@ public record SecurityUserInfo(Guid Id, string UserName, SecurityRole Role, IRea
 public record RoleInfo(Guid Id, string Name, string Description, IReadOnlyList<Permission> Permissions, DateTime CreatedAt, DateTime UpdatedAt);
 
 public record LoginSession(string Token, DateTime ExpiresAt, SecurityUserInfo User);
+
+public record ApiKeyInfo(Guid Id, string Name, Guid UserId, IReadOnlyList<Guid> RoleIds, DateTime CreatedAt, DateTime UpdatedAt);
+
+public record ApiKeyCreatedResult(ApiKeyInfo Info, string PlainTextKey);

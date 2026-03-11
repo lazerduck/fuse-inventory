@@ -97,6 +97,27 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    apiKeyAll(signal?: AbortSignal): Promise<ApiKeyInfo[]>;
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult>;
+
+    /**
+     * @return OK
+     */
+    apiKeyRegenerate(id: string, signal?: AbortSignal): Promise<ApiKeyCreatedResult>;
+
+    /**
+     * @return No Content
+     */
+    apiKeyDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     applicationAll(signal?: AbortSignal): Promise<Application[]>;
 
     /**
@@ -1609,6 +1630,228 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<ActivityFeedResult>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    apiKeyAll(signal?: AbortSignal): Promise<ApiKeyInfo[]> {
+        let url_ = this.baseUrl + "/api/ApiKey";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApiKeyAll(_response);
+        });
+    }
+
+    protected processApiKeyAll(response: Response): Promise<ApiKeyInfo[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ApiKeyInfo.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ApiKeyInfo[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return Created
+     */
+    apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult> {
+        let url_ = this.baseUrl + "/api/ApiKey";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApiKeyPOST(_response);
+        });
+    }
+
+    protected processApiKeyPOST(response: Response): Promise<ApiKeyCreatedResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = ApiKeyCreatedResult.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ApiKeyCreatedResult>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    apiKeyRegenerate(id: string, signal?: AbortSignal): Promise<ApiKeyCreatedResult> {
+        let url_ = this.baseUrl + "/api/ApiKey/{id}/regenerate";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApiKeyRegenerate(_response);
+        });
+    }
+
+    protected processApiKeyRegenerate(response: Response): Promise<ApiKeyCreatedResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ApiKeyCreatedResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ApiKeyCreatedResult>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    apiKeyDELETE(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/ApiKey/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApiKeyDELETE(_response);
+        });
+    }
+
+    protected processApiKeyDELETE(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -9023,6 +9266,110 @@ export interface IActivityFeedResult {
     pageSize?: number;
 }
 
+export class ApiKeyCreatedResult implements IApiKeyCreatedResult {
+    info?: ApiKeyInfo;
+    plainTextKey?: string | undefined;
+
+    constructor(data?: IApiKeyCreatedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.info = _data["info"] ? ApiKeyInfo.fromJS(_data["info"]) : undefined as any;
+            this.plainTextKey = _data["plainTextKey"];
+        }
+    }
+
+    static fromJS(data: any): ApiKeyCreatedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApiKeyCreatedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["info"] = this.info ? this.info.toJSON() : undefined as any;
+        data["plainTextKey"] = this.plainTextKey;
+        return data;
+    }
+}
+
+export interface IApiKeyCreatedResult {
+    info?: ApiKeyInfo;
+    plainTextKey?: string | undefined;
+}
+
+export class ApiKeyInfo implements IApiKeyInfo {
+    id?: string;
+    name?: string | undefined;
+    userId?: string;
+    roleIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    constructor(data?: IApiKeyInfo) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.userId = _data["userId"];
+            if (Array.isArray(_data["roleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["roleIds"])
+                    this.roleIds!.push(item);
+            }
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ApiKeyInfo {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApiKeyInfo();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["userId"] = this.userId;
+        if (Array.isArray(this.roleIds)) {
+            data["roleIds"] = [];
+            for (let item of this.roleIds)
+                data["roleIds"].push(item);
+        }
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IApiKeyInfo {
+    id?: string;
+    name?: string | undefined;
+    userId?: string;
+    roleIds?: string[] | undefined;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
 export class Application implements IApplication {
     id?: string;
     name?: string | undefined;
@@ -10477,6 +10824,58 @@ export interface ICreateAccountGrant {
     database?: string | undefined;
     schema?: string | undefined;
     privileges?: Privilege[] | undefined;
+}
+
+export class CreateApiKey implements ICreateApiKey {
+    name?: string | undefined;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
+
+    constructor(data?: ICreateApiKey) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            if (Array.isArray(_data["roleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["roleIds"])
+                    this.roleIds!.push(item);
+            }
+            this.requestedBy = _data["requestedBy"];
+        }
+    }
+
+    static fromJS(data: any): CreateApiKey {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateApiKey();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        if (Array.isArray(this.roleIds)) {
+            data["roleIds"] = [];
+            for (let item of this.roleIds)
+                data["roleIds"].push(item);
+        }
+        data["requestedBy"] = this.requestedBy;
+        return data;
+    }
+}
+
+export interface ICreateApiKey {
+    name?: string | undefined;
+    roleIds?: string[] | undefined;
+    requestedBy?: string | undefined;
 }
 
 export class CreateApplication implements ICreateApplication {
