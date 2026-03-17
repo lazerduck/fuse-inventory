@@ -235,6 +235,17 @@
                 Graph
               </q-item-section>
             </q-item>
+
+            <q-item clickable v-ripple :to="{ name: 'blastRadius' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
+              data-tour-id="nav-blast-radius">
+              <q-item-section avatar>
+                <q-icon name="crisis_alert" />
+              </q-item-section>
+              <q-item-section>
+                Blast Radius
+              </q-item-section>
+            </q-item>
           </q-expansion-item>
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator>

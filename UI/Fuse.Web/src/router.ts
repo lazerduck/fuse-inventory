@@ -155,6 +155,11 @@ const router = createRouter({
       component: () => import('./pages/ActivitiesPage.vue')
     },
     {
+      path: '/blast-radius',
+      name: 'blastRadius',
+      component: () => import('./pages/BlastRadiusPage.vue')
+    },
+    {
       path: '/risks',
       name: 'risks',
       component: () => import('./pages/RisksPage.vue')

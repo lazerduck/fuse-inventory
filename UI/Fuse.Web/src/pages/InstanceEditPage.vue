@@ -8,6 +8,15 @@
           <p class="subtitle">Manage instance details and dependencies.</p>
         </div>
       </div>
+      <q-btn
+        flat
+        dense
+        icon="crisis_alert"
+        label="Blast Radius"
+        color="negative"
+        :to="{ name: 'blastRadius', query: { kind: 'Application', id: instanceId } }"
+        :disable="!instanceId"
+      />
     </div>
 
     <q-banner v-if="errorMessage" dense class="bg-red-1 text-negative q-mb-md">
