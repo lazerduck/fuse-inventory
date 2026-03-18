@@ -20,6 +20,36 @@
         :disable="environmentStore.isLoading.value"
         hint="Select one or more environments to display"
       />
+      <div class="traversal-mode-group">
+        <div class="text-caption text-grey-7 q-mb-xs">Focus mode</div>
+        <q-btn-toggle
+          v-model="traversalMode"
+          dense
+          rounded
+          unelevated
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="[
+            { label: 'Direct', value: 'direct' },
+            { label: 'Full Chain', value: 'full-chain' },
+            { label: 'Critical Path', value: 'critical-path' }
+          ]"
+        />
+      </div>
+      <div class="risk-overlay-group">
+        <q-toggle
+          v-model="showRiskOverlay"
+          label="Risk Overlay"
+          color="red"
+        />
+        <div v-if="showRiskOverlay" class="risk-legend">
+          <span class="risk-legend-item critical"><span class="risk-dot"></span>Critical</span>
+          <span class="risk-legend-item high"><span class="risk-dot"></span>High</span>
+          <span class="risk-legend-item medium"><span class="risk-dot"></span>Medium</span>
+          <span class="risk-legend-item low"><span class="risk-dot"></span>Low</span>
+        </div>
+      </div>
       <div v-if="selectedNodeId" class="node-filter-info">
         <q-chip
           removable
@@ -30,6 +60,25 @@
         >
           Focused view active - Click node again to deselect
         </q-chip>
+        <div v-if="selectedNodeRisk" class="node-risk-badge">
+          <q-chip
+            :color="getRiskColor(selectedNodeRisk.level)"
+            text-color="white"
+            :icon="getRiskIcon(selectedNodeRisk.level)"
+            dense
+          >
+            {{ selectedNodeRisk.level.charAt(0).toUpperCase() + selectedNodeRisk.level.slice(1) }} Risk
+            <template v-if="selectedNodeRisk.count > 1">&nbsp;({{ selectedNodeRisk.count }})</template>
+          </q-chip>
+          <q-btn
+            flat
+            dense
+            size="sm"
+            icon="open_in_new"
+            label="View Risk"
+            @click="router.push({ name: 'riskEdit', params: { id: selectedNodeRisk.topRiskId } })"
+          />
+        </div>
       </div>
     </div>
     <q-card class="content-card graph-card">
@@ -51,6 +100,19 @@ import { usePlatforms } from '../composables/usePlatforms';
 import { useDataStores } from '../composables/useDataStores';
 import { useExternalResources } from '../composables/useExternalResources';
 import { useMessageBrokers } from '../composables/useMessageBrokers';
+import { useRisks } from '../composables/useRisks';
+import type { Risk } from '../api/client';
+
+type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none'
+type TraversalMode = 'direct' | 'full-chain' | 'critical-path'
+
+interface NodeRiskInfo {
+  level: RiskLevel
+  topRiskId: string | null
+  count: number
+}
+
+const RISK_LEVEL_ORDER: Record<RiskLevel, number> = { critical: 4, high: 3, medium: 2, low: 1, none: 0 }
 
 const graphEl = ref<HTMLDivElement | null>(null)
 
@@ -64,6 +126,7 @@ const platformsStore = usePlatforms()
 const dataStore = useDataStores();
 const externalServicesStore = useExternalResources();
 const messageBrokersStore = useMessageBrokers();
+const { risks } = useRisks();
 
 const isLoading = computed(() => 
   applicationStore.isLoading.value ||
@@ -80,6 +143,96 @@ const selectedEnvIds = ref<string[]>([])
 // Selected node for focused view filtering
 const selectedNodeId = ref<string | null>(null)
 
+// Traversal mode for focus view
+const traversalMode = ref<TraversalMode>('direct')
+
+// Risk overlay toggle
+const showRiskOverlay = ref(true)
+
+// Compute risk map: nodeId → highest-impact active risk info
+const nodeRiskMap = computed<Map<string, NodeRiskInfo>>(() => {
+  const map = new Map<string, NodeRiskInfo>()
+  const allRisks = (risks.value ?? []) as Risk[]
+  const applications = applicationStore.data.value ?? []
+
+  for (const risk of allRisks) {
+    if (risk.status === 'Mitigated' || risk.status === 'Closed') continue
+
+    const rawImpact = (risk.impact ?? '').toLowerCase()
+    const impactLevel: RiskLevel = (['critical', 'high', 'medium', 'low'] as RiskLevel[]).includes(rawImpact as RiskLevel)
+      ? (rawImpact as RiskLevel)
+      : 'none'
+
+    const nodeIds: string[] = []
+    switch (risk.targetType) {
+      case 'Application': {
+        const app = applications.find(a => a.id === risk.targetId)
+        if (app) {
+          for (const inst of app.instances ?? []) {
+            if (inst.id) nodeIds.push(`appi-${inst.id}`)
+          }
+        }
+        break
+      }
+      case 'ApplicationInstance':
+        if (risk.targetId) nodeIds.push(`appi-${risk.targetId}`)
+        break
+      case 'DataStore':
+        if (risk.targetId) nodeIds.push(`ds-${risk.targetId}`)
+        break
+      case 'ExternalResource':
+        if (risk.targetId) nodeIds.push(`ext-${risk.targetId}`)
+        break
+      case 'MessageBroker':
+        if (risk.targetId) nodeIds.push(`mb-${risk.targetId}`)
+        break
+    }
+
+    for (const nodeId of nodeIds) {
+      const existing = map.get(nodeId)
+      if (!existing) {
+        map.set(nodeId, { level: impactLevel, topRiskId: risk.id ?? null, count: 1 })
+      } else {
+        const newCount = existing.count + 1
+        if (RISK_LEVEL_ORDER[impactLevel] > RISK_LEVEL_ORDER[existing.level]) {
+          map.set(nodeId, { level: impactLevel, topRiskId: risk.id ?? null, count: newCount })
+        } else {
+          map.set(nodeId, { ...existing, count: newCount })
+        }
+      }
+    }
+  }
+  return map
+})
+
+// Risk info for the currently selected node
+const selectedNodeRisk = computed<NodeRiskInfo | null>(() => {
+  if (!selectedNodeId.value || !showRiskOverlay.value) return null
+  const info = nodeRiskMap.value.get(selectedNodeId.value)
+  if (!info || info.level === 'none') return null
+  return info
+})
+
+function getRiskColor(level: RiskLevel): string {
+  switch (level) {
+    case 'critical': return 'red-8'
+    case 'high': return 'orange-8'
+    case 'medium': return 'yellow-9'
+    case 'low': return 'green-6'
+    default: return 'grey'
+  }
+}
+
+function getRiskIcon(level: RiskLevel): string {
+  switch (level) {
+    case 'critical': return 'error'
+    case 'high': return 'warning'
+    case 'medium': return 'info'
+    case 'low': return 'check_circle'
+    default: return 'help'
+  }
+}
+
 watch(isLoading, (newVal) => {
   if (!newVal) {
     refreshGraph();
@@ -91,6 +244,21 @@ watch(selectedEnvIds, () => {
   // Clear node selection when changing environments
   selectedNodeId.value = null
   refreshGraph()
+})
+
+// Re-apply focus filter when traversal mode changes
+watch(traversalMode, () => {
+  applyNodeFocusFilter()
+})
+
+// Refresh graph when risk overlay is toggled
+watch(showRiskOverlay, () => {
+  refreshGraph()
+})
+
+// Refresh graph when risk data loads or changes
+watch(() => risks.value, () => {
+  if (!isLoading.value) refreshGraph()
 })
 
 function refreshGraph() {
@@ -198,6 +366,24 @@ function refreshGraph() {
   cy.elements().remove()
   cy.add([...nodes, ...edges])
 
+  // Apply risk overlay classes to nodes
+  cy.nodes().forEach(node => {
+    node.removeClass('risk-overlay-critical risk-overlay-high risk-overlay-medium risk-overlay-low')
+    if (showRiskOverlay.value) {
+      const riskInfo = nodeRiskMap.value.get(node.id())
+      if (riskInfo && riskInfo.level !== 'none') {
+        node.addClass(`risk-overlay-${riskInfo.level}`)
+      }
+      node.data('riskLevel', riskInfo?.level ?? 'none')
+      node.data('topRiskId', riskInfo?.topRiskId ?? null)
+      node.data('riskCount', riskInfo?.count ?? 0)
+    } else {
+      node.data('riskLevel', 'none')
+      node.data('topRiskId', null)
+      node.data('riskCount', 0)
+    }
+  })
+
   // Update node text color based on theme
   const textColor = $q.dark.isActive ? '#fff' : '#222';
   cy.style()
@@ -234,18 +420,72 @@ function applyNodeFocusFilter() {
       return
     }
 
-    // Get connected nodes (neighbors) and edges
-    const neighborhood = selectedNode.neighborhood()
-    const connectedNodes = neighborhood.nodes()
-    const connectedEdges = neighborhood.edges()
+    let elementsToShow = cy.collection()
+
+    if (traversalMode.value === 'direct') {
+      // Direct neighbors only (existing behavior)
+      const neighborhood = selectedNode.neighborhood()
+      elementsToShow = elementsToShow.union(selectedNode).union(neighborhood)
+    } else if (traversalMode.value === 'full-chain') {
+      // All ancestors (predecessors) and descendants (successors)
+      const predecessors = selectedNode.predecessors()
+      const successors = selectedNode.successors()
+      elementsToShow = elementsToShow.union(selectedNode).union(predecessors).union(successors)
+    } else if (traversalMode.value === 'critical-path') {
+      // Paths from selected node to/from nodes with critical or high risk
+      const predecessors = selectedNode.predecessors()
+      const successors = selectedNode.successors()
+      const fullChain = predecessors.union(successors)
+
+      // Find critical/high risk nodes in the full chain
+      const riskNodes = fullChain.nodes().filter(n => {
+        const level = n.data('riskLevel')
+        return level === 'critical' || level === 'high'
+      })
+
+      if (riskNodes.length === 0) {
+        // No risk nodes found — fall back to full chain
+        elementsToShow = elementsToShow.union(selectedNode).union(fullChain)
+      } else {
+        // Include selected node, then find directed paths to/from each risk node
+        elementsToShow = elementsToShow.union(selectedNode)
+        riskNodes.forEach(riskNode => {
+          // Downstream: selected → riskNode (dependency direction)
+          const downResult = cy!.elements().aStar({
+            root: selectedNode,
+            goal: riskNode,
+            directed: true
+          })
+          if (downResult.found) {
+            elementsToShow = elementsToShow.union(downResult.path)
+          }
+          // Upstream: riskNode → selected (dependent direction)
+          const upResult = cy!.elements().aStar({
+            root: riskNode,
+            goal: selectedNode,
+            directed: true
+          })
+          if (upResult.found) {
+            elementsToShow = elementsToShow.union(upResult.path)
+          }
+        })
+      }
+    }
 
     // Hide all elements first
     cy.elements().addClass('dimmed')
 
     // Show and highlight the selected node and its connections
-    selectedNode.removeClass('dimmed').addClass('selected')
-    connectedNodes.removeClass('dimmed').addClass('neighbor')
-    connectedEdges.removeClass('dimmed')
+    elementsToShow.forEach(el => {
+      el.removeClass('dimmed')
+      if (el.isNode()) {
+        if (el.id() === selectedNodeId.value) {
+          el.addClass('selected')
+        } else {
+          el.addClass('neighbor')
+        }
+      }
+    })
   } else {
     // No node selected, show all elements normally
     cy.elements().removeClass('dimmed selected neighbor')
@@ -264,6 +504,15 @@ function handleNodeClick(nodeId: string) {
 }
 
 function handleNodeDoubleClick(nodeId: string) {
+  // If risk overlay is enabled and this node has an active risk, navigate to that risk
+  if (showRiskOverlay.value) {
+    const topRiskId = cy?.getElementById(nodeId)?.data('topRiskId')
+    if (topRiskId) {
+      router.push({ name: 'riskEdit', params: { id: topRiskId } })
+      return
+    }
+  }
+
   // Parse node ID to get type and actual ID
   const [prefix, ...idParts] = nodeId.split('-')
   const actualId = idParts.join('-')
@@ -328,14 +577,16 @@ onMounted(() => {
         'target-arrow-color': '#ccc',
         'curve-style': 'bezier'
       }},
+      // Risk overlay styles — colored borders showing active risk level
+      { selector: '.risk-overlay-critical', style: { 'border-width': 4, 'border-color': '#dc2626', 'border-style': 'solid' } as any },
+      { selector: '.risk-overlay-high', style: { 'border-width': 4, 'border-color': '#f97316', 'border-style': 'solid' } as any },
+      { selector: '.risk-overlay-medium', style: { 'border-width': 3, 'border-color': '#eab308', 'border-style': 'solid' } as any },
+      { selector: '.risk-overlay-low', style: { 'border-width': 2, 'border-color': '#22c55e', 'border-style': 'solid' } as any },
       { selector: '.selected', style: {
           'background-color': '#ffe600',
-          'border-width': 0,
           'z-index': 999
         } as any },
-        { selector: '.neighbor', style: {
-          'border-width': 0
-        } as any },
+        { selector: '.neighbor', style: {} as any },
       { selector: '.dimmed', style: {
         'opacity': 0.1,
         'z-index': 0
@@ -428,12 +679,59 @@ watch(() => $q.dark.isActive, (isDark) => {
 .node-filter-info {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-top: 0.5rem;
   min-width: 220px;
+}
+
+.node-risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .env-select {
   min-width: 260px;
   margin-right: 1.5rem;
 }
+
+.traversal-mode-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.risk-overlay-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.risk-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.risk-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.risk-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.risk-legend-item.critical .risk-dot { background-color: #dc2626; }
+.risk-legend-item.high .risk-dot { background-color: #f97316; }
+.risk-legend-item.medium .risk-dot { background-color: #eab308; }
+.risk-legend-item.low .risk-dot { background-color: #22c55e; }
 </style>
