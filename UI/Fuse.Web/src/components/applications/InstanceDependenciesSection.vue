@@ -23,6 +23,15 @@
             {{ resolveTargetName(props.row.__source) }}
           </q-td>
         </template>
+        <template #body-cell-severity="props">
+          <q-td :props="props">
+            <q-badge
+              :label="props.row.severity === 'Partial' ? 'Partial' : 'Full'"
+              :color="props.row.severity === 'Partial' ? 'warning' : 'negative'"
+              outline
+            />
+          </q-td>
+        </template>
         <template #body-cell-authKind="props">
           <q-td :props="props">
             <q-badge :label="props.row.authKind ?? 'None'" outline />
@@ -77,6 +86,7 @@ interface DependencyRow {
   targetId?: string
   targetKind?: TargetKind
   port?: number
+  severity?: string
   authKind?: string
   accountId?: string
   identityId?: string
@@ -105,6 +115,7 @@ const columns: QTableColumn<DependencyRow>[] = [
   { name: 'target', label: 'Target', field: 'targetId', align: 'left' },
   { name: 'targetKind', label: 'Kind', field: 'targetKind', align: 'left' },
   { name: 'port', label: 'Port', field: 'port', align: 'left' },
+  { name: 'severity', label: 'Severity', field: 'severity', align: 'left' },
   { name: 'authKind', label: 'Auth', field: 'authKind', align: 'left' },
   { name: 'credential', label: 'Credential', field: (row) => row.accountId || row.__source.identityId, align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }

@@ -435,7 +435,7 @@ public class ApplicationService : IApplicationService
         if (command.Port is int p && (p < 1 || p > 65535))
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
-        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId);
+        var dep = new ApplicationInstanceDependency(Guid.NewGuid(), command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId, command.Severity);
         var updatedInst = inst with { Dependencies = inst.Dependencies.Append(dep).ToList(), UpdatedAt = DateTime.UtcNow };
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
@@ -466,7 +466,7 @@ public class ApplicationService : IApplicationService
         if (command.Port is int p && (p < 1 || p > 65535))
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
-        var updatedDep = new ApplicationInstanceDependency(command.DependencyId, command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId);
+        var updatedDep = new ApplicationInstanceDependency(command.DependencyId, command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId, command.Severity);
         var updatedInst = inst with { Dependencies = inst.Dependencies.Select(d => d.Id == dep.Id ? updatedDep : d).ToList(), UpdatedAt = DateTime.UtcNow };
         var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
         await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });

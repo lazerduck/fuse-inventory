@@ -9582,6 +9582,7 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 
     constructor(data?: IApplicationInstanceDependency) {
         if (data) {
@@ -9601,6 +9602,7 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
             this.authKind = _data["authKind"];
             this.accountId = _data["accountId"];
             this.identityId = _data["identityId"];
+            this.severity = _data["severity"];
         }
     }
 
@@ -9620,6 +9622,7 @@ export class ApplicationInstanceDependency implements IApplicationInstanceDepend
         data["authKind"] = this.authKind;
         data["accountId"] = this.accountId;
         data["identityId"] = this.identityId;
+        data["severity"] = this.severity;
         return data;
     }
 }
@@ -9632,6 +9635,7 @@ export interface IApplicationInstanceDependency {
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 }
 
 export class ApplicationPipeline implements IApplicationPipeline {
@@ -10963,6 +10967,7 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 
     constructor(data?: ICreateApplicationDependency) {
         if (data) {
@@ -10983,6 +10988,7 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
             this.authKind = _data["authKind"];
             this.accountId = _data["accountId"];
             this.identityId = _data["identityId"];
+            this.severity = _data["severity"];
         }
     }
 
@@ -11003,6 +11009,7 @@ export class CreateApplicationDependency implements ICreateApplicationDependency
         data["authKind"] = this.authKind;
         data["accountId"] = this.accountId;
         data["identityId"] = this.identityId;
+        data["severity"] = this.severity;
         return data;
     }
 }
@@ -11016,6 +11023,7 @@ export interface ICreateApplicationDependency {
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 }
 
 export class CreateApplicationInstance implements ICreateApplicationInstance {
@@ -12402,6 +12410,11 @@ export enum DependencyAuthKind {
     None = "None",
     Account = "Account",
     Identity = "Identity",
+}
+
+export enum DependencySeverity {
+    Partial = "Partial",
+    Full = "Full",
 }
 
 export class DriftResolutionOperation implements IDriftResolutionOperation {
@@ -15721,6 +15734,7 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 
     constructor(data?: IUpdateApplicationDependency) {
         if (data) {
@@ -15742,6 +15756,7 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
             this.authKind = _data["authKind"];
             this.accountId = _data["accountId"];
             this.identityId = _data["identityId"];
+            this.severity = _data["severity"];
         }
     }
 
@@ -15763,6 +15778,7 @@ export class UpdateApplicationDependency implements IUpdateApplicationDependency
         data["authKind"] = this.authKind;
         data["accountId"] = this.accountId;
         data["identityId"] = this.identityId;
+        data["severity"] = this.severity;
         return data;
     }
 }
@@ -15777,6 +15793,7 @@ export interface IUpdateApplicationDependency {
     authKind?: DependencyAuthKind;
     accountId?: string | undefined;
     identityId?: string | undefined;
+    severity?: DependencySeverity;
 }
 
 export class UpdateApplicationInstance implements IUpdateApplicationInstance {

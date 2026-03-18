@@ -84,6 +84,20 @@
         </h3>
         <p class="section-value">{{ dependency.port }}</p>
       </section>
+
+      <!-- Severity -->
+      <section class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="warning" size="20px" />
+          Severity
+        </h3>
+        <q-badge
+          :label="severityLabel"
+          :color="severityColor"
+          outline
+          class="severity-badge"
+        />
+      </section>
     </div>
   </ReadOnlyShell>
 </template>
@@ -99,7 +113,7 @@ import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
 import { useAccounts } from '../../composables/useAccounts'
 import { useIdentities } from '../../composables/useIdentities'
-import { DependencyAuthKind, TargetKind } from '../../api/client'
+import { DependencyAuthKind, DependencySeverity, TargetKind } from '../../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -276,6 +290,28 @@ const authEntityRoute = computed(() => {
   return null
 })
 
+const severityLabel = computed(() => {
+  switch (dependency.value?.severity) {
+    case DependencySeverity.Partial:
+      return 'Partial / Degraded'
+    case DependencySeverity.Full:
+      return 'Full (will not work without)'
+    default:
+      return 'Full (will not work without)'
+  }
+})
+
+const severityColor = computed(() => {
+  switch (dependency.value?.severity) {
+    case DependencySeverity.Partial:
+      return 'warning'
+    case DependencySeverity.Full:
+      return 'negative'
+    default:
+      return 'negative'
+  }
+})
+
 // Higher context: App + Instance
 const higherContext = computed<HigherItem[]>(() => {
   const items: HigherItem[] = []
@@ -436,7 +472,8 @@ function goBack() {
 }
 
 .type-badge,
-.auth-badge {
+.auth-badge,
+.severity-badge {
   font-size: 0.85rem;
 }
 
