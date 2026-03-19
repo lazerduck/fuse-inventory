@@ -145,6 +145,30 @@
         <p class="section-notes">{{ application.notes }}</p>
       </section>
 
+      <!-- API Key -->
+      <section v-if="instance.apiKey && instance.apiKey.kind !== 'None'" class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="vpn_key" size="20px" />
+          API Key
+        </h3>
+        <div class="url-list">
+          <div class="url-item">
+            <span class="url-label">Type</span>
+            <span class="url-value">
+              <q-badge
+                :label="instance.apiKey.kind === 'AzureKeyVault' ? 'Azure Key Vault' : 'Plain Text'"
+                :color="instance.apiKey.kind === 'AzureKeyVault' ? 'blue' : 'green'"
+                outline
+              />
+            </span>
+          </div>
+          <div v-if="instance.apiKey.kind === 'AzureKeyVault' && instance.apiKey.azureKeyVault" class="url-item">
+            <span class="url-label">Secret Name</span>
+            <span class="url-value">{{ instance.apiKey.azureKeyVault.secretName }}</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Dependents (reverse dependencies) -->
       <section class="detail-section">
         <h3 class="section-subtitle">
@@ -424,6 +448,8 @@ function resolveAuthInfo(
         return `identity: ${identityName}`
       }
       return 'auth: identity'
+    case DependencyAuthKind.ApiKey:
+      return 'auth: api key'
     default:
       return ''
   }

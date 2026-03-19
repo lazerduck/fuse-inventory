@@ -227,7 +227,8 @@ public class ApplicationService : IApplicationService
             Dependencies: Array.Empty<ApplicationInstanceDependency>(),
             TagIds: tagIds,
             CreatedAt: now,
-            UpdatedAt: now
+            UpdatedAt: now,
+            ApiKey: command.ApiKey
         );
 
         var updated = app with { Instances = app.Instances.Append(inst).ToList(), UpdatedAt = now };
@@ -283,6 +284,7 @@ public class ApplicationService : IApplicationService
             OpenApiUri = command.OpenApiUri,
             Version = command.Version,
             TagIds = tagIds,
+            ApiKey = command.ApiKey,
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -358,6 +360,23 @@ public class ApplicationService : IApplicationService
         await _auditService.LogAsync(auditLog);
         
         return Result.Success();
+    }
+
+    public async Task<Result<string>> GetInstanceApiKeyAsync(Guid applicationId, Guid instanceId)
+    {
+        var store = await _fuseStore.GetAsync();
+        var app = store.Applications.FirstOrDefault(a => a.Id == applicationId);
+        if (app is null)
+            return Result<string>.Failure($"Application with ID '{applicationId}' not found.", ErrorType.NotFound);
+        var inst = app.Instances.FirstOrDefault(i => i.Id == instanceId);
+        if (inst is null)
+            return Result<string>.Failure($"Instance with ID '{instanceId}' not found.", ErrorType.NotFound);
+        if (inst.ApiKey is null || inst.ApiKey.Kind == SecretBindingKind.None)
+            return Result<string>.Failure("This instance does not have an API key configured.", ErrorType.NotFound);
+        if (inst.ApiKey.Kind == SecretBindingKind.PlainReference)
+            return Result<string>.Success(inst.ApiKey.PlainReference ?? string.Empty);
+        // Azure Key Vault bindings are not resolved here; callers should use the SecretProvider reveal endpoint
+        return Result<string>.Failure("Azure Key Vault API keys must be retrieved via the secret provider reveal endpoint.", ErrorType.Validation);
     }
 
     public async Task<Result<ApplicationPipeline>> CreatePipelineAsync(CreateApplicationPipeline command)
@@ -517,6 +536,19 @@ public class ApplicationService : IApplicationService
                 // 2. The identity is owned by the same instance that's creating the dependency
                 if (identity.OwnerInstanceId is not null && identity.OwnerInstanceId != instanceId)
                     return Result<ApplicationInstanceDependency>.Failure($"Identity with ID '{identityId}' is owned by a different instance.", ErrorType.Validation);
+                break;
+
+            case DependencyAuthKind.ApiKey:
+                // For ApiKey auth kind, the target must be an Application instance with an API key configured
+                if (dependencyTargetKind != TargetKind.Application)
+                    return Result<ApplicationInstanceDependency>.Failure("ApiKey auth kind can only be used with Application targets.", ErrorType.Validation);
+                var targetInstance = store.Applications
+                    .SelectMany(a => a.Instances)
+                    .FirstOrDefault(i => i.Id == dependencyTargetId);
+                if (targetInstance is null)
+                    return Result<ApplicationInstanceDependency>.Failure($"Target application instance with ID '{dependencyTargetId}' not found.", ErrorType.Validation);
+                if (targetInstance.ApiKey is null || targetInstance.ApiKey.Kind == SecretBindingKind.None)
+                    return Result<ApplicationInstanceDependency>.Failure($"Target application instance does not have an API key configured.", ErrorType.Validation);
                 break;
 
             case DependencyAuthKind.None:

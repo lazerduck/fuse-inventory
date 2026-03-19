@@ -1,5 +1,6 @@
 namespace Fuse.API.Controllers
 {
+    using System.Security.Claims;
     using Microsoft.AspNetCore.Mvc;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
@@ -13,11 +14,15 @@ namespace Fuse.API.Controllers
     {
         private readonly IApplicationService _appService;
         private readonly IKumaHealthService _healthService;
+        private readonly IPermissionService _permissionService;
+        private readonly ISecurityService _securityService;
 
-        public ApplicationController(IApplicationService appService, IKumaHealthService healthService)
+        public ApplicationController(IApplicationService appService, IKumaHealthService healthService, IPermissionService permissionService, ISecurityService securityService)
         {
             _appService = appService;
             _healthService = healthService;
+            _permissionService = permissionService;
+            _securityService = securityService;
         }
 
         // Applications
@@ -180,6 +185,59 @@ namespace Fuse.API.Controllers
             return Ok(healthStatus);
         }
 
+        [HttpGet("{appId}/instances/{instanceId}/api-key")]
+        [SwaggerOperation(OperationId = "instanceApiKey")]
+        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<string>> GetInstanceApiKey([FromRoute] Guid appId, [FromRoute] Guid instanceId)
+        {
+            var app = await _appService.GetApplicationByIdAsync(appId);
+            if (app is null)
+                return NotFound(new { error = $"Application with ID '{appId}' not found." });
+
+            var instance = app.Instances.FirstOrDefault(i => i.Id == instanceId);
+            if (instance is null)
+                return NotFound(new { error = $"Instance with ID '{instanceId}' not found." });
+
+            if (instance.ApiKey is null || instance.ApiKey.Kind == SecretBindingKind.None)
+                return NotFound(new { error = "This instance does not have an API key configured." });
+
+            var userId = GetUserId();
+            var securityState = await _securityService.GetSecurityStateAsync();
+            var user = userId.HasValue ? securityState.Users.FirstOrDefault(u => u.Id == userId.Value) : null;
+
+            if (instance.ApiKey.Kind == SecretBindingKind.AzureKeyVault)
+            {
+                // Requires AzureKeyVaultSecretsView permission
+                if (user is null || !await _permissionService.HasPermissionAsync(user, Permission.AzureKeyVaultSecretsView))
+                {
+                    if (user is null || !await _permissionService.IsUserAdminAsync(user))
+                        return StatusCode(403, new { error = "AzureKeyVaultSecretsView permission required to access vault-stored API keys." });
+                }
+                // Return vault metadata; actual secret retrieval uses the secret provider reveal endpoint
+                return Ok(new { kind = "AzureKeyVault", secretName = instance.ApiKey.AzureKeyVault?.SecretName, providerId = instance.ApiKey.AzureKeyVault?.ProviderId });
+            }
+
+            // Plain text API key requires ApplicationsRead permission
+            if (user is null || !await _permissionService.HasPermissionAsync(user, Permission.ApplicationsRead))
+            {
+                if (user is null || !await _permissionService.IsUserAdminAsync(user))
+                    return StatusCode(403, new { error = "ApplicationsRead permission required to view API keys." });
+            }
+
+            var result = await _appService.GetInstanceApiKeyAsync(appId, instanceId);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    _ => BadRequest(new { error = result.Error })
+                };
+            }
+            return Ok(result.Value);
+        }
+
         // Pipelines
         [HttpPost("{appId}/pipelines")]
         [SwaggerOperation(OperationId = "pipelinesPOST")]
@@ -300,6 +358,14 @@ namespace Fuse.API.Controllers
                 };
             }
             return NoContent();
+        }
+
+        private Guid? GetUserId()
+        {
+            var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdValue) && Guid.TryParse(userIdValue, out var parsedUserId))
+                return parsedUserId;
+            return null;
         }
     }
 }
