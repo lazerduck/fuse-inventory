@@ -209,22 +209,23 @@ namespace Fuse.API.Controllers
 
             if (instance.ApiKey.Kind == SecretBindingKind.AzureKeyVault)
             {
-                // Requires AzureKeyVaultSecretsView permission
-                if (user is null || !await _permissionService.HasPermissionAsync(user, Permission.AzureKeyVaultSecretsView))
-                {
-                    if (user is null || !await _permissionService.IsUserAdminAsync(user))
-                        return StatusCode(403, new { error = "AzureKeyVaultSecretsView permission required to access vault-stored API keys." });
-                }
+                // Requires AzureKeyVaultSecretsView permission or admin
+                if (user is null)
+                    return StatusCode(403, new { error = "Authentication required to access vault-stored API keys." });
+                if (!await _permissionService.HasPermissionAsync(user, Permission.AzureKeyVaultSecretsView)
+                    && !await _permissionService.IsUserAdminAsync(user))
+                    return StatusCode(403, new { error = "AzureKeyVaultSecretsView permission required to access vault-stored API keys." });
+
                 // Return vault metadata; actual secret retrieval uses the secret provider reveal endpoint
                 return Ok(new { kind = "AzureKeyVault", secretName = instance.ApiKey.AzureKeyVault?.SecretName, providerId = instance.ApiKey.AzureKeyVault?.ProviderId });
             }
 
-            // Plain text API key requires ApplicationsRead permission
-            if (user is null || !await _permissionService.HasPermissionAsync(user, Permission.ApplicationsRead))
-            {
-                if (user is null || !await _permissionService.IsUserAdminAsync(user))
-                    return StatusCode(403, new { error = "ApplicationsRead permission required to view API keys." });
-            }
+            // Plain text API key requires ApplicationsRead permission or admin
+            if (user is null)
+                return StatusCode(403, new { error = "Authentication required to view API keys." });
+            if (!await _permissionService.HasPermissionAsync(user, Permission.ApplicationsRead)
+                && !await _permissionService.IsUserAdminAsync(user))
+                return StatusCode(403, new { error = "ApplicationsRead permission required to view API keys." });
 
             var result = await _appService.GetInstanceApiKeyAsync(appId, instanceId);
             if (!result.IsSuccess)

@@ -285,7 +285,7 @@ function onApiKeyKindChange(kind: string) {
 
 function buildApiKeyBinding(): SecretBinding | undefined {
   if (form.apiKeyKind === 'PlainReference') {
-    if (!form.apiKeyValue) return Object.assign(new SecretBinding(), { kind: SecretBindingKind.None })
+    if (!form.apiKeyValue) return undefined
     return Object.assign(new SecretBinding(), {
       kind: SecretBindingKind.PlainReference,
       plainReference: form.apiKeyValue
