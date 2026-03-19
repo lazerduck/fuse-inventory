@@ -144,6 +144,35 @@
         </h3>
         <p class="section-notes">{{ application.notes }}</p>
       </section>
+
+      <!-- Dependents (reverse dependencies) -->
+      <section class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="account_tree" size="20px" />
+          Depended on by
+        </h3>
+        <div v-if="reverseDependencies.length === 0" class="empty-value">
+          No other instances depend on this instance
+        </div>
+        <q-list v-else separator class="identity-list">
+          <q-item
+            v-for="dependent in reverseDependencies"
+            :key="dependent.dependencyId"
+            clickable
+            @click="router.push(`/view/instance/${dependent.instanceId}`)"
+          >
+            <q-item-section avatar>
+              <q-icon name="layers" color="primary" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ dependent.instanceDisplayName }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon name="chevron_right" color="grey-6" />
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </section>
     </div>
   </ReadOnlyShell>
 </template>
@@ -161,7 +190,7 @@ import { useAccounts } from '../../composables/useAccounts'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
 import { useTags } from '../../composables/useTags'
-import { DependencyAuthKind, TargetKind, type TagColor } from '../../api/client'
+import { DependencyAuthKind, DependencySeverity, TargetKind, type TagColor } from '../../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -263,6 +292,37 @@ function getTagColor(color: TagColor | undefined): string {
   return colorMap[color] ?? 'grey'
 }
 
+// Reverse dependencies: instances that depend on this instance
+const reverseDependencies = computed(() => {
+  if (!applicationsData.value || !id.value) return []
+
+  const results: Array<{
+    appName: string
+    instanceId: string
+    instanceDisplayName: string
+    dependencyId: string
+  }> = []
+
+  for (const app of applicationsData.value) {
+    for (const inst of app.instances ?? []) {
+      if (inst.id === id.value) continue
+      for (const incomingDep of inst.dependencies ?? []) {
+        if (incomingDep.targetKind === TargetKind.Application && incomingDep.targetId === id.value && incomingDep.id) {
+          const envName = environmentLookup.value[inst.environmentId ?? ''] ?? 'Unknown'
+          results.push({
+            appName: app.name ?? 'App',
+            instanceId: inst.id ?? '',
+            instanceDisplayName: `${app.name ?? 'App'} — ${envName}`,
+            dependencyId: incomingDep.id
+          })
+        }
+      }
+    }
+  }
+
+  return results
+})
+
 // Higher context: App + Environment
 const higherContext = computed<HigherItem[]>(() => {
   const items: HigherItem[] = []
@@ -299,13 +359,14 @@ const lowerContext = computed<LowerItem[]>(() => {
   return deps.map((dep) => {
     const targetName = resolveTargetName(dep.targetKind, dep.targetId)
     const authInfo = resolveAuthInfo(dep.authKind, dep.accountId, dep.identityId)
+    const severityInfo = dep.severity === DependencySeverity.Partial ? 'partial' : 'full'
     
     return {
       id: dep.id ?? '',
       type: 'dependency',
       name: targetName,
       route: `/view/dependency/${dep.id}`,
-      subtitle: authInfo
+      subtitle: `${severityInfo} · ${authInfo}`
     } as LowerItem
   })
 })

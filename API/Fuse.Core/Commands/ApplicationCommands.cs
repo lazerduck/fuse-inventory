@@ -89,7 +89,8 @@ public record CreateApplicationDependency(
     int? Port,
     DependencyAuthKind AuthKind,
     Guid? AccountId,
-    Guid? IdentityId
+    Guid? IdentityId,
+    DependencySeverity Severity = DependencySeverity.Full
 );
 
 public record UpdateApplicationDependency(
@@ -101,7 +102,8 @@ public record UpdateApplicationDependency(
     int? Port,
     DependencyAuthKind AuthKind,
     Guid? AccountId,
-    Guid? IdentityId
+    Guid? IdentityId,
+    DependencySeverity Severity = DependencySeverity.Full
 );
 
 public record DeleteApplicationDependency(

@@ -81,6 +81,27 @@
         </q-td>
       </template>
 
+      <template #body-cell-severity="cellProps">
+        <q-td :props="cellProps">
+          <q-select
+            v-if="cellProps.row.isEditing"
+            v-model="cellProps.row.form.severity"
+            dense
+            outlined
+            emit-value
+            map-options
+            :options="severityOptions"
+            class="dep-select-wide"
+          />
+          <q-badge
+            v-else
+            :label="cellProps.row.dep.severity === DependencySeverity.Partial ? 'Partial' : 'Full'"
+            :color="cellProps.row.dep.severity === DependencySeverity.Partial ? 'warning' : 'negative'"
+            outline
+          />
+        </q-td>
+      </template>
+
       <template #body-cell-authKind="cellProps">
         <q-td :props="cellProps">
           <q-select
@@ -200,6 +221,7 @@ import {
   ApplicationInstanceDependency,
   CreateApplicationDependency,
   DependencyAuthKind,
+  DependencySeverity,
   TargetKind,
   UpdateApplicationDependency
 } from '../../api/client'
@@ -224,6 +246,7 @@ interface DependencyRowForm {
   authKind: DependencyAuthKind
   accountId: string | null
   identityId: string | null
+  severity: DependencySeverity
   saving: boolean
 }
 
@@ -285,6 +308,11 @@ const authKindOptions: SelectOption<DependencyAuthKind>[] = [
   { label: 'Identity', value: DependencyAuthKind.Identity }
 ]
 
+const severityOptions: SelectOption<DependencySeverity>[] = [
+  { label: 'Partial / Degraded', value: DependencySeverity.Partial },
+  { label: 'Full (will not work without)', value: DependencySeverity.Full }
+]
+
 const identityOptions = computed<SelectOption<string>[]>(() => {
   const currentInstanceId = props.instanceId
   return (identitiesQuery.data.value ?? [])
@@ -303,6 +331,7 @@ const columns: QTableColumn<TableRow>[] = [
   { name: 'targetKind', label: 'Kind', field: (row) => row.dep?.targetKind ?? '', align: 'left' },
   { name: 'target', label: 'Target', field: (row) => row.dep?.targetId ?? '', align: 'left' },
   { name: 'port', label: 'Port', field: (row) => row.dep?.port ?? '', align: 'left' },
+  { name: 'severity', label: 'Severity', field: (row) => row.dep?.severity ?? '', align: 'left' },
   { name: 'authKind', label: 'Auth', field: (row) => row.dep?.authKind ?? '', align: 'left' },
   { name: 'credential', label: 'Credential', field: (row) => row.dep?.accountId ?? row.dep?.identityId ?? '', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
@@ -335,6 +364,7 @@ function createEmptyForm(draftId?: string): DependencyRowForm {
     authKind: DependencyAuthKind.None,
     accountId: null,
     identityId: null,
+    severity: DependencySeverity.Full,
     saving: false
   }
 }
@@ -353,6 +383,7 @@ function startEdit(dep: ApplicationInstanceDependency) {
     authKind: dep.authKind ?? DependencyAuthKind.None,
     accountId: dep.accountId ?? null,
     identityId: dep.identityId ?? null,
+    severity: dep.severity ?? DependencySeverity.Full,
     saving: false
   }
 }
@@ -578,7 +609,8 @@ async function saveRow(row: TableRow) {
     port: form.port ?? undefined,
     authKind: form.authKind,
     accountId: form.accountId ?? undefined,
-    identityId: form.identityId ?? undefined
+    identityId: form.identityId ?? undefined,
+    severity: form.severity
   }
 
   try {

@@ -48,5 +48,6 @@ public record ApplicationInstanceDependency
     int? Port,
     DependencyAuthKind AuthKind,
     Guid? AccountId,
-    Guid? IdentityId
+    Guid? IdentityId,
+    DependencySeverity Severity = DependencySeverity.Full
 );

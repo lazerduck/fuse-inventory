@@ -654,4 +654,36 @@ public class ApplicationServiceTests
         var depDelete = await service.DeleteDependencyAsync(new DeleteApplicationDependency(app.Id, instId, dep.Id));
     Assert.True(depDelete.IsSuccess);
     }
+
+    [Fact]
+    public async Task Dependency_Severity_IsStoredAndReturned()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var ds = new DataStore(Guid.NewGuid(), "D", null, "sql", env.Id, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(),
+            new[] { new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow) },
+            Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, dataStores: new[] { ds });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+        var inst = app.Instances.Single();
+
+        // Create with Partial severity
+        var createPartial = await service.CreateDependencyAsync(new CreateApplicationDependency(
+            app.Id, inst.Id, ds.Id, TargetKind.DataStore, null, DependencyAuthKind.None, null, null, DependencySeverity.Partial));
+        Assert.True(createPartial.IsSuccess);
+        Assert.Equal(DependencySeverity.Partial, createPartial.Value!.Severity);
+
+        // Create with Full severity (default)
+        var createFull = await service.CreateDependencyAsync(new CreateApplicationDependency(
+            app.Id, inst.Id, ds.Id, TargetKind.DataStore, null, DependencyAuthKind.None, null, null, DependencySeverity.Full));
+        Assert.True(createFull.IsSuccess);
+        Assert.Equal(DependencySeverity.Full, createFull.Value!.Severity);
+
+        // Update from Full to Partial
+        var updated = await service.UpdateDependencyAsync(new UpdateApplicationDependency(
+            app.Id, inst.Id, createFull.Value!.Id, ds.Id, TargetKind.DataStore, null, DependencyAuthKind.None, null, null, DependencySeverity.Partial));
+        Assert.True(updated.IsSuccess);
+        Assert.Equal(DependencySeverity.Partial, updated.Value!.Severity);
+    }
 }
