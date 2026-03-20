@@ -37,7 +37,8 @@ public record ApplicationInstance
     IReadOnlyList<ApplicationInstanceDependency> Dependencies,
     HashSet<Guid> TagIds,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    SecretBinding? ApiKey = null
 );
 
 public record ApplicationInstanceDependency

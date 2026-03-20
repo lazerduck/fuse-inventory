@@ -17,6 +17,7 @@ public interface IApplicationService
     Task<Result<ApplicationInstance>> CreateInstanceAsync(CreateApplicationInstance command);
     Task<Result<ApplicationInstance>> UpdateInstanceAsync(UpdateApplicationInstance command);
     Task<Result> DeleteInstanceAsync(DeleteApplicationInstance command);
+    Task<Result<string>> GetInstanceApiKeyAsync(Guid applicationId, Guid instanceId);
 
     // Pipelines
     Task<Result<ApplicationPipeline>> CreatePipelineAsync(CreateApplicationPipeline command);

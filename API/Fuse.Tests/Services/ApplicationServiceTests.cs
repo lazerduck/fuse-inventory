@@ -432,6 +432,133 @@ public class ApplicationServiceTests
         Assert.Equal(ErrorType.Validation, updBadTarget.ErrorType);
         Assert.Contains("must target the same resource", updBadTarget.Error);
     }
+
+    [Fact]
+    public async Task CreateInstance_StoresApiKey()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        var apiKey = new SecretBinding(SecretBindingKind.PlainReference, "my-secret-key", null);
+        var result = await service.CreateInstanceAsync(new CreateApplicationInstance(app.Id, env.Id, null, null, null, null, null, null, apiKey));
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.ApiKey);
+        Assert.Equal(SecretBindingKind.PlainReference, result.Value!.ApiKey!.Kind);
+        Assert.Equal("my-secret-key", result.Value!.ApiKey!.PlainReference);
+    }
+
+    [Fact]
+    public async Task UpdateInstance_ClearsApiKey()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var existingApiKey = new SecretBinding(SecretBindingKind.PlainReference, "old-key", null);
+        var inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow, existingApiKey);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        // Update with null ApiKey should clear it
+        var result = await service.UpdateInstanceAsync(new UpdateApplicationInstance(app.Id, inst.Id, env.Id, null, null, null, null, null, null, null));
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value!.ApiKey);
+    }
+
+    [Fact]
+    public async Task GetInstanceApiKey_ReturnsPlainTextKey()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var apiKey = new SecretBinding(SecretBindingKind.PlainReference, "my-secret-api-key", null);
+        var inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow, apiKey);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        var result = await service.GetInstanceApiKeyAsync(app.Id, inst.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("my-secret-api-key", result.Value);
+    }
+
+    [Fact]
+    public async Task GetInstanceApiKey_WhenNoApiKey_ReturnsNotFound()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        var result = await service.GetInstanceApiKeyAsync(app.Id, inst.Id);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task Dependency_ApiKeyAuth_RequiresApplicationTarget()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var ds = new DataStore(Guid.NewGuid(), "D", null, "sql", env.Id, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var inst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var app = new Application(Guid.NewGuid(), "App", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { inst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, dataStores: new[] { ds });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        // ApiKey auth requires an Application target, not DataStore
+        var result = await service.CreateDependencyAsync(new CreateApplicationDependency(app.Id, inst.Id, ds.Id, TargetKind.DataStore, null, DependencyAuthKind.ApiKey, null, null));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("ApiKey auth kind can only be used with Application targets", result.Error);
+    }
+
+    [Fact]
+    public async Task Dependency_ApiKeyAuth_RequiresTargetInstanceToHaveApiKey()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        // Target instance without API key
+        var targetInst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var targetApp = new Application(Guid.NewGuid(), "Target", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { targetInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var consumerInst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var consumerApp = new Application(Guid.NewGuid(), "Consumer", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { consumerInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(apps: new[] { targetApp, consumerApp }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        // Target has no API key configured - should fail
+        var result = await service.CreateDependencyAsync(new CreateApplicationDependency(consumerApp.Id, consumerInst.Id, targetInst.Id, TargetKind.Application, null, DependencyAuthKind.ApiKey, null, null));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("does not have an API key configured", result.Error);
+    }
+
+    [Fact]
+    public async Task Dependency_ApiKeyAuth_SucceedsWhenTargetHasApiKey()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        // Target instance WITH API key
+        var apiKey = new SecretBinding(SecretBindingKind.PlainReference, "secret-key", null);
+        var targetInst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow, apiKey);
+        var targetApp = new Application(Guid.NewGuid(), "Target", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { targetInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var consumerInst = new ApplicationInstance(Guid.NewGuid(), env.Id, null, null, null, null, null, new List<ApplicationInstanceDependency>(), new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
+        var consumerApp = new Application(Guid.NewGuid(), "Consumer", null, null, null, null, null, null, null, new HashSet<Guid>(), new[] { consumerInst }, Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+
+        var store = NewStore(apps: new[] { targetApp, consumerApp }, envs: new[] { env });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        // Target has API key - should succeed
+        var result = await service.CreateDependencyAsync(new CreateApplicationDependency(consumerApp.Id, consumerInst.Id, targetInst.Id, TargetKind.Application, null, DependencyAuthKind.ApiKey, null, null));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(DependencyAuthKind.ApiKey, result.Value!.AuthKind);
+    }
     
 
     private static InMemoryFuseStore NewStore(

@@ -41,7 +41,8 @@ public record CreateApplicationInstance(
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
-    HashSet<Guid>? TagIds = null
+    HashSet<Guid>? TagIds = null,
+    SecretBinding? ApiKey = null
 );
 
 public record UpdateApplicationInstance(
@@ -53,7 +54,8 @@ public record UpdateApplicationInstance(
     Uri? HealthUri,
     Uri? OpenApiUri,
     string? Version,
-    HashSet<Guid>? TagIds = null
+    HashSet<Guid>? TagIds = null,
+    SecretBinding? ApiKey = null
 );
 
 public record DeleteApplicationInstance(

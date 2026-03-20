@@ -146,6 +146,7 @@
               :hint="identityOptions.length === 0 ? 'No identities available' : undefined"
               class="dep-select-wide"
             />
+            <span v-else-if="cellProps.row.form.authKind === DependencyAuthKind.ApiKey" class="text-grey-6 text-caption">Uses target's API key</span>
             <span v-else class="text-grey-5">—</span>
           </template>
           <span v-else>{{ getCredentialLabel(cellProps.row.dep) }}</span>
@@ -305,7 +306,8 @@ const targetKindOptions: SelectOption<TargetKind>[] = Object.values(TargetKind).
 const authKindOptions: SelectOption<DependencyAuthKind>[] = [
   { label: 'None', value: DependencyAuthKind.None },
   { label: 'Account', value: DependencyAuthKind.Account },
-  { label: 'Identity', value: DependencyAuthKind.Identity }
+  { label: 'Identity', value: DependencyAuthKind.Identity },
+  { label: 'API Key', value: DependencyAuthKind.ApiKey }
 ]
 
 const severityOptions: SelectOption<DependencySeverity>[] = [
@@ -400,6 +402,7 @@ function isRowValid(form: DependencyRowForm): boolean {
   if (!form.targetId) return false
   if (form.authKind === DependencyAuthKind.Account && !form.accountId) return false
   if (form.authKind === DependencyAuthKind.Identity && !form.identityId) return false
+  if (form.authKind === DependencyAuthKind.ApiKey && form.targetKind !== TargetKind.Application) return false
   return true
 }
 
@@ -535,6 +538,9 @@ function getCredentialLabel(dep: ApplicationInstanceDependency): string {
   if (dep.authKind === DependencyAuthKind.Identity && dep.identityId) {
     const identity = identitiesQuery.data.value?.find((i) => i.id === dep.identityId)
     return identity?.name ?? dep.identityId
+  }
+  if (dep.authKind === DependencyAuthKind.ApiKey) {
+    return 'API key'
   }
   return '—'
 }

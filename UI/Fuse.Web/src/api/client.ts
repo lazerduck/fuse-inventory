@@ -165,6 +165,11 @@ export interface IFuseApiClient {
     health(appId: string, instanceId: string, signal?: AbortSignal): Promise<HealthStatusResponse>;
 
     /**
+     * @return OK
+     */
+    instanceApiKey(appId: string, instanceId: string, signal?: AbortSignal): Promise<string>;
+
+    /**
      * @param body (optional) 
      * @return Created
      */
@@ -2334,6 +2339,55 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<HealthStatusResponse>(null as any);
+    }
+
+    instanceApiKey(appId: string, instanceId: string, signal?: AbortSignal): Promise<string> {
+        let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/api-key";
+        if (appId === undefined || appId === null)
+            throw new globalThis.Error("The parameter 'appId' must be defined.");
+        url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+        if (instanceId === undefined || instanceId === null)
+            throw new globalThis.Error("The parameter 'instanceId' must be defined.");
+        url_ = url_.replace("{instanceId}", encodeURIComponent("" + instanceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processInstanceApiKey(_response);
+        });
+    }
+
+    protected processInstanceApiKey(response: Response): Promise<string> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 !== undefined ? "" + resultData200 : null as any;
+            return result200;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            return throwException("Forbidden", status, _responseText, _headers);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            return throwException("Not Found", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string>(null as any);
     }
 
     /**
@@ -9494,6 +9548,7 @@ export class ApplicationInstance implements IApplicationInstance {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    apiKey?: SecretBinding | undefined;
 
     constructor(data?: IApplicationInstance) {
         if (data) {
@@ -9525,6 +9580,7 @@ export class ApplicationInstance implements IApplicationInstance {
             }
             this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
             this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
         }
     }
 
@@ -9556,6 +9612,7 @@ export class ApplicationInstance implements IApplicationInstance {
         }
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
         return data;
     }
 }
@@ -9572,6 +9629,7 @@ export interface IApplicationInstance {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    apiKey?: SecretBinding | undefined;
 }
 
 export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
@@ -11035,6 +11093,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
+    apiKey?: SecretBinding | undefined;
 
     constructor(data?: ICreateApplicationInstance) {
         if (data) {
@@ -11059,6 +11118,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
                 for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
+            this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
         }
     }
 
@@ -11083,6 +11143,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
             for (let item of this.tagIds)
                 data["tagIds"].push(item);
         }
+        data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
         return data;
     }
 }
@@ -11096,6 +11157,7 @@ export interface ICreateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
+    apiKey?: SecretBinding | undefined;
 }
 
 export class CreateApplicationPipeline implements ICreateApplicationPipeline {
@@ -12410,6 +12472,7 @@ export enum DependencyAuthKind {
     None = "None",
     Account = "Account",
     Identity = "Identity",
+    ApiKey = "ApiKey",
 }
 
 export enum DependencySeverity {
@@ -15806,6 +15869,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
+    apiKey?: SecretBinding | undefined;
 
     constructor(data?: IUpdateApplicationInstance) {
         if (data) {
@@ -15831,6 +15895,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
                 for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
             }
+            this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
         }
     }
 
@@ -15856,6 +15921,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
             for (let item of this.tagIds)
                 data["tagIds"].push(item);
         }
+        data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
         return data;
     }
 }
@@ -15870,6 +15936,7 @@ export interface IUpdateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
+    apiKey?: SecretBinding | undefined;
 }
 
 export class UpdateApplicationPipeline implements IUpdateApplicationPipeline {

@@ -59,6 +59,58 @@
             <q-input v-model="form.openApiUri" label="OpenAPI URI" dense outlined />
             <TagSelect v-model="form.tagIds" label="Tags" />
           </div>
+
+          <q-separator class="q-my-md" />
+          <div class="text-subtitle2 q-mb-sm">API Key</div>
+          <div class="text-caption text-grey-7 q-mb-md">
+            Optional API key to allow other services to authenticate with this instance.
+          </div>
+          <div class="form-grid">
+            <q-select
+              v-model="form.apiKeyKind"
+              label="API Key Type"
+              dense
+              outlined
+              emit-value
+              map-options
+              :options="apiKeyKindOptions"
+              @update:model-value="onApiKeyKindChange"
+            />
+            <q-input
+              v-if="form.apiKeyKind === 'PlainReference'"
+              v-model="form.apiKeyValue"
+              label="API Key Value"
+              dense
+              outlined
+              :type="showApiKey ? 'text' : 'password'"
+            >
+              <template #append>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  :icon="showApiKey ? 'visibility_off' : 'visibility'"
+                  @click="showApiKey = !showApiKey"
+                />
+              </template>
+            </q-input>
+            <template v-if="form.apiKeyKind === 'AzureKeyVault'">
+              <q-select
+                v-model="form.apiKeyVaultProviderId"
+                label="Secret Provider"
+                dense
+                outlined
+                emit-value
+                map-options
+                clearable
+                :options="secretProviderOptions"
+                :disable="secretProviderOptions.length === 0"
+                :hint="secretProviderOptions.length === 0 ? 'No secret providers configured' : undefined"
+              />
+              <q-input v-model="form.apiKeyVaultSecretName" label="Secret Name" dense outlined />
+              <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />
+            </template>
+          </div>
         </q-card-section>
         <q-separator />
         <q-card-actions align="right">
@@ -93,13 +145,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import {
   UpdateApplicationInstance,
-  Permission
+  Permission,
+  SecretBinding,
+  SecretBindingKind
 } from '../api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
@@ -108,6 +162,7 @@ import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'
 import { getErrorMessage } from '../utils/error'
 import DependencyInlineTable from '../components/applications/DependencyInlineTable.vue'
+import { useSecretProviders } from '../composables/useSecretProviders'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,6 +172,14 @@ const fuseStore = useFuseStore()
 
 const applicationId = computed(() => route.params.applicationId as string)
 const instanceId = computed(() => route.params.instanceId as string)
+
+const showApiKey = ref(false)
+const secretProvidersQuery = useSecretProviders()
+const secretProviderOptions = computed(() =>
+  (secretProvidersQuery.data.value ?? [])
+    .filter((p) => !!p.id)
+    .map((p) => ({ label: p.name ?? p.id!, value: p.id! }))
+)
 
 const { data: applicationsData, error: applicationsErrorRef } = useQuery({
   queryKey: ['applications'],
@@ -158,6 +221,12 @@ const environmentLookup = environmentsStore.lookup
 const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
 
+const apiKeyKindOptions = [
+  { label: 'None', value: 'None' },
+  { label: 'Plain Text', value: 'PlainReference' },
+  { label: 'Azure Key Vault', value: 'AzureKeyVault' }
+]
+
 const form = reactive({
   environmentId: null as string | null,
   platformId: null as string | null,
@@ -165,7 +234,12 @@ const form = reactive({
   healthUri: '',
   openApiUri: '',
   version: '',
-  tagIds: [] as string[]
+  tagIds: [] as string[],
+  apiKeyKind: 'None' as string,
+  apiKeyValue: '',
+  apiKeyVaultProviderId: null as string | null,
+  apiKeyVaultSecretName: '',
+  apiKeyVaultVersion: ''
 })
 
 watch(instance, (inst) => {
@@ -177,8 +251,59 @@ watch(instance, (inst) => {
     form.openApiUri = inst.openApiUri ?? ''
     form.version = inst.version ?? ''
     form.tagIds = [...(inst.tagIds ?? [])]
+    // API key
+    const apiKey = inst.apiKey
+    if (!apiKey || apiKey.kind === SecretBindingKind.None) {
+      form.apiKeyKind = 'None'
+      form.apiKeyValue = ''
+      form.apiKeyVaultProviderId = null
+      form.apiKeyVaultSecretName = ''
+      form.apiKeyVaultVersion = ''
+    } else if (apiKey.kind === SecretBindingKind.PlainReference) {
+      form.apiKeyKind = 'PlainReference'
+      form.apiKeyValue = apiKey.plainReference ?? ''
+      form.apiKeyVaultProviderId = null
+      form.apiKeyVaultSecretName = ''
+      form.apiKeyVaultVersion = ''
+    } else if (apiKey.kind === SecretBindingKind.AzureKeyVault) {
+      form.apiKeyKind = 'AzureKeyVault'
+      form.apiKeyValue = ''
+      form.apiKeyVaultProviderId = apiKey.azureKeyVault?.providerId ?? null
+      form.apiKeyVaultSecretName = apiKey.azureKeyVault?.secretName ?? ''
+      form.apiKeyVaultVersion = apiKey.azureKeyVault?.version ?? ''
+    }
   }
 }, { immediate: true })
+
+function onApiKeyKindChange(kind: string) {
+  form.apiKeyKind = kind
+  form.apiKeyValue = ''
+  form.apiKeyVaultProviderId = null
+  form.apiKeyVaultSecretName = ''
+  form.apiKeyVaultVersion = ''
+}
+
+function buildApiKeyBinding(): SecretBinding | undefined {
+  if (form.apiKeyKind === 'PlainReference') {
+    if (!form.apiKeyValue) return undefined
+    return Object.assign(new SecretBinding(), {
+      kind: SecretBindingKind.PlainReference,
+      plainReference: form.apiKeyValue
+    })
+  }
+  if (form.apiKeyKind === 'AzureKeyVault') {
+    if (!form.apiKeyVaultProviderId || !form.apiKeyVaultSecretName) return undefined
+    return Object.assign(new SecretBinding(), {
+      kind: SecretBindingKind.AzureKeyVault,
+      azureKeyVault: {
+        providerId: form.apiKeyVaultProviderId,
+        secretName: form.apiKeyVaultSecretName,
+        version: form.apiKeyVaultVersion || undefined
+      }
+    })
+  }
+  return undefined
+}
 
 function navigateBack() {
   router.push({ name: 'applicationEdit', params: { id: applicationId.value } })
@@ -217,7 +342,8 @@ function handleSubmitInstance() {
     healthUri: form.healthUri || undefined,
     openApiUri: form.openApiUri || undefined,
     version: form.version || undefined,
-    tagIds: form.tagIds.length ? [...form.tagIds] : undefined
+    tagIds: form.tagIds.length ? [...form.tagIds] : undefined,
+    apiKey: buildApiKeyBinding()
   })
   updateInstanceMutation.mutate({ appId: applicationId.value, instanceId: instanceId.value, payload })
 }

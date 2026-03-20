@@ -137,6 +137,18 @@ public sealed class SecurityMiddleware
                 }
             }
 
+            // Enforce authentication for instance API key endpoint (sensitive credential data)
+            if (IsInstanceApiKeyEndpoint(path) && HttpMethods.IsGet(context.Request.Method))
+            {
+                if (user is null)
+                {
+                    await WriteUnauthorizedAsync(context, cancellationToken);
+                    return;
+                }
+
+                // Fine-grained permission check (plain text vs vault) is handled in the controller
+            }
+
             // Undo endpoint requires entity-specific undo permission
             if (path.StartsWithSegments("/api/undo", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(context.Request.Method))
             {
@@ -584,5 +596,26 @@ public sealed class SecurityMiddleware
             return true;
 
         return false;
+    }
+
+    /// <summary>
+    /// Determines if the path is an instance API key endpoint.
+    /// Pattern: /api/application/{appId}/instances/{instanceId}/api-key
+    /// </summary>
+    private static bool IsInstanceApiKeyEndpoint(PathString path)
+    {
+        var pathStr = path.Value;
+        if (string.IsNullOrWhiteSpace(pathStr))
+            return false;
+
+        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        // Expected: ["api", "application", "{appId}", "instances", "{instanceId}", "api-key"]
+        if (segments.Length != 6)
+            return false;
+
+        return segments[0].Equals("api", StringComparison.OrdinalIgnoreCase)
+            && segments[1].Equals("application", StringComparison.OrdinalIgnoreCase)
+            && segments[3].Equals("instances", StringComparison.OrdinalIgnoreCase)
+            && segments[5].Equals("api-key", StringComparison.OrdinalIgnoreCase);
     }
 }
