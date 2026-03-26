@@ -1,5 +1,6 @@
 using Fuse.Core.Interfaces;
 using Fuse.Core.Services;
+using Fuse.Core.Services.Startup;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fuse.Core;
@@ -57,6 +58,13 @@ public static class FuseCodeModule
         services.AddHostedService(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
         services.AddSingleton<ISqlPermissionsCache>(provider => provider.GetRequiredService<SqlPermissionsCacheService>());
         
+        // Register startup tasks in execution order, then the orchestrator
+        services.AddScoped<IStartupTask, StoreLoadTask>();
+        services.AddScoped<IStartupTask, SecurityRoleSeedTask>();
+        services.AddScoped<IStartupTask, LegacyRoleMigrationTask>();
+        services.AddScoped<IStartupTask, SnapshotTrackerRegistrationTask>();
+        services.AddScoped<IAppInitializationService, AppInitializationService>();
+
         // Register Snapshot Change Tracker for automatic version history
         services.AddSingleton<SnapshotChangeTracker>();
 

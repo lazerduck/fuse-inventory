@@ -4,8 +4,6 @@ using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
-using Fuse.Core.Models;
-using Fuse.Core.Services;
 using Fuse.Data;
 using Microsoft.OpenApi;
 
@@ -19,7 +17,6 @@ builder.Services.AddControllers()
     });
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -68,54 +65,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var store = scope.ServiceProvider.GetRequiredService<IFuseStore>();
-    await store.LoadAsync();
-    
-    // Initialize default roles if they don't exist
-    var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
-    var defaultRoles = await permissionService.EnsureDefaultRolesAsync();
-    
-    // Update the store with default roles if needed
-    var state = await store.GetAsync();
-    var existingRoleIds = state.Security.Roles.Select(r => r.Id).ToHashSet();
-    var missingRoles = defaultRoles.Where(r => !existingRoleIds.Contains(r.Id)).ToList();
-    
-    if (missingRoles.Any())
-    {
-        var allRoles = state.Security.Roles.Concat(missingRoles).ToList();
-        await store.UpdateAsync(s => s with
-        {
-            Security = s.Security with { Roles = allRoles }
-        });
-    }
-
-    // Migrate any legacy users that have no built-in role in their RoleIds yet
-    var currentState = await store.GetAsync();
-    var usersNeedingMigration = currentState.Security.Users.Where(u =>
-        (u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId)) ||
-        (u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))).ToList();
-
-    if (usersNeedingMigration.Any())
-    {
-        await store.UpdateAsync(s => s with
-        {
-            Security = s.Security with
-            {
-                Users = s.Security.Users.Select(u =>
-                {
-                    if (u.Role == SecurityRole.Admin && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))
-                        return u with { RoleIds = u.RoleIds.Append(BuiltInRoles.AdminRoleId).ToList() };
-                    if (u.Role == SecurityRole.Reader && !u.RoleIds.Contains(BuiltInRoles.ReaderRoleId) && !u.RoleIds.Contains(BuiltInRoles.AdminRoleId))
-                        return u with { RoleIds = u.RoleIds.Append(BuiltInRoles.ReaderRoleId).ToList() };
-                    return u;
-                }).ToList()
-            }
-        });
-    }
-    
-    // Wire up SnapshotChangeTracker to IFuseStore.Changed event
-    var versionHistoryService = scope.ServiceProvider.GetRequiredService<IVersionHistoryService>();
-    SnapshotChangeTracker.RegisterWithStore(store, versionHistoryService, await store.GetAsync());
+    var appInitializationService = scope.ServiceProvider.GetRequiredService<IAppInitializationService>();
+    await appInitializationService.InitializeAsync();
 }
 
 // Configure the HTTP request pipeline.
