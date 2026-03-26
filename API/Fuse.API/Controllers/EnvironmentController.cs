@@ -95,7 +95,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("apply-automation")]
         [SwaggerOperation(OperationId = "applyAutomation")]
-        [RequirePermission(Permission.EnvironmentsCreate)]
+        [RequirePermission(Permission.EnvironmentsUpdate)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<ActionResult<int>> ApplyAutomation([FromBody] ApplyEnvironmentAutomation command)

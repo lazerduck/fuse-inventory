@@ -194,7 +194,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{providerId}/secrets")]
         [SwaggerOperation(OperationId = "secrets")]
-        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsCreate)]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -216,7 +216,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{providerId}/secrets/{secretName}/rotate")]
         [SwaggerOperation(OperationId = "rotate")]
-        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsCreate)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
