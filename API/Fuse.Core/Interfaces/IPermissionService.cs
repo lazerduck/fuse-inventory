@@ -22,11 +22,6 @@ public interface IPermissionService
     Task<IReadOnlyList<Permission>> GetUserPermissionsAsync(SecurityUser user, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get the required permission for a controller action
-    /// </summary>
-    Permission? GetRequiredPermission(string controllerName, string actionName, string httpMethod);
-
-    /// <summary>
     /// Get default Admin role with all permissions
     /// </summary>
     Role GetDefaultAdminRole();

@@ -97,59 +97,7 @@ public sealed class SecurityMiddleware
                 return;
             }
             
-            // Enforce permission-based or admin-only access for specific endpoints
-            if (path.StartsWithSegments("/api/audit", StringComparison.OrdinalIgnoreCase))
-            {
-                if (user is null)
-                {
-                    await WriteUnauthorizedAsync(context, cancellationToken);
-                    return;
-                }
-                
-                // Check for AuditLogsView permission
-                if (!await permissionService.HasPermissionAsync(user, Permission.AuditLogsView, cancellationToken))
-                {
-                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
-                    {
-                        await WriteForbiddenAsync(context, cancellationToken);
-                        return;
-                    }
-                }
-            }
-
-            // Enforce permission-based or admin-only access for Config export endpoint (exposes secrets)
-            if (path.StartsWithSegments("/api/config/export", StringComparison.OrdinalIgnoreCase))
-            {
-                if (user is null)
-                {
-                    await WriteUnauthorizedAsync(context, cancellationToken);
-                    return;
-                }
-                
-                // Check for ConfigurationExport permission
-                if (!await permissionService.HasPermissionAsync(user, Permission.ConfigurationExport, cancellationToken))
-                {
-                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
-                    {
-                        await WriteForbiddenAsync(context, cancellationToken);
-                        return;
-                    }
-                }
-            }
-
-            // Enforce authentication for instance API key endpoint (sensitive credential data)
-            if (IsInstanceApiKeyEndpoint(path) && HttpMethods.IsGet(context.Request.Method))
-            {
-                if (user is null)
-                {
-                    await WriteUnauthorizedAsync(context, cancellationToken);
-                    return;
-                }
-
-                // Fine-grained permission check (plain text vs vault) is handled in the controller
-            }
-
-            // Undo endpoint requires entity-specific undo permission
+            // Undo has dynamic, entity-specific permission requirements determined at runtime
             if (path.StartsWithSegments("/api/undo", StringComparison.OrdinalIgnoreCase) && HttpMethods.IsPost(context.Request.Method))
             {
                 if (user is null)
@@ -165,35 +113,34 @@ public sealed class SecurityMiddleware
                     return;
                 }
             }
-
-            // Enforce granular permissions for CRUD endpoints
-            var crudPermission = GetRequiredCrudPermission(path, context.Request.Method, permissionService);
-            var permissionHandled = false;
-            if (crudPermission.HasValue)
+            else
             {
-                if (user is null)
-                {
-                    await WriteUnauthorizedAsync(context, cancellationToken);
-                    return;
-                }
+                // Read the required permission from the endpoint's [RequirePermission] attribute.
+                // Routing must have run before this middleware (UseRouting() in Program.cs).
+                var endpoint = context.GetEndpoint();
+                var requiredPermission = endpoint?.Metadata.GetMetadata<RequirePermissionAttribute>()?.Permission;
 
-                if (!await permissionService.HasPermissionAsync(user, crudPermission.Value, cancellationToken))
+                if (requiredPermission.HasValue)
                 {
-                    if (!await permissionService.IsUserAdminAsync(user, cancellationToken)) // Fallback to admin check
+                    if (user is null)
+                    {
+                        await WriteUnauthorizedAsync(context, cancellationToken);
+                        return;
+                    }
+
+                    if (!await permissionService.HasPermissionAsync(user, requiredPermission.Value, cancellationToken)
+                        && !await permissionService.IsUserAdminAsync(user, cancellationToken))
                     {
                         await WriteForbiddenAsync(context, cancellationToken);
                         return;
                     }
                 }
-
-                // Permission was checked and satisfied, skip legacy security-level enforcement
-                permissionHandled = true;
-            }
-
-            if (!permissionHandled)
-            {
-                if (!await AuthorizeAsync(requirement, user, context, permissionService, cancellationToken))
-                    return;
+                else
+                {
+                    // No specific permission declared — fall back to site-wide security level
+                    if (!await AuthorizeAsync(requirement, user, context, permissionService, cancellationToken))
+                        return;
+                }
             }
         }
 
@@ -475,147 +422,5 @@ public sealed class SecurityMiddleware
         Public,
         Read,
         Admin
-    }
-
-    /// <summary>
-    /// Determines the required permission for a CRUD endpoint based on the request path and method.
-    /// Returns null if the endpoint doesn't have a granular permission mapping.
-    /// </summary>
-    private static Permission? GetRequiredCrudPermission(PathString path, string method, IPermissionService permissionService)
-    {
-        // Extract controller name and determine action
-        var (controllerName, actionName) = ExtractControllerAndAction(path, method);
-        
-        if (string.IsNullOrEmpty(controllerName) || string.IsNullOrEmpty(actionName))
-            return null;
-
-        return permissionService.GetRequiredPermission(
-            controllerName,
-            actionName,
-            method.ToUpperInvariant());
-    }
-
-    /// <summary>
-    /// Extracts the controller name and determines the action name from the request path and HTTP method.
-    /// Returns (controllerName, actionName) or (null, null) if extraction fails.
-    /// </summary>
-    private static (string? controllerName, string? actionName) ExtractControllerAndAction(PathString path, string method)
-    {
-        var pathStr = path.Value ?? "";
-        
-        // Remove /api/ prefix
-        if (!pathStr.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
-            return (null, null);
-
-        pathStr = pathStr[5..]; // Remove "/api/"
-
-        // Split path into segments
-        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0)
-            return (null, null);
-
-        var controllerSegment = segments[0];
-
-        // Skip security endpoints - handled separately
-        if (controllerSegment.Equals("security", StringComparison.OrdinalIgnoreCase) ||
-            controllerSegment.Equals("roles", StringComparison.OrdinalIgnoreCase))
-            return (null, null);
-
-        // Map controller segment to proper PascalCase
-        var controllerName = NormalizeControllerName(controllerSegment);
-        if (string.IsNullOrEmpty(controllerName))
-            return (null, null);
-
-        // Determine action based on HTTP method and route structure
-        string actionName = method.ToUpperInvariant() switch
-        {
-            "GET" => segments.Length > 1 ? "Get" : "GetAll",
-            "POST" => "Create",
-            "PUT" => "Update",
-            "PATCH" => "Update",
-            "DELETE" => "Delete",
-            _ => ""
-        };
-
-        // Handle special actions in POST requests (e.g., Risk.Approve.POST, Account.ApplyGrants.POST)
-        if (HttpMethods.IsPost(method) && segments.Length > 1)
-        {
-            var lastSegment = segments[^1];
-            // Check if last segment is a special action (not a GUID or ID)
-            if (!IsGuidOrId(lastSegment))
-            {
-                // Capitalize the action name
-                actionName = char.ToUpperInvariant(lastSegment[0]) + lastSegment[1..];
-            }
-        }
-
-        return (controllerName, actionName);
-    }
-
-    private static string? NormalizeControllerName(string controllerSegment)
-    {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["application"] = "Application",
-            ["account"] = "Account",
-            ["identity"] = "Identity",
-            ["datastore"] = "DataStore",
-            ["platform"] = "Platform",
-            ["environment"] = "Environment",
-            ["externalresource"] = "ExternalResource",
-            ["position"] = "Position",
-            ["responsibilitytype"] = "ResponsibilityType",
-            ["responsibilityassignment"] = "ResponsibilityAssignment",
-            ["risk"] = "Risk",
-            ["secretprovider"] = "SecretProvider",
-            ["sqlintegration"] = "SqlIntegration",
-            ["kumaintegration"] = "KumaIntegration",
-            ["activity"] = "Activity",
-            ["config"] = "Config",
-            ["audit"] = "Audit",
-            ["tag"] = "Tag",
-            ["role"] = "Role"
-        };
-
-        return map.TryGetValue(controllerSegment, out var controllerName)
-            ? controllerName
-            : null;
-    }
-
-    /// <summary>
-    /// Determines if a path segment is a GUID or numeric ID.
-    /// </summary>
-    private static bool IsGuidOrId(string segment)
-    {
-        // Check if it's a GUID
-        if (Guid.TryParse(segment, out _))
-            return true;
-
-        // Check if it's a number
-        if (int.TryParse(segment, out _))
-            return true;
-
-        return false;
-    }
-
-    /// <summary>
-    /// Determines if the path is an instance API key endpoint.
-    /// Pattern: /api/application/{appId}/instances/{instanceId}/api-key
-    /// </summary>
-    private static bool IsInstanceApiKeyEndpoint(PathString path)
-    {
-        var pathStr = path.Value;
-        if (string.IsNullOrWhiteSpace(pathStr))
-            return false;
-
-        var segments = pathStr.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        // Expected: ["api", "application", "{appId}", "instances", "{instanceId}", "api-key"]
-        if (segments.Length != 6)
-            return false;
-
-        return segments[0].Equals("api", StringComparison.OrdinalIgnoreCase)
-            && segments[1].Equals("application", StringComparison.OrdinalIgnoreCase)
-            && segments[3].Equals("instances", StringComparison.OrdinalIgnoreCase)
-            && segments[5].Equals("api-key", StringComparison.OrdinalIgnoreCase);
     }
 }
