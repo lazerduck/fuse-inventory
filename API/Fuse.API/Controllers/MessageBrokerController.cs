@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.API;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -19,6 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "messageBrokerAll")]
+        [RequirePermission(Permission.MessageBrokersRead)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<MessageBroker>))]
         public async Task<ActionResult<IEnumerable<MessageBroker>>> GetMessageBrokers()
         {
@@ -27,6 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "messageBrokerGET")]
+        [RequirePermission(Permission.MessageBrokersRead)]
         [ProducesResponseType(200, Type = typeof(MessageBroker))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<MessageBroker>> GetMessageBrokerById([FromRoute] Guid id)
@@ -37,6 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "messageBrokerPOST")]
+        [RequirePermission(Permission.MessageBrokersCreate)]
         [ProducesResponseType(201, Type = typeof(MessageBroker))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -58,6 +62,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "messageBrokerPUT")]
+        [RequirePermission(Permission.MessageBrokersUpdate)]
         [ProducesResponseType(200, Type = typeof(MessageBroker))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -81,6 +86,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "messageBrokerDELETE")]
+        [RequirePermission(Permission.MessageBrokersDelete)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteMessageBroker([FromRoute] Guid id)

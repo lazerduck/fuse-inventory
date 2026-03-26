@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.API;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
     using Fuse.Core.Interfaces;
@@ -33,6 +34,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "secretProviderAll")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecretProviderResponse>))]
         public async Task<ActionResult<IEnumerable<SecretProviderResponse>>> GetSecretProviders()
         {
@@ -51,6 +53,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "secretProviderGET")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(200, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<SecretProviderResponse>> GetSecretProviderById([FromRoute] Guid id)
@@ -73,6 +76,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "secretProviderPOST")]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsCreate)]
         [ProducesResponseType(201, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<SecretProviderResponse>> CreateSecretProvider([FromBody] CreateSecretProvider command)
@@ -98,6 +102,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "secretProviderPUT")]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsCreate)]
         [ProducesResponseType(200, Type = typeof(SecretProviderResponse))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -129,6 +134,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "secretProviderDELETE")]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsDelete)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -148,6 +154,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("test-connection")]
         [SwaggerOperation(OperationId = "testConnection")]
+        [RequirePermission(Permission.AzureKeyVaultConnectionsCreate)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> TestConnection([FromBody] TestSecretProviderConnection command)
@@ -162,6 +169,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{providerId}/secrets")]
         [SwaggerOperation(OperationId = "secretsAll")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SecretMetadataResponse>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -186,6 +194,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{providerId}/secrets")]
         [SwaggerOperation(OperationId = "secrets")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -207,6 +216,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{providerId}/secrets/{secretName}/rotate")]
         [SwaggerOperation(OperationId = "rotate")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -241,6 +251,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{providerId}/secrets/{secretName}/reveal")]
         [SwaggerOperation(OperationId = "reveal")]
+        [RequirePermission(Permission.AzureKeyVaultSecretsView)]
         [ProducesResponseType(200, Type = typeof(SecretValueResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(403)]

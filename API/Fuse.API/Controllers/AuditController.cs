@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Fuse.API;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 
@@ -20,6 +21,7 @@ public class AuditController : ControllerBase
     /// </summary>
     [HttpGet]
     [SwaggerOperation(OperationId = "audit")]
+    [RequirePermission(Permission.AuditLogsView)]
     [ProducesResponseType(200, Type = typeof(AuditLogResult))]
     public async Task<ActionResult<AuditLogResult>> QueryAuditLogs(
         [FromQuery] DateTime? startTime,
@@ -54,6 +56,7 @@ public class AuditController : ControllerBase
     /// </summary>
     [HttpGet("{id}")]
     [SwaggerOperation(OperationId = "audit2")]
+    [RequirePermission(Permission.AuditLogsView)]
     [ProducesResponseType(200, Type = typeof(AuditLog))]
     [ProducesResponseType(404)]
     public async Task<ActionResult<AuditLog>> GetAuditLog([FromRoute] Guid id)
@@ -71,6 +74,7 @@ public class AuditController : ControllerBase
     /// </summary>
     [HttpGet("actions")]
     [SwaggerOperation(OperationId = "actions")]
+    [RequirePermission(Permission.AuditLogsView)]
     [ProducesResponseType(200, Type = typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAuditActions()
     {
@@ -83,6 +87,7 @@ public class AuditController : ControllerBase
     /// </summary>
     [HttpGet("areas")]
     [SwaggerOperation(OperationId = "areas")]
+    [RequirePermission(Permission.AuditLogsView)]
     [ProducesResponseType(200, Type = typeof(IEnumerable<string>))]
     public ActionResult<IEnumerable<string>> GetAuditAreas()
     {

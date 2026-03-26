@@ -1,9 +1,11 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.API;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
+    using Fuse.Core.Models;
     using Fuse.Core.Responses;
     using System.Security.Claims;
 
@@ -63,6 +65,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/permissions-overview/refresh")]
         [SwaggerOperation(OperationId = "refreshPOST")]
+        [RequirePermission(Permission.SqlConnectionsCreate)]
         [ProducesResponseType(200, Type = typeof(CachedPermissionsOverviewResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> RefreshPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
@@ -84,6 +87,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/resolve")]
         [SwaggerOperation(OperationId = "resolve")]
+        [RequirePermission(Permission.SqlGrantsApply)]
         [ProducesResponseType(200, Type = typeof(ResolveDriftResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -105,6 +109,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/import")]
         [SwaggerOperation(OperationId = "import2")]
+        [RequirePermission(Permission.SqlGrantsApply)]
         [ProducesResponseType(200, Type = typeof(ImportPermissionsResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -126,6 +131,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/orphan-principals/import")]
         [SwaggerOperation(OperationId = "import3")]
+        [RequirePermission(Permission.SqlGrantsApply)]
         [ProducesResponseType(200, Type = typeof(ImportOrphanPrincipalResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -149,6 +155,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/create")]
         [SwaggerOperation(OperationId = "create")]
+        [RequirePermission(Permission.SqlConnectionsCreate)]
         [ProducesResponseType(200, Type = typeof(CreateSqlAccountResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -172,6 +179,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/bulk-resolve")]
         [SwaggerOperation(OperationId = "bulkResolve")]
+        [RequirePermission(Permission.SqlGrantsApply)]
         [ProducesResponseType(200, Type = typeof(BulkResolveResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -193,6 +201,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("test-connection")]
         [SwaggerOperation(OperationId = "testConnection2")]
+        [RequirePermission(Permission.SqlConnectionsCreate)]
         [ProducesResponseType(200, Type = typeof(SqlConnectionTestResult))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<SqlConnectionTestResult>> TestConnection([FromBody] TestSqlConnection command, CancellationToken ct)
@@ -207,6 +216,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "sqlIntegrationPOST")]
+        [RequirePermission(Permission.SqlConnectionsCreate)]
         [ProducesResponseType(201, Type = typeof(SqlIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -229,6 +239,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "sqlIntegrationPUT")]
+        [RequirePermission(Permission.SqlConnectionsCreate)]
         [ProducesResponseType(200, Type = typeof(SqlIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -251,6 +262,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "sqlIntegrationDELETE")]
+        [RequirePermission(Permission.SqlConnectionsDelete)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete([FromRoute] Guid id)

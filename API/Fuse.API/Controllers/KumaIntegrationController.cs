@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.API;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -35,6 +36,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "kumaIntegrationPOST")]
+        [RequirePermission(Permission.KumaIntegrationsCreate)]
         [ProducesResponseType(201, Type = typeof(KumaIntegrationResponse))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<KumaIntegrationResponse>> Create([FromBody] CreateKumaIntegration command, CancellationToken ct)
@@ -55,6 +57,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "kumaIntegrationPUT")]
+        [RequirePermission(Permission.KumaIntegrationsCreate)]
         [ProducesResponseType(200, Type = typeof(KumaIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -76,6 +79,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "kumaIntegrationDELETE")]
+        [RequirePermission(Permission.KumaIntegrationsDelete)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
