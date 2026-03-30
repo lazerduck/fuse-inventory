@@ -3,6 +3,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using System.Linq;
 using Xunit;
@@ -585,7 +586,8 @@ public class ApplicationServiceTests
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
                 Risks: Array.Empty<Risk>(),
                 MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+                SecurityContext: SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);
     }

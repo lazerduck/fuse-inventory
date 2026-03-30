@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using System.Linq;
 using Xunit;
@@ -31,7 +32,8 @@ public class SecurityServiceTests
             KumaIntegrations: Array.Empty<KumaIntegration>(),
                 SecretProviders: Array.Empty<SecretProvider>(),
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-                Security: securityState
+                Security: securityState,
+                SecurityContextHelper.Get
         );
 
         return new InMemoryFuseStore(snapshot);

@@ -1,6 +1,7 @@
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Interfaces;
 

@@ -4,6 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using Moq;
 using System.Linq;
@@ -50,7 +51,8 @@ public class AccountServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContext: SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -780,7 +782,8 @@ public class AccountServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: new[] { broker1, broker2, broker3 },
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContext: SecurityContextHelper.Get
         );
 
         var store = new InMemoryFuseStore(snapshot);

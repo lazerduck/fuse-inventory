@@ -1,6 +1,7 @@
 using Fuse.Core.Configs;
 using Fuse.Core.Models;
 using Fuse.Data.Stores;
+using Fuse.Tests.Helpers;
 using Xunit;
 
 namespace Fuse.Tests.Stores;
@@ -175,7 +176,8 @@ public class JsonFuseStoreTests : IDisposable
             ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContextHelper.Get
         );
 
         await store.SaveAsync(snapshot);

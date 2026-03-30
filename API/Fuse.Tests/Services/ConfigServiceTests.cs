@@ -4,6 +4,7 @@ using Fuse.Tests.TestInfrastructure;
 using System.Linq;
 using Xunit;
 using System.Text.Json;
+using Fuse.Tests.Helpers;
 
 namespace Fuse.Tests.Services;
 
@@ -30,7 +31,8 @@ public class ConfigServiceTests
             KumaIntegrations: Array.Empty<KumaIntegration>(),
                 SecretProviders: Array.Empty<SecretProvider>(),
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>())
+                Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+                SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);
     }

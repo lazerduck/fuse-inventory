@@ -58,7 +58,9 @@ public sealed class JsonFuseStore : IFuseStore
                 Risks: await ReadAsync<Risk>("risks.json", ct),
                 MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct),
+                SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct)
+
             );
 
             var errors = SnapshotValidator.Validate(_cache);
@@ -117,6 +119,8 @@ public sealed class JsonFuseStore : IFuseStore
                 writeTasks.Add(WriteAsync("security.json", snapshot.Security, ct));
             if(snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
                 writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
+            if(_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
+                writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
 
             if(writeTasks.Count > 0)
                 await Task.WhenAll(writeTasks);
@@ -164,6 +168,29 @@ public sealed class JsonFuseStore : IFuseStore
         await using var fs = File.OpenRead(path);
         return (await JsonSerializer.DeserializeAsync<SecurityState>(fs, Json, ct))
             ?? new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
+    }
+
+        private async Task<SecurityContext> ReadSecurityContextAsync(string file, CancellationToken ct)
+    {
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path))
+        {
+            return new SecurityContext(SecurityPosture.Unrestricted,
+                Array.Empty<FuseRole>(),
+                Array.Empty<FuseUser>(),
+                Array.Empty<FuseApiKey>(),
+                Array.Empty<Session>()
+            );
+        }
+
+        await using var fs = File.OpenRead(path);
+        return (await JsonSerializer.DeserializeAsync<SecurityContext>(fs, Json, ct))
+            ?? new SecurityContext(SecurityPosture.Unrestricted,
+                Array.Empty<FuseRole>(),
+                Array.Empty<FuseUser>(),
+                Array.Empty<FuseApiKey>(),
+                Array.Empty<Session>()
+            );
     }
 
     private async Task<T?> ReadObjectAsync<T>(string file, CancellationToken ct) where T : class

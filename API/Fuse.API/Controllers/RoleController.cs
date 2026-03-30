@@ -8,6 +8,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Helpers;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
+    using Fuse.Core.Responses;
     using Microsoft.AspNetCore.Mvc;
     using Swashbuckle.AspNetCore.Annotations;
 

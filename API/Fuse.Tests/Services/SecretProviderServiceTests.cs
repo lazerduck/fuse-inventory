@@ -3,6 +3,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using Moq;
 using Xunit;
@@ -27,7 +28,8 @@ public class SecretProviderServiceTests
             KumaIntegrations: Array.Empty<KumaIntegration>(),
             SecretProviders: (providers ?? Array.Empty<SecretProvider>()).ToArray(),
             SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContextHelper.Get
         );
         return new InMemoryFuseStore(snapshot);
     }

@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using Xunit;
 
@@ -35,7 +36,8 @@ public class SecurityServiceRoleTests
             Positions: Array.Empty<Position>(),
             ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-            Security: securityState
+            Security: securityState,
+            SecurityContext: SecurityContextHelper.Get
         );
 
         return new InMemoryFuseStore(snapshot);

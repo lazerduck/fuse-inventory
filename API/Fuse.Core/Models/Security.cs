@@ -333,13 +333,3 @@ public record SecurityState
     [JsonIgnore]
     public bool RequiresSetup => !Users.Any(u => u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId));
 }
-
-public record SecurityUserInfo(Guid Id, string UserName, SecurityRole Role, IReadOnlyList<Guid>? RoleIds, DateTime CreatedAt, DateTime UpdatedAt);
-
-public record RoleInfo(Guid Id, string Name, string Description, IReadOnlyList<Permission> Permissions, DateTime CreatedAt, DateTime UpdatedAt);
-
-public record LoginSession(string Token, DateTime ExpiresAt, SecurityUserInfo User);
-
-public record ApiKeyInfo(Guid Id, string Name, Guid UserId, IReadOnlyList<Guid> RoleIds, DateTime CreatedAt, DateTime UpdatedAt);
-
-public record ApiKeyCreatedResult(ApiKeyInfo Info, string PlainTextKey);

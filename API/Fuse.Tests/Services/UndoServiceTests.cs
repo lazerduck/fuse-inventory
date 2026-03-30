@@ -2,6 +2,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using Xunit;
 
@@ -47,7 +48,8 @@ public class UndoServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContext: SecurityContextHelper.Get
         );
 
         var store = new InMemoryFuseStore(snapshot);
@@ -195,7 +197,8 @@ public class UndoServiceTests
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContext: SecurityContextHelper.Get
         );
 
         var store = new InMemoryFuseStore(snapshot);

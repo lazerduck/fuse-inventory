@@ -1,6 +1,7 @@
 using Fuse.Core.Commands;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
+using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
 using Xunit;
 
@@ -28,6 +29,7 @@ public class PasswordGeneratorServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContextHelper.Get,
             PasswordGeneratorConfig: config
         );
         return new InMemoryFuseStore(snapshot);
