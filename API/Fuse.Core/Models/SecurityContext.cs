@@ -30,6 +30,7 @@ public record FuseUser(
 public record FuseApiKey(
     Guid Id,
     string Name,
+    string KeyPrefix,
     string KeyHash,
     string KeySalt,
     Guid UserId,
