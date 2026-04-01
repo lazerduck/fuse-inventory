@@ -91,6 +91,8 @@ app.UseRouting();
 // Apply security only to API routes so SPA static files and fallback aren't blocked
 app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), branch =>
 {
+    branch.UseMiddleware<AuthenticationMiddleware>();
+    branch.UseMiddleware<AuthorizationMiddleware>();
     branch.UseMiddleware<SecurityMiddleware>();
 });
 

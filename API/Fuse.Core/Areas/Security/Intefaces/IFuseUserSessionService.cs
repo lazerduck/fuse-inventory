@@ -10,4 +10,6 @@ public interface IFuseUserSessionService
     Task<Result<string>> RefreshSession(string token);
 
     Task<Result> DeleteSession(string token);
+
+    Task<Result<Guid>> ValidateSession(string token);
 }

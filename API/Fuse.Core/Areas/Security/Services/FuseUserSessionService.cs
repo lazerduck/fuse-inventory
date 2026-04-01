@@ -88,4 +88,21 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
 
         return Result.Success();
     }
+
+    public async Task<Result<Guid>> ValidateSession(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return Result<Guid>.Failure("Token is required.", ErrorType.Validation);
+
+        var snapshot = await fuseStore.GetAsync();
+        var session = snapshot.SecurityContext.Sessions.FirstOrDefault(s => s.Token == token);
+
+        if (session is null)
+            return Result<Guid>.Failure("Session not found.", ErrorType.Unauthorized);
+
+        if (session.ExpiresAt <= DateTime.UtcNow)
+            return Result<Guid>.Failure("Session has expired.", ErrorType.Unauthorized);
+
+        return Result<Guid>.Success(session.UserId);
+    }
 }

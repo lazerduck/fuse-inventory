@@ -13,5 +13,5 @@ public interface IAPIKeyService
 
     Task<Result<IReadOnlyList<FuseApiKey>>> GetAPIKeys();
 
-    Task<Result<IReadOnlyList<Guid>>> VerifyAPIKeys(string apiKey);
+    Task<Result<FuseApiKey>> VerifyAPIKeys(string apiKey);
 }

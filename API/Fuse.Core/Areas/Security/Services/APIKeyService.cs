@@ -121,19 +121,19 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
         return Result.Success();
     }
 
-    public async Task<Result<IReadOnlyList<Guid>>> VerifyAPIKeys(string apiKey)
+    public async Task<Result<FuseApiKey>> VerifyAPIKeys(string apiKey)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            return Result<IReadOnlyList<Guid>>.Failure("API key cannot be empty.", ErrorType.Validation);
+            return Result<FuseApiKey>.Failure("API key cannot be empty.", ErrorType.Validation);
 
         var snapshot = await fuseStore.GetAsync();
 
         var prefix = ExtractPrefix(apiKey);
         var candidate = snapshot.SecurityContext.ApiKeys.FirstOrDefault(k => k.KeyPrefix == prefix);
         if (candidate is not null && VerifyPassword(apiKey, candidate.KeyHash, candidate.KeySalt))
-            return Result<IReadOnlyList<Guid>>.Success(candidate.RoleIds);
+            return Result<FuseApiKey>.Success(candidate);
 
-        return Result<IReadOnlyList<Guid>>.Failure("Invalid API key.", ErrorType.Unauthorized);
+        return Result<FuseApiKey>.Failure("Invalid API key.", ErrorType.Unauthorized);
     }
 
     private static string ExtractPrefix(string rawKey) => rawKey[..Math.Min(16, rawKey.Length)];
