@@ -18,4 +18,12 @@ public sealed class AccountPermissions : AreaPermissions
         UpdateKey,
         DeleteKey
     ];
+
+    public override IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors() =>
+    [
+        new(ReadKey, IsAllowedInRestrictedEditing: true),
+        new(CreateKey, IsAllowedInRestrictedEditing: false),
+        new(UpdateKey, IsAllowedInRestrictedEditing: false),
+        new(DeleteKey, IsAllowedInRestrictedEditing: false)
+    ];
 }

@@ -31,7 +31,30 @@ public abstract class AreaPermissions
     public abstract string AreaName { get; }
 
     public abstract IReadOnlyList<string> GetPermissions();
+
+    public virtual IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors() =>
+        GetPermissions()
+            .Select(permission => new PermissionDescriptor(permission))
+            .ToList();
+
+    public PermissionDescriptor? TryGetPermissionDescriptor(string permissionKey)
+    {
+        if (string.IsNullOrWhiteSpace(permissionKey))
+            return null;
+
+        return GetPermissionDescriptors()
+            .FirstOrDefault(descriptor => string.Equals(
+                descriptor.Key,
+                permissionKey,
+                StringComparison.OrdinalIgnoreCase));
+    }
 }
+
+public sealed record PermissionDescriptor(
+    string Key,
+    bool IsAllowedInRestrictedEditing = false,
+    bool IgnorePosture = false
+);
 
 public sealed record PermissionAreaCatalog(
     string AreaName,
