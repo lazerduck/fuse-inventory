@@ -11,14 +11,6 @@ public sealed class AccountPermissions : AreaPermissions
 
     public override string AreaName => "accounts";
 
-    public override IReadOnlyList<string> GetPermissions() =>
-    [
-        ReadKey,
-        CreateKey,
-        UpdateKey,
-        DeleteKey
-    ];
-
     public override IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors() =>
     [
         new(ReadKey, IsAllowedInRestrictedEditing: true),

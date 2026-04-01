@@ -30,11 +30,13 @@ public abstract class AreaPermissions
 {
     public abstract string AreaName { get; }
 
-    public abstract IReadOnlyList<string> GetPermissions();
+    // Descriptors are the source of truth so posture behavior and key list cannot drift.
+    public abstract IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors();
 
-    public virtual IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors() =>
-        GetPermissions()
-            .Select(permission => new PermissionDescriptor(permission))
+    public virtual IReadOnlyList<string> GetPermissions() =>
+        GetPermissionDescriptors()
+            .Select(permission => permission.Key)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
     public PermissionDescriptor? TryGetPermissionDescriptor(string permissionKey)

@@ -72,6 +72,7 @@ public static class FuseCodeModule
         services.AddScoped<IStartupTask, SecurityRoleSeedTask>();
         services.AddScoped<IStartupTask, LegacyRoleMigrationTask>();
         services.AddScoped<IStartupTask, SecurityContextMigrationTask>();
+        services.AddScoped<IStartupTask, PermissionCatalogValidationTask>();
         services.AddScoped<IStartupTask, SnapshotTrackerRegistrationTask>();
         services.AddScoped<IAppInitializationService, AppInitializationService>();
 
