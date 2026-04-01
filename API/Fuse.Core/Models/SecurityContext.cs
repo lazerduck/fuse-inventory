@@ -12,8 +12,7 @@ public record FuseRole(
     Guid Id,
     string Name,
     string Description,
-    IReadOnlyList<string>
-    Permissions,
+    IReadOnlyList<string> Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
