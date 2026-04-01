@@ -64,10 +64,6 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
             var rolesResult = await roleService.GetRolesByIds(distinctRoleIds);
             if (!rolesResult.IsSuccess)
                 return Result<FuseUser>.Failure("Failed to verify roles.", rolesResult);
-
-            // Depends on if the GetRolesByIds Succeeds if a role doesn't exist
-            if (rolesResult.Value!.Count != distinctRoleIds.Count)
-                return Result<FuseUser>.Failure("One or more roles do not exist.", ErrorType.Validation);
         }
 
         var now = DateTime.UtcNow;
@@ -115,9 +111,6 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
             var rolesResult = await roleService.GetRolesByIds(distinctRoleIds);
             if (!rolesResult.IsSuccess)
                 return Result.Failure("Failed to verify roles.", rolesResult);
-
-            if (rolesResult.Value!.Count != distinctRoleIds.Count)
-                return Result.Failure("One or more roles do not exist.", ErrorType.Validation);
         }
 
         var updatedUser = existingUser with

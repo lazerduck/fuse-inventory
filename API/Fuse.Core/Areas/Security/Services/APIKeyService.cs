@@ -13,9 +13,16 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
         if (string.IsNullOrWhiteSpace(name))
             return Result<string>.Failure("API key name cannot be empty.", ErrorType.Validation);
 
+        if (roleIds is null)
+            return Result<string>.Failure("Role IDs cannot be null.", ErrorType.Validation);
+
         var userResult = await userService.GetUser(UserId);
         if (!userResult.IsSuccess)
             return Result<string>.Failure("Failed to verify user existence.", userResult);
+
+        var rolesResult = await roleService.GetRolesByIds([.. roleIds.Distinct()]);
+        if (!rolesResult.IsSuccess)
+            return Result<string>.Failure("Failed to verify roles exist.", rolesResult);
         
         var rawKey = GenerateApiKey();
         var salt = GenerateSalt();
@@ -29,7 +36,7 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
             KeyHash: hash,
             KeySalt: salt,
             UserId: userResult.Value!.Id,
-            RoleIds: roleIds ?? Array.Empty<Guid>(),
+            RoleIds: [.. rolesResult.Value!.Select(role => role.Id)],
             CreatedAt: now,
             UpdatedAt: now
         );

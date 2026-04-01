@@ -1,4 +1,4 @@
-namespace Fuse.Core.Security;
+namespace Fuse.Core.Areas.Security;
 
 /// <summary>
 /// Base class for all area-local permission catalogs.
@@ -28,7 +28,12 @@ namespace Fuse.Core.Security;
 /// </summary>
 public abstract class AreaPermissions
 {
-    // Convention holder only — no shared state.
-    // Future: consider adding a virtual IEnumerable<PermissionId> All() method
-    // so each catalog can enumerate its own permissions for seed/audit purposes.
+    public abstract string AreaName { get; }
+
+    public abstract IReadOnlyList<string> GetPermissions();
 }
+
+public sealed record PermissionAreaCatalog(
+    string AreaName,
+    IReadOnlyList<string> Permissions
+);
