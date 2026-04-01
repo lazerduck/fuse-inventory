@@ -8,21 +8,21 @@ namespace Fuse.Core.Areas.Security.Services;
 
 public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, IFuseRoleService roleService) : IAPIKeyService
 {
-    public async Task<Result<string>> GenerateNewAPIKey(string name, Guid UserId, IReadOnlyList<Guid> roleIds)
+    public async Task<Result<(string RawKey, FuseApiKey ApiKey)>> GenerateNewAPIKey(string name, Guid UserId, IReadOnlyList<Guid> roleIds)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return Result<string>.Failure("API key name cannot be empty.", ErrorType.Validation);
+            return Result<(string RawKey, FuseApiKey ApiKey)>.Failure("API key name cannot be empty.", ErrorType.Validation);
 
         if (roleIds is null)
-            return Result<string>.Failure("Role IDs cannot be null.", ErrorType.Validation);
+            return Result<(string RawKey, FuseApiKey ApiKey)>.Failure("Role IDs cannot be null.", ErrorType.Validation);
 
         var userResult = await userService.GetUser(UserId);
         if (!userResult.IsSuccess)
-            return Result<string>.Failure("Failed to verify user existence.", userResult);
+            return Result<(string RawKey, FuseApiKey ApiKey)>.Failure("Failed to verify user existence.", userResult);
 
         var rolesResult = await roleService.GetRolesByIds([.. roleIds.Distinct()]);
         if (!rolesResult.IsSuccess)
-            return Result<string>.Failure("Failed to verify roles exist.", rolesResult);
+            return Result<(string RawKey, FuseApiKey ApiKey)>.Failure("Failed to verify roles exist.", rolesResult);
         
         var rawKey = GenerateApiKey();
         var salt = GenerateSalt();
@@ -49,7 +49,7 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
             }
         });
 
-        return Result<string>.Success(rawKey);
+        return Result<(string RawKey, FuseApiKey ApiKey)>.Success((rawKey, apiKey));
     }
 
     public async Task<Result<IReadOnlyList<FuseApiKey>>> GetAPIKeys()
@@ -82,6 +82,25 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
         });
 
         return Result<string>.Success(rawKey);
+    }
+
+    public async Task<Result> DeleteAPIKey(Guid id)
+    {
+        var snapshot = await fuseStore.GetAsync();
+        var existing = snapshot.SecurityContext.ApiKeys.FirstOrDefault(k => k.Id == id);
+
+        if (existing is null)
+            return Result.Failure($"API key with ID '{id}' not found.", ErrorType.NotFound);
+
+        await fuseStore.UpdateAsync(s => s with
+        {
+            SecurityContext = s.SecurityContext with
+            {
+                ApiKeys = s.SecurityContext.ApiKeys.Where(k => k.Id != id).ToList()
+            }
+        });
+
+        return Result.Success();
     }
 
     public async Task<Result> SetAPIKeyPermissions(Guid Id, Guid UserId, IReadOnlyList<Guid> roleIds)
@@ -134,6 +153,16 @@ public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, I
             return Result<FuseApiKey>.Success(candidate);
 
         return Result<FuseApiKey>.Failure("Invalid API key.", ErrorType.Unauthorized);
+    }
+
+    public async Task<Result<FuseApiKey>> GetAPIKey(Guid id)
+    {
+        var snapshot = await fuseStore.GetAsync();
+        var apiKey = snapshot.SecurityContext.ApiKeys.FirstOrDefault(m => m.Id == id);
+        if(apiKey is not null)
+            return Result<FuseApiKey>.Success(apiKey);
+
+        return Result<FuseApiKey>.Failure("Unable to find the API key with Id" + id, ErrorType.NotFound);
     }
 
     private static string ExtractPrefix(string rawKey) => rawKey[..Math.Min(16, rawKey.Length)];

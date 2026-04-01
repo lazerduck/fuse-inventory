@@ -1,6 +1,7 @@
 using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security.Permissions;
 using Fuse.Core.Areas.Security.Services;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Services;
@@ -36,6 +37,7 @@ public static class FuseCodeModule
         services.AddScoped<IFuseUserSessionService, FuseUserSessionService>();
         services.AddScoped<IAPIKeyService, APIKeyService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
+        services.AddSingleton<AreaPermissions, APIKeyPermissions>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();
