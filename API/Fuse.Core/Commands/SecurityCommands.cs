@@ -29,12 +29,12 @@ public record UpdateUser(Guid Id, SecurityRole? Role = null)
 }
 
 // Role management commands
-public record CreateRole(string Name, string Description, IReadOnlyList<Permission> Permissions)
+public record CreateRole(string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
 }
 
-public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<Permission> Permissions)
+public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
 }

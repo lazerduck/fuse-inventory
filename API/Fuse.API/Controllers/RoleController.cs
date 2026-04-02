@@ -2,11 +2,11 @@ namespace Fuse.API.Controllers
 {
     using System;
     using System.Linq;
-    using System.Security.Claims;
     using System.Threading.Tasks;
+    using Fuse.Core.Areas.Security.Interfaces;
+    using Fuse.Core.Areas.Security.Permissions;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
-    using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Responses;
     using Microsoft.AspNetCore.Mvc;
@@ -14,22 +14,17 @@ namespace Fuse.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class RoleController : ControllerBase
+    public class RoleController(IFuseRoleService roleService, IFuseUserService userService) : ControllerBase
     {
-        private readonly ISecurityService _securityService;
-
-        public RoleController(ISecurityService securityService)
-        {
-            _securityService = securityService;
-        }
 
         [HttpGet]
         [SwaggerOperation(OperationId = "roleAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<RoleInfo>))]
+        [RequirePermissionKey(RolePermissions.ReadKey)]
         public async Task<ActionResult<IEnumerable<RoleInfo>>> GetRoles()
         {
-            var state = await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            var roles = state.Roles.Select(r => new RoleInfo(r.Id, r.Name, r.Description, r.Permissions, r.CreatedAt, r.UpdatedAt));
+            var roleResult = await roleService.GetRoles();
+            var roles = roleResult.Value!.Select(r => new RoleInfo(r.Id, r.Name, r.Description, r.Permissions, r.CreatedAt, r.UpdatedAt));
             return Ok(roles);
         }
 
@@ -37,13 +32,19 @@ namespace Fuse.API.Controllers
         [SwaggerOperation(OperationId = "roleGET")]
         [ProducesResponseType(200, Type = typeof(RoleInfo))]
         [ProducesResponseType(404)]
+        [RequirePermissionKey(RolePermissions.ReadKey)]
         public async Task<ActionResult<RoleInfo>> GetRoleById(Guid id)
         {
-            var state = await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            var role = state.Roles.FirstOrDefault(r => r.Id == id);
-            
-            if (role is null)
-                return NotFound(new { error = "Role not found" });
+            var roleResult = await roleService.GetRole(id);
+            if (!roleResult.IsSuccess)
+            {
+                if(roleResult.ErrorType == ErrorType.NotFound)
+                {
+                    return NotFound();
+                }
+                return BadRequest(roleResult.Error);
+            }
+            var role = roleResult.Value!;
 
             var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt);
             return Ok(roleInfo);
@@ -55,24 +56,19 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(RolePermissions.CreateKey)]
         public async Task<ActionResult<RoleInfo>> CreateRole([FromBody] CreateRole command)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Guid? requestedBy = null;
-            if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var id))
-            {
-                requestedBy = id;
-            }
-
-            var merged = command with { RequestedBy = requestedBy };
-            var result = await _securityService.CreateRoleAsync(merged, HttpContext.RequestAborted);
+            var result = await roleService.CreateRole(
+                command.Name,
+                command.Description,
+                command.Permissions);
             
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
                 {
                     ErrorType.Conflict => Conflict(new { error = result.Error }),
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }
@@ -89,17 +85,14 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(RolePermissions.UpdateKey)]
         public async Task<ActionResult<RoleInfo>> UpdateRole([FromRoute] Guid id, [FromBody] UpdateRole command)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Guid? requestedBy = null;
-            if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var uid))
-            {
-                requestedBy = uid;
-            }
-
-            var merged = command with { Id = id, RequestedBy = requestedBy };
-            var result = await _securityService.UpdateRoleAsync(merged, HttpContext.RequestAborted);
+            var result = await roleService.UpdateRole(
+                id,
+                command.Name,
+                command.Description,
+                command.Permissions);
             
             if (!result.IsSuccess)
             {
@@ -107,7 +100,6 @@ namespace Fuse.API.Controllers
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
                     ErrorType.Conflict => Conflict(new { error = result.Error }),
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }
@@ -121,26 +113,20 @@ namespace Fuse.API.Controllers
         [SwaggerOperation(OperationId = "roleDELETE")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(RolePermissions.DeleteKey)]
         public async Task<IActionResult> DeleteRole([FromRoute] Guid id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Guid? requestedBy = null;
-            if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var uid))
-            {
-                requestedBy = uid;
-            }
-
-            var command = new DeleteRole(id) { RequestedBy = requestedBy };
-            var result = await _securityService.DeleteRoleAsync(command, HttpContext.RequestAborted);
+            var result = await roleService.DeleteRole(id);
             
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }
@@ -154,24 +140,16 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(RolePermissions.AssignKey)]
         public async Task<IActionResult> AssignRolesToUser([FromBody] AssignRolesToUser command)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Guid? requestedBy = null;
-            if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var uid))
-            {
-                requestedBy = uid;
-            }
-
-            var merged = command with { RequestedBy = requestedBy };
-            var result = await _securityService.AssignRolesToUserAsync(merged, HttpContext.RequestAborted);
+            var result = await userService.SetUserRoles(command.UserId, command.RoleIds);
             
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }

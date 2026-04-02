@@ -93,7 +93,6 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), branch =>
 {
     branch.UseMiddleware<AuthenticationMiddleware>();
     branch.UseMiddleware<AuthorizationMiddleware>();
-    branch.UseMiddleware<SecurityMiddleware>();
 });
 
 app.MapControllers();

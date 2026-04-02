@@ -30,7 +30,6 @@ public static class FuseCodeModule
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
-        services.AddSingleton<ISecurityService, SecurityService>();
         services.AddSingleton<IPermissionService, PermissionService>();
         services.AddScoped<IFuseRoleService, FuseRoleService>();
         services.AddScoped<IFuseUserService, FuseUserService>();
@@ -38,6 +37,7 @@ public static class FuseCodeModule
         services.AddScoped<IAPIKeyService, APIKeyService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, APIKeyPermissions>();
+        services.AddSingleton<AreaPermissions, RolePermissions>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();

@@ -8,7 +8,7 @@ public record RoleInfo(
     Guid Id,
     string Name,
     string Description,
-    IReadOnlyList<Permission> Permissions,
+    IReadOnlyList<string> Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );
