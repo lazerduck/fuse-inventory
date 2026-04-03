@@ -105,4 +105,17 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
 
         return Result<Guid>.Success(session.UserId);
     }
+
+    public async Task<Result<DateTime>> GetExpiry(string token)
+    {
+        var snapshot = await fuseStore.GetAsync();
+        var session = snapshot.SecurityContext.Sessions.FirstOrDefault(s => s.Token == token);
+
+        if(session is null)
+        {
+            return Result<DateTime>.Failure("Could not find session", ErrorType.NotFound);
+        }
+
+        return Result<DateTime>.Success(session.ExpiresAt);
+    }
 }

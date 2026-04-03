@@ -6,7 +6,7 @@ using Fuse.Core.Models;
 
 namespace Fuse.Core.Areas.Security.Services;
 
-public class APIKeyService(IFuseStore fuseStore, IFuseUserService userService, IFuseRoleService roleService) : IAPIKeyService
+public class FuseAPIKeyService(IFuseStore fuseStore, IFuseUserService userService, IFuseRoleService roleService) : IFuseAPIKeyService
 {
     public async Task<Result<(string RawKey, FuseApiKey ApiKey)>> GenerateNewAPIKey(string name, Guid UserId, IReadOnlyList<Guid> roleIds)
     {

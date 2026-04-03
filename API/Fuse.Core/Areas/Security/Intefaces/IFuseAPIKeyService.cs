@@ -3,7 +3,7 @@ using Fuse.Core.Models;
 
 namespace Fuse.Core.Areas.Security.Interfaces;
 
-public interface IAPIKeyService
+public interface IFuseAPIKeyService
 {
     Task<Result<(string RawKey, FuseApiKey ApiKey)>> GenerateNewAPIKey(string name, Guid UserId, IReadOnlyList<Guid> roleIds);
 

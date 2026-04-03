@@ -10,7 +10,7 @@ namespace Fuse.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ApiKeyController(IAPIKeyService apiKeyService) : ControllerBase
+    public class ApiKeyController(IFuseAPIKeyService apiKeyService) : ControllerBase
     {
 
         [HttpGet]

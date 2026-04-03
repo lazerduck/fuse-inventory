@@ -185,6 +185,12 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         return Result.Success();
     }
 
+    public async Task<Result<IReadOnlyList<FuseUser>>> GetUsers()
+    {
+        var snapshot = await fuseStore.GetAsync();
+        return Result<IReadOnlyList<FuseUser>>.Success(snapshot.SecurityContext.Users);
+    }
+
     private static string GenerateSalt()
     {
         var bytes = RandomNumberGenerator.GetBytes(16);

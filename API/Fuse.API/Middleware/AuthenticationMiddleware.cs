@@ -17,7 +17,7 @@ public sealed class AuthenticationMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService)
+    public async Task InvokeAsync(HttpContext context, IFuseAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService)
     {
         var cancellationToken = context.RequestAborted;
 
@@ -45,7 +45,7 @@ public sealed class AuthenticationMiddleware
 
     private static async Task<ClaimsPrincipal?> TryAuthenticateApiKeyAsync(
         string rawKey,
-        IAPIKeyService apiKeyService,
+        IFuseAPIKeyService apiKeyService,
         CancellationToken cancellationToken)
     {
         var result = await apiKeyService.VerifyAPIKeys(rawKey);

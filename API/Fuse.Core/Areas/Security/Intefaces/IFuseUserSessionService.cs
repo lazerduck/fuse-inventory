@@ -12,4 +12,6 @@ public interface IFuseUserSessionService
     Task<Result> DeleteSession(string token);
 
     Task<Result<Guid>> ValidateSession(string token);
+
+    Task<Result<DateTime>> GetExpiry(string token);
 }
