@@ -1,7 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using Fuse.API;
+    using Fuse.Core.Areas.Risk;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -20,7 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "riskAll")]
-        [RequirePermission(Permission.RisksRead)]
+        [RequirePermissionKey(RiskPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Risk>))]
         public async Task<ActionResult<IEnumerable<Risk>>> GetRisks()
         {
@@ -29,7 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "riskGET")]
-        [RequirePermission(Permission.RisksRead)]
+        [RequirePermissionKey(RiskPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Risk))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Risk>> GetRiskById([FromRoute] Guid id)
@@ -40,7 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("target/{targetType}/{targetId}")]
         [SwaggerOperation(OperationId = "target")]
-        [RequirePermission(Permission.RisksRead)]
+        [RequirePermissionKey(RiskPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Risk>))]
         public async Task<ActionResult<IEnumerable<Risk>>> GetRisksByTarget([FromRoute] string targetType, [FromRoute] Guid targetId)
         {
@@ -49,7 +49,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "riskPOST")]
-        [RequirePermission(Permission.RisksCreate)]
+        [RequirePermissionKey(RiskPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Risk))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<Risk>> CreateRisk([FromBody] CreateRisk command)
@@ -66,7 +66,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "riskPUT")]
-        [RequirePermission(Permission.RisksUpdate)]
+        [RequirePermissionKey(RiskPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Risk))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -88,7 +88,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "riskDELETE")]
-        [RequirePermission(Permission.RisksDelete)]
+        [RequirePermissionKey(RiskPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteRisk([FromRoute] Guid id)

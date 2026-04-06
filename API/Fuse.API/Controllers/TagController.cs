@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.Core.Areas.Tag;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -19,6 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "tagAll")]
+        [RequirePermissionKey(TagPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Tag>))]
         public async Task<ActionResult<IEnumerable<Tag>>> GetTags()
         {
@@ -27,6 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "tagGET")]
+        [RequirePermissionKey(TagPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Tag))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Tag>> GetTagById(Guid id)
@@ -37,6 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "tagPOST")]
+        [RequirePermissionKey(TagPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Tag))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -58,6 +62,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "tagPUT")]
+        [RequirePermissionKey(TagPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Tag))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -82,6 +87,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "tagDELETE")]
+        [RequirePermissionKey(TagPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTag([FromRoute] Guid id)

@@ -1,7 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using Fuse.API;
+    using Fuse.Core.Areas.Responsibility;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -24,7 +24,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet(Name = "responsibilityAssignmentAll")]
         [SwaggerOperation(OperationId = "responsibilityAssignmentAll")]
-        [RequirePermission(Permission.ResponsibilitiesRead)]
+        [RequirePermissionKey(ResponsibilityPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<ResponsibilityAssignment>))]
         public async Task<ActionResult<IEnumerable<ResponsibilityAssignment>>> GetResponsibilityAssignmentsByApplication([FromRoute] Guid applicationId)
         {
@@ -33,7 +33,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}", Name = "responsibilityAssignmentGET")]
         [SwaggerOperation(OperationId = "responsibilityAssignmentGET")]
-        [RequirePermission(Permission.ResponsibilitiesRead)]
+        [RequirePermissionKey(ResponsibilityPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<ResponsibilityAssignment>> GetResponsibilityAssignmentById([FromRoute] Guid applicationId, [FromRoute] Guid id)
@@ -47,7 +47,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost(Name = "responsibilityAssignmentPOST")]
         [SwaggerOperation(OperationId = "responsibilityAssignmentPOST")]
-        [RequirePermission(Permission.ResponsibilitiesCreate)]
+        [RequirePermissionKey(ResponsibilityPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -73,7 +73,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}", Name = "responsibilityAssignmentPUT")]
         [SwaggerOperation(OperationId = "responsibilityAssignmentPUT")]
-        [RequirePermission(Permission.ResponsibilitiesUpdate)]
+        [RequirePermissionKey(ResponsibilityPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(ResponsibilityAssignment))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -101,7 +101,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}", Name = "responsibilityAssignmentDELETE")]
         [SwaggerOperation(OperationId = "responsibilityAssignmentDELETE")]
-        [RequirePermission(Permission.ResponsibilitiesDelete)]
+        [RequirePermissionKey(ResponsibilityPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteResponsibilityAssignment([FromRoute] Guid applicationId, [FromRoute] Guid id)

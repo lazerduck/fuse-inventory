@@ -1,7 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using Fuse.API;
+    using Fuse.Core.Areas.Platform;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -20,7 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "platformAll")]
-        [RequirePermission(Permission.PlatformsRead)]
+        [RequirePermissionKey(PlatformPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Platform>))]
         public async Task<ActionResult<IEnumerable<Platform>>> GetPlatforms()
         {
@@ -29,7 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "platformGET")]
-        [RequirePermission(Permission.PlatformsRead)]
+        [RequirePermissionKey(PlatformPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Platform))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Platform>> GetPlatformById([FromRoute] Guid id)
@@ -40,7 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "platformPOST")]
-        [RequirePermission(Permission.PlatformsCreate)]
+        [RequirePermissionKey(PlatformPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Platform))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -62,7 +62,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "platformPUT")]
-        [RequirePermission(Permission.PlatformsUpdate)]
+        [RequirePermissionKey(PlatformPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Platform))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -86,7 +86,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "platformDELETE")]
-        [RequirePermission(Permission.PlatformsDelete)]
+        [RequirePermissionKey(PlatformPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeletePlatform([FromRoute] Guid id)

@@ -47,6 +47,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("settings")]
         [SwaggerOperation(OperationId = "settings")]
+        [RequirePermissionKey(SecuritySettingsPermissions.UpdateSettingsKey)]
         [ProducesResponseType(200, Type = typeof(SecurityPosture))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]

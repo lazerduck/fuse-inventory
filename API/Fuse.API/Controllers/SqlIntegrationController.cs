@@ -1,7 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using Fuse.API;
+    using Fuse.Core.Areas.SqlIntegration;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
@@ -24,11 +24,13 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "sqlIntegrationAll")]
+        [RequirePermissionKey(SqlIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<SqlIntegrationResponse>))]
         public async Task<ActionResult<IEnumerable<SqlIntegrationResponse>>> Get() => Ok(await _service.GetSqlIntegrationsAsync());
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "sqlIntegrationGET")]
+        [RequirePermissionKey(SqlIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(SqlIntegrationResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<SqlIntegrationResponse>> GetById([FromRoute] Guid id)
@@ -39,6 +41,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}/permissions-overview")]
         [SwaggerOperation(OperationId = "permissionsOverview")]
+        [RequirePermissionKey(SqlIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(CachedPermissionsOverviewResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> GetPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
@@ -65,7 +68,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/permissions-overview/refresh")]
         [SwaggerOperation(OperationId = "refreshPOST")]
-        [RequirePermission(Permission.SqlConnectionsCreate)]
+        [RequirePermissionKey(SqlIntegrationPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(CachedPermissionsOverviewResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedPermissionsOverviewResponse>> RefreshPermissionsOverview([FromRoute] Guid id, CancellationToken ct)
@@ -87,7 +90,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/resolve")]
         [SwaggerOperation(OperationId = "resolve")]
-        [RequirePermission(Permission.SqlGrantsApply)]
+        [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
         [ProducesResponseType(200, Type = typeof(ResolveDriftResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -109,7 +112,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/import")]
         [SwaggerOperation(OperationId = "import2")]
-        [RequirePermission(Permission.SqlGrantsApply)]
+        [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
         [ProducesResponseType(200, Type = typeof(ImportPermissionsResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -131,7 +134,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/orphan-principals/import")]
         [SwaggerOperation(OperationId = "import3")]
-        [RequirePermission(Permission.SqlGrantsApply)]
+        [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
         [ProducesResponseType(200, Type = typeof(ImportOrphanPrincipalResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -155,7 +158,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/accounts/{accountId}/create")]
         [SwaggerOperation(OperationId = "create")]
-        [RequirePermission(Permission.SqlConnectionsCreate)]
+        [RequirePermissionKey(SqlIntegrationPermissions.CreateKey)]
         [ProducesResponseType(200, Type = typeof(CreateSqlAccountResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -179,7 +182,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/bulk-resolve")]
         [SwaggerOperation(OperationId = "bulkResolve")]
-        [RequirePermission(Permission.SqlGrantsApply)]
+        [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
         [ProducesResponseType(200, Type = typeof(BulkResolveResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -201,7 +204,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("test-connection")]
         [SwaggerOperation(OperationId = "testConnection2")]
-        [RequirePermission(Permission.SqlConnectionsCreate)]
+        [RequirePermissionKey(SqlIntegrationPermissions.CreateKey)]
         [ProducesResponseType(200, Type = typeof(SqlConnectionTestResult))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<SqlConnectionTestResult>> TestConnection([FromBody] TestSqlConnection command, CancellationToken ct)
@@ -216,7 +219,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "sqlIntegrationPOST")]
-        [RequirePermission(Permission.SqlConnectionsCreate)]
+        [RequirePermissionKey(SqlIntegrationPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(SqlIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -239,7 +242,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "sqlIntegrationPUT")]
-        [RequirePermission(Permission.SqlConnectionsCreate)]
+        [RequirePermissionKey(SqlIntegrationPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(SqlIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -262,7 +265,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "sqlIntegrationDELETE")]
-        [RequirePermission(Permission.SqlConnectionsDelete)]
+        [RequirePermissionKey(SqlIntegrationPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
@@ -281,6 +284,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}/databases")]
         [SwaggerOperation(OperationId = "databases")]
+        [RequirePermissionKey(SqlIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(SqlDatabasesResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]

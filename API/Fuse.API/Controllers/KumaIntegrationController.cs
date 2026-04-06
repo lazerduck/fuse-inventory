@@ -1,7 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using Fuse.API;
+    using Fuse.Core.Areas.KumaIntegration;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -21,11 +21,13 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "kumaIntegrationAll")]
+        [RequirePermissionKey(KumaIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<KumaIntegrationResponse>))]
         public async Task<ActionResult<IEnumerable<KumaIntegrationResponse>>> Get() => Ok(await _service.GetKumaIntegrationsAsync());
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "kumaIntegrationGET")]
+        [RequirePermissionKey(KumaIntegrationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(KumaIntegrationResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<KumaIntegrationResponse>> GetById([FromRoute] Guid id)
@@ -36,7 +38,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "kumaIntegrationPOST")]
-        [RequirePermission(Permission.KumaIntegrationsCreate)]
+        [RequirePermissionKey(KumaIntegrationPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(KumaIntegrationResponse))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<KumaIntegrationResponse>> Create([FromBody] CreateKumaIntegration command, CancellationToken ct)
@@ -57,7 +59,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "kumaIntegrationPUT")]
-        [RequirePermission(Permission.KumaIntegrationsCreate)]
+        [RequirePermissionKey(KumaIntegrationPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(KumaIntegrationResponse))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -79,7 +81,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "kumaIntegrationDELETE")]
-        [RequirePermission(Permission.KumaIntegrationsDelete)]
+        [RequirePermissionKey(KumaIntegrationPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
