@@ -2,7 +2,7 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 
-namespace Fuse.Core.Services;
+namespace Fuse.Core.Areas.Activity;
 
 public sealed class ActivityFeedService : IActivityFeedService
 {

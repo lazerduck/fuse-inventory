@@ -1,6 +1,6 @@
 using Fuse.Core.Models;
 
-namespace Fuse.Core.Interfaces;
+namespace Fuse.Core.Areas.Activity;
 
 public interface IActivityFeedService
 {

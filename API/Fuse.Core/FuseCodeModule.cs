@@ -1,4 +1,5 @@
 using Fuse.Core.Areas.Account;
+using Fuse.Core.Areas.Activity;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Areas.Security.Permissions;

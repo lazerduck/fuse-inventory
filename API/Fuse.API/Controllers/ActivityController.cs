@@ -1,5 +1,5 @@
 using Fuse.API;
-using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Activity;
 using Fuse.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +18,7 @@ public class ActivityController : ControllerBase
 
     [HttpGet]
     [SwaggerOperation(OperationId = "activity")]
-    [RequirePermission(Permission.ActivityRead)]
+    [RequirePermissionKey(ActivityPermissions.ReadKey)]
     [ProducesResponseType(200, Type = typeof(ActivityFeedResult))]
     public async Task<ActionResult<ActivityFeedResult>> Query(
         [FromQuery] DateTime? startTime,
@@ -47,7 +47,7 @@ public class ActivityController : ControllerBase
 
     [HttpGet("{entityType}/{entityId:guid}")]
     [SwaggerOperation(OperationId = "activityByEntity")]
-    [RequirePermission(Permission.ActivityRead)]
+    [RequirePermissionKey(ActivityPermissions.ReadKey)]
     [ProducesResponseType(200, Type = typeof(ActivityFeedResult))]
     public async Task<ActionResult<ActivityFeedResult>> QueryByEntity(
         [FromRoute] EntityType entityType,
