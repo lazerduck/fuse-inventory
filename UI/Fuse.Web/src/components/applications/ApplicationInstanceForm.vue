@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
-import type { ApplicationInstance } from '../../api/client'
+import type { ApplicationInstance } from 'api/client'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
 import TagSelect from '../tags/TagSelect.vue'

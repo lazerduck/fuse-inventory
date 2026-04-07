@@ -189,7 +189,8 @@ import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
-import { CreateRisk, UpdateRisk, RiskImpact, RiskLikelihood, RiskStatus, Permission } from '../api/client'
+import { CreateRisk, UpdateRisk, RiskImpact, RiskLikelihood, RiskStatus } from 'api/client'
+import { Permission } from 'permissions'
 
 const router = useRouter()
 const route = useRoute()

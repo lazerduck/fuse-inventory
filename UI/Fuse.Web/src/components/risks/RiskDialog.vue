@@ -132,7 +132,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
-import type { Risk, Position, RiskImpact, RiskLikelihood, RiskStatus } from '../../api/client'
+import type { Risk, Position, RiskImpact, RiskLikelihood, RiskStatus } from 'api/client'
 
 interface Props {
   risk: Risk | null

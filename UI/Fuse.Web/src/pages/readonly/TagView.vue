@@ -96,7 +96,7 @@ import { useExternalResources } from '../../composables/useExternalResources'
 import { useRisks } from '../../composables/useRisks'
 import { usePositions } from '../../composables/usePositions'
 import { useEnvironments } from '../../composables/useEnvironments'
-import type { TagColor } from '../../api/client'
+import type { TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

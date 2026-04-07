@@ -151,10 +151,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import {
   UpdateApplicationInstance,
-  Permission,
   SecretBinding,
   SecretBindingKind
-} from '../api/client'
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import TagSelect from '../components/tags/TagSelect.vue'

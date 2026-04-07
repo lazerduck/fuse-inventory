@@ -53,7 +53,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
 import { useTags } from '../../composables/useTags'
 import { useFuseClient } from '../../composables/useFuseClient'
-import { CreateTag, TagColor, type Tag } from '../../api/client'
+import { CreateTag, TagColor, type Tag } from 'api/client'
 import { getErrorMessage } from '../../utils/error'
 
 interface TagOption {

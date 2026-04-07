@@ -9,13 +9,13 @@ import {
   CreateAccount,
   DependencyAuthKind,
   Grant,
-  Permission,
   Privilege,
   SecretBinding,
   SecretBindingKind,
   TargetKind,
   UpdateAccount
-} from '../../../api/client'
+} from 'api/client'
+import { Permission } from 'permissions'
 import type {
   AccountFormModel,
   AccountSecretFields,

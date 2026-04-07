@@ -108,9 +108,9 @@ import {
   UpdateSecretProvider,
   SecretProviderAuthMode,
   SecretProviderCapabilities,
-  SecretProviderCredentials,
-  Permission
-} from '../api/client'
+  SecretProviderCredentials
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'

@@ -118,7 +118,7 @@ import { useAuditLogs } from '../composables/useAuditLogs'
 import type { QTableProps } from 'quasar'
 import { useQuasar } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
-import { Permission } from '../api/client'
+import { Permission } from 'permissions'
 
 const fuseStore = useFuseStore()
 const isAdmin = computed(() => fuseStore.hasPermission(Permission.AuditLogsView))

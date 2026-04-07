@@ -2,7 +2,7 @@
   {
     "id": "4772b2cc-b955-4cc3-be44-756145fca633",
     "name": "Payment Processor",
-    "version": "1",
+    "version": "2",
     "description": "Allows customers to make payments for their orders",
     "owner": null,
     "notes": null,
@@ -27,12 +27,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:13:21.0390747Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "b3ec895a-72ce-405c-9817-0e795f7d5f83",
@@ -50,12 +52,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:13:21.0390747Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "eef3b084-e406-4d20-accf-1209cab864b3",
@@ -73,7 +77,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "604e635e-00d7-45fe-bc0b-8323c6316b63",
@@ -82,17 +87,19 @@
             "port": null,
             "authKind": "Account",
             "accountId": "177110b5-ee71-4f43-9c45-61859582791c",
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:13:21.0390747Z",
-        "updatedAt": "2026-03-05T20:32:39.3644615Z"
+        "updatedAt": "2026-03-05T20:32:39.3644615Z",
+        "apiKey": null
       }
     ],
     "pipelines": [],
     "createdAt": "2026-02-25T19:13:21.0045183Z",
-    "updatedAt": "2026-03-05T20:32:39.3646067Z"
+    "updatedAt": "2026-04-07T22:49:30.902537Z"
   },
   {
     "id": "56b7a0b0-b9ec-4fde-a71a-f0adc1eb6994",
@@ -122,7 +129,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5",
+            "severity": "Full"
           },
           {
             "id": "6833d610-1af6-4953-a4b9-56e2e72cf899",
@@ -131,7 +139,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5",
+            "severity": "Full"
           },
           {
             "id": "123cc414-0dc9-4352-a68a-ecce6def1200",
@@ -140,7 +149,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5",
+            "severity": "Full"
           },
           {
             "id": "21543872-4139-4a43-97fd-10112161b42f",
@@ -149,12 +159,14 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5"
+            "identityId": "90b347bb-d257-4d8c-aa97-ab6cc761d0d5",
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:14:33.4021586Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "10caf851-7378-4fa1-806b-11accf80cefe",
@@ -172,7 +184,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398",
+            "severity": "Full"
           },
           {
             "id": "e10d196f-8332-4470-9187-c73dafff0152",
@@ -181,7 +194,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398",
+            "severity": "Full"
           },
           {
             "id": "4e86fcca-235b-42b0-a4e5-7edf6e579da2",
@@ -190,7 +204,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398",
+            "severity": "Full"
           },
           {
             "id": "5d7175a1-1023-4aca-9cf4-7e0eec9895e5",
@@ -199,12 +214,14 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398"
+            "identityId": "d7cb1c4a-dafe-4873-8aff-688d6e457398",
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:14:33.4021586Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "79ba1a62-d10f-4985-aec7-98cb39ae7e34",
@@ -222,7 +239,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d",
+            "severity": "Full"
           },
           {
             "id": "a4732c30-69b5-47cb-a04e-856fc6415d66",
@@ -231,7 +249,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d",
+            "severity": "Full"
           },
           {
             "id": "206dc3ae-873e-4375-a6e8-f35c5abd6d61",
@@ -240,7 +259,8 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d",
+            "severity": "Full"
           },
           {
             "id": "dc0479c2-32ff-47dd-ad4e-5e6af0a20ba1",
@@ -249,12 +269,14 @@
             "port": null,
             "authKind": "Identity",
             "accountId": null,
-            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d"
+            "identityId": "28eb941b-db03-480c-86f4-45dc04d9ec6d",
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:14:33.4021586Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       }
     ],
     "pipelines": [],
@@ -289,12 +311,14 @@
             "port": null,
             "authKind": "Account",
             "accountId": "4445d7e1-70cb-4978-9c2b-0a175029fb82",
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:15:38.8217491Z",
-        "updatedAt": "2026-02-25T20:09:39.1846496Z"
+        "updatedAt": "2026-02-25T20:09:39.1846496Z",
+        "apiKey": null
       },
       {
         "id": "b4d5e5b7-087d-4539-a60d-42e6b1c2ecf2",
@@ -312,12 +336,14 @@
             "port": null,
             "authKind": "Account",
             "accountId": "c2e01b16-6818-4df2-a537-b09a6dfcbac9",
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:15:38.8217491Z",
-        "updatedAt": "2026-02-25T20:09:48.4268762Z"
+        "updatedAt": "2026-02-25T20:09:48.4268762Z",
+        "apiKey": null
       },
       {
         "id": "3b577845-bdc0-4fe5-bb1f-51cda777e29e",
@@ -335,12 +361,14 @@
             "port": null,
             "authKind": "Account",
             "accountId": "9e7e3577-edd2-4bee-9357-0e5d7770317f",
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:15:38.8217491Z",
-        "updatedAt": "2026-02-25T20:09:57.9531754Z"
+        "updatedAt": "2026-02-25T20:09:57.9531754Z",
+        "apiKey": null
       }
     ],
     "pipelines": [],
@@ -375,7 +403,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "694cf8cf-760b-454e-8ccc-0edc2c4f930d",
@@ -384,7 +413,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "75ae9fef-4493-4300-b25e-8f9f84faad5d",
@@ -393,7 +423,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "01c4da64-982f-4367-b628-b03a766eef6c",
@@ -402,12 +433,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:16:12.4227106Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "8ef4496a-9ac6-45ee-bf46-6fb0016cc546",
@@ -425,7 +458,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "4d34751a-c409-44ce-b1c5-e39198c23cd8",
@@ -434,7 +468,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "447e83f4-9a00-4640-afb5-75f0a2bb5f78",
@@ -443,7 +478,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "d0d2053f-e78f-453f-bc5c-8d1757900268",
@@ -452,12 +488,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:16:12.4227106Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "ef31ac34-2e97-4eee-980a-7e1163e70a53",
@@ -475,7 +513,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "db724d6f-0a64-4e7a-8792-46577e4cb8e4",
@@ -484,7 +523,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "3e589c40-e6a9-4b02-9c3b-595ebc051ffa",
@@ -493,7 +533,8 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           },
           {
             "id": "3d73d83b-0eeb-47fd-a068-ee5c90798722",
@@ -502,12 +543,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:16:12.4227106Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       }
     ],
     "pipelines": [],
@@ -542,12 +585,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:17:31.4370655Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "9c8f3651-cda5-4119-a779-d6a0446e8405",
@@ -565,12 +610,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:17:31.4370655Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       },
       {
         "id": "747713e6-44e8-46b3-9d6b-f0e664e97524",
@@ -588,12 +635,14 @@
             "port": null,
             "authKind": "None",
             "accountId": null,
-            "identityId": null
+            "identityId": null,
+            "severity": "Full"
           }
         ],
         "tagIds": [],
         "createdAt": "2026-02-25T19:17:31.4370655Z",
-        "updatedAt": "2026-02-25T20:18:09.3421822Z"
+        "updatedAt": "2026-02-25T20:18:09.3421822Z",
+        "apiKey": null
       }
     ],
     "pipelines": [],

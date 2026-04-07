@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted } from 'vue'
-import type { EnvironmentInfo } from '../../api/client'
+import type { EnvironmentInfo } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'

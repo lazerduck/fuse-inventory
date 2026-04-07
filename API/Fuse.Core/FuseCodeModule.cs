@@ -52,6 +52,7 @@ public static class FuseCodeModule
         services.AddScoped<IFuseRoleService, FuseRoleService>();
         services.AddScoped<IFuseUserService, FuseUserService>();
         services.AddScoped<IFuseUserSessionService, FuseUserSessionService>();
+        services.AddScoped<IFuseSecurityService, FuseSecurityService>();
         services.AddScoped<IFuseAPIKeyService, FuseAPIKeyService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();

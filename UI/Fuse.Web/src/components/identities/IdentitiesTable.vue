@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { Identity, IdentityKind } from '../../api/client'
+import type { Identity, IdentityKind } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import TagChip from '../tags/TagChip.vue'
 

@@ -126,7 +126,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import { SyncStatus, type SqlAccountPermissionsStatus } from '../../api/client'
+import { SyncStatus, type SqlAccountPermissionsStatus } from 'api/client'
 import PermissionDiffSummary from './PermissionDiffSummary.vue'
 import StatusBadge from './StatusBadge.vue'
 

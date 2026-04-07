@@ -257,9 +257,9 @@ import {
   EntityType,
   UpdateApplication,
   UpdateApplicationPipeline,
-  Risk,
-  Permission
-} from '../api/client'
+  Risk
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'

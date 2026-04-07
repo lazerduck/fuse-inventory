@@ -10,4 +10,6 @@ public interface IFuseSecurityService
     Task SetSecurityPosture(SecurityPosture posture);
 
     Task<bool> RequiresSetup();
+
+    Task<IReadOnlyList<PermissionAreaCatalog>> GetPermissionCatalogs();
 }

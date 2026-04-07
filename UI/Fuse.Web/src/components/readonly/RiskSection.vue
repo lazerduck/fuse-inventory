@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { type Ref } from 'vue'
-import type { Risk } from '../../api/client'
+import type { Risk } from 'api/client'
 import type { RiskAggregation } from '../../composables/useRiskAggregation'
 
 interface Props {

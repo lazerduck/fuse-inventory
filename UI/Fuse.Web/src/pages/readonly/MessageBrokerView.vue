@@ -125,7 +125,7 @@ import { useAccounts } from '../../composables/useAccounts'
 import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
-import { TargetKind, type TagColor } from '../../api/client'
+import { TargetKind, type TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

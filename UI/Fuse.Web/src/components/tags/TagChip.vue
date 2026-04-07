@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TagColor } from '../../api/client'
+import { TagColor } from 'api/client'
 
 interface Props {
   label: string

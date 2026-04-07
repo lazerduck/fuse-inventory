@@ -221,7 +221,8 @@ import { Dialog, Notify, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useRoles } from '../composables/useRoles'
-import { CreateRole, UpdateRole, RoleInfo, Permission } from '../api/client'
+import { CreateRole, UpdateRole, RoleInfo } from 'api/client'
+import { Permission } from 'permissions'
 import { getErrorMessage } from '../utils/error'
 import PermissionSelector from '../components/roles/PermissionSelector.vue'
 
@@ -241,7 +242,7 @@ const roleForm = ref({
   id: '',
   name: '',
   description: '',
-  permissions: [] as Permission[]
+  permissions: [] as string[]
 })
 
 const { data, isLoading } = useRoles()
@@ -262,7 +263,7 @@ function isDefaultRole(roleId?: string): boolean {
   return roleId === DEFAULT_ADMIN_ROLE_ID || roleId === DEFAULT_READER_ROLE_ID
 }
 
-function formatPermission(permission: Permission): string {
+function formatPermission(permission: string): string {
   // Convert camelCase to spaced words
   return permission.toString().replace(/([A-Z])/g, ' $1').trim()
 }
@@ -297,7 +298,7 @@ function editRole(role: RoleInfo) {
     id: role.id || '',
     name: role.name || '',
     description: role.description || '',
-    permissions: [...(role.permissions || [])]
+    permissions: [...(role.permissions || [])] as string[]
   }
   selectedRole.value = role
   isEditDialogOpen.value = true

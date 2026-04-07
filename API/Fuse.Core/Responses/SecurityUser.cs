@@ -7,6 +7,7 @@ namespace Fuse.Core.Responses;
 public record SecurityUserResponse (
   Guid Id,
   string UserName,
+  bool IsAdmin,
   IReadOnlyList<Guid> RoleIds,
   DateTime CreatedAt,
   DateTime UpdatedAt

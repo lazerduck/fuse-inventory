@@ -1,10 +1,13 @@
 namespace Fuse.Core.Areas.Security.Services;
 
 using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 
-public class FuseSecurityService(IFuseStore fuseStore) : IFuseSecurityService
+public class FuseSecurityService(
+    IFuseStore fuseStore,
+    IEnumerable<AreaPermissions> permissionCatalogs) : IFuseSecurityService
 {
     public async Task<SecurityPosture> GetSecurityPosture()
     {
@@ -27,5 +30,19 @@ public class FuseSecurityService(IFuseStore fuseStore) : IFuseSecurityService
                 Posture = posture
             }
         });
+    }
+
+    public Task<IReadOnlyList<PermissionAreaCatalog>> GetPermissionCatalogs()
+    {
+        var catalogs = permissionCatalogs
+            .Select(catalog => new PermissionAreaCatalog(
+                catalog.AreaName,
+                catalog.GetPermissions()
+                    .OrderBy(permission => permission, StringComparer.OrdinalIgnoreCase)
+                    .ToList()))
+            .OrderBy(catalog => catalog.AreaName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<PermissionAreaCatalog>>(catalogs);
     }
 }

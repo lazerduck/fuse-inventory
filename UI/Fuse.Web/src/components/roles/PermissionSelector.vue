@@ -1,5 +1,10 @@
 <template>
   <div class="permission-selector">
+    <q-banner v-if="catalogError" dense class="bg-red-1 text-negative q-mb-sm">
+      Unable to load permission catalog.
+    </q-banner>
+    <q-linear-progress v-if="isCatalogLoading" indeterminate color="primary" class="q-mb-sm" />
+
     <q-tabs v-model="activeTab" dense>
       <q-tab name="all" label="All Permissions" />
       <q-tab name="byCategory" label="By Category" />
@@ -91,199 +96,50 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Permission } from '../../api/client'
+import { usePermissionCatalog } from '../../composables/usePermissionCatalog'
 
 const props = defineProps<{
-  modelValue: Permission[]
+  modelValue: string[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: Permission[]): void
+  (e: 'update:modelValue', value: string[]): void
 }>()
 
 const activeTab = ref('all')
+const { data: permissionCatalog, isLoading: isCatalogLoading, error: catalogError } = usePermissionCatalog()
 
-const allPermissions = computed(() => Object.values(Permission))
+const allPermissions = computed(() => {
+  const fromCatalog = (permissionCatalog.value ?? []).flatMap((category) => category.permissions ?? [])
+  const fromSelected = props.modelValue ?? []
 
-const basePermissionCategories = computed(() => [
-  {
-    name: 'Applications',
-    permissions: [
-      Permission.ApplicationsRead,
-      Permission.ApplicationsCreate,
-      Permission.ApplicationsUpdate,
-      Permission.ApplicationsDelete,
-      Permission.ApplicationsUndo
-    ]
-  },
-  {
-    name: 'Accounts',
-    permissions: [
-      Permission.AccountsRead,
-      Permission.AccountsCreate,
-      Permission.AccountsUpdate,
-      Permission.AccountsDelete,
-      Permission.AccountsUndo
-    ]
-  },
-  {
-    name: 'Identities',
-    permissions: [
-      Permission.IdentitiesRead,
-      Permission.IdentitiesCreate,
-      Permission.IdentitiesUpdate,
-      Permission.IdentitiesDelete,
-      Permission.IdentitiesUndo
-    ]
-  },
-  {
-    name: 'Data Stores',
-    permissions: [
-      Permission.DataStoresRead,
-      Permission.DataStoresCreate,
-      Permission.DataStoresUpdate,
-      Permission.DataStoresDelete,
-      Permission.DataStoresUndo
-    ]
-  },
-  {
-    name: 'Platforms',
-    permissions: [
-      Permission.PlatformsRead,
-      Permission.PlatformsCreate,
-      Permission.PlatformsUpdate,
-      Permission.PlatformsDelete
-    ]
-  },
-  {
-    name: 'Environments',
-    permissions: [
-      Permission.EnvironmentsRead,
-      Permission.EnvironmentsCreate,
-      Permission.EnvironmentsUpdate,
-      Permission.EnvironmentsDelete
-    ]
-  },
-  {
-    name: 'External Resources',
-    permissions: [
-      Permission.ExternalResourcesRead,
-      Permission.ExternalResourcesCreate,
-      Permission.ExternalResourcesUpdate,
-      Permission.ExternalResourcesDelete
-    ]
-  },
-  {
-    name: 'Message Brokers',
-    permissions: [
-      Permission.MessageBrokersRead,
-      Permission.MessageBrokersCreate,
-      Permission.MessageBrokersUpdate,
-      Permission.MessageBrokersDelete
-    ]
-  },
-  {
-    name: 'Positions',
-    permissions: [
-      Permission.PositionsRead,
-      Permission.PositionsCreate,
-      Permission.PositionsUpdate,
-      Permission.PositionsDelete
-    ]
-  },
-  {
-    name: 'Responsibilities',
-    permissions: [
-      Permission.ResponsibilitiesRead,
-      Permission.ResponsibilitiesCreate,
-      Permission.ResponsibilitiesUpdate,
-      Permission.ResponsibilitiesDelete
-    ]
-  },
-  {
-    name: 'Risks',
-    permissions: [
-      Permission.RisksRead,
-      Permission.RisksCreate,
-      Permission.RisksUpdate,
-      Permission.RisksDelete,
-      Permission.RisksApprove
-    ]
-  },
-  {
-    name: 'Azure Key Vault',
-    permissions: [
-      Permission.AzureKeyVaultSecretsView,
-      Permission.AzureKeyVaultConnectionsCreate,
-      Permission.AzureKeyVaultConnectionsDelete
-    ]
-  },
-  {
-    name: 'SQL Integrations',
-    permissions: [
-      Permission.SqlConnectionsCreate,
-      Permission.SqlConnectionsDelete,
-      Permission.SqlGrantsApply
-    ]
-  },
-  {
-    name: 'Kuma Integrations',
-    permissions: [
-      Permission.KumaIntegrationsCreate,
-      Permission.KumaIntegrationsDelete
-    ]
-  },
-  {
-    name: 'Configuration',
-    permissions: [
-      Permission.ConfigurationExport,
-      Permission.ConfigurationImport
-    ]
-  },
-  {
-    name: 'Audit & Activity',
-    permissions: [
-      Permission.AuditLogsView,
-      Permission.ActivityRead
-    ]
-  },
-  {
-    name: 'Users & Roles',
-    permissions: [
-      Permission.UsersRead,
-      Permission.UsersCreate,
-      Permission.UsersUpdate,
-      Permission.UsersDelete,
-      Permission.RolesRead,
-      Permission.RolesCreate,
-      Permission.RolesUpdate,
-      Permission.RolesDelete
-    ]
-  }
-])
-
-const permissionCategories = computed(() => {
-  const categorized = new Set(basePermissionCategories.value.flatMap((category) => category.permissions))
-  const uncategorized = allPermissions.value.filter((permission) => !categorized.has(permission))
-
-  if (!uncategorized.length) {
-    return basePermissionCategories.value
-  }
-
-  return [
-    ...basePermissionCategories.value,
-    {
-      name: 'Other',
-      permissions: uncategorized
-    }
-  ]
+  return [...new Set([...fromCatalog, ...fromSelected])].sort((a, b) => a.localeCompare(b))
 })
 
-function isSelected(permission: Permission): boolean {
+const permissionCategories = computed(() => {
+  const categories = (permissionCatalog.value ?? []).map((category) => ({
+    name: category.areaName ?? 'Other',
+    permissions: [...new Set(category.permissions ?? [])].sort((a, b) => a.localeCompare(b))
+  }))
+
+  const categorized = new Set<string>(categories.flatMap((category) => category.permissions))
+  const uncategorized = (props.modelValue ?? []).filter((permission) => !categorized.has(permission))
+
+  if (uncategorized.length > 0) {
+    categories.push({
+      name: 'Other',
+      permissions: [...new Set(uncategorized)].sort((a, b) => a.localeCompare(b))
+    })
+  }
+
+  return categories
+})
+
+function isSelected(permission: string): boolean {
   return props.modelValue?.includes(permission) || false
 }
 
-function togglePermission(permission: Permission, selected: boolean) {
+function togglePermission(permission: string, selected: boolean) {
   const current = [...(props.modelValue || [])]
   if (selected) {
     if (!current.includes(permission)) {
@@ -306,7 +162,7 @@ function clearAll() {
   emit('update:modelValue', [])
 }
 
-function selectCategory(permissions: Permission[]) {
+function selectCategory(permissions: string[]) {
   const current = [...(props.modelValue || [])]
   permissions.forEach(p => {
     if (!current.includes(p)) {
@@ -316,17 +172,17 @@ function selectCategory(permissions: Permission[]) {
   emit('update:modelValue', current)
 }
 
-function clearCategory(permissions: Permission[]) {
+function clearCategory(permissions: string[]) {
   const current = [...(props.modelValue || [])]
   const filtered = current.filter(p => !permissions.includes(p))
   emit('update:modelValue', filtered)
 }
 
-function getSelectedInCategory(permissions: Permission[]): Permission[] {
+function getSelectedInCategory(permissions: string[]): string[] {
   return permissions.filter(p => isSelected(p))
 }
 
-function formatPermission(permission: Permission): string {
+function formatPermission(permission: string): string {
   // Convert camelCase to spaced words
   return permission.toString().replace(/([A-Z])/g, ' $1').trim()
 }

@@ -110,8 +110,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ApplicationInstanceDependency, IdentityAssignment, TargetKind } from '../../api/client'
-import { DependencyAuthKind } from '../../api/client'
+import type { ApplicationInstanceDependency, IdentityAssignment, TargetKind } from 'api/client'
+import { DependencyAuthKind } from 'api/client'
 
 type DependencyStatus =
   | { kind: 'applied'; dep: ApplicationInstanceDependency; deps: ApplicationInstanceDependency[] }

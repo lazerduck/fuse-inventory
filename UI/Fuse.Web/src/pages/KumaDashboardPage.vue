@@ -116,7 +116,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Permission, MonitorStatus } from '../api/client'
+import { MonitorStatus } from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'
 import { usePlatforms } from '../composables/usePlatforms'

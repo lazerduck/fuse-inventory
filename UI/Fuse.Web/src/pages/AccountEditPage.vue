@@ -152,7 +152,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'
-import { Grant, CloneTarget, CloneAccount, TargetKind, Permission, EntityType } from '../api/client'
+import { Grant, CloneTarget, CloneAccount, TargetKind, EntityType } from 'api/client'
+import { Permission } from 'permissions'
 import AccountForm from '../components/accounts/AccountForm.vue'
 import AccountGrantsSection from '../components/accounts/AccountGrantsSection.vue'
 import AccountSqlStatusSection from '../components/accounts/AccountSqlStatusSection.vue'

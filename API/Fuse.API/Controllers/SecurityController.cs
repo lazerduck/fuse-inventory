@@ -1,4 +1,5 @@
 using Fuse.API.CurrentUser;
+using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Areas.Security.Permissions;
 using Fuse.Core.Commands;
@@ -135,6 +136,16 @@ namespace Fuse.API.Controllers
         {
             var usersResult = await fuseUserService.GetUsers();   
             return Ok(usersResult.Value!.Select(m => new SecurityUserInfo(m)));
+        }
+
+        [HttpGet("permissions/catalog")]
+        [RequirePermissionKey(RolePermissions.ReadKey)]
+        [SwaggerOperation(OperationId = "permissionsCatalog")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<PermissionAreaCatalog>))]
+        public async Task<IActionResult> GetPermissionCatalog()
+        {
+            var catalog = await fuseSecurityService.GetPermissionCatalogs();
+            return Ok(catalog);
         }
 
         [HttpDelete("accounts/{Id}")]

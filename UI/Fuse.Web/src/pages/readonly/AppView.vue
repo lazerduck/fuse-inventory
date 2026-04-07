@@ -168,7 +168,7 @@ import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
 import { useRiskAggregation } from '../../composables/useRiskAggregation'
-import type { TagColor } from '../../api/client'
+import type { TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { ResponsibilityAssignment, ResponsibilityScope } from '../../api/client'
+import { ResponsibilityAssignment, ResponsibilityScope } from 'api/client'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { getErrorMessage } from '../../utils/error'

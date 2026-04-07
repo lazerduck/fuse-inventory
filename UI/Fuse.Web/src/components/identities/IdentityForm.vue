@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { toRefs } from 'vue'
 import type { IdentityFormModel, SelectOption, TargetOption } from './types'
-import type { IdentityKind } from '../../api/client'
+import type { IdentityKind } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 const form = defineModel<IdentityFormModel>({ required: true })

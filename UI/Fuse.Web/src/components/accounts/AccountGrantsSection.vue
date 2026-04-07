@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { Grant, Privilege } from '../../api/client'
+import type { Grant, Privilege } from 'api/client'
 
 interface GrantRow {
   __key: string

@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import type { Position } from '../../api/client'
+import type { Position } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 interface PositionFormModel {

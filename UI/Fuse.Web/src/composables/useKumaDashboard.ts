@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useApplications } from './useApplications'
 import { useKumaIntegrations } from './useKumaIntegrations'
 import { useFuseClient } from './useFuseClient'
-import { type HealthStatusResponse, MonitorStatus } from '../api/client'
+import { type HealthStatusResponse, MonitorStatus } from 'api/client'
 
 export interface ServiceHealthEntry {
   applicationId: string

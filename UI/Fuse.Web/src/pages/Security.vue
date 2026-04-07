@@ -24,7 +24,7 @@
           <div class="text-h6 q-mb-md">Security Settings</div>
           <div class="text-body2">
             <p>
-              <strong>Security Level:</strong> {{ fuseStore.securityLevel }} - {{ levelDescription }}
+              <strong>Security Level:</strong> {{ fuseStore.securityPosture }} - {{ levelDescription }}
               <q-btn 
                 v-if="isAdmin"
                 flat 
@@ -51,7 +51,7 @@
             <div class="row q-gutter-md">
               <div class="col-auto">
                 <p><strong>Username:</strong> {{ fuseStore.currentUser.userName }}</p>
-                <p><strong>Legacy Role:</strong> {{ fuseStore.currentUser.role ?? '—' }}</p>
+                <p><strong>Admin:</strong> {{ fuseStore.currentUser.isAdmin ? 'Yes' : 'No' }}</p>
               </div>
               <div class="col">
                 <p><strong>Assigned Roles:</strong></p>
@@ -191,7 +191,7 @@
               icon="lock_reset"
               color="warning"
               class="q-ml-xs"
-              v-if="fuseStore.hasPermission(Permission.UsersUpdate) && !isCurrentUser(props.row) && props.row.role !== 'Admin'"
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate) && !isCurrentUser(props.row) && !props.row.isAdmin"
               @click="openAdminResetDialog(props.row)"
             >
               <q-tooltip>Reset password</q-tooltip>
@@ -247,7 +247,7 @@
           v-if="selectedUser"
           :user="selectedUser"
           :available-roles="availableRoles"
-          :loading="updateUserMutation.isPending.value" 
+          :loading="assignRolesMutation.isPending.value" 
           @submit="handleEditUser"
           @cancel="closeEditDialog" 
         />
@@ -428,7 +428,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateApiKey, CreateSecurityUser, SecurityLevel, SecurityRole, SecurityUserResponse, UpdateSecuritySettings, UpdateUser, AssignRolesToUser, ResetPasswordRequest, RoleInfo, Permission, ApiKeyInfo } from '../api/client'
+import { CreateApiKey, CreateSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
+import { Permission } from 'permissions'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
 import ResetPasswordDialog from '../components/security/ResetPasswordDialog.vue'
@@ -453,9 +454,9 @@ const isEditDialogOpen = ref(false)
 const isEditSecurityLevelDialogOpen = ref(false)
 const isResetPasswordDialogOpen = ref(false)
 const isPermissionsDialogOpen = ref(false)
-const selectedSecurityLevel = ref<SecurityLevel | null>(null)
-const selectedUser = ref<SecurityUserResponse | null>(null)
-const resetPasswordTarget = ref<SecurityUserResponse | null>(null)
+const selectedSecurityLevel = ref<SecurityPosture | null>(null)
+const selectedUser = ref<SecurityUserInfo | null>(null)
+const resetPasswordTarget = ref<SecurityUserInfo | null>(null)
 const selectedRole = ref<RoleInfo | null>(null)
 const securityError = ref<string | null>(null)
 
@@ -478,9 +479,9 @@ const apiKeys = computed(() => apiKeysData.value ?? [])
 
 const isAdmin = computed(() => fuseStore.isAdmin)
 
-const columns: QTableColumn<SecurityUserResponse>[] = [
+const columns: QTableColumn<SecurityUserInfo>[] = [
   { name: 'userName', label: 'Username', field: 'userName', sortable: true },
-  { name: 'role', label: 'Legacy Role', field: 'role', sortable: true },
+  { name: 'isAdmin', label: 'Admin', field: (row) => row.isAdmin ? 'Yes' : 'No', sortable: true },
   { name: 'roleIds', label: 'Assigned Roles', field: (row) => row.roleIds?.length || 0, sortable: true },
   { name: 'createdAt', label: 'Created', field: 'createdAt', sortable: true},
   { name: 'updatedAt', label: 'Updated', field: 'updatedAt', sortable: true},
@@ -489,18 +490,18 @@ const columns: QTableColumn<SecurityUserResponse>[] = [
 
 const securityLevelOptions = [
   { 
-    label: 'None', 
-    value: SecurityLevel.None,
+    label: 'None',
+    value: SecurityPosture.Unrestricted,
     description: 'No Security, everyone has full access'
   },
   { 
     label: 'Restricted Editing', 
-    value: SecurityLevel.RestrictedEditing,
+    value: SecurityPosture.RestrictedEditing,
     description: 'Everyone can see everything, only Admins can edit'
   },
   { 
     label: 'Fully Restricted', 
-    value: SecurityLevel.FullyRestricted,
+    value: SecurityPosture.FullyRestricted,
     description: 'Read account required to read, Admin to edit'
   }
 ]
@@ -510,7 +511,7 @@ function openCreateDialog() {
 }
 
 function openEditSecurityLevelDialog() {
-  selectedSecurityLevel.value = fuseStore.securityLevel
+  selectedSecurityLevel.value = fuseStore.securityPosture
   isEditSecurityLevelDialogOpen.value = true
 }
 
@@ -519,13 +520,13 @@ function closeEditSecurityLevelDialog() {
   selectedSecurityLevel.value = null
 }
 
-function getSecurityLevelDescription(level: SecurityLevel): string {
+function getSecurityLevelDescription(level: SecurityPosture): string {
   switch (level) {
-    case SecurityLevel.None:
+    case SecurityPosture.Unrestricted:
       return "No Security, everyone has full access"
-    case SecurityLevel.RestrictedEditing:
+    case SecurityPosture.RestrictedEditing:
       return "Everyone can see everything, only Admins can edit"
-    case SecurityLevel.FullyRestricted:
+    case SecurityPosture.FullyRestricted:
       return "Read account required to read, Admin to edit"
     default:
       return ""
@@ -533,7 +534,7 @@ function getSecurityLevelDescription(level: SecurityLevel): string {
 }
 
 const levelDescription = computed(() => {
-  return fuseStore.securityLevel ? getSecurityLevelDescription(fuseStore.securityLevel) : ""
+  return fuseStore.securityPosture ? getSecurityLevelDescription(fuseStore.securityPosture) : ""
 })
 
 const createAccountMutation = useMutation({
@@ -567,13 +568,13 @@ const updateSecurityLevelMutation = useMutation({
   }
 })
 
-function handleCreateAccount(form: { userName: string; password: string; role: SecurityRole | null; requestedBy: string; roleIds: string[] }) {
+function handleCreateAccount(form: { userName: string; password: string; isAdmin: boolean; requestedBy: string; roleIds: string[] }) {
   securityError.value = null
   const payload = Object.assign(new CreateSecurityUser(), {
     userName: form.userName || undefined,
     password: form.password || undefined,
-    role: form.role || undefined,
-    requestedBy: form.requestedBy || undefined
+    roleIds: form.roleIds || [],
+    isAdmin: form.isAdmin
   })
   createAccountMutation.mutate(payload, {
     onSuccess: (newUser) => {
@@ -597,28 +598,11 @@ function handleUpdateSecurityLevel() {
 
   securityError.value = null
   const payload = Object.assign(new UpdateSecuritySettings(), {
-    level: selectedSecurityLevel.value,
+    posture: selectedSecurityLevel.value,
     requestedBy: fuseStore.currentUser?.id || undefined
   })
   updateSecurityLevelMutation.mutate(payload)
 }
-
-// Edit and Delete User Functions
-const updateUserMutation = useMutation({
-  mutationFn: (payload: UpdateUser) => client.accountsPATCH(payload.id || '', payload),
-  onSuccess: async () => {
-    Notify.create({ type: 'positive', message: 'User updated successfully' })
-    isEditDialogOpen.value = false
-    selectedUser.value = null
-    // Refresh the users list
-    queryClient.invalidateQueries({ queryKey: ['securityUsers']})
-  },
-  onError: (err) => {
-    const errorMsg = getErrorMessage(err, 'Unable to update user')
-    securityError.value = errorMsg
-    Notify.create({ type: 'negative', message: errorMsg })
-  }
-})
 
 const deleteUserMutation = useMutation({
   mutationFn: (userId: string) => client.accountsDELETE(userId),
@@ -648,12 +632,12 @@ const resetPasswordMutation = useMutation({
   }
 })
 
-function editItem(user: SecurityUserResponse) {
+function editItem(user: SecurityUserInfo) {
   selectedUser.value = user
   isEditDialogOpen.value = true
 }
 
-function deleteItem(user: SecurityUserResponse) {
+function deleteItem(user: SecurityUserInfo) {
   Dialog.create({
     title: 'Confirm Delete',
     message: `Are you sure you want to delete user "${user.userName}"? This action cannot be undone.`,
@@ -671,16 +655,16 @@ function openSelfResetDialog() {
     resetPasswordTarget.value = {
       id: fuseStore.currentUser.id,
       userName: fuseStore.currentUser.userName,
-      role: fuseStore.currentUser.role,
+      isAdmin: fuseStore.currentUser.isAdmin,
       roleIds: fuseStore.currentUser.roleIds,
       createdAt: fuseStore.currentUser.createdAt,
       updatedAt: fuseStore.currentUser.updatedAt
-    } as SecurityUserResponse
+    } as SecurityUserInfo
     isResetPasswordDialogOpen.value = true
   }
 }
 
-function openAdminResetDialog(user: SecurityUserResponse) {
+function openAdminResetDialog(user: SecurityUserInfo) {
   resetPasswordTarget.value = user
   isResetPasswordDialogOpen.value = true
 }
@@ -708,28 +692,23 @@ function viewRolePermissions(roleId: string) {
   }
 }
 
-function handleEditUser(form: { id: string; role: SecurityRole | null; roleIds: string[] }) {
+function handleEditUser(form: { id: string; roleIds: string[] }) {
   securityError.value = null
-  
-  // Update the legacy role first
-  const updatePayload = Object.assign(new UpdateUser(), {
-    id: form.id || undefined,
-    role: form.role || undefined
-  })
-  
-  // Chain the mutations: first update user, then assign roles
-  updateUserMutation.mutate(updatePayload, {
-    onSuccess: () => {
-      // Only assign roles if user update succeeded
-      if (form.roleIds) {
-        const assignPayload = Object.assign(new AssignRolesToUser(), {
-          userId: form.id || undefined,
-          roleIds: form.roleIds
-        })
-        assignRolesMutation.mutate({ userId: form.id, payload: assignPayload })
+  if (form.roleIds) {
+    const assignPayload = Object.assign(new AssignRolesToUser(), {
+      userId: form.id || undefined,
+      roleIds: form.roleIds
+    })
+    assignRolesMutation.mutate({ userId: form.id, payload: assignPayload }, {
+      onSuccess: () => {
+        isEditDialogOpen.value = false
+        selectedUser.value = null
       }
-    }
-  })
+    })
+  } else {
+    isEditDialogOpen.value = false
+    selectedUser.value = null
+  }
 }
 
 const assignRolesMutation = useMutation({
@@ -752,7 +731,7 @@ function closeEditDialog() {
   selectedUser.value = null
 }
 
-function isCurrentUser(user: SecurityUserResponse): boolean {
+function isCurrentUser(user: SecurityUserInfo): boolean {
   return user.id === fuseStore.currentUser?.id
 }
 

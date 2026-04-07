@@ -19,6 +19,29 @@ namespace Fuse.Tests.AuthMiddleware;
 [Trait("Category", "AuthMiddleware")]
 public class PermissionGrantsAccessTests : IAsyncLifetime
 {
+    private enum Permission
+    {
+        AuditLogsView,
+        ConfigurationExport,
+        UsersRead,
+        RolesRead,
+        AccountsRead,
+        ApplicationsRead,
+        IdentitiesRead,
+        DataStoresRead,
+        PlatformsRead,
+        EnvironmentsRead,
+        ExternalResourcesRead,
+        PositionsRead,
+        RisksRead,
+        AccountsCreate,
+        ApplicationsCreate,
+        IdentitiesCreate,
+        RisksCreate,
+        UsersCreate,
+        RolesCreate,
+    }
+
     private readonly ApiIntegrationFixture _apiFixture;
     private FuseApiClient? _adminClient;
 
@@ -290,7 +313,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         var roleName = $"role-{username}";
 
         var apiPermissions = permissions
-            .Select(p => (ApiClient.Permission)Enum.Parse(typeof(ApiClient.Permission), p.ToString()))
+            .Select(p => p.ToString())
             .ToList();
 
         try

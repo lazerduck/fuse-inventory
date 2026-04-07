@@ -254,7 +254,7 @@ import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useMessageBrokers } from '../composables/useMessageBrokers'
 import { useEnvironments } from '../composables/useEnvironments'
-import type { Application, ApplicationInstance } from '../api/client'
+import type { Application, ApplicationInstance } from 'api/client'
 
 const route = useRoute()
 

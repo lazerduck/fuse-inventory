@@ -136,7 +136,8 @@ import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverv
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useSqlPermissionsActions } from '../composables/useSqlPermissionsActions'
 import { useFuseStore } from '../stores/FuseStore'
-import { PasswordSource, SyncStatus, Permission } from '../api/client'
+import { PasswordSource, SyncStatus } from 'api/client'
+import { Permission } from 'permissions'
 import type {
   AuthKind,
   SecretBindingKind,
@@ -147,7 +148,7 @@ import type {
   ResolveDriftResponse,
   SqlAccountPermissionsStatus,
   SqlOrphanPrincipal
-} from '../api/client'
+} from 'api/client'
 import SqlPermissionsHeader from '../components/sqlPermissions/SqlPermissionsHeader.vue'
 import SqlPermissionsSummaryCard from '../components/sqlPermissions/SqlPermissionsSummaryCard.vue'
 import SqlPermissionsBulkActions from '../components/sqlPermissions/SqlPermissionsBulkActions.vue'

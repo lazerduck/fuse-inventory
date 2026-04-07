@@ -214,7 +214,7 @@ import { useAccounts } from '../../composables/useAccounts'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
 import { useTags } from '../../composables/useTags'
-import { DependencyAuthKind, DependencySeverity, TargetKind, type TagColor } from '../../api/client'
+import { DependencyAuthKind, DependencySeverity, TargetKind, type TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useQuasar, type QTableColumn } from 'quasar'
-import type { Risk, Position } from '../../api/client'
+import type { Risk, Position } from 'api/client'
 import RiskDialog from './RiskDialog.vue'
 
 interface Props {

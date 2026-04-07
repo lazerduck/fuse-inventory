@@ -112,7 +112,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ApplicationInstance } from '../../api/client'
+import type { ApplicationInstance } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import { useHealthCheck } from '../../composables/useHealthCheck'
 import { MonitorStatus } from '../../types/health'

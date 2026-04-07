@@ -223,7 +223,7 @@ import { Notify } from 'quasar'
 import { useDataStores } from '../../composables/useDataStores'
 import { useAccounts } from '../../composables/useAccounts'
 import { useFuseClient } from '../../composables/useFuseClient'
-import { TestSqlConnection, SqlConnectionTestResult, SecretBindingKind, TargetKind } from '../../api/client'
+import { TestSqlConnection, SqlConnectionTestResult, SecretBindingKind, TargetKind } from 'api/client'
 import { getErrorMessage } from '../../utils/error'
 import { parseSqlPermissions } from '../../utils/sqlPermissions'
 

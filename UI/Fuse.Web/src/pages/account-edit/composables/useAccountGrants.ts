@@ -8,7 +8,7 @@ import {
   TargetKind,
   UpdateAccountGrant,
   type SqlIntegrationResponse
-} from '../../../api/client'
+} from 'api/client'
 import { useFuseClient } from '../../../composables/useFuseClient'
 import { getErrorMessage } from '../../../utils/error'
 import type { ComputedRef, Ref } from 'vue'

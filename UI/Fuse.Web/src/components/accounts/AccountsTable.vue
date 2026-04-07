@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { Account } from '../../api/client'
+import type { Account } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import TagChip from '../tags/TagChip.vue'
 

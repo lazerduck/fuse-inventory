@@ -63,7 +63,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Dialog, Notify, type QTableColumn, type QTableProps } from 'quasar'
-import { EntityType, Permission } from '../../api/client'
+import { EntityType } from 'api/client'
+import { Permission } from 'permissions'
 import { useActivityFeed } from '../../composables/useActivityFeed'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useFuseStore } from '../../stores/FuseStore'

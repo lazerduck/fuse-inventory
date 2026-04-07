@@ -150,7 +150,7 @@ import { useExternalResources } from '../../composables/useExternalResources'
 import { useMessageBrokers } from '../../composables/useMessageBrokers'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useTags } from '../../composables/useTags'
-import { DependencyAuthKind, IdentityKind, TargetKind, type IdentityAssignment, type TagColor } from '../../api/client'
+import { DependencyAuthKind, IdentityKind, TargetKind, type IdentityAssignment, type TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

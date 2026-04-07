@@ -76,7 +76,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { ApplicationInstanceDependency, TargetKind } from '../../api/client'
+import type { ApplicationInstanceDependency, TargetKind } from 'api/client'
 
 interface DependencyRow {
   __key: string

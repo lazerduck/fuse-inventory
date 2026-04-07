@@ -65,7 +65,7 @@
 import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
-import type { DataStore } from '../../api/client'
+import type { DataStore } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'

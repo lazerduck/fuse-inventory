@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { BulkResolveRequest, BulkResolveResponse, BulkPasswordSource } from '../api/client'
+import { BulkResolveRequest, BulkResolveResponse, BulkPasswordSource } from 'api/client'
 
 export function useBulkResolve() {
   const client = useFuseClient()

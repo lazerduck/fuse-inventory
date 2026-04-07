@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StatusBadge from '../../sqlPermissions/StatusBadge.vue'
-import type { ResolveDriftResponse } from '../../../api/client'
+import type { ResolveDriftResponse } from 'api/client'
 
 interface Props {
   modelValue: boolean

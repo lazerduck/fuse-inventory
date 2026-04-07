@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { PasswordSource, type SqlAccountPermissionsStatus } from '../../../api/client'
+import { PasswordSource, type SqlAccountPermissionsStatus } from 'api/client'
 
 interface Props {
   modelValue: boolean

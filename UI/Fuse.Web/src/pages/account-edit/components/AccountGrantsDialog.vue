@@ -75,9 +75,9 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import type { Privilege } from '../../../api/client'
+import type { Privilege } from 'api/client'
 import type { SelectOption } from '../../../components/accounts/types'
-import type { Grant } from '../../../api/client'
+import type { Grant } from 'api/client'
 
 interface Props {
   modelValue: boolean

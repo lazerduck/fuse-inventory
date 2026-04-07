@@ -113,7 +113,7 @@ import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
 import { useAccounts } from '../../composables/useAccounts'
 import { useIdentities } from '../../composables/useIdentities'
-import { DependencyAuthKind, DependencySeverity, TargetKind } from '../../api/client'
+import { DependencyAuthKind, DependencySeverity, TargetKind } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

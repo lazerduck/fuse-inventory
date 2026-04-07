@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SqlAccountPermissionsStatus } from '../../../api/client'
+import type { SqlAccountPermissionsStatus } from 'api/client'
 
 interface Props {
   modelValue: boolean

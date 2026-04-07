@@ -1,4 +1,4 @@
-import type { SqlPermissions } from '../api/client'
+import type { SqlPermissions } from 'api/client'
 
 export function parseSqlPermissions(permissions?: SqlPermissions): string[] {
   if (!permissions) return []

@@ -192,9 +192,9 @@ import {
   DependencyAuthKind,
   CloneTarget,
   CloneIdentity,
-  Permission,
   EntityType
-} from '../api/client'
+} from 'api/client'
+import { Permission } from 'permissions'
 import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'

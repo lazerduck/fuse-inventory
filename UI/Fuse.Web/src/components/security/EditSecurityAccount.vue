@@ -17,16 +17,11 @@
             disable
             class="full-span"
           />
-          <q-select
-            v-model="form.role"
-            label="Legacy Role"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="roleOptions"
+          <q-toggle
+            :model-value="props.user.isAdmin ?? false"
+            label="Administrator"
+            disable
             class="full-span"
-            hint="For backward compatibility. Use role assignments below for fine-grained permissions."
           />
           <div class="full-span q-mt-md">
             <div class="text-subtitle2 q-mb-sm">Role Assignments</div>
@@ -70,16 +65,16 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { SecurityRole, SecurityUserResponse, RoleInfo } from '../../api/client'
+import { RoleInfo } from 'api/client'
+import type { SecurityUserInfo } from 'api/client'
 
 interface EditAccountForm {
   id: string
-  role: SecurityRole | null
   roleIds: string[]
 }
 
 interface Props {
-  user: SecurityUserResponse
+  user: SecurityUserInfo
   availableRoles?: RoleInfo[]
   loading?: boolean
 }
@@ -98,16 +93,10 @@ const emit = defineEmits<Emits>()
 
 const form = reactive<EditAccountForm>({
   id: props.user.id || '',
-  role: props.user.role || null,
   roleIds: [...(props.user.roleIds || [])]
 })
 
 const displayUserName = ref(props.user.userName || '')
-
-const roleOptions = [
-  { label: 'Reader', value: SecurityRole.Reader },
-  { label: 'Admin', value: SecurityRole.Admin }
-]
 
 function handleSubmit() {
   emit('submit', { ...form })

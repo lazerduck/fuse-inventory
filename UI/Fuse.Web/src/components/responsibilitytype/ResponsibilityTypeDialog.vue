@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import type { ResponsibilityType } from '../../api/client'
+import type { ResponsibilityType } from 'api/client'
 
 interface ResponsibilityTypeFormModel {
   name: string
