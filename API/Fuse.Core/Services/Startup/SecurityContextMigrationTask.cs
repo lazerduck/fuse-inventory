@@ -80,16 +80,22 @@ public class SecurityContextMigrationTask(IFuseStore store) : IStartupTask
 
         var incoming = legacy.Users
             .Where(u => !existingIds.Contains(u.Id))
-            .Select(u => new FuseUser(
-                Id: u.Id,
-                UserName: u.UserName,
-                PasswordHash: u.PasswordHash,
-                PasswordSalt: u.PasswordSalt,
-                IsAdmin: u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId),
-                RoleIds: u.RoleIds,
-                CreatedAt: u.CreatedAt,
-                UpdatedAt: u.UpdatedAt
-            ));
+            .Select(u =>
+            {
+                var isAdmin = u.Role == SecurityRole.Admin || u.RoleIds.Contains(BuiltInRoles.AdminRoleId);
+                var roleIds = u.RoleIds.Where(id => id != BuiltInRoles.AdminRoleId).ToList();
+
+                return new FuseUser(
+                    Id: u.Id,
+                    UserName: u.UserName,
+                    PasswordHash: u.PasswordHash,
+                    PasswordSalt: u.PasswordSalt,
+                    IsAdmin: isAdmin,
+                    RoleIds: roleIds,
+                    CreatedAt: u.CreatedAt,
+                    UpdatedAt: u.UpdatedAt
+                );
+            });
 
         return context.Users.Concat(incoming).ToList();
     }
@@ -163,7 +169,7 @@ public class SecurityContextMigrationTask(IFuseStore store) : IStartupTask
         var existingIds = context.Roles.Select(r => r.Id).ToHashSet();
 
         var incoming = legacy.Roles
-            .Where(r => !existingIds.Contains(r.Id))
+            .Where(r => r.Id != BuiltInRoles.AdminRoleId && !existingIds.Contains(r.Id))
             .Select(r => new FuseRole(
                 Id: r.Id,
                 Name: r.Name,
