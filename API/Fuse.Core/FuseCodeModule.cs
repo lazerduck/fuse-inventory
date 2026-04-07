@@ -49,7 +49,6 @@ public static class FuseCodeModule
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
-        services.AddSingleton<IPermissionService, PermissionService>();
         services.AddScoped<IFuseRoleService, FuseRoleService>();
         services.AddScoped<IFuseUserService, FuseUserService>();
         services.AddScoped<IFuseUserSessionService, FuseUserSessionService>();
@@ -110,7 +109,6 @@ public static class FuseCodeModule
         
         // Register startup tasks in execution order, then the orchestrator
         services.AddScoped<IStartupTask, StoreLoadTask>();
-        services.AddScoped<IStartupTask, SecurityRoleSeedTask>();
         services.AddScoped<IStartupTask, LegacyRoleMigrationTask>();
         services.AddScoped<IStartupTask, SecurityContextMigrationTask>();
         services.AddScoped<IStartupTask, PermissionCatalogValidationTask>();

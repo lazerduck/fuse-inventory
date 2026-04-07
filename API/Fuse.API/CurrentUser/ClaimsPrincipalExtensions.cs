@@ -21,6 +21,12 @@ public static class ClaimsPrincipalExtensions
         return Guid.TryParse(value, out var id) ? id : null;
     }
 
+    public static string? GetUsername(this ClaimsPrincipal? principal)
+    {
+        var name = principal?.FindFirst(ClaimTypes.Name)?.Value;
+        return name;
+    }
+
     public static IReadOnlyList<Guid> GetRoleIds(this ClaimsPrincipal? principal)
     {
         if (principal is null)
