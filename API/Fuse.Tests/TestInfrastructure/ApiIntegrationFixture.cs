@@ -1,10 +1,14 @@
 using System.Net.Http.Headers;
 using Fuse.API;
+using Fuse.Core.Configs;
+using Fuse.Core.Interfaces;
+using Fuse.Data.Stores;
 using Fuse.Tests.ApiClient;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 using Xunit.Sdk;
 
@@ -152,18 +156,24 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
 
         if (_tempDataDirectory != null)
         {
-            // Override the data directory for this test instance
+            var dataDirectory = _tempDataDirectory;
+
+            // Override data services for this test host instance.
             builder.ConfigureServices(services =>
             {
-                // This runs after the normal service registration,
-                // so we need to replace the registered IFuseStore and IAuditService
-                // with ones that use our temp directory.
-                // However, since FuseDataModule is called in Program.cs before we get here,
-                // we'll instead override AppContext.BaseDirectory behavior via environment variable.
-            });
+                services.RemoveAll<IFuseStore>();
+                services.RemoveAll<IAuditService>();
+                services.RemoveAll<IVersionHistoryService>();
 
-            // Set environment variable that the data directory can check
-            Environment.SetEnvironmentVariable("FUSE_DATA_DIR", _tempDataDirectory);
+                services.AddSingleton<IFuseStore>(_ =>
+                    new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = dataDirectory }));
+
+                services.AddSingleton<IAuditService>(_ =>
+                    new LiteDbAuditService(dataDirectory));
+
+                services.AddSingleton<IVersionHistoryService>(_ =>
+                    new LiteDbVersionHistoryService(dataDirectory));
+            });
 
             builder.UseEnvironment("Test");
         }
