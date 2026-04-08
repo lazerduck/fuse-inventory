@@ -23,8 +23,11 @@ public sealed class AuthorizationMiddleware
     {
         var cancellationToken = context.RequestAborted;
         var user = context.User;
-        var requiredKey = context.GetEndpoint()?.Metadata
-            .GetMetadata<RequirePermissionKeyAttribute>()?.PermissionKey;
+        var endpoint = context.GetEndpoint();
+        var endpointMetadata = endpoint?.Metadata;
+        var requiredKey = endpointMetadata
+            ?.GetMetadata<RequirePermissionKeyAttribute>()?.PermissionKey;
+        var allowDuringSetup = endpointMetadata?.GetMetadata<AllowDuringSetupAttribute>() is not null;
 
         // Admins bypass all further checks
         if (string.Equals(
@@ -45,6 +48,14 @@ public sealed class AuthorizationMiddleware
         var requiresSetup = !snapshot.SecurityContext.Users.Any(u => u.IsAdmin);
         if (requiresSetup)
         {
+            if (!allowDuringSetup)
+            {
+                context.Response.StatusCode = user.Identity?.IsAuthenticated == true
+                    ? StatusCodes.Status403Forbidden
+                    : StatusCodes.Status401Unauthorized;
+                return;
+            }
+
             await _next(context);
             return;
         }

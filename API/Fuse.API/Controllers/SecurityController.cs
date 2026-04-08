@@ -21,6 +21,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("state")]
         [SwaggerOperation(OperationId = "state")]
+        [AllowDuringSetup]
         [ProducesResponseType(200)]
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
@@ -62,6 +63,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("accounts")]
         [SwaggerOperation(OperationId = "accountsPOST")]
+        [AllowDuringSetup]
         [RequirePermissionKey(UserAccountPermissions.CreateKey)]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
@@ -70,6 +72,12 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(409)]
         public async Task<ActionResult<SecurityUserInfo>> CreateAccount([FromBody] CreateSecurityUser command)
         {
+            var requiresSetup = await fuseSecurityService.RequiresSetup();
+            if (requiresSetup && !command.IsAdmin)
+            {
+                return BadRequest(new { error = "The initial setup account must be an admin account." });
+            }
+
             var userResult = await fuseUserService.CreateUser(command.UserName, command.Password, command.IsAdmin, command.RoleIds);
             if(userResult.IsSuccess && userResult.Value is not null)
             {

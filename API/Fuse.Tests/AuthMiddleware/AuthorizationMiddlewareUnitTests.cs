@@ -33,7 +33,7 @@ public class AuthorizationMiddlewareUnitTests
     }
 
     [Fact]
-    public async Task InvokeAsync_RequiresSetup_AllowsRequest()
+    public async Task InvokeAsync_RequiresSetup_AllowedEndpoint_AllowsRequest()
     {
         var wasNextCalled = false;
         var middleware = new AuthorizationMiddleware(_ =>
@@ -42,7 +42,7 @@ public class AuthorizationMiddlewareUnitTests
             return Task.CompletedTask;
         });
 
-        var context = NewContext(authenticated: false);
+        var context = NewContext(authenticated: false, allowDuringSetup: true);
         var store = MockStore(NewSnapshot(
             posture: SecurityPosture.FullyRestricted,
             users: Array.Empty<FuseUser>()));
@@ -50,6 +50,34 @@ public class AuthorizationMiddlewareUnitTests
         await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RequiresSetup_UnauthenticatedNonSetupEndpoint_Returns401()
+    {
+        var middleware = new AuthorizationMiddleware(_ => Task.CompletedTask);
+        var context = NewContext(authenticated: false, requiredPermissionKey: "accounts:read");
+        var store = MockStore(NewSnapshot(
+            posture: SecurityPosture.FullyRestricted,
+            users: Array.Empty<FuseUser>()));
+
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RequiresSetup_AuthenticatedNonSetupEndpoint_Returns403()
+    {
+        var middleware = new AuthorizationMiddleware(_ => Task.CompletedTask);
+        var context = NewContext(authenticated: true, requiredPermissionKey: "accounts:read");
+        var store = MockStore(NewSnapshot(
+            posture: SecurityPosture.FullyRestricted,
+            users: Array.Empty<FuseUser>()));
+
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+
+        Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
     }
 
     [Fact]
@@ -277,7 +305,8 @@ public class AuthorizationMiddlewareUnitTests
         bool authenticated,
         bool isAdmin = false,
         string? requiredPermissionKey = null,
-        IReadOnlyList<Guid>? roleIds = null)
+        IReadOnlyList<Guid>? roleIds = null,
+        bool allowDuringSetup = false)
     {
         var claims = new List<Claim>();
         if (authenticated)
@@ -302,9 +331,15 @@ public class AuthorizationMiddlewareUnitTests
             User = new ClaimsPrincipal(identity)
         };
 
-        var metadata = requiredPermissionKey is null
+        var metadataItems = new List<object>();
+        if (requiredPermissionKey is not null)
+            metadataItems.Add(new RequirePermissionKeyAttribute(requiredPermissionKey));
+        if (allowDuringSetup)
+            metadataItems.Add(new AllowDuringSetupAttribute());
+
+        var metadata = metadataItems.Count == 0
             ? EndpointMetadataCollection.Empty
-            : new EndpointMetadataCollection(new RequirePermissionKeyAttribute(requiredPermissionKey));
+            : new EndpointMetadataCollection(metadataItems.ToArray());
         context.SetEndpoint(new Endpoint(_ => Task.CompletedTask, metadata, "test-endpoint"));
 
         return context;
