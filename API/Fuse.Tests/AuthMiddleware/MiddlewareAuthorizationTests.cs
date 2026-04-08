@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using Fuse.Core.Models;
 using Fuse.Tests.ApiClient;
 using Fuse.Tests.TestInfrastructure;
 using Xunit;
@@ -46,7 +45,8 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
                 {
                     UserName = "initialAdmin",
                     Password = "InitialPassword123!",
-                    Role = ApiClient.SecurityRole.Admin
+                    IsAdmin = true,
+                    RoleIds = new List<Guid>()
                 });
 
                 // Login as the newly created admin
@@ -78,7 +78,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         {
             await _adminClient.ApiSecuritySettingsAsync(new UpdateSecuritySettings
             {
-                Level = ApiClient.SecurityLevel.FullyRestricted
+                Posture = ApiClient.SecurityPosture.FullyRestricted
             });
         }
         catch (ApiException ex)
@@ -198,7 +198,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             // This is a known issue with SecurityController.CreateAccount() not respecting granular permissions
             if (test.Endpoint.Contains("/api/security/accounts") && 
                 test.HttpMethod == "POST" &&
-                scenario.Role != Core.Models.SecurityRole.Admin)
+                !scenario.IsAdmin)
             {
                 return; // Skip - controller bug, doesn't respect granular permissions
             }
@@ -233,29 +233,27 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderUser_CanReadButNotWrite()
     {
-        if (!_userTokens.TryGetValue("reader-user", out var token))
+        // In the new permission model, use a user with explicit read permissions but not write.
+        // The "limited-user" has accounts:read but not accounts:create.
+        if (!_userTokens.TryGetValue("limited-user", out var token))
         {
             return;
         }
 
-        var client = GetOrCreateClient("reader-user", token);
+        var client = GetOrCreateClient("limited-user", token);
 
-        // Reader should be able to GET
+        // Limited user should be able to GET (has accounts:read permission)
         var getResponse = await client.GetAsync("/api/account");
         Assert.NotEqual(System.Net.HttpStatusCode.Forbidden, getResponse.StatusCode);
 
-        // Reader should NOT be able to POST (expect 403 Forbidden or 400 BadRequest if validation runs first)
+        // Limited user should NOT be able to POST (lacks accounts:create permission)
         var postRequest = new { name = "TestAccount", description = "Test" };
         var postResponse = await client.PostAsJsonAsync(
             "/api/account",
             postRequest,
             System.Text.Json.JsonSerializerOptions.Default);
         
-        // Both 400 (validation error) and 403 (forbidden) indicate the write was blocked
-        Assert.True(
-            postResponse.StatusCode == System.Net.HttpStatusCode.Forbidden || 
-            postResponse.StatusCode == System.Net.HttpStatusCode.BadRequest,
-            $"Expected 403 or 400 but got {postResponse.StatusCode}");
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, postResponse.StatusCode);
     }
 
     /// <summary>
@@ -305,8 +303,10 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SelfPasswordReset_AuthenticatedUser_PassesMiddleware()
+    public async Task SelfPasswordReset_WithoutResetPermission_ReturnsForbidden()
     {
+        // In the new permission model, useraccount:resetpassword is required to reset any password.
+        // A user without this explicit permission gets 403, even when resetting their own password.
         if (!_userTokens.TryGetValue("no-permissions-user", out var token) || string.IsNullOrEmpty(token))
         {
             return;
@@ -334,7 +334,7 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
             },
             System.Text.Json.JsonSerializerOptions.Default);
 
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -377,8 +377,10 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetOwnAssignedRole_WithoutRolesReadPermission_ReturnsOk()
+    public async Task GetOwnAssignedRole_WithoutRolesReadPermission_ReturnsForbidden()
     {
+        // In the new permission model, roles:read is required to view any role,
+        // including roles assigned to the requesting user.
         if (!_userTokens.TryGetValue("no-permissions-user", out var token) || string.IsNullOrEmpty(token))
         {
             return;
@@ -402,8 +404,9 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         Assert.NotEmpty(roleIds);
         Assert.True(Guid.TryParse(roleIds[0], out var roleId));
 
+        // Without roles:read permission, even own assigned role lookup returns 403
         var response = await client.GetAsync($"/api/role/{roleId}");
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

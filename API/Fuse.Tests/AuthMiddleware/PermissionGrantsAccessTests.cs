@@ -1,5 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
+using Fuse.Core.Areas.Account;
+using Fuse.Core.Areas.Application;
+using Fuse.Core.Areas.Audit;
+using Fuse.Core.Areas.Config;
+using Fuse.Core.Areas.DataStore;
+using Fuse.Core.Areas.Environment;
+using Fuse.Core.Areas.ExternalResource;
+using Fuse.Core.Areas.Identity;
+using Fuse.Core.Areas.Platform;
+using Fuse.Core.Areas.Position;
+using Fuse.Core.Areas.Risk;
+using Fuse.Core.Areas.Security.Permissions;
 using Fuse.Tests.ApiClient;
 using Fuse.Tests.TestInfrastructure;
 using Xunit;
@@ -42,6 +54,30 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         RolesCreate,
     }
 
+    // Maps the local Permission enum name to the permission key string used in the new area-based system
+    private static readonly Dictionary<string, string> PermissionKeyMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [nameof(Permission.AuditLogsView)]        = AuditPermissions.ViewKey,
+        [nameof(Permission.ConfigurationExport)]  = ConfigPermissions.ExportKey,
+        [nameof(Permission.UsersRead)]            = UserAccountPermissions.ReadKey,
+        [nameof(Permission.UsersCreate)]          = UserAccountPermissions.CreateKey,
+        [nameof(Permission.RolesRead)]            = RolePermissions.ReadKey,
+        [nameof(Permission.RolesCreate)]          = RolePermissions.CreateKey,
+        [nameof(Permission.AccountsRead)]         = AccountPermissions.ReadKey,
+        [nameof(Permission.AccountsCreate)]       = AccountPermissions.CreateKey,
+        [nameof(Permission.ApplicationsRead)]     = ApplicationPermissions.ReadKey,
+        [nameof(Permission.ApplicationsCreate)]   = ApplicationPermissions.CreateKey,
+        [nameof(Permission.IdentitiesRead)]       = IdentityPermissions.ReadKey,
+        [nameof(Permission.IdentitiesCreate)]     = IdentityPermissions.CreateKey,
+        [nameof(Permission.DataStoresRead)]       = DataStorePermissions.ReadKey,
+        [nameof(Permission.PlatformsRead)]        = PlatformPermissions.ReadKey,
+        [nameof(Permission.EnvironmentsRead)]     = EnvironmentPermissions.ReadKey,
+        [nameof(Permission.ExternalResourcesRead)]= ExternalResourcePermissions.ReadKey,
+        [nameof(Permission.PositionsRead)]        = PositionPermissions.ReadKey,
+        [nameof(Permission.RisksRead)]            = RiskPermissions.ReadKey,
+        [nameof(Permission.RisksCreate)]          = RiskPermissions.CreateKey,
+    };
+
     private readonly ApiIntegrationFixture _apiFixture;
     private FuseApiClient? _adminClient;
 
@@ -68,7 +104,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         new object[] { nameof(Permission.AuditLogsView),        "GET", "/api/audit" },
         new object[] { nameof(Permission.ConfigurationExport),  "GET", "/api/config/export" },
         new object[] { nameof(Permission.UsersRead),            "GET", "/api/security/accounts" },
-        new object[] { nameof(Permission.RolesRead),            "GET", "/api/roles" },
+        new object[] { nameof(Permission.RolesRead),            "GET", "/api/role" },
 
         // Standard CRUD read permissions (handled by the CRUD permission matrix)
         new object[] { nameof(Permission.AccountsRead),         "GET", "/api/account" },
@@ -117,7 +153,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         new object[]
         {
             nameof(Permission.RolesCreate),
-            "POST", "/api/roles",
+            "POST", "/api/role",
             new { name = "PermTestRole", description = "Test", permissions = new string[] { } }
         },
     };
@@ -243,7 +279,8 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
                 {
                     UserName = "initialAdmin",
                     Password = "InitialPassword123!",
-                    Role = SecurityRole.Admin
+                    IsAdmin = true,
+                    RoleIds = new List<Guid>()
                 });
             }
             catch (ApiException ex) when (ex.StatusCode == 409) { /* Already exists */ }
@@ -257,7 +294,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         {
             await _adminClient.ApiSecuritySettingsAsync(new UpdateSecuritySettings
             {
-                Level = SecurityLevel.FullyRestricted
+                Posture = SecurityPosture.FullyRestricted
             });
         }
         catch { /* May already be set */ }
@@ -313,7 +350,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
         var roleName = $"role-{username}";
 
         var apiPermissions = permissions
-            .Select(p => p.ToString())
+            .Select(p => PermissionKeyMap.TryGetValue(p.ToString(), out var key) ? key : p.ToString())
             .ToList();
 
         try
@@ -340,7 +377,8 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
             {
                 UserName = username,
                 Password = "PermTest123!",
-                Role = SecurityRole.Reader
+                IsAdmin = false,
+                RoleIds = new List<Guid>()
             });
             userId = user.Id;
         }

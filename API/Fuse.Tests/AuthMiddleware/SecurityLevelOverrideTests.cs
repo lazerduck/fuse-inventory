@@ -35,7 +35,8 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
             {
                 UserName = "initialAdmin",
                 Password = "InitialPassword123!",
-                Role = ApiClient.SecurityRole.Admin
+                IsAdmin = true,
+                RoleIds = new List<Guid>()
             });
             _adminToken = await AuthTestHelpers.LoginAsync(unauthClient, "initialAdmin", "InitialPassword123!");
         }
@@ -56,7 +57,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
             {
                 await _adminClient.ApiSecuritySettingsAsync(new UpdateSecuritySettings
                 {
-                    Level = ApiClient.SecurityLevel.FullyRestricted
+                    Posture = ApiClient.SecurityPosture.FullyRestricted
                 });
             }
             catch
@@ -72,7 +73,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to None (public access)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.None
+            Posture = ApiClient.SecurityPosture.Unrestricted
         });
 
         // Act: Try to read applications without authentication
@@ -89,7 +90,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to None (public access)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.None
+            Posture = ApiClient.SecurityPosture.Unrestricted
         });
 
         // Act: Try to create an application without authentication
@@ -112,7 +113,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to RestrictedEditing (public read, restricted write)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.RestrictedEditing
+            Posture = ApiClient.SecurityPosture.RestrictedEditing
         });
 
         // Act: Try to read applications without authentication
@@ -129,7 +130,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to RestrictedEditing (public read, restricted write)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.RestrictedEditing
+            Posture = ApiClient.SecurityPosture.RestrictedEditing
         });
 
         // Act & Assert: Try to create an application without authentication
@@ -155,7 +156,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to FullyRestricted (all access requires authentication)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.FullyRestricted
+            Posture = ApiClient.SecurityPosture.FullyRestricted
         });
 
         // Act & Assert: Try to read applications without authentication
@@ -175,7 +176,7 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
         // Arrange: Set security level to FullyRestricted (all access requires authentication)
         await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings
         {
-            Level = ApiClient.SecurityLevel.FullyRestricted
+            Posture = ApiClient.SecurityPosture.FullyRestricted
         });
 
         // Act & Assert: Try to create an application without authentication

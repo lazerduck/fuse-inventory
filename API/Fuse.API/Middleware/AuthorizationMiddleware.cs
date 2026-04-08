@@ -40,6 +40,15 @@ public sealed class AuthorizationMiddleware
         var posture = snapshot.SecurityContext.Posture;
         var descriptor = ResolveDescriptor(requiredKey, permissionCatalogs);
 
+        // During initial setup (no admin users yet), allow unauthenticated access to create
+        // the first admin account so the application can be bootstrapped.
+        var requiresSetup = !snapshot.SecurityContext.Users.Any(u => u.IsAdmin);
+        if (requiresSetup)
+        {
+            await _next(context);
+            return;
+        }
+
         switch (posture)
         {
             case SecurityPosture.Unrestricted:

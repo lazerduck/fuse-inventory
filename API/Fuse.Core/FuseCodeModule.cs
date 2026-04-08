@@ -77,6 +77,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, APIKeyPermissions>();
         services.AddSingleton<AreaPermissions, RolePermissions>();
         services.AddSingleton<AreaPermissions, SecuritySettingsPermissions>();
+        services.AddSingleton<AreaPermissions, UserAccountPermissions>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();

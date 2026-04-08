@@ -1,4 +1,20 @@
-using Fuse.Core.Models;
+using Fuse.Core.Areas.Account;
+using Fuse.Core.Areas.Application;
+using Fuse.Core.Areas.Audit;
+using Fuse.Core.Areas.Config;
+using Fuse.Core.Areas.DataStore;
+using Fuse.Core.Areas.Environment;
+using Fuse.Core.Areas.ExternalResource;
+using Fuse.Core.Areas.Identity;
+using Fuse.Core.Areas.KumaIntegration;
+using Fuse.Core.Areas.MessageBroker;
+using Fuse.Core.Areas.Platform;
+using Fuse.Core.Areas.Position;
+using Fuse.Core.Areas.Responsibility;
+using Fuse.Core.Areas.Risk;
+using Fuse.Core.Areas.SecretProvider;
+using Fuse.Core.Areas.Security.Permissions;
+using Fuse.Core.Areas.SqlIntegration;
 
 namespace Fuse.Tests.AuthMiddleware;
 
@@ -23,21 +39,15 @@ public record TestUserScenario
     public required string Password { get; init; }
 
     /// <summary>
-    /// The SecurityRole to assign (Admin or Reader).
+    /// Whether this user is an admin (bypasses all permission checks).
     /// </summary>
-    public required SecurityRole Role { get; init; }
+    public required bool IsAdmin { get; init; }
 
     /// <summary>
-    /// Custom role ID to assign (optional, in addition to or instead of Role).
-    /// Used for creating restricted custom roles.
+    /// Specific permission keys for custom roles (optional).
+    /// If null, the user has no custom role and relies on admin status only.
     /// </summary>
-    public Guid? CustomRoleId { get; init; }
-
-    /// <summary>
-    /// Specific permissions for custom roles (optional).
-    /// If empty, uses permissions from the Role.
-    /// </summary>
-    public IReadOnlyList<Permission>? SpecificPermissions { get; init; }
+    public IReadOnlyList<string>? SpecificPermissions { get; init; }
 
     /// <summary>
     /// Display name for test output.
@@ -79,9 +89,9 @@ public record EndpointAccessTest
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// Required permission to access this endpoint (for documentation).
+    /// Required permission key to access this endpoint (e.g., "application:read").
     /// </summary>
-    public Permission? RequiredPermission { get; init; }
+    public string? RequiredPermissionKey { get; init; }
 
     public override string ToString() => $"{HttpMethod} {Endpoint}";
 }
@@ -99,60 +109,60 @@ public static class PermissionMatrixBuilder
         ScenarioId = "admin-user",
         UserName = "admin_test",
         Password = "AdminPassword123!",
-        Role = SecurityRole.Admin,
+        IsAdmin = true,
         DisplayName = "Admin User"
     };
 
     /// <summary>
-    /// Reader user with read-only access.
+    /// Reader user with no special permissions (non-admin, no custom role).
+    /// In FullyRestricted mode this user is blocked from all permission-gated endpoints.
     /// </summary>
     public static readonly TestUserScenario ReaderUser = new()
     {
         ScenarioId = "reader-user",
         UserName = "reader_test",
         Password = "ReaderPassword123!",
-        Role = SecurityRole.Reader,
-        DisplayName = "Reader User (Read-Only)"
+        IsAdmin = false,
+        DisplayName = "Reader User (No Permissions)"
     };
 
     /// <summary>
-    /// No permissions user (custom role with no permissions, but still has Reader base role).
-    /// Note: Reader role grants read access at the authentication level, even without specific permissions.
+    /// No permissions user (custom role with no permissions).
     /// </summary>
     public static readonly TestUserScenario NoPermissionsUser = new()
     {
         ScenarioId = "no-permissions-user",
         UserName = "restricted_test",
         Password = "RestrictedPassword123!",
-        Role = SecurityRole.Reader,
-        SpecificPermissions = Array.Empty<Permission>(),
-        DisplayName = "Restricted User (Reader, No Custom Permissions)"
+        IsAdmin = false,
+        SpecificPermissions = Array.Empty<string>(),
+        DisplayName = "Restricted User (Empty Custom Role)"
     };
 
     /// <summary>
-    /// Limited permissions user (can read accounts, but not write).
+    /// Limited permissions user (can read core entities, but not write).
     /// </summary>
     public static readonly TestUserScenario LimitedPermissionsUser = new()
     {
         ScenarioId = "limited-user",
         UserName = "limited_test",
         Password = "LimitedPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.AccountsRead,
-            Permission.ApplicationsRead,
-            Permission.IdentitiesRead,
-            Permission.DataStoresRead,
-            Permission.PlatformsRead,
-            Permission.EnvironmentsRead,
-            Permission.ExternalResourcesRead,
-            Permission.PositionsRead,
-            Permission.ResponsibilitiesRead,
-            Permission.RisksRead,
-            Permission.UsersRead,
-            Permission.RolesRead,
-            Permission.AuditLogsView
+            AccountPermissions.ReadKey,
+            ApplicationPermissions.ReadKey,
+            IdentityPermissions.ReadKey,
+            DataStorePermissions.ReadKey,
+            PlatformPermissions.ReadKey,
+            EnvironmentPermissions.ReadKey,
+            ExternalResourcePermissions.ReadKey,
+            PositionPermissions.ReadKey,
+            ResponsibilityPermissions.ReadKey,
+            RiskPermissions.ReadKey,
+            UserAccountPermissions.ReadKey,
+            RolePermissions.ReadKey,
+            AuditPermissions.ViewKey,
         },
         DisplayName = "Limited User (Read-Only Custom)"
     };
@@ -165,119 +175,115 @@ public static class PermissionMatrixBuilder
         ScenarioId = "power-user",
         UserName = "power_test",
         Password = "PowerPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.AccountsRead,
-            Permission.AccountsCreate,
-            Permission.AccountsUpdate,
-            Permission.ApplicationsRead,
-            Permission.ApplicationsCreate,
-            Permission.ApplicationsUpdate,
-            Permission.IdentitiesRead,
-            Permission.IdentitiesCreate,
-            Permission.IdentitiesUpdate,
-            Permission.DataStoresRead,
-            Permission.DataStoresCreate,
-            Permission.DataStoresUpdate,
-            Permission.PlatformsRead,
-            Permission.PlatformsCreate,
-            Permission.PlatformsUpdate,
-            Permission.EnvironmentsRead,
-            Permission.EnvironmentsCreate,
-            Permission.EnvironmentsUpdate,
-            Permission.ExternalResourcesRead,
-            Permission.ExternalResourcesCreate,
-            Permission.ExternalResourcesUpdate,
-            Permission.PositionsRead,
-            Permission.PositionsCreate,
-            Permission.PositionsUpdate,
-            Permission.ResponsibilitiesRead,
-            Permission.ResponsibilitiesCreate,
-            Permission.ResponsibilitiesUpdate,
-            Permission.RisksRead,
-            Permission.RisksCreate,
-            Permission.RisksUpdate,
-            Permission.UsersRead,
-            Permission.RolesRead,
-            Permission.RisksApprove,
-            Permission.AuditLogsView
+            AccountPermissions.ReadKey,
+            AccountPermissions.CreateKey,
+            AccountPermissions.UpdateKey,
+            ApplicationPermissions.ReadKey,
+            ApplicationPermissions.CreateKey,
+            ApplicationPermissions.UpdateKey,
+            IdentityPermissions.ReadKey,
+            IdentityPermissions.CreateKey,
+            IdentityPermissions.UpdateKey,
+            DataStorePermissions.ReadKey,
+            DataStorePermissions.CreateKey,
+            DataStorePermissions.UpdateKey,
+            PlatformPermissions.ReadKey,
+            PlatformPermissions.CreateKey,
+            PlatformPermissions.UpdateKey,
+            EnvironmentPermissions.ReadKey,
+            EnvironmentPermissions.CreateKey,
+            EnvironmentPermissions.UpdateKey,
+            ExternalResourcePermissions.ReadKey,
+            ExternalResourcePermissions.CreateKey,
+            ExternalResourcePermissions.UpdateKey,
+            PositionPermissions.ReadKey,
+            PositionPermissions.CreateKey,
+            PositionPermissions.UpdateKey,
+            ResponsibilityPermissions.ReadKey,
+            ResponsibilityPermissions.CreateKey,
+            ResponsibilityPermissions.UpdateKey,
+            RiskPermissions.ReadKey,
+            RiskPermissions.CreateKey,
+            RiskPermissions.UpdateKey,
+            RiskPermissions.ApproveKey,
+            UserAccountPermissions.ReadKey,
+            RolePermissions.ReadKey,
+            AuditPermissions.ViewKey,
         },
         DisplayName = "Power User (Create/Read/Update)"
     };
 
     /// <summary>
-    /// User with only user management permissions (no roles/audit/config).
-    /// Tests isolation of UsersRead/Create/Update/Delete permissions.
+    /// User with only user management permissions.
     /// </summary>
     public static readonly TestUserScenario UserManagerUser = new()
     {
         ScenarioId = "user-manager",
         UserName = "usermgr_test",
         Password = "UserMgrPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.UsersRead,
-            Permission.UsersCreate,
-            Permission.UsersUpdate,
-            Permission.UsersDelete
+            UserAccountPermissions.ReadKey,
+            UserAccountPermissions.CreateKey,
+            UserAccountPermissions.UpdateKey,
+            UserAccountPermissions.DeleteKey,
         },
         DisplayName = "User Manager (Users Only)"
     };
 
     /// <summary>
-    /// User with only role management permissions (no users/audit/config).
-    /// Tests isolation of RolesRead/Create/Update/Delete permissions.
+    /// User with only role management permissions.
     /// </summary>
     public static readonly TestUserScenario RoleManagerUser = new()
     {
         ScenarioId = "role-manager",
         UserName = "rolemgr_test",
         Password = "RoleMgrPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.RolesRead,
-            Permission.RolesCreate,
-            Permission.RolesUpdate,
-            Permission.RolesDelete
+            RolePermissions.ReadKey,
+            RolePermissions.CreateKey,
+            RolePermissions.UpdateKey,
+            RolePermissions.DeleteKey,
         },
         DisplayName = "Role Manager (Roles Only)"
     };
 
     /// <summary>
-    /// User with only read permissions for users and roles (no write).
-    /// Tests read-only access to security management.
+    /// User with only read permissions for users and roles.
     /// </summary>
     public static readonly TestUserScenario SecurityReaderUser = new()
     {
         ScenarioId = "security-reader",
         UserName = "secreader_test",
         Password = "SecReaderPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.UsersRead,
-            Permission.RolesRead
+            UserAccountPermissions.ReadKey,
+            RolePermissions.ReadKey,
         },
         DisplayName = "Security Reader (Read-Only)"
     };
 
     /// <summary>
     /// User with audit log viewing and configuration export permissions.
-    /// Tests access to sensitive read-only operations.
     /// </summary>
     public static readonly TestUserScenario AuditorUser = new()
     {
         ScenarioId = "auditor",
         UserName = "auditor_test",
         Password = "AuditorPassword123!",
-        Role = SecurityRole.Reader,
+        IsAdmin = false,
         SpecificPermissions = new[]
         {
-            Permission.AuditLogsView,
-            Permission.ConfigurationExport
+            AuditPermissions.ViewKey,
+            ConfigPermissions.ExportKey,
         },
         DisplayName = "Auditor (Audit + Config Export)"
     };
@@ -311,7 +317,7 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/account",
             DisplayName = "Get Accounts",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.AccountsRead
+            RequiredPermissionKey = AccountPermissions.ReadKey
         },
         new()
         {
@@ -320,7 +326,7 @@ public static class PermissionMatrixBuilder
             DisplayName = "Create Account",
             RequestBody = new { name = "TestAccount", description = "Test" },
             ExpectedStatusCode = 201,
-            RequiredPermission = Permission.AccountsCreate
+            RequiredPermissionKey = AccountPermissions.CreateKey
         },
 
         // Application endpoints
@@ -330,7 +336,7 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/application",
             DisplayName = "Get Applications",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.ApplicationsRead
+            RequiredPermissionKey = ApplicationPermissions.ReadKey
         },
         new()
         {
@@ -339,7 +345,7 @@ public static class PermissionMatrixBuilder
             DisplayName = "Create Application",
             RequestBody = new { name = "TestApp", description = "Test" },
             ExpectedStatusCode = 201,
-            RequiredPermission = Permission.ApplicationsCreate
+            RequiredPermissionKey = ApplicationPermissions.CreateKey
         },
 
         // Audit logs (sensitive - read-only, but permission-gated)
@@ -349,7 +355,7 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/audit",
             DisplayName = "Get Audit Logs",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.AuditLogsView
+            RequiredPermissionKey = AuditPermissions.ViewKey
         },
 
         // Config export (highly sensitive - requires specific permission)
@@ -359,79 +365,45 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/config/export",
             DisplayName = "Export Configuration",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.ConfigurationExport
+            RequiredPermissionKey = ConfigPermissions.ExportKey
         },
 
-        // Security endpoints - User management (CRUD with granular permissions)
+        // Security endpoints - User management
         new()
         {
             HttpMethod = "GET",
             Endpoint = "/api/security/accounts",
             DisplayName = "Get Security Accounts",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.UsersRead
+            RequiredPermissionKey = UserAccountPermissions.ReadKey
         },
         new()
         {
             HttpMethod = "POST",
             Endpoint = "/api/security/accounts",
             DisplayName = "Create Security Account",
-            RequestBody = new { userName = "newuser", password = "NewPassword123!", role = "Reader" },
+            RequestBody = new { userName = "newuser", password = "NewPassword123!", isAdmin = false, roleIds = new string[] { } },
             ExpectedStatusCode = 201,
-            RequiredPermission = Permission.UsersCreate
-        },
-        new()
-        {
-            HttpMethod = "PATCH",
-            Endpoint = "/api/security/accounts/placeholder-id",
-            DisplayName = "Update Security Account",
-            RequestBody = new { userName = "updateduser" },
-            ExpectedStatusCode = 200,
-            RequiredPermission = Permission.UsersUpdate
-        },
-        new()
-        {
-            HttpMethod = "DELETE",
-            Endpoint = "/api/security/accounts/placeholder-id",
-            DisplayName = "Delete Security Account",
-            ExpectedStatusCode = 204,
-            RequiredPermission = Permission.UsersDelete
+            RequiredPermissionKey = UserAccountPermissions.CreateKey
         },
 
-        // Role management endpoints (CRUD with granular permissions)
+        // Role management endpoints
         new()
         {
             HttpMethod = "GET",
-            Endpoint = "/api/roles",
+            Endpoint = "/api/role",
             DisplayName = "Get Roles",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.RolesRead
+            RequiredPermissionKey = RolePermissions.ReadKey
         },
         new()
         {
             HttpMethod = "POST",
-            Endpoint = "/api/roles",
+            Endpoint = "/api/role",
             DisplayName = "Create Role",
             RequestBody = new { name = "NewRole", permissions = new string[] { } },
             ExpectedStatusCode = 201,
-            RequiredPermission = Permission.RolesCreate
-        },
-        new()
-        {
-            HttpMethod = "PUT",
-            Endpoint = "/api/roles/placeholder-id",
-            DisplayName = "Update Role",
-            RequestBody = new { name = "UpdatedRole" },
-            ExpectedStatusCode = 200,
-            RequiredPermission = Permission.RolesUpdate
-        },
-        new()
-        {
-            HttpMethod = "DELETE",
-            Endpoint = "/api/roles/placeholder-id",
-            DisplayName = "Delete Role",
-            ExpectedStatusCode = 204,
-            RequiredPermission = Permission.RolesDelete
+            RequiredPermissionKey = RolePermissions.CreateKey
         },
 
         // Positions endpoints
@@ -441,7 +413,7 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/position",
             DisplayName = "Get Positions",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.PositionsRead
+            RequiredPermissionKey = PositionPermissions.ReadKey
         },
 
         // Identities endpoints
@@ -451,7 +423,7 @@ public static class PermissionMatrixBuilder
             Endpoint = "/api/identity",
             DisplayName = "Get Identities",
             ExpectedStatusCode = 200,
-            RequiredPermission = Permission.IdentitiesRead
+            RequiredPermissionKey = IdentityPermissions.ReadKey
         },
     };
 
@@ -461,196 +433,135 @@ public static class PermissionMatrixBuilder
     /// </summary>
     public static int GetExpectedStatusCode(TestUserScenario scenario, EndpointAccessTest test)
     {
-        // Admin always gets access (except for 404s due to missing resources)
-        if (scenario.Role == SecurityRole.Admin)
+        // Admins bypass all permission checks
+        if (scenario.IsAdmin)
         {
             return test.ExpectedStatusCode;
         }
 
-        // For endpoints that require specific permissions, check if user has them
-        if (test.RequiredPermission.HasValue)
+        // For endpoints that require a specific permission key, check if user has it
+        if (test.RequiredPermissionKey is not null)
         {
             var permissions = scenario.SpecificPermissions;
-            
-            // If SpecificPermissions is not null, the user has a custom role (even if empty)
-            // Custom roles override default role permissions
+
+            // If SpecificPermissions is not null, the user has a custom role
             if (permissions != null)
             {
-                // User has custom role - only check those permissions
-                if (!permissions.Contains(test.RequiredPermission.Value))
+                if (!permissions.Contains(test.RequiredPermissionKey, StringComparer.OrdinalIgnoreCase))
                 {
-                    return 403; // Forbidden - missing required permission in custom role
+                    return 403; // Forbidden - missing required permission
                 }
-                // User has the required permission - return expected status
                 return test.ExpectedStatusCode;
             }
-            else if (scenario.Role == SecurityRole.Reader)
-            {
-                // Reader users with NO custom roles get default reader permissions
-                var defaultPermissions = GetReaderPermissions();
-                if (!defaultPermissions.Contains(test.RequiredPermission.Value))
-                {
-                    return 403; // Forbidden - permission not in default reader set
-                }
-                // User has the required permission - return expected status
-                return test.ExpectedStatusCode;
-            }
-            else
-            {
-                // Non-reader, non-admin users without permissions can't access
-                return 403;
-            }
+
+            // Non-admin user with no custom role has no permissions in FullyRestricted mode
+            return 403;
         }
 
-        // For regular CRUD endpoints with SecurityLevel.FullyRestricted:
-        // - GET/HEAD/OPTIONS: Any authenticated user can access (Reader or Admin)
-        // - POST/PUT/DELETE/PATCH: Only Admin can access
-        var isReadOperation = test.HttpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase) ||
-                              test.HttpMethod.Equals("HEAD", StringComparison.OrdinalIgnoreCase) ||
-                              test.HttpMethod.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase);
-
-        if (!isReadOperation)
-        {
-            // Write operations require Admin role
-            if (scenario.Role != SecurityRole.Admin)
-            {
-                return 403; // Non-admin users get 403 on write operations
-            }
-        }
-
-        // Reader users can perform read operations (if no specific permission required)
-        // Return the expected status from the test
+        // For endpoints with no required permission key, any authenticated user can access
         return test.ExpectedStatusCode;
     }
 
     /// <summary>
-    /// Get the default permissions for a security role.
+    /// Get all available permission keys.
     /// </summary>
-    public static IReadOnlyList<Permission> GetDefaultPermissions(SecurityRole role)
-    {
-        return role switch
-        {
-            SecurityRole.Admin => GetAllPermissions(),
-            SecurityRole.Reader => GetReaderPermissions(),
-            _ => Array.Empty<Permission>()
-        };
-    }
-
-    /// <summary>
-    /// Get all available permissions.
-    /// </summary>
-    public static IReadOnlyList<Permission> GetAllPermissions() => new[]
+    public static IReadOnlyList<string> GetAllPermissions() => new[]
     {
         // Applications
-        Permission.ApplicationsRead,
-        Permission.ApplicationsCreate,
-        Permission.ApplicationsUpdate,
-        Permission.ApplicationsDelete,
+        ApplicationPermissions.ReadKey,
+        ApplicationPermissions.CreateKey,
+        ApplicationPermissions.UpdateKey,
+        ApplicationPermissions.DeleteKey,
 
         // Accounts
-        Permission.AccountsRead,
-        Permission.AccountsCreate,
-        Permission.AccountsUpdate,
-        Permission.AccountsDelete,
+        AccountPermissions.ReadKey,
+        AccountPermissions.CreateKey,
+        AccountPermissions.UpdateKey,
+        AccountPermissions.DeleteKey,
 
         // Identities
-        Permission.IdentitiesRead,
-        Permission.IdentitiesCreate,
-        Permission.IdentitiesUpdate,
-        Permission.IdentitiesDelete,
+        IdentityPermissions.ReadKey,
+        IdentityPermissions.CreateKey,
+        IdentityPermissions.UpdateKey,
+        IdentityPermissions.DeleteKey,
 
         // DataStores
-        Permission.DataStoresRead,
-        Permission.DataStoresCreate,
-        Permission.DataStoresUpdate,
-        Permission.DataStoresDelete,
+        DataStorePermissions.ReadKey,
+        DataStorePermissions.CreateKey,
+        DataStorePermissions.UpdateKey,
+        DataStorePermissions.DeleteKey,
 
         // Platforms
-        Permission.PlatformsRead,
-        Permission.PlatformsCreate,
-        Permission.PlatformsUpdate,
-        Permission.PlatformsDelete,
+        PlatformPermissions.ReadKey,
+        PlatformPermissions.CreateKey,
+        PlatformPermissions.UpdateKey,
+        PlatformPermissions.DeleteKey,
 
         // Environments
-        Permission.EnvironmentsRead,
-        Permission.EnvironmentsCreate,
-        Permission.EnvironmentsUpdate,
-        Permission.EnvironmentsDelete,
+        EnvironmentPermissions.ReadKey,
+        EnvironmentPermissions.CreateKey,
+        EnvironmentPermissions.UpdateKey,
+        EnvironmentPermissions.DeleteKey,
 
         // ExternalResources
-        Permission.ExternalResourcesRead,
-        Permission.ExternalResourcesCreate,
-        Permission.ExternalResourcesUpdate,
-        Permission.ExternalResourcesDelete,
+        ExternalResourcePermissions.ReadKey,
+        ExternalResourcePermissions.CreateKey,
+        ExternalResourcePermissions.UpdateKey,
+        ExternalResourcePermissions.DeleteKey,
 
         // Positions
-        Permission.PositionsRead,
-        Permission.PositionsCreate,
-        Permission.PositionsUpdate,
-        Permission.PositionsDelete,
+        PositionPermissions.ReadKey,
+        PositionPermissions.CreateKey,
+        PositionPermissions.UpdateKey,
+        PositionPermissions.DeleteKey,
 
         // Responsibilities
-        Permission.ResponsibilitiesRead,
-        Permission.ResponsibilitiesCreate,
-        Permission.ResponsibilitiesUpdate,
-        Permission.ResponsibilitiesDelete,
+        ResponsibilityPermissions.ReadKey,
+        ResponsibilityPermissions.CreateKey,
+        ResponsibilityPermissions.UpdateKey,
+        ResponsibilityPermissions.DeleteKey,
 
         // Risks
-        Permission.RisksRead,
-        Permission.RisksCreate,
-        Permission.RisksUpdate,
-        Permission.RisksDelete,
-        Permission.RisksApprove,
+        RiskPermissions.ReadKey,
+        RiskPermissions.CreateKey,
+        RiskPermissions.UpdateKey,
+        RiskPermissions.DeleteKey,
+        RiskPermissions.ApproveKey,
 
-        // Azure Key Vault
-        Permission.AzureKeyVaultSecretsView,
-        Permission.AzureKeyVaultConnectionsCreate,
-        Permission.AzureKeyVaultConnectionsDelete,
+        // Secret Providers
+        SecretProviderPermissions.ReadKey,
+        SecretProviderPermissions.CreateKey,
+        SecretProviderPermissions.UpdateKey,
+        SecretProviderPermissions.DeleteKey,
 
-        // SQL
-        Permission.SqlConnectionsCreate,
-        Permission.SqlConnectionsDelete,
-        Permission.SqlGrantsApply,
+        // SQL Integrations
+        SqlIntegrationPermissions.ReadKey,
+        SqlIntegrationPermissions.CreateKey,
+        SqlIntegrationPermissions.UpdateKey,
+        SqlIntegrationPermissions.DeleteKey,
+        SqlIntegrationPermissions.ApplyGrantsKey,
 
-        // Kuma
-        Permission.KumaIntegrationsCreate,
-        Permission.KumaIntegrationsDelete,
+        // Kuma Integrations
+        KumaIntegrationPermissions.ReadKey,
+        KumaIntegrationPermissions.CreateKey,
+        KumaIntegrationPermissions.UpdateKey,
+        KumaIntegrationPermissions.DeleteKey,
 
         // Configuration
-        Permission.ConfigurationExport,
-        Permission.ConfigurationImport,
+        ConfigPermissions.ExportKey,
+        ConfigPermissions.ImportKey,
 
         // Audit
-        Permission.AuditLogsView,
+        AuditPermissions.ViewKey,
 
         // Users/Security
-        Permission.UsersRead,
-        Permission.UsersCreate,
-        Permission.UsersUpdate,
-        Permission.UsersDelete,
-        Permission.RolesRead,
-        Permission.RolesCreate,
-        Permission.RolesUpdate,
-        Permission.RolesDelete
-    };
-
-    /// <summary>
-    /// Get the default permissions for the Reader role.
-    /// </summary>
-    public static IReadOnlyList<Permission> GetReaderPermissions() => new[]
-    {
-        Permission.ApplicationsRead,
-        Permission.AccountsRead,
-        Permission.IdentitiesRead,
-        Permission.DataStoresRead,
-        Permission.PlatformsRead,
-        Permission.EnvironmentsRead,
-        Permission.ExternalResourcesRead,
-        Permission.PositionsRead,
-        Permission.ResponsibilitiesRead,
-        Permission.RisksRead,
-        Permission.UsersRead,
-        Permission.RolesRead,
-
+        UserAccountPermissions.ReadKey,
+        UserAccountPermissions.CreateKey,
+        UserAccountPermissions.UpdateKey,
+        UserAccountPermissions.DeleteKey,
+        RolePermissions.ReadKey,
+        RolePermissions.CreateKey,
+        RolePermissions.UpdateKey,
+        RolePermissions.DeleteKey,
     };
 }

@@ -67,6 +67,7 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult<SecurityUserInfo>> CreateAccount([FromBody] CreateSecurityUser command)
         {
             var userResult = await fuseUserService.CreateUser(command.UserName, command.Password, command.IsAdmin, command.RoleIds);
@@ -77,8 +78,11 @@ namespace Fuse.API.Controllers
                 return CreatedAtAction(nameof(GetState), null, userInfo);
             }
 
-            return BadRequest(userResult.Error);
-            
+            return userResult.ErrorType switch
+            {
+                ErrorType.Conflict => Conflict(new { error = userResult.Error }),
+                _ => BadRequest(new { error = userResult.Error })
+            };
         }
 
         [HttpPost("login")]
