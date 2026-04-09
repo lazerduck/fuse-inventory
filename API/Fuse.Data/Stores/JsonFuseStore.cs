@@ -83,46 +83,46 @@ public sealed class JsonFuseStore : IFuseStore
 
             var writeTasks = new List<Task>();
 
-            if(_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
+            if (_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
                 writeTasks.Add(WriteAsync("applications.json", snapshot.Applications, ct));
-            if(_cache is null || !ReferenceEquals(_cache.DataStores, snapshot.DataStores))
+            if (_cache is null || !ReferenceEquals(_cache.DataStores, snapshot.DataStores))
                 writeTasks.Add(WriteAsync("datastores.json", snapshot.DataStores, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Platforms, snapshot.Platforms))
+            if (_cache is null || !ReferenceEquals(_cache.Platforms, snapshot.Platforms))
                 writeTasks.Add(WriteAsync("platforms.json", snapshot.Platforms, ct));
-            if(_cache is null || !ReferenceEquals(_cache.ExternalResources, snapshot.ExternalResources))
+            if (_cache is null || !ReferenceEquals(_cache.ExternalResources, snapshot.ExternalResources))
                 writeTasks.Add(WriteAsync("externalresources.json", snapshot.ExternalResources, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Accounts, snapshot.Accounts))
+            if (_cache is null || !ReferenceEquals(_cache.Accounts, snapshot.Accounts))
                 writeTasks.Add(WriteAsync("accounts.json", snapshot.Accounts, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Identities, snapshot.Identities))
+            if (_cache is null || !ReferenceEquals(_cache.Identities, snapshot.Identities))
                 writeTasks.Add(WriteAsync("identities.json", snapshot.Identities, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Tags, snapshot.Tags))
+            if (_cache is null || !ReferenceEquals(_cache.Tags, snapshot.Tags))
                 writeTasks.Add(WriteAsync("tags.json", snapshot.Tags, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Environments, snapshot.Environments))
+            if (_cache is null || !ReferenceEquals(_cache.Environments, snapshot.Environments))
                 writeTasks.Add(WriteAsync("environments.json", snapshot.Environments, ct));
-            if(_cache is null || !ReferenceEquals(_cache.KumaIntegrations, snapshot.KumaIntegrations))
+            if (_cache is null || !ReferenceEquals(_cache.KumaIntegrations, snapshot.KumaIntegrations))
                 writeTasks.Add(WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct));
-            if(_cache is null || !ReferenceEquals(_cache.SecretProviders, snapshot.SecretProviders))
+            if (_cache is null || !ReferenceEquals(_cache.SecretProviders, snapshot.SecretProviders))
                 writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
-            if(_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
+            if (_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
                 writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
+            if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
                 writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
-            if(_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
+            if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
                 writeTasks.Add(WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct));
-            if(_cache is null || !ReferenceEquals(_cache.ResponsibilityAssignments, snapshot.ResponsibilityAssignments))
+            if (_cache is null || !ReferenceEquals(_cache.ResponsibilityAssignments, snapshot.ResponsibilityAssignments))
                 writeTasks.Add(WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
+            if (_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
                 writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
-            if(_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
+            if (_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
                 writeTasks.Add(WriteAsync("messagebrokers.json", snapshot.MessageBrokers, ct));
-            if(_cache is null || !ReferenceEquals(_cache.Security, snapshot.Security))
+            if (_cache is null || !ReferenceEquals(_cache.Security, snapshot.Security))
                 writeTasks.Add(WriteAsync("security.json", snapshot.Security, ct));
-            if(snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
+            if (snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
                 writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
-            if(_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
+            if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
                 writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
 
-            if(writeTasks.Count > 0)
+            if (writeTasks.Count > 0)
                 await Task.WhenAll(writeTasks);
 
             _cache = snapshot; // swap the in-memory snapshot
@@ -170,7 +170,7 @@ public sealed class JsonFuseStore : IFuseStore
             ?? new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>());
     }
 
-        private async Task<SecurityContext> ReadSecurityContextAsync(string file, CancellationToken ct)
+    private async Task<SecurityContext> ReadSecurityContextAsync(string file, CancellationToken ct)
     {
         var path = Path.Combine(_options.DataDirectory, file);
         if (!File.Exists(path))
