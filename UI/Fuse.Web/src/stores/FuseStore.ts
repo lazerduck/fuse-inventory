@@ -25,7 +25,7 @@ function hasHighestAccess(user: SecurityUserInfo | null | undefined): boolean {
 
 function isOpenReadPermission(posture: SecurityPosture | null, permission: Permission): boolean {
   // Backend allows read descriptors during RestrictedEditing even when unauthenticated.
-  return posture === SecurityPosture.RestrictedEditing && permission.endsWith("Read");
+  return posture === SecurityPosture.RestrictedEditing && permission.endsWith(":read");
 }
 
 const fuseClient = useFuseClient

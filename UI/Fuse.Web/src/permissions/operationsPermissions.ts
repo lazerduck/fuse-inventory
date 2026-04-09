@@ -1,4 +1,4 @@
 export const OperationsPermissions = {
-  ActivityRead: 'ActivityRead',
-  AuditLogsView: 'AuditLogsView',
+  ActivityRead: 'activity:read',
+  AuditLogsView: 'audit:view',
 } as const
