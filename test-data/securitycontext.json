@@ -1,5 +1,5 @@
 {
-  "posture": "Unrestricted",
+  "posture": "RestrictedEditing",
   "roles": [
     {
       "id": "00000000-0000-0000-0000-000000000002",
@@ -75,6 +75,11 @@
       "token": "f37ca395b70148e09d933adfa229a6f3",
       "userId": "35bab7bf-c356-4314-914d-6c2ee2811f76",
       "expiresAt": "2026-05-07T20:41:59.0939186Z"
+    },
+    {
+      "token": "8fef4610e7c34efe943a22871c560680",
+      "userId": "35bab7bf-c356-4314-914d-6c2ee2811f76",
+      "expiresAt": "2026-05-09T19:13:08.2925103Z"
     }
   ]
 }
