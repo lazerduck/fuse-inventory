@@ -171,7 +171,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Notify } from 'quasar'
-import { TargetKind } from '../api/client'
+import { TargetKind } from 'api/client'
 import { useApplications } from '../composables/useApplications'
 import { usePlatforms } from '../composables/usePlatforms'
 import { useEnvironments } from '../composables/useEnvironments'

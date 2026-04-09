@@ -1,4 +1,4 @@
-import type { IdentityKind, IdentityAssignment, TargetKind } from '../../api/client'
+import type { IdentityKind, IdentityAssignment, TargetKind } from 'api/client'
 
 export interface IdentityFormModel {
   name: string

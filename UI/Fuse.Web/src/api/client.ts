@@ -696,7 +696,7 @@ export interface IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings>;
+    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture>;
 
     /**
      * @param body (optional) 
@@ -707,7 +707,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]>;
+    accountsAll(signal?: AbortSignal): Promise<SecurityUserInfo[]>;
 
     /**
      * @param body (optional) 
@@ -722,10 +722,9 @@ export interface IFuseApiClient {
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
      * @return OK
      */
-    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse>;
+    permissionsCatalog(signal?: AbortSignal): Promise<PermissionAreaCatalog[]>;
 
     /**
      * @return No Content
@@ -2341,6 +2340,9 @@ export class FuseApiClient implements IFuseApiClient {
         return Promise.resolve<HealthStatusResponse>(null as any);
     }
 
+    /**
+     * @return OK
+     */
     instanceApiKey(appId: string, instanceId: string, signal?: AbortSignal): Promise<string> {
         let url_ = this.baseUrl + "/api/Application/{appId}/instances/{instanceId}/api-key";
         if (appId === undefined || appId === null)
@@ -2371,16 +2373,23 @@ export class FuseApiClient implements IFuseApiClient {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 !== undefined ? "" + resultData200 : null as any;
+                result200 = resultData200 !== undefined ? resultData200 : null as any;
+    
             return result200;
             });
         } else if (status === 403) {
             return response.text().then((_responseText) => {
-            return throwException("Forbidden", status, _responseText, _headers);
+            let result403: any = null;
+            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, _responseText, _headers, result403);
             });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
-            return throwException("Not Found", status, _responseText, _headers);
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -6747,6 +6756,13 @@ export class FuseApiClient implements IFuseApiClient {
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, _responseText, _headers, result404);
             });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -7404,7 +7420,7 @@ export class FuseApiClient implements IFuseApiClient {
      * @param body (optional) 
      * @return OK
      */
-    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecuritySettings> {
+    settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture> {
         let url_ = this.baseUrl + "/api/Security/settings";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -7425,14 +7441,15 @@ export class FuseApiClient implements IFuseApiClient {
         });
     }
 
-    protected processSettings(response: Response): Promise<SecuritySettings> {
+    protected processSettings(response: Response): Promise<SecurityPosture> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = SecuritySettings.fromJS(resultData200);
+                result200 = resultData200 !== undefined ? resultData200 : null as any;
+    
             return result200;
             });
         } else if (status === 400) {
@@ -7461,7 +7478,7 @@ export class FuseApiClient implements IFuseApiClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<SecuritySettings>(null as any);
+        return Promise.resolve<SecurityPosture>(null as any);
     }
 
     /**
@@ -7531,7 +7548,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    accountsAll(signal?: AbortSignal): Promise<SecurityUserResponse[]> {
+    accountsAll(signal?: AbortSignal): Promise<SecurityUserInfo[]> {
         let url_ = this.baseUrl + "/api/Security/accounts";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -7548,7 +7565,7 @@ export class FuseApiClient implements IFuseApiClient {
         });
     }
 
-    protected processAccountsAll(response: Response): Promise<SecurityUserResponse[]> {
+    protected processAccountsAll(response: Response): Promise<SecurityUserInfo[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -7558,7 +7575,7 @@ export class FuseApiClient implements IFuseApiClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(SecurityUserResponse.fromJS(item));
+                    result200!.push(SecurityUserInfo.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -7570,7 +7587,7 @@ export class FuseApiClient implements IFuseApiClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<SecurityUserResponse[]>(null as any);
+        return Promise.resolve<SecurityUserInfo[]>(null as any);
     }
 
     /**
@@ -7677,63 +7694,48 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
      * @return OK
      */
-    accountsPATCH(id: string, body: UpdateUser | undefined, signal?: AbortSignal): Promise<SecurityUserResponse> {
-        let url_ = this.baseUrl + "/api/Security/accounts/{Id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{Id}", encodeURIComponent("" + id));
+    permissionsCatalog(signal?: AbortSignal): Promise<PermissionAreaCatalog[]> {
+        let url_ = this.baseUrl + "/api/Security/permissions/catalog";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
-
         let options_: RequestInit = {
-            body: content_,
-            method: "PATCH",
+            method: "GET",
             signal,
             headers: {
-                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAccountsPATCH(_response);
+            return this.processPermissionsCatalog(_response);
         });
     }
 
-    protected processAccountsPATCH(response: Response): Promise<SecurityUserResponse> {
+    protected processPermissionsCatalog(response: Response): Promise<PermissionAreaCatalog[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = SecurityUserResponse.fromJS(resultData200);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(PermissionAreaCatalog.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
             return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, _responseText, _headers, result404);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<SecurityUserResponse>(null as any);
+        return Promise.resolve<PermissionAreaCatalog[]>(null as any);
     }
 
     /**
@@ -9548,7 +9550,7 @@ export class ApplicationInstance implements IApplicationInstance {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 
     constructor(data?: IApplicationInstance) {
         if (data) {
@@ -9629,7 +9631,7 @@ export interface IApplicationInstance {
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 }
 
 export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
@@ -9871,6 +9873,9 @@ export enum AuditAction {
     RoleUpdated = "RoleUpdated",
     RoleDeleted = "RoleDeleted",
     UserRolesAssigned = "UserRolesAssigned",
+    ApiKeyCreated = "ApiKeyCreated",
+    ApiKeyRegenerated = "ApiKeyRegenerated",
+    ApiKeyDeleted = "ApiKeyDeleted",
     KumaIntegrationCreated = "KumaIntegrationCreated",
     KumaIntegrationUpdated = "KumaIntegrationUpdated",
     KumaIntegrationDeleted = "KumaIntegrationDeleted",
@@ -11093,7 +11098,7 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 
     constructor(data?: ICreateApplicationInstance) {
         if (data) {
@@ -11157,7 +11162,7 @@ export interface ICreateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 }
 
 export class CreateApplicationPipeline implements ICreateApplicationPipeline {
@@ -11987,7 +11992,7 @@ export interface ICreateRisk {
 export class CreateRole implements ICreateRole {
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     requestedBy?: string | undefined;
 
     constructor(data?: ICreateRole) {
@@ -12036,7 +12041,7 @@ export class CreateRole implements ICreateRole {
 export interface ICreateRole {
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     requestedBy?: string | undefined;
 }
 
@@ -12139,8 +12144,8 @@ export interface ICreateSecretProvider {
 export class CreateSecurityUser implements ICreateSecurityUser {
     userName?: string | undefined;
     password?: string | undefined;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
+    roleIds?: string[] | undefined;
+    isAdmin?: boolean;
 
     constructor(data?: ICreateSecurityUser) {
         if (data) {
@@ -12155,8 +12160,12 @@ export class CreateSecurityUser implements ICreateSecurityUser {
         if (_data) {
             this.userName = _data["userName"];
             this.password = _data["password"];
-            this.role = _data["role"];
-            this.requestedBy = _data["requestedBy"];
+            if (Array.isArray(_data["roleIds"])) {
+                this.roleIds = [] as any;
+                for (let item of _data["roleIds"])
+                    this.roleIds!.push(item);
+            }
+            this.isAdmin = _data["isAdmin"];
         }
     }
 
@@ -12171,8 +12180,12 @@ export class CreateSecurityUser implements ICreateSecurityUser {
         data = typeof data === 'object' ? data : {};
         data["userName"] = this.userName;
         data["password"] = this.password;
-        data["role"] = this.role;
-        data["requestedBy"] = this.requestedBy;
+        if (Array.isArray(this.roleIds)) {
+            data["roleIds"] = [];
+            for (let item of this.roleIds)
+                data["roleIds"].push(item);
+        }
+        data["isAdmin"] = this.isAdmin;
         return data;
     }
 }
@@ -12180,8 +12193,8 @@ export class CreateSecurityUser implements ICreateSecurityUser {
 export interface ICreateSecurityUser {
     userName?: string | undefined;
     password?: string | undefined;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
+    roleIds?: string[] | undefined;
+    isAdmin?: boolean;
 }
 
 export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
@@ -13500,89 +13513,52 @@ export enum PasswordSourceUsed {
     NewSecret = "NewSecret",
 }
 
-export enum Permission {
-    ApplicationsRead = "ApplicationsRead",
-    ApplicationsCreate = "ApplicationsCreate",
-    ApplicationsUpdate = "ApplicationsUpdate",
-    ApplicationsDelete = "ApplicationsDelete",
-    AccountsRead = "AccountsRead",
-    AccountsCreate = "AccountsCreate",
-    AccountsUpdate = "AccountsUpdate",
-    AccountsDelete = "AccountsDelete",
-    IdentitiesRead = "IdentitiesRead",
-    IdentitiesCreate = "IdentitiesCreate",
-    IdentitiesUpdate = "IdentitiesUpdate",
-    IdentitiesDelete = "IdentitiesDelete",
-    DataStoresRead = "DataStoresRead",
-    DataStoresCreate = "DataStoresCreate",
-    DataStoresUpdate = "DataStoresUpdate",
-    DataStoresDelete = "DataStoresDelete",
-    PlatformsRead = "PlatformsRead",
-    PlatformsCreate = "PlatformsCreate",
-    PlatformsUpdate = "PlatformsUpdate",
-    PlatformsDelete = "PlatformsDelete",
-    EnvironmentsRead = "EnvironmentsRead",
-    EnvironmentsCreate = "EnvironmentsCreate",
-    EnvironmentsUpdate = "EnvironmentsUpdate",
-    EnvironmentsDelete = "EnvironmentsDelete",
-    ExternalResourcesRead = "ExternalResourcesRead",
-    ExternalResourcesCreate = "ExternalResourcesCreate",
-    ExternalResourcesUpdate = "ExternalResourcesUpdate",
-    ExternalResourcesDelete = "ExternalResourcesDelete",
-    MessageBrokersRead = "MessageBrokersRead",
-    MessageBrokersCreate = "MessageBrokersCreate",
-    MessageBrokersUpdate = "MessageBrokersUpdate",
-    MessageBrokersDelete = "MessageBrokersDelete",
-    PositionsRead = "PositionsRead",
-    PositionsCreate = "PositionsCreate",
-    PositionsUpdate = "PositionsUpdate",
-    PositionsDelete = "PositionsDelete",
-    ResponsibilitiesRead = "ResponsibilitiesRead",
-    ResponsibilitiesCreate = "ResponsibilitiesCreate",
-    ResponsibilitiesUpdate = "ResponsibilitiesUpdate",
-    ResponsibilitiesDelete = "ResponsibilitiesDelete",
-    RisksRead = "RisksRead",
-    RisksCreate = "RisksCreate",
-    RisksUpdate = "RisksUpdate",
-    RisksDelete = "RisksDelete",
-    RisksApprove = "RisksApprove",
-    AzureKeyVaultSecretsView = "AzureKeyVaultSecretsView",
-    AzureKeyVaultConnectionsCreate = "AzureKeyVaultConnectionsCreate",
-    AzureKeyVaultConnectionsDelete = "AzureKeyVaultConnectionsDelete",
-    SqlConnectionsCreate = "SqlConnectionsCreate",
-    SqlConnectionsDelete = "SqlConnectionsDelete",
-    SqlGrantsApply = "SqlGrantsApply",
-    KumaIntegrationsCreate = "KumaIntegrationsCreate",
-    KumaIntegrationsDelete = "KumaIntegrationsDelete",
-    ConfigurationExport = "ConfigurationExport",
-    ConfigurationImport = "ConfigurationImport",
-    AuditLogsView = "AuditLogsView",
-    ActivityRead = "ActivityRead",
-    ApplicationsUndo = "ApplicationsUndo",
-    AccountsUndo = "AccountsUndo",
-    IdentitiesUndo = "IdentitiesUndo",
-    DataStoresUndo = "DataStoresUndo",
-    PlatformsUndo = "PlatformsUndo",
-    EnvironmentsUndo = "EnvironmentsUndo",
-    ExternalResourcesUndo = "ExternalResourcesUndo",
-    MessageBrokersUndo = "MessageBrokersUndo",
-    TagsUndo = "TagsUndo",
-    PositionsUndo = "PositionsUndo",
-    ResponsibilitiesUndo = "ResponsibilitiesUndo",
-    RisksUndo = "RisksUndo",
-    SecretProvidersUndo = "SecretProvidersUndo",
-    SqlIntegrationsUndo = "SqlIntegrationsUndo",
-    KumaIntegrationsUndo = "KumaIntegrationsUndo",
-    SecurityUndo = "SecurityUndo",
-    ConfigurationUndo = "ConfigurationUndo",
-    UsersRead = "UsersRead",
-    UsersCreate = "UsersCreate",
-    UsersUpdate = "UsersUpdate",
-    UsersDelete = "UsersDelete",
-    RolesRead = "RolesRead",
-    RolesCreate = "RolesCreate",
-    RolesUpdate = "RolesUpdate",
-    RolesDelete = "RolesDelete",
+export class PermissionAreaCatalog implements IPermissionAreaCatalog {
+    areaName?: string | undefined;
+    permissions?: string[] | undefined;
+
+    constructor(data?: IPermissionAreaCatalog) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.areaName = _data["areaName"];
+            if (Array.isArray(_data["permissions"])) {
+                this.permissions = [] as any;
+                for (let item of _data["permissions"])
+                    this.permissions!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): PermissionAreaCatalog {
+        data = typeof data === 'object' ? data : {};
+        let result = new PermissionAreaCatalog();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["areaName"] = this.areaName;
+        if (Array.isArray(this.permissions)) {
+            data["permissions"] = [];
+            for (let item of this.permissions)
+                data["permissions"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IPermissionAreaCatalog {
+    areaName?: string | undefined;
+    permissions?: string[] | undefined;
 }
 
 export class Platform implements IPlatform {
@@ -13813,7 +13789,6 @@ export interface IProblemDetails {
 
 export class ResetPasswordRequest implements IResetPasswordRequest {
     newPassword?: string | undefined;
-    currentPassword?: string | undefined;
 
     constructor(data?: IResetPasswordRequest) {
         if (data) {
@@ -13827,7 +13802,6 @@ export class ResetPasswordRequest implements IResetPasswordRequest {
     init(_data?: any) {
         if (_data) {
             this.newPassword = _data["newPassword"];
-            this.currentPassword = _data["currentPassword"];
         }
     }
 
@@ -13841,14 +13815,12 @@ export class ResetPasswordRequest implements IResetPasswordRequest {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["newPassword"] = this.newPassword;
-        data["currentPassword"] = this.currentPassword;
         return data;
     }
 }
 
 export interface IResetPasswordRequest {
     newPassword?: string | undefined;
-    currentPassword?: string | undefined;
 }
 
 export class ResolveDriftResponse implements IResolveDriftResponse {
@@ -14176,7 +14148,7 @@ export class RoleInfo implements IRoleInfo {
     id?: string;
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 
@@ -14231,7 +14203,7 @@ export interface IRoleInfo {
     id?: string;
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -14531,62 +14503,15 @@ export interface ISecretValueResponse {
     value?: string | undefined;
 }
 
-export enum SecurityLevel {
-    None = "None",
+export enum SecurityPosture {
+    Unrestricted = "Unrestricted",
     RestrictedEditing = "RestrictedEditing",
     FullyRestricted = "FullyRestricted",
 }
 
-export enum SecurityRole {
-    Reader = "Reader",
-    Admin = "Admin",
-}
-
-export class SecuritySettings implements ISecuritySettings {
-    level?: SecurityLevel;
-    updatedAt?: Date;
-
-    constructor(data?: ISecuritySettings) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.level = _data["level"];
-            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): SecuritySettings {
-        data = typeof data === 'object' ? data : {};
-        let result = new SecuritySettings();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["level"] = this.level;
-        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface ISecuritySettings {
-    level?: SecurityLevel;
-    updatedAt?: Date;
-}
-
 export class SecurityStateResponse implements ISecurityStateResponse {
-    level?: SecurityLevel;
-    updatedAt?: Date;
+    posture?: SecurityPosture;
     requiresSetup?: boolean;
-    hasUsers?: boolean;
     currentUser?: SecurityUserInfo;
 
     constructor(data?: ISecurityStateResponse) {
@@ -14600,10 +14525,8 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
     init(_data?: any) {
         if (_data) {
-            this.level = _data["level"];
-            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            this.posture = _data["posture"];
             this.requiresSetup = _data["requiresSetup"];
-            this.hasUsers = _data["hasUsers"];
             this.currentUser = _data["currentUser"] ? SecurityUserInfo.fromJS(_data["currentUser"]) : undefined as any;
         }
     }
@@ -14617,27 +14540,23 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["level"] = this.level;
-        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        data["posture"] = this.posture;
         data["requiresSetup"] = this.requiresSetup;
-        data["hasUsers"] = this.hasUsers;
         data["currentUser"] = this.currentUser ? this.currentUser.toJSON() : undefined as any;
         return data;
     }
 }
 
 export interface ISecurityStateResponse {
-    level?: SecurityLevel;
-    updatedAt?: Date;
+    posture?: SecurityPosture;
     requiresSetup?: boolean;
-    hasUsers?: boolean;
     currentUser?: SecurityUserInfo;
 }
 
 export class SecurityUserInfo implements ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
-    role?: SecurityRole;
+    isAdmin?: boolean;
     roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
@@ -14655,7 +14574,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
         if (_data) {
             this.id = _data["id"];
             this.userName = _data["userName"];
-            this.role = _data["role"];
+            this.isAdmin = _data["isAdmin"];
             if (Array.isArray(_data["roleIds"])) {
                 this.roleIds = [] as any;
                 for (let item of _data["roleIds"])
@@ -14677,7 +14596,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["userName"] = this.userName;
-        data["role"] = this.role;
+        data["isAdmin"] = this.isAdmin;
         if (Array.isArray(this.roleIds)) {
             data["roleIds"] = [];
             for (let item of this.roleIds)
@@ -14692,71 +14611,7 @@ export class SecurityUserInfo implements ISecurityUserInfo {
 export interface ISecurityUserInfo {
     id?: string;
     userName?: string | undefined;
-    role?: SecurityRole;
-    roleIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-
-export class SecurityUserResponse implements ISecurityUserResponse {
-    id?: string;
-    userName?: string | undefined;
-    role?: SecurityRole;
-    roleIds?: string[] | undefined;
-    createdAt?: Date;
-    updatedAt?: Date;
-
-    constructor(data?: ISecurityUserResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.userName = _data["userName"];
-            this.role = _data["role"];
-            if (Array.isArray(_data["roleIds"])) {
-                this.roleIds = [] as any;
-                for (let item of _data["roleIds"])
-                    this.roleIds!.push(item);
-            }
-            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
-            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): SecurityUserResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new SecurityUserResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["userName"] = this.userName;
-        data["role"] = this.role;
-        if (Array.isArray(this.roleIds)) {
-            data["roleIds"] = [];
-            for (let item of this.roleIds)
-                data["roleIds"].push(item);
-        }
-        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
-        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface ISecurityUserResponse {
-    id?: string;
-    userName?: string | undefined;
-    role?: SecurityRole;
+    isAdmin?: boolean;
     roleIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
@@ -15869,7 +15724,7 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 
     constructor(data?: IUpdateApplicationInstance) {
         if (data) {
@@ -15936,7 +15791,7 @@ export interface IUpdateApplicationInstance {
     openApiUri?: string | undefined;
     version?: string | undefined;
     tagIds?: string[] | undefined;
-    apiKey?: SecretBinding | undefined;
+    apiKey?: SecretBinding;
 }
 
 export class UpdateApplicationPipeline implements IUpdateApplicationPipeline {
@@ -16859,7 +16714,7 @@ export class UpdateRole implements IUpdateRole {
     id?: string;
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     requestedBy?: string | undefined;
 
     constructor(data?: IUpdateRole) {
@@ -16911,7 +16766,7 @@ export interface IUpdateRole {
     id?: string;
     name?: string | undefined;
     description?: string | undefined;
-    permissions?: Permission[] | undefined;
+    permissions?: string[] | undefined;
     requestedBy?: string | undefined;
 }
 
@@ -16972,7 +16827,7 @@ export interface IUpdateSecretProvider {
 }
 
 export class UpdateSecuritySettings implements IUpdateSecuritySettings {
-    level?: SecurityLevel;
+    posture?: SecurityPosture;
     requestedBy?: string | undefined;
 
     constructor(data?: IUpdateSecuritySettings) {
@@ -16986,7 +16841,7 @@ export class UpdateSecuritySettings implements IUpdateSecuritySettings {
 
     init(_data?: any) {
         if (_data) {
-            this.level = _data["level"];
+            this.posture = _data["posture"];
             this.requestedBy = _data["requestedBy"];
         }
     }
@@ -17000,14 +16855,14 @@ export class UpdateSecuritySettings implements IUpdateSecuritySettings {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["level"] = this.level;
+        data["posture"] = this.posture;
         data["requestedBy"] = this.requestedBy;
         return data;
     }
 }
 
 export interface IUpdateSecuritySettings {
-    level?: SecurityLevel;
+    posture?: SecurityPosture;
     requestedBy?: string | undefined;
 }
 
@@ -17113,50 +16968,6 @@ export interface IUpdateTag {
     name?: string | undefined;
     description?: string | undefined;
     color?: TagColor;
-}
-
-export class UpdateUser implements IUpdateUser {
-    id?: string;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
-
-    constructor(data?: IUpdateUser) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.role = _data["role"];
-            this.requestedBy = _data["requestedBy"];
-        }
-    }
-
-    static fromJS(data: any): UpdateUser {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateUser();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["role"] = this.role;
-        data["requestedBy"] = this.requestedBy;
-        return data;
-    }
-}
-
-export interface IUpdateUser {
-    id?: string;
-    role?: SecurityRole;
-    requestedBy?: string | undefined;
 }
 
 export interface FileParameter {

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Fuse.Core.Areas.Config;
+using Fuse.Core.Models;
 using Fuse.Core.Services;
 using System.Text;
 
@@ -22,6 +24,7 @@ namespace Fuse.API.Controllers
         /// <returns>The configuration file content</returns>
         [HttpGet("export")]
         [SwaggerOperation(OperationId = "export")]
+        [RequirePermissionKey(ConfigPermissions.ExportKey)]
         [ProducesResponseType(200, Type = typeof(FileContentResult))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Export([FromQuery] string format = "json")
@@ -90,6 +93,7 @@ namespace Fuse.API.Controllers
         /// <returns>Success status</returns>
         [HttpPost("import")]
         [SwaggerOperation(OperationId = "importPOST")]
+        [RequirePermissionKey(ConfigPermissions.ImportKey)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Import([FromQuery] string format, IFormFile file)

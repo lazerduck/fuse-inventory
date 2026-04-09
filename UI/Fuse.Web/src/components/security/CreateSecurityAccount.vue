@@ -17,15 +17,15 @@
             :rules="[val => !!val || 'Username is required']"
           />
           <q-select
-            v-model="form.role"
-            label="Legacy Role"
+            v-model="form.isAdmin"
+            label="Administrator"
             dense
             outlined
+            :options="isAdminOptions"
             emit-value
             map-options
-            :options="roleOptions"
-            :rules="[val => requireSetup ? (!!val || 'Admin role is required for setup') : true]"
-            hint="For backward compatibility. Use role assignments below for fine-grained permissions."
+            :disable="requireSetup"
+            hint="Admins have full access. You can still assign additional roles below."
           />
           <q-input
             v-model="form.password"
@@ -107,12 +107,12 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { SecurityRole, RoleInfo } from '../../api/client'
+import { RoleInfo } from 'api/client'
 
 interface SecurityAccountForm {
   userName: string
   password: string
-  role: SecurityRole | null
+  isAdmin: boolean
   requestedBy: string
   roleIds: string[]
 }
@@ -139,16 +139,16 @@ const emit = defineEmits<Emits>()
 const form = reactive<SecurityAccountForm>({
   userName: '',
   password: '',
-  role: props.requireSetup ? SecurityRole.Admin : null,
+  isAdmin: props.requireSetup,
   requestedBy: '',
   roleIds: []
 })
 
 const confirmPassword = ref('')
 
-const roleOptions = [
-  { label: 'Reader', value: SecurityRole.Reader },
-  { label: 'Admin', value: SecurityRole.Admin }
+const isAdminOptions = [
+  { label: 'No', value: false },
+  { label: 'Yes', value: true }
 ]
 
 const title = computed(() => props.requireSetup ? 'Create Administrator Account' : 'Create Security Account')

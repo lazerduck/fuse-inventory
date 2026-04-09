@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted } from 'vue'
-import type { ExternalResource } from '../../api/client'
+import type { ExternalResource } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'

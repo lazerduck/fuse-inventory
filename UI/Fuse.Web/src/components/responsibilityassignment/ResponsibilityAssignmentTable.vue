@@ -128,9 +128,9 @@ import {
   ResponsibilityAssignment,
   ResponsibilityScope,
   CreateResponsibilityAssignment,
-  UpdateResponsibilityAssignment,
-  Permission
-} from '../../api/client'
+  UpdateResponsibilityAssignment
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useFuseStore } from '../../stores/FuseStore'
 import { useEnvironments } from '../../composables/useEnvironments'

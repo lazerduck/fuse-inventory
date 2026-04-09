@@ -20,6 +20,7 @@ public record Snapshot(
     IReadOnlyList<Risk> Risks,
     IReadOnlyList<MessageBroker> MessageBrokers,
     SecurityState Security,
+    SecurityContext SecurityContext,
     PasswordGeneratorConfig? PasswordGeneratorConfig = null
 )
 {
@@ -38,7 +39,8 @@ public record Snapshot(
         IReadOnlyList<Position> Positions,
         IReadOnlyList<ResponsibilityType> ResponsibilityTypes,
         IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
-        SecurityState Security
+        SecurityState Security,
+        SecurityContext SecurityContext
     ) : this(
         Applications,
         DataStores,
@@ -56,7 +58,8 @@ public record Snapshot(
         ResponsibilityAssignments,
         Array.Empty<Risk>(),
         Array.Empty<MessageBroker>(),
-        Security
+        Security,
+        SecurityContext
     )
     {
     }
@@ -96,6 +99,12 @@ public record Snapshot(
         new SecurityState(
             new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow),
             Array.Empty<SecurityUser>()
+        ),
+        new SecurityContext(SecurityPosture.Unrestricted, 
+            Array.Empty<FuseRole>(),
+            Array.Empty<FuseUser>(),
+            Array.Empty<FuseApiKey>(),
+            Array.Empty<Session>()
         )
     )
     {
@@ -117,7 +126,8 @@ public record Snapshot(
         IReadOnlyList<ResponsibilityType> ResponsibilityTypes,
         IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
         IReadOnlyList<Risk> Risks,
-        SecurityState Security
+        SecurityState Security,
+        SecurityContext SecurityContext
     ) : this(
         Applications,
         DataStores,
@@ -135,7 +145,8 @@ public record Snapshot(
         ResponsibilityAssignments,
         Risks,
         Array.Empty<MessageBroker>(),
-        Security
+        Security,
+        SecurityContext
     )
     {
     }

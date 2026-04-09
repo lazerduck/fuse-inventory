@@ -1,11 +1,32 @@
 import { defineStore } from "pinia";
 import { useFuseClient } from "../composables/useFuseClient";
 import { useAuthToken } from "../composables/useAuthToken";
-import { LogoutSecurityUser, SecurityRole, Permission } from "../api/client";
-import { type SecurityUserInfo, SecurityLevel, type LoginSecurityUser } from "../api/client";
+import { LogoutSecurityUser, SecurityPosture } from "api/client";
+import { type SecurityUserInfo, type LoginSecurityUser } from "api/client";
 
 // Default Admin Role ID (matches PermissionService.DefaultAdminRoleId)
 const DEFAULT_ADMIN_ROLE_ID = "00000000-0000-0000-0000-000000000001";
+
+type SecurityUserWithAdminFlag = SecurityUserInfo & {
+  isAdmin?: boolean;
+};
+
+type Permission = string;
+
+function hasHighestAccess(user: SecurityUserInfo | null | undefined): boolean {
+  if (!user) return false;
+
+  const userWithAdminFlag = user as SecurityUserWithAdminFlag;
+  if (userWithAdminFlag.isAdmin) return true;
+
+  // Legacy compatibility while older role-based payloads are still present.
+  return user.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false;
+}
+
+function isOpenReadPermission(posture: SecurityPosture | null, permission: Permission): boolean {
+  // Backend allows read descriptors during RestrictedEditing even when unauthenticated.
+  return posture === SecurityPosture.RestrictedEditing && permission.endsWith(":read");
+}
 
 const fuseClient = useFuseClient
 const { getToken, setToken, clearToken } = useAuthToken()
@@ -13,30 +34,29 @@ const { getToken, setToken, clearToken } = useAuthToken()
 export const useFuseStore = defineStore("fuse", {
   state: () => ({
     requireSetup: false as boolean,
-    securityLevel: null as SecurityLevel | null,
+    securityPosture: null as SecurityPosture | null,
     currentUser: null as SecurityUserInfo | null,
     sessionToken: null as string | null,
     userPermissions: null as Permission[] | null
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
-    isAdmin: (state) => {
-      if (!state.currentUser) return false;
-      // Check if user has legacy Admin role OR is assigned to the default Admin role
-      return state.currentUser.role === SecurityRole.Admin || 
-             (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false);
-    },
-    userRole: (state) => state.currentUser?.role ?? null,
+    isAdmin: (state) => hasHighestAccess(state.currentUser),
+    userRole: (state) => (state.currentUser as { role?: string } | null)?.role ?? null,
     userName: (state) => state.currentUser?.userName ?? null,
     hasPermission: (state) => (permission: Permission): boolean => {
       // No security restrictions
-      if (state.securityLevel === SecurityLevel.None) return true;
+      if (state.securityPosture === SecurityPosture.Unrestricted) return true;
+
+      // Restricted editing allows read operations without authentication.
+      if (isOpenReadPermission(state.securityPosture, permission)) return true;
+
       // Must be logged in
       if (!state.currentUser) return false;
-      // Legacy admin role gets all permissions
-      if (state.currentUser.role === SecurityRole.Admin) return true;
-      // Default admin role gets all permissions
-      if (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false) return true;
+
+      // Admin users have full access.
+      if (hasHighestAccess(state.currentUser)) return true;
+
       // Check granular permissions if loaded
       if (state.userPermissions !== null) {
         return state.userPermissions.includes(permission);
@@ -45,15 +65,15 @@ export const useFuseStore = defineStore("fuse", {
       return false;
     },
     canModify: (state) => {
-      switch (state.securityLevel) {
-        case SecurityLevel.None:
+      switch (state.securityPosture) {
+        case SecurityPosture.Unrestricted:
           return true;
-        case SecurityLevel.RestrictedEditing:
-        case SecurityLevel.FullyRestricted:
+        case SecurityPosture.RestrictedEditing:
+        case SecurityPosture.FullyRestricted:
           if (!state.currentUser) return false;
-          // Check if user has legacy Admin role OR is assigned to the default Admin role
-          if (state.currentUser.role === SecurityRole.Admin ||
-              (state.currentUser.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false)) return true;
+
+          if (hasHighestAccess(state.currentUser)) return true;
+
           // Check if user has any write permissions
           if (state.userPermissions !== null) {
             return state.userPermissions.length > 0;
@@ -64,11 +84,11 @@ export const useFuseStore = defineStore("fuse", {
       }
     },
     canRead: (state) => {
-      switch (state.securityLevel) {
-        case SecurityLevel.None:
-        case SecurityLevel.RestrictedEditing:
+      switch (state.securityPosture) {
+        case SecurityPosture.Unrestricted:
+        case SecurityPosture.RestrictedEditing:
           return true;
-        case SecurityLevel.FullyRestricted:
+        case SecurityPosture.FullyRestricted:
           return state.currentUser !== null;
         default:
           return false;
@@ -114,7 +134,7 @@ export const useFuseStore = defineStore("fuse", {
     async fetchStatus() {
       const status = await fuseClient().state();
       this.requireSetup = status.requiresSetup || false;
-      this.securityLevel = status.level || null;
+      this.securityPosture = status.posture || null;
       this.currentUser = status.currentUser || null;
 
       if (!this.currentUser) {

@@ -6,6 +6,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
     using Fuse.Core.Responses;
+    using Fuse.Core.Areas.Account;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -22,6 +23,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "accountAll")]
+        [RequirePermissionKey(AccountPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Account>))]
         public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
         {
@@ -30,6 +32,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "accountGET")]
+        [RequirePermissionKey(AccountPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Account))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Account>> GetAccountById([FromRoute] Guid id)
@@ -40,6 +43,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}/sql-status")]
         [SwaggerOperation(OperationId = "sqlStatus")]
+        [RequirePermissionKey(AccountPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(CachedAccountSqlStatusResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<CachedAccountSqlStatusResponse>> GetAccountSqlStatus([FromRoute] Guid id, CancellationToken ct)
@@ -68,6 +72,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/sql-status/refresh")]
         [SwaggerOperation(OperationId = "refresh")]
+        [RequirePermissionKey(AccountPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(CachedAccountSqlStatusResponse))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -90,6 +95,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "accountPOST")]
+        [RequirePermissionKey(AccountPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Account))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<Account>> CreateAccount([FromBody] CreateAccount command)
@@ -106,6 +112,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "accountPUT")]
+        [RequirePermissionKey(AccountPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Account))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -127,6 +134,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "accountDELETE")]
+        [RequirePermissionKey(AccountPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteAccount([FromRoute] Guid id)
@@ -145,6 +153,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}/clone-targets")]
         [SwaggerOperation(OperationId = "accountCloneTargets")]
+        [RequirePermissionKey(AccountPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetAccountCloneTargets([FromRoute] Guid id)
@@ -163,6 +172,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/clone")]
         [SwaggerOperation(OperationId = "accountClone")]
+        [RequirePermissionKey(AccountPermissions.CreateKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Account>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -183,6 +193,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{accountId}/grant")]
         [SwaggerOperation(OperationId = "grantPOST")]
+        [RequirePermissionKey(AccountPermissions.UpdateKey)]
         [ProducesResponseType(201, Type = typeof(Grant))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -205,6 +216,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{accountId}/grant/{grantId}")]
         [SwaggerOperation(OperationId = "grantPUT")]
+        [RequirePermissionKey(AccountPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Grant))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -226,6 +238,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{accountId}/grant/{grantId}")]
         [SwaggerOperation(OperationId = "grantDELETE")]
+        [RequirePermissionKey(AccountPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteGrant([FromRoute] Guid accountId, [FromRoute] Guid grantId)

@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
-import type { Application } from '../../api/client'
+import type { Application } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../../constants/applicationIcons'
 

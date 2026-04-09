@@ -119,9 +119,9 @@ import type { QTableColumn } from 'quasar'
 import { 
   SqlIntegrationResponse, 
   CreateSqlIntegration, 
-  UpdateSqlIntegration,
-  Permission
-} from '../api/client'
+  UpdateSqlIntegration 
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useDataStores } from '../composables/useDataStores'

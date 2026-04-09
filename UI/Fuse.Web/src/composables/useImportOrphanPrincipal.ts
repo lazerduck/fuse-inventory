@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { ImportOrphanPrincipalRequest, ImportOrphanPrincipalResponse } from '../api/client'
+import { ImportOrphanPrincipalRequest, ImportOrphanPrincipalResponse } from 'api/client'
 
 export function useImportOrphanPrincipal() {
   const client = useFuseClient()

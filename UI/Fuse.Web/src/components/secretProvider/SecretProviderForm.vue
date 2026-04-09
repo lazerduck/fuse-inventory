@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted } from 'vue'
-import { SecretProviderResponse, SecretProviderAuthMode } from '../../api/client'
+import { SecretProviderResponse, SecretProviderAuthMode } from 'api/client'
 
 type Mode = 'create' | 'edit'
 

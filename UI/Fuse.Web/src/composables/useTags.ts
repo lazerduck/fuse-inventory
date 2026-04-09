@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import type { TagColor } from '../api/client'
+import type { TagColor } from 'api/client'
 
 export interface TagInfo {
   name: string

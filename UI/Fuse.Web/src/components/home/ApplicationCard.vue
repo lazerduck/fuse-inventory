@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Application } from '../../api/client'
+import type { Application } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import InstanceCard from './InstanceCard.vue'
 import TagChip from '../tags/TagChip.vue'

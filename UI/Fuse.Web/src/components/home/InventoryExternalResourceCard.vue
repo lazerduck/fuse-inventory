@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ExternalResource } from '../../api/client'
+import type { ExternalResource } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import TagChip from '../tags/TagChip.vue'
 

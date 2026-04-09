@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { SqlOrphanPrincipal } from '../../api/client'
+import type { SqlOrphanPrincipal } from 'api/client'
 
 interface Props {
   principals?: SqlOrphanPrincipal[] | null

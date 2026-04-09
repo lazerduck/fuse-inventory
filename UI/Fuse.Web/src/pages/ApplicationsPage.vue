@@ -184,8 +184,8 @@ import type { QTableColumn } from 'quasar'
 import {
   Application,
   CreateApplication,
-  Permission
-} from '../api/client'
+} from 'api/client'
+import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'

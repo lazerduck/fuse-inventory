@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { EntityType, type ActivityFeedItem } from '../api/client'
+import { EntityType, type ActivityFeedItem } from 'api/client'
 import { useFuseClient } from './useFuseClient'
 
 export interface ActivityFeedQuery {

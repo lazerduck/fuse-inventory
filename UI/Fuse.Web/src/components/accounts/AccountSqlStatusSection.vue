@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import { SyncStatus, type SqlPermissionComparison } from '../../api/client'
+import { SyncStatus, type SqlPermissionComparison } from 'api/client'
 import { useAccountSqlStatus } from '../../composables/useAccountSqlStatus'
 
 interface ComparisonRow {

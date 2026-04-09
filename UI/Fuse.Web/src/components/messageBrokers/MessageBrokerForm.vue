@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
-import type { MessageBroker } from '../../api/client'
+import type { MessageBroker } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'

@@ -2,7 +2,7 @@ import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useQuasar } from 'quasar'
 import { useFuseClient } from './useFuseClient'
-import { Risk, CreateRisk, UpdateRisk } from '../api/client'
+import { Risk, CreateRisk, UpdateRisk } from 'api/client'
 
 export function useRisks() {
   const client = useFuseClient()

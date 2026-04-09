@@ -1,12 +1,12 @@
 namespace Fuse.API.Controllers
 {
-    using System.Security.Claims;
     using Microsoft.AspNetCore.Mvc;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
     using Fuse.Core.Helpers;
     using Fuse.Core.Responses;
+    using Fuse.Core.Areas.Application;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -14,26 +14,24 @@ namespace Fuse.API.Controllers
     {
         private readonly IApplicationService _appService;
         private readonly IKumaHealthService _healthService;
-        private readonly IPermissionService _permissionService;
-        private readonly ISecurityService _securityService;
 
-        public ApplicationController(IApplicationService appService, IKumaHealthService healthService, IPermissionService permissionService, ISecurityService securityService)
+        public ApplicationController(IApplicationService appService, IKumaHealthService healthService)
         {
             _appService = appService;
             _healthService = healthService;
-            _permissionService = permissionService;
-            _securityService = securityService;
         }
 
         // Applications
         [HttpGet]
         [SwaggerOperation(OperationId = "applicationAll")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Application>))]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
             => Ok(await _appService.GetApplicationsAsync());
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "applicationGET")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Application))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Application>> GetApplicationById([FromRoute] Guid id)
@@ -44,6 +42,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "applicationPOST")]
+        [RequirePermissionKey(ApplicationPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Application))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -64,6 +63,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "applicationPUT")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Application))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -86,6 +86,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "applicationDELETE")]
+        [RequirePermissionKey(ApplicationPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteApplication([FromRoute] Guid id)
@@ -105,6 +106,7 @@ namespace Fuse.API.Controllers
         // Instances
         [HttpPost("{appId}/instances")]
         [SwaggerOperation(OperationId = "instancesPOST")]
+        [RequirePermissionKey(ApplicationPermissions.CreateInstanceKey)]
         [ProducesResponseType(201, Type = typeof(ApplicationInstance))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -125,6 +127,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{appId}/instances/{instanceId}")]
         [SwaggerOperation(OperationId = "instancesPUT")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateInstanceKey)]
         [ProducesResponseType(200, Type = typeof(ApplicationInstance))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -145,6 +148,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{appId}/instances/{instanceId}")]
         [SwaggerOperation(OperationId = "instancesDELETE")]
+        [RequirePermissionKey(ApplicationPermissions.DeleteInstanceKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteInstance([FromRoute] Guid appId, [FromRoute] Guid instanceId)
@@ -163,6 +167,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{appId}/instances/{instanceId}/health")]
         [SwaggerOperation(OperationId = "health")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(HealthStatusResponse))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<HealthStatusResponse>> GetInstanceHealth([FromRoute] Guid appId, [FromRoute] Guid instanceId)
@@ -187,6 +192,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{appId}/instances/{instanceId}/api-key")]
         [SwaggerOperation(OperationId = "instanceApiKey")]
+        [RequirePermissionKey(ApplicationPermissions.ReadInstanceAPIKey)]
         [ProducesResponseType(200, Type = typeof(string))]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
@@ -203,29 +209,11 @@ namespace Fuse.API.Controllers
             if (instance.ApiKey is null || instance.ApiKey.Kind == SecretBindingKind.None)
                 return NotFound(new { error = "This instance does not have an API key configured." });
 
-            var userId = GetUserId();
-            var securityState = await _securityService.GetSecurityStateAsync();
-            var user = userId.HasValue ? securityState.Users.FirstOrDefault(u => u.Id == userId.Value) : null;
-
             if (instance.ApiKey.Kind == SecretBindingKind.AzureKeyVault)
             {
-                // Requires AzureKeyVaultSecretsView permission or admin
-                if (user is null)
-                    return StatusCode(403, new { error = "Authentication required to access vault-stored API keys." });
-                if (!await _permissionService.HasPermissionAsync(user, Permission.AzureKeyVaultSecretsView)
-                    && !await _permissionService.IsUserAdminAsync(user))
-                    return StatusCode(403, new { error = "AzureKeyVaultSecretsView permission required to access vault-stored API keys." });
-
                 // Return vault metadata; actual secret retrieval uses the secret provider reveal endpoint
                 return Ok(new { kind = "AzureKeyVault", secretName = instance.ApiKey.AzureKeyVault?.SecretName, providerId = instance.ApiKey.AzureKeyVault?.ProviderId });
             }
-
-            // Plain text API key requires ApplicationsRead permission or admin
-            if (user is null)
-                return StatusCode(403, new { error = "Authentication required to view API keys." });
-            if (!await _permissionService.HasPermissionAsync(user, Permission.ApplicationsRead)
-                && !await _permissionService.IsUserAdminAsync(user))
-                return StatusCode(403, new { error = "ApplicationsRead permission required to view API keys." });
 
             var result = await _appService.GetInstanceApiKeyAsync(appId, instanceId);
             if (!result.IsSuccess)
@@ -242,6 +230,7 @@ namespace Fuse.API.Controllers
         // Pipelines
         [HttpPost("{appId}/pipelines")]
         [SwaggerOperation(OperationId = "pipelinesPOST")]
+        [RequirePermissionKey(ApplicationPermissions.CreateInstanceKey)]
         [ProducesResponseType(201, Type = typeof(ApplicationPipeline))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -264,6 +253,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{appId}/pipelines/{pipelineId}")]
         [SwaggerOperation(OperationId = "pipelinesPUT")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateInstanceKey)]
         [ProducesResponseType(200, Type = typeof(ApplicationPipeline))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -286,6 +276,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{appId}/pipelines/{pipelineId}")]
         [SwaggerOperation(OperationId = "pipelinesDELETE")]
+        [RequirePermissionKey(ApplicationPermissions.DeleteInstanceKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeletePipeline([FromRoute] Guid appId, [FromRoute] Guid pipelineId)
@@ -305,6 +296,7 @@ namespace Fuse.API.Controllers
         // Dependencies
         [HttpPost("{appId}/instances/{instanceId}/dependencies")]
         [SwaggerOperation(OperationId = "dependenciesPOST")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateInstanceKey)]
         [ProducesResponseType(201, Type = typeof(ApplicationInstanceDependency))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -325,6 +317,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{appId}/instances/{instanceId}/dependencies/{dependencyId}")]
         [SwaggerOperation(OperationId = "dependenciesPUT")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateInstanceKey)]
         [ProducesResponseType(200, Type = typeof(ApplicationInstanceDependency))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -345,6 +338,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{appId}/instances/{instanceId}/dependencies/{dependencyId}")]
         [SwaggerOperation(OperationId = "dependenciesDELETE")]
+        [RequirePermissionKey(ApplicationPermissions.UpdateInstanceKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteDependency([FromRoute] Guid appId, [FromRoute] Guid instanceId, [FromRoute] Guid dependencyId)

@@ -1,4 +1,4 @@
-import type { AuthKind, Grant, TargetKind } from '../../api/client'
+import type { AuthKind, Grant, TargetKind } from 'api/client'
 
 export interface KeyValuePair {
   key: string

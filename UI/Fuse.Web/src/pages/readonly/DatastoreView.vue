@@ -112,7 +112,7 @@ import { useApplications } from '../../composables/useApplications'
 import { useTags } from '../../composables/useTags'
 import { useRiskAggregation } from '../../composables/useRiskAggregation'
 import RiskSection from '../../components/readonly/RiskSection.vue'
-import { TargetKind, type TagColor } from '../../api/client'
+import { TargetKind, type TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

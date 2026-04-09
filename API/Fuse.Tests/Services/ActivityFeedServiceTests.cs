@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.Activity;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;

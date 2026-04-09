@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { ImportPermissionsResponse } from '../api/client'
+import { ImportPermissionsResponse } from 'api/client'
 
 export function useImportPermissions() {
   const client = useFuseClient()

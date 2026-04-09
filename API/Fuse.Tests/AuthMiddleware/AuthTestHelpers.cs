@@ -1,4 +1,3 @@
-using Fuse.Core.Models;
 using Fuse.Tests.ApiClient;
 using Xunit;
 using Xunit.Sdk;
@@ -33,27 +32,23 @@ public static class AuthTestHelpers
     }
 
     /// <summary>
-    /// Create a user with the given role and optional custom role assignment.
+    /// Create a user with the given admin status and optional custom role assignment.
     /// </summary>
     public static async Task<Guid> CreateUserAsync(
         FuseApiClient adminClient,
         string username,
         string password,
-        Core.Models.SecurityRole role = Core.Models.SecurityRole.Reader,
+        bool isAdmin = false,
         Guid? customRoleId = null)
     {
         try
         {
-            // Convert Core.Models.SecurityRole to ApiClient.SecurityRole
-            var apiRole = role == Core.Models.SecurityRole.Admin 
-                ? ApiClient.SecurityRole.Admin 
-                : ApiClient.SecurityRole.Reader;
-
             var user = await adminClient.ApiSecurityAccountsPostAsync(new CreateSecurityUser
             {
                 UserName = username,
                 Password = password,
-                Role = apiRole
+                IsAdmin = isAdmin,
+                RoleIds = new List<Guid>()
             });
 
             Assert.NotNull(user);
@@ -88,25 +83,20 @@ public static class AuthTestHelpers
     }
 
     /// <summary>
-    /// Create a custom role with the specified permissions.
+    /// Create a custom role with the specified permission keys.
     /// </summary>
     public static async Task<Guid> CreateRoleAsync(
         FuseApiClient adminClient,
         string roleName,
-        IReadOnlyList<Core.Models.Permission> permissions)
+        IReadOnlyList<string> permissionKeys)
     {
         try
         {
-            // Convert Core.Models.Permission to ApiClient.Permission
-            var apiPermissions = permissions.Select(p => 
-                (ApiClient.Permission)Enum.Parse(typeof(ApiClient.Permission), p.ToString())
-            ).ToList();
-
             var role = await adminClient.ApiRolePostAsync(new CreateRole
             {
                 Name = roleName,
                 Description = $"Test role: {roleName}",
-                Permissions = apiPermissions
+                Permissions = permissionKeys.ToList()
             });
 
             Assert.NotNull(role);
@@ -152,7 +142,7 @@ public static class AuthTestHelpers
             adminClient,
             scenario.UserName,
             scenario.Password,
-            scenario.Role,
+            scenario.IsAdmin,
             customRoleId);
 
         // Login as the new user to get token
@@ -186,10 +176,8 @@ public static class AuthTestHelpers
             
             return new SecurityStateResponse
             {
-                Level = Enum.Parse<ApiClient.SecurityLevel>(state.Level!),
-                UpdatedAt = state.UpdatedAt,
+                Posture = Enum.Parse<ApiClient.SecurityPosture>(state.Posture!),
                 RequiresSetup = state.RequiresSetup,
-                HasUsers = state.HasUsers,
                 CurrentUser = null // We don't need this for test setup
             };
         }
@@ -202,10 +190,8 @@ public static class AuthTestHelpers
     // DTO for deserializing security state response
     private class SecurityStateDto
     {
-        public string? Level { get; set; }
-        public DateTimeOffset UpdatedAt { get; set; }
+        public string? Posture { get; set; }
         public bool RequiresSetup { get; set; }
-        public bool HasUsers { get; set; }
     }
 
     /// <summary>

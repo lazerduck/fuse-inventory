@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
-import type { ApplicationPipeline } from '../../api/client'
+import type { ApplicationPipeline } from 'api/client'
 
 type Mode = 'create' | 'edit'
 

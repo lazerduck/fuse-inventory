@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
-import { Permission, type RoleInfo } from '../api/client'
+import { type RoleInfo } from 'api/client'
+import { Permission } from 'permissions'
 
 export function useRoles() {
   const client = useFuseClient()

@@ -129,7 +129,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { Notify, copyToClipboard as qCopyToClipboard, useQuasar } from 'quasar'
-import { UpdatePasswordGeneratorConfig } from '../api/client'
+import { UpdatePasswordGeneratorConfig } from 'api/client'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { getErrorMessage } from '../utils/error'

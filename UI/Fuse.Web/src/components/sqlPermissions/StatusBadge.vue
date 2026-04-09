@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SyncStatus } from '../../api/client'
+import { SyncStatus } from 'api/client'
 
 interface Props {
   status?: SyncStatus

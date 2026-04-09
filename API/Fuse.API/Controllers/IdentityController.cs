@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.Core.Areas.Identity;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -20,6 +21,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "identityAll")]
+        [RequirePermissionKey(IdentityPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Identity>))]
         public async Task<ActionResult<IEnumerable<Identity>>> GetIdentities()
         {
@@ -28,6 +30,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "identityGET")]
+        [RequirePermissionKey(IdentityPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Identity))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Identity>> GetIdentityById([FromRoute] Guid id)
@@ -38,6 +41,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "identityPOST")]
+        [RequirePermissionKey(IdentityPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Identity))]
         [ProducesResponseType(400)]
         public async Task<ActionResult<Identity>> CreateIdentity([FromBody] CreateIdentity command)
@@ -54,6 +58,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "identityPUT")]
+        [RequirePermissionKey(IdentityPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Identity))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -75,6 +80,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "identityDELETE")]
+        [RequirePermissionKey(IdentityPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteIdentity([FromRoute] Guid id)
@@ -93,6 +99,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}/clone-targets")]
         [SwaggerOperation(OperationId = "identityCloneTargets")]
+        [RequirePermissionKey(IdentityPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetIdentityCloneTargets([FromRoute] Guid id)
@@ -111,6 +118,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{id}/clone")]
         [SwaggerOperation(OperationId = "identityClone")]
+        [RequirePermissionKey(IdentityPermissions.CreateKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Identity>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -131,6 +139,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost("{identityId}/assignment")]
         [SwaggerOperation(OperationId = "assignmentPOST")]
+        [RequirePermissionKey(IdentityPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(IdentityAssignment))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -153,6 +162,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{identityId}/assignment/{assignmentId}")]
         [SwaggerOperation(OperationId = "assignmentPUT")]
+        [RequirePermissionKey(IdentityPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(IdentityAssignment))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -174,6 +184,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{identityId}/assignment/{assignmentId}")]
         [SwaggerOperation(OperationId = "assignmentDELETE")]
+        [RequirePermissionKey(IdentityPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteAssignment([FromRoute] Guid identityId, [FromRoute] Guid assignmentId)

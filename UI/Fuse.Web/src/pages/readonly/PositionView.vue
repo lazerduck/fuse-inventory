@@ -119,7 +119,7 @@ import { useTags } from '../../composables/useTags'
 import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useFuseClient } from '../../composables/useFuseClient'
-import { ResponsibilityScope, type ResponsibilityAssignment, type Risk, type TagColor } from '../../api/client'
+import { ResponsibilityScope, type ResponsibilityAssignment, type Risk, type TagColor } from 'api/client'
 
 const route = useRoute()
 const router = useRouter()

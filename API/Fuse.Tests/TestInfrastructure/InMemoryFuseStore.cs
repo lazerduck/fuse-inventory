@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Tests.Helpers;
 
 namespace Fuse.Tests.TestInfrastructure;
 
@@ -28,7 +29,8 @@ public sealed class InMemoryFuseStore : IFuseStore
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
-            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>())
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContextHelper.Get
         );
     }
 

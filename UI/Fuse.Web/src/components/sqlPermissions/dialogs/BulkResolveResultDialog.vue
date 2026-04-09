@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
-import type { BulkResolveAccountResult, BulkResolveResponse } from '../../../api/client'
+import type { BulkResolveAccountResult, BulkResolveResponse } from 'api/client'
 
 interface Props {
   modelValue: boolean

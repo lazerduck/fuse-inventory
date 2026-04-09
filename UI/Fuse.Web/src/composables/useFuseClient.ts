@@ -1,4 +1,4 @@
-import { FuseApiClient } from '../api/client'
+import { FuseApiClient } from 'api/client'
 import { useAuthToken } from './useAuthToken'
 
 let client: FuseApiClient | null = null

@@ -225,7 +225,7 @@ import {
   DependencySeverity,
   TargetKind,
   UpdateApplicationDependency
-} from '../../api/client'
+} from 'api/client'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useDataStores } from '../../composables/useDataStores'

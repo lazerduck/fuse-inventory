@@ -280,6 +280,7 @@ public class ConfigService : IConfigService
                 Risks: current.Risks,
                 MessageBrokers: current.MessageBrokers,
                 Security: current.Security,
+                SecurityContext: current.SecurityContext,
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig
             );
         }, ct);

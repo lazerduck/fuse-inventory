@@ -1,6 +1,6 @@
 import { computed, type Ref } from 'vue'
 import { useRisks } from './useRisks'
-import type { Risk } from '../api/client'
+import type { Risk } from 'api/client'
 
 export interface RiskAggregation {
   total: number

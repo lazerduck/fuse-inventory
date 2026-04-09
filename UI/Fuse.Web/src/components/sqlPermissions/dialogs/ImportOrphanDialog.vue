@@ -78,7 +78,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { AuthKind, SecretBindingKind, type SqlOrphanPrincipal } from '../../../api/client'
+import { AuthKind, SecretBindingKind, type SqlOrphanPrincipal } from 'api/client'
 
 interface Props {
   modelValue: boolean

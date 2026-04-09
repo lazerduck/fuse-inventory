@@ -144,8 +144,8 @@ import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
-import type { Risk } from '../api/client'
-import { Permission } from '../api/client'
+import type { Risk } from 'api/client'
+import { Permission } from 'permissions'
 
 const router = useRouter()
 const $q = useQuasar()

@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, onMounted, watch } from 'vue'
-import { PlatformKind, type Platform } from '../../api/client'
+import { PlatformKind, type Platform } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'

@@ -1,0 +1,85 @@
+{
+  "posture": "RestrictedEditing",
+  "roles": [
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "name": "Reader",
+      "description": "Read-only access to all resources",
+      "permissions": [
+        "application:read",
+        "application:instance:api:read",
+        "accounts:read",
+        "identities:read",
+        "datastores:read",
+        "platforms:read",
+        "environments:read",
+        "externalresources:read",
+        "positions:read",
+        "responsibilities:read",
+        "risks:read",
+        "useraccount:read",
+        "roles:read"
+      ],
+      "createdAt": "2026-02-25T18:42:43.5172767Z",
+      "updatedAt": "2026-02-25T18:42:43.5172768Z"
+    },
+    {
+      "id": "5775d343-26da-4473-bdd8-8be452629a4d",
+      "name": "Developer",
+      "description": "",
+      "permissions": [
+        "application:read",
+        "application:instance:api:read",
+        "application:create",
+        "application:instance:create",
+        "application:update",
+        "application:instance:update",
+        "application:delete",
+        "application:instance:delete",
+        "accounts:read",
+        "identities:read",
+        "datastores:read",
+        "platforms:read",
+        "environments:read",
+        "environments:create",
+        "environments:update",
+        "environments:automation:apply",
+        "environments:delete",
+        "externalresources:read",
+        "externalresources:create",
+        "externalresources:update",
+        "externalresources:delete",
+        "risks:read",
+        "risks:create",
+        "messagebrokers:read"
+      ],
+      "createdAt": "2026-02-25T21:15:54.4292897Z",
+      "updatedAt": "2026-03-05T20:32:06.0393264Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "35bab7bf-c356-4314-914d-6c2ee2811f76",
+      "userName": "Admin",
+      "passwordHash": "4VoO7NoLa694uXtUyfDMEr8O4ikvqRaMXULrrg7dRGA=",
+      "passwordSalt": "dLsuTdI0v9kNZahq\u002Bmp56Q==",
+      "isAdmin": true,
+      "roleIds": [],
+      "createdAt": "2026-02-25T18:43:04.2040353Z",
+      "updatedAt": "2026-02-25T18:43:04.2040353Z"
+    }
+  ],
+  "apiKeys": [],
+  "sessions": [
+    {
+      "token": "f37ca395b70148e09d933adfa229a6f3",
+      "userId": "35bab7bf-c356-4314-914d-6c2ee2811f76",
+      "expiresAt": "2026-05-07T20:41:59.0939186Z"
+    },
+    {
+      "token": "8fef4610e7c34efe943a22871c560680",
+      "userId": "35bab7bf-c356-4314-914d-6c2ee2811f76",
+      "expiresAt": "2026-05-09T19:13:08.2925103Z"
+    }
+  ]
+}

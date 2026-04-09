@@ -4,15 +4,12 @@ using Fuse.Core.Models;
 
 namespace Fuse.Core.Commands;
 
-public record UpdateSecuritySettings(SecurityLevel Level)
+public record UpdateSecuritySettings(SecurityPosture Posture)
 {
     public Guid? RequestedBy { get; init; }
 }
 
-public record CreateSecurityUser(string UserName, string Password, SecurityRole? Role = null)
-{
-    public Guid? RequestedBy { get; init; }
-}
+public record CreateSecurityUser(string UserName, string Password, List<Guid> RoleIds, bool IsAdmin = false);
 
 public record LoginSecurityUser(string UserName, string Password);
 
@@ -23,18 +20,13 @@ public record DeleteUser(Guid Id)
     public Guid? RequestedBy { get; init; }
 }
 
-public record UpdateUser(Guid Id, SecurityRole? Role = null)
-{
-    public Guid? RequestedBy { get; init; }
-}
-
 // Role management commands
-public record CreateRole(string Name, string Description, IReadOnlyList<Permission> Permissions)
+public record CreateRole(string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
 }
 
-public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<Permission> Permissions)
+public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
 }

@@ -1,4 +1,4 @@
-import { ApiException } from '../api/client'
+import { ApiException } from 'api/client'
 
 type ProblemDetails = {
   error?: string

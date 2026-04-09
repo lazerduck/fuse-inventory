@@ -1,4 +1,4 @@
-import type { SecretProviderResponse } from '../api/client'
+import type { SecretProviderResponse } from 'api/client'
 
 export type SecretCapability = 'Check' | 'Create' | 'Rotate' | 'Read'
 

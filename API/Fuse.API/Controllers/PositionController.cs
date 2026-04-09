@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.Core.Areas.Position;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -19,6 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "positionAll")]
+        [RequirePermissionKey(PositionPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Position>))]
         public async Task<ActionResult<IEnumerable<Position>>> GetPositions()
         {
@@ -27,6 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "positionGET")]
+        [RequirePermissionKey(PositionPermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(Position))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<Position>> GetPositionById([FromRoute] Guid id)
@@ -37,6 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "positionPOST")]
+        [RequirePermissionKey(PositionPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Position))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -58,6 +62,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "positionPUT")]
+        [RequirePermissionKey(PositionPermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(Position))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -81,6 +86,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "positionDELETE")]
+        [RequirePermissionKey(PositionPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]

@@ -1,43 +1,47 @@
+using Fuse.API.CurrentUser;
+using Fuse.Core.Areas.Security;
+using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security.Permissions;
+using Fuse.Core.Commands;
+using Fuse.Core.Helpers;
+using Fuse.Core.Models;
+using Fuse.Core.Responses;
+using Microsoft.AspNetCore.Mvc;
+
 namespace Fuse.API.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Fuse.Core.Commands;
-    using Fuse.Core.Helpers;
-    using Fuse.Core.Interfaces;
-    using Fuse.Core.Models;
-  using Fuse.Core.Responses;
-  using Microsoft.AspNetCore.Mvc;
-
     [ApiController]
     [Route("api/[controller]")]
-    public class SecurityController : ControllerBase
+    public class SecurityController(
+        IFuseSecurityService fuseSecurityService,
+        IFuseUserService fuseUserService,
+        IFuseUserSessionService fuseUserSessionService
+        ) : ControllerBase
     {
-        private readonly ISecurityService _securityService;
-        private readonly IPermissionService _permissionService;
-
-        public SecurityController(ISecurityService securityService, IPermissionService permissionService)
-        {
-            _securityService = securityService;
-            _permissionService = permissionService;
-        }
 
         [HttpGet("state")]
         [SwaggerOperation(OperationId = "state")]
+        [AllowDuringSetup]
         [ProducesResponseType(200)]
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
-            var state = await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            var user = await GetCurrentUserAsync(state);
+            SecurityUserInfo? userInfo = null;
+            var userId = User.GetPrincipalId();
+            if (User.IsLoggedIn() && userId is not null)
+            {
+                var userResult = await fuseUserService.GetUser(userId.Value);
+                if (userResult.IsSuccess && userResult.Value is not null)
+                {
+                    var user = userResult.Value;
+                    userInfo = new SecurityUserInfo(user);
+                }
+            }
+
             var response = new SecurityStateResponse
             {
-                Level = state.Settings.Level,
-                UpdatedAt = state.Settings.UpdatedAt,
-                RequiresSetup = state.RequiresSetup,
-                CurrentUser = ToInfo(user),
-                HasUsers = state.Users.Count > 0
+                Posture = await fuseSecurityService.GetSecurityPosture(),
+                RequiresSetup = await fuseSecurityService.RequiresSetup(),
+                CurrentUser = userInfo
             };
 
             return Ok(response);
@@ -45,64 +49,48 @@ namespace Fuse.API.Controllers
 
         [HttpPost("settings")]
         [SwaggerOperation(OperationId = "settings")]
-        [ProducesResponseType(200, Type = typeof(SecuritySettings))]
+        [RequirePermissionKey(SecuritySettingsPermissions.UpdateSettingsKey)]
+        [ProducesResponseType(200, Type = typeof(SecurityPosture))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
-        public async Task<ActionResult<SecuritySettings>> UpdateSettings([FromBody] UpdateSecuritySettings command)
+        public async Task<ActionResult<SecurityPosture>> UpdateSettings([FromBody] UpdateSecuritySettings command)
         {
-            var currentUser = await GetCurrentUserAsync();
-            if (currentUser is null)
-                return Unauthorized(new { error = "Authentication required." });
-            if (!await _permissionService.IsUserAdminAsync(currentUser, HttpContext.RequestAborted))
-                return Forbid();
+            await fuseSecurityService.SetSecurityPosture(command.Posture);
 
-            var merged = command with { RequestedBy = currentUser.Id };
-            var result = await _securityService.UpdateSecuritySettingsAsync(merged, HttpContext.RequestAborted);
-            if (!result.IsSuccess)
-            {
-                return result.ErrorType switch
-                {
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
-                    _ => BadRequest(new { error = result.Error })
-                };
-            }
-
-            return Ok(result.Value);
+            return Ok(await fuseSecurityService.GetSecurityPosture());
         }
 
         [HttpPost("accounts")]
         [SwaggerOperation(OperationId = "accountsPOST")]
+        [AllowDuringSetup]
+        [RequirePermissionKey(UserAccountPermissions.CreateKey)]
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult<SecurityUserInfo>> CreateAccount([FromBody] CreateSecurityUser command)
         {
-            var state = await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            var currentUser = await GetCurrentUserAsync(state);
-
-            if (!state.RequiresSetup)
+            var requiresSetup = await fuseSecurityService.RequiresSetup();
+            if (requiresSetup && !command.IsAdmin)
             {
-                if (currentUser is null)
-                    return Unauthorized(new { error = "Authentication required." });
-                // Permission check is handled by SecurityMiddleware using granular permissions
+                return BadRequest(new { error = "The initial setup account must be an admin account." });
             }
 
-            var merged = command with { RequestedBy = currentUser?.Id };
-            var result = await _securityService.CreateUserAsync(merged, HttpContext.RequestAborted);
-            if (!result.IsSuccess)
+            var userResult = await fuseUserService.CreateUser(command.UserName, command.Password, command.IsAdmin, command.RoleIds);
+            if(userResult.IsSuccess && userResult.Value is not null)
             {
-                return result.ErrorType switch
-                {
-                    ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
-                    ErrorType.Conflict => Conflict(new { error = result.Error }),
-                    _ => BadRequest(new { error = result.Error })
-                };
+                var user = userResult.Value;
+                var userInfo = new SecurityUserInfo(user);
+                return CreatedAtAction(nameof(GetState), null, userInfo);
             }
 
-            var info = ToInfo(result.Value!);
-            return CreatedAtAction(nameof(GetState), null, info);
+            return userResult.ErrorType switch
+            {
+                ErrorType.Conflict => Conflict(new { error = userResult.Error }),
+                _ => BadRequest(new { error = userResult.Error })
+            };
         }
 
         [HttpPost("login")]
@@ -112,17 +100,31 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(401)]
         public async Task<ActionResult<LoginSession>> Login([FromBody] LoginSecurityUser command)
         {
-            var result = await _securityService.LoginAsync(command, HttpContext.RequestAborted);
-            if (!result.IsSuccess)
+            var userResult = await fuseUserService.VerifyUser(command.UserName, command.Password);
+
+            if(!userResult.IsSuccess || userResult.Value is null)
             {
-                return result.ErrorType switch
+                return userResult.ErrorType switch
                 {
-                    ErrorType.Validation => BadRequest(new { error = result.Error }),
-                    _ => Unauthorized(new { error = result.Error })
+                    ErrorType.Validation => BadRequest(new { error = userResult.Error }),
+                    _ => Unauthorized(new { error = userResult.Error })
                 };
             }
 
-            return Ok(result.Value);
+            var user = userResult.Value;
+
+            var tokenResult = await fuseUserSessionService.CreateSession(user);
+            if(!tokenResult.IsSuccess || string.IsNullOrEmpty(tokenResult.Value))
+            {
+                return BadRequest(tokenResult.Error);
+            }
+
+            var token = tokenResult.Value;
+            var expiry = (await fuseUserSessionService.GetExpiry(token)).Value;
+
+            var userInfo = new SecurityUserInfo(user);
+
+            return Ok(new LoginSession(token, expiry, userInfo));
         }
 
         [HttpPost("logout")]
@@ -131,7 +133,7 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> Logout([FromBody] LogoutSecurityUser command)
         {
-            var result = await _securityService.LogoutAsync(command);
+            var result = await fuseUserSessionService.DeleteSession(command.Token);
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
 
@@ -139,70 +141,41 @@ namespace Fuse.API.Controllers
         }
 
         [HttpGet("accounts")]
+        [RequirePermissionKey(UserAccountPermissions.ReadKey)]
         [SwaggerOperation(OperationId = "accountsAll")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserResponse>))]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<SecurityUserInfo>))]
         public async Task<IActionResult> GetAccounts()
         {
-            var securityState = await _securityService.GetSecurityStateAsync();
-            var response = securityState.Users.Select(m => new SecurityUserResponse(m.Id, m.UserName, m.Role, m.RoleIds, m.CreatedAt, m.UpdatedAt));
-            return Ok(response);
+            var usersResult = await fuseUserService.GetUsers();   
+            return Ok(usersResult.Value!.Select(m => new SecurityUserInfo(m)));
         }
 
-        [HttpPatch("accounts/{Id}")]
-        [SwaggerOperation(OperationId = "accountsPATCH")]
-        [ProducesResponseType(200, Type = typeof(SecurityUserResponse))]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> UpdateUser([FromRoute] Guid Id, [FromBody] UpdateUser command)
+        [HttpGet("permissions/catalog")]
+        [RequirePermissionKey(RolePermissions.ReadKey)]
+        [SwaggerOperation(OperationId = "permissionsCatalog")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<PermissionAreaCatalog>))]
+        public async Task<IActionResult> GetPermissionCatalog()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                return BadRequest(new { error = "Invalid user context." });
-            }
-
-            if (Id == userGuid)
-            {
-                return BadRequest(new { error = "You cannot edit your own account." });
-            }
-
-            var merged = command with { Id = Id };
-            var result = await _securityService.UpdateUser(merged, HttpContext.RequestAborted);
-            if (!result.IsSuccess)
-            {
-                return result.ErrorType switch
-                {
-                    ErrorType.Validation => BadRequest(new { error = result.Error }),
-                    ErrorType.NotFound => NotFound(new { error = result.Error }),
-                    _ => BadRequest(new { error = result.Error })
-                };
-            }
-
-            var user = result.Value!;
-            var response = new SecurityUserResponse(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
-            return Ok(response);
+            var catalog = await fuseSecurityService.GetPermissionCatalogs();
+            return Ok(catalog);
         }
 
         [HttpDelete("accounts/{Id}")]
         [SwaggerOperation(OperationId = "accountsDELETE")]
+        [RequirePermissionKey(UserAccountPermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteUser([FromRoute] Guid Id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                return BadRequest(new { error = "Invalid user context." });
-            }
+            var userId = User.GetPrincipalId();
 
-            if (Id == userGuid)
+            if (Id == userId)
             {
                 return BadRequest(new { error = "You cannot delete your own account." });
             }
-            
-            var command = new DeleteUser(Id);
-            var result = await _securityService.DeleteUser(command, HttpContext.RequestAborted);
+
+            var result = await fuseUserService.DeleteUser(Id);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -218,20 +191,19 @@ namespace Fuse.API.Controllers
 
         [HttpPost("accounts/{userId}/roles")]
         [SwaggerOperation(OperationId = "roles")]
+        [RequirePermissionKey(UserAccountPermissions.UpdateKey)]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> AssignUserRoles([FromRoute] Guid userId, [FromBody] AssignRolesToUser command)
         {
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(currentUserId, out var userGuid))
+            if(User.GetPrincipalId() == userId)
             {
-                return BadRequest(new { error = "Invalid user context." });
+                return Unauthorized("Can not change your own roles");
             }
 
-            var merged = command with { UserId = userId, RequestedBy = userGuid };
-            var result = await _securityService.AssignRolesToUserAsync(merged, HttpContext.RequestAborted);
-            
+            var result = await fuseUserService.SetUserRoles(userId, command.RoleIds);
+
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -247,6 +219,8 @@ namespace Fuse.API.Controllers
 
 
         [HttpPost("accounts/{id}/reset-password")]
+        [SwaggerOperation(OperationId = "resetPassword")]
+        [RequirePermissionKey(UserAccountPermissions.ResetPasswordKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -254,17 +228,12 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword([FromRoute] Guid id, [FromBody] ResetPasswordRequest request)
         {
-            var currentUser = await GetCurrentUserAsync();
-            if (currentUser is null)
-                return Unauthorized(new { error = "Authentication required." });
-
-            var command = new ResetPassword(id, request.NewPassword)
+            if(User.GetPrincipalId() != id && !User.IsAdmin())
             {
-                RequestedBy = currentUser.Id,
-                CurrentPassword = request.CurrentPassword
-            };
+                return Unauthorized("Can not reset another users password");
+            }
 
-            var result = await _securityService.ResetPasswordAsync(command, HttpContext.RequestAborted);
+            var result = await fuseUserService.ResetPassword(id, request.NewPassword);
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
@@ -279,37 +248,16 @@ namespace Fuse.API.Controllers
             return NoContent();
         }
 
-
-        private async Task<SecurityUser?> GetCurrentUserAsync(SecurityState? state = null)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var id))
-                return null;
-
-            var snapshot = state ?? await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            return snapshot.Users.FirstOrDefault(u => u.Id == id);
-        }
-
-        private static SecurityUserInfo? ToInfo(SecurityUser? user)
-        {
-            return user is null
-                ? null
-                : new SecurityUserInfo(user.Id, user.UserName, user.Role, user.RoleIds, user.CreatedAt, user.UpdatedAt);
-        }
-
         public class SecurityStateResponse
         {
-            public SecurityLevel Level { get; set; }
-            public DateTime UpdatedAt { get; set; }
+            public SecurityPosture Posture { get; set; }
             public bool RequiresSetup { get; set; }
-            public bool HasUsers { get; set; }
             public SecurityUserInfo? CurrentUser { get; set; }
         }
 
         public class ResetPasswordRequest
         {
             public string NewPassword { get; set; } = string.Empty;
-            public string? CurrentPassword { get; set; }
         }
     }
 }

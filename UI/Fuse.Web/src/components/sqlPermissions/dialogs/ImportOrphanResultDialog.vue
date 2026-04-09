@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ImportOrphanPrincipalResponse } from '../../../api/client'
+import type { ImportOrphanPrincipalResponse } from 'api/client'
 
 interface Props {
   modelValue: boolean

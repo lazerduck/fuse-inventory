@@ -21,7 +21,7 @@ import {
   SecretBindingKind,
   type SqlAccountPermissionsStatus,
   type SqlOrphanPrincipal
-} from '../api/client'
+} from 'api/client'
 
 interface CreateAccountOptions {
   passwordSource: PasswordSource

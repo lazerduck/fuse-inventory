@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { ResolveDriftResponse } from '../api/client'
+import { ResolveDriftResponse } from 'api/client'
 
 export function useResolveDrift() {
   const client = useFuseClient()

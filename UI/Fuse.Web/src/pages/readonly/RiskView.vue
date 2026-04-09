@@ -183,7 +183,7 @@ import type {
   Platform,
   Risk,
   TagColor
-} from '../../api/client'
+} from 'api/client'
 
 type TargetEntity = Application | DataStore | ExternalResource | MessageBroker | Platform
 type RiskTargetType = 'Application' | 'DataStore' | 'Platform' | 'ExternalResource' | 'MessageBroker'

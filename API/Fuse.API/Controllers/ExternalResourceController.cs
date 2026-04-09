@@ -1,6 +1,7 @@
 namespace Fuse.API.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Fuse.Core.Areas.ExternalResource;
     using Fuse.Core.Interfaces;
     using Fuse.Core.Models;
     using Fuse.Core.Commands;
@@ -19,6 +20,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "externalResourceAll")]
+        [RequirePermissionKey(ExternalResourcePermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(IEnumerable<ExternalResource>))]
         public async Task<ActionResult<IEnumerable<ExternalResource>>> GetExternalResources()
         {
@@ -27,6 +29,7 @@ namespace Fuse.API.Controllers
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "externalResourceGET")]
+        [RequirePermissionKey(ExternalResourcePermissions.ReadKey)]
         [ProducesResponseType(200, Type = typeof(ExternalResource))]
         [ProducesResponseType(404)]
         public async Task<ActionResult<ExternalResource>> GetExternalResourceById([FromRoute] Guid id)
@@ -37,6 +40,7 @@ namespace Fuse.API.Controllers
 
         [HttpPost]
         [SwaggerOperation(OperationId = "externalResourcePOST")]
+        [RequirePermissionKey(ExternalResourcePermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(ExternalResource))]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
@@ -58,6 +62,7 @@ namespace Fuse.API.Controllers
 
         [HttpPut("{id}")]
         [SwaggerOperation(OperationId = "externalResourcePUT")]
+        [RequirePermissionKey(ExternalResourcePermissions.UpdateKey)]
         [ProducesResponseType(200, Type = typeof(ExternalResource))]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
@@ -81,6 +86,7 @@ namespace Fuse.API.Controllers
 
         [HttpDelete("{id}")]
         [SwaggerOperation(OperationId = "externalResourceDELETE")]
+        [RequirePermissionKey(ExternalResourcePermissions.DeleteKey)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteExternalResource([FromRoute] Guid id)

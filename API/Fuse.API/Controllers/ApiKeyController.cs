@@ -1,40 +1,30 @@
+using Fuse.API.CurrentUser;
+using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security.Permissions;
+using Fuse.Core.Commands;
+using Fuse.Core.Helpers;
+using Fuse.Core.Responses;
+using Microsoft.AspNetCore.Mvc;
+
 namespace Fuse.API.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Fuse.Core.Commands;
-    using Fuse.Core.Helpers;
-    using Fuse.Core.Interfaces;
-    using Fuse.Core.Models;
-    using Microsoft.AspNetCore.Mvc;
-    using Swashbuckle.AspNetCore.Annotations;
-
     [ApiController]
     [Route("api/[controller]")]
-    public class ApiKeyController : ControllerBase
+    public class ApiKeyController(IFuseAPIKeyService apiKeyService) : ControllerBase
     {
-        private readonly ISecurityService _securityService;
-
-        public ApiKeyController(ISecurityService securityService)
-        {
-            _securityService = securityService;
-        }
 
         [HttpGet]
         [SwaggerOperation(OperationId = "apiKeyAll")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<ApiKeyInfo>))]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(APIKeyPermissions.ReadKey)]
         public async Task<ActionResult<IEnumerable<ApiKeyInfo>>> GetApiKeys()
         {
-            var userId = GetCurrentUserId();
-            if (userId is null)
-                return Unauthorized(new { error = "Authentication required." });
-
-            var state = await _securityService.GetSecurityStateAsync(HttpContext.RequestAborted);
-            var keys = state.ApiKeys
-                .Where(k => k.UserId == userId.Value)
+            var apiKeysResult = await apiKeyService.GetAPIKeys();
+            if (!apiKeysResult.IsSuccess)
+                return BadRequest(new { error = apiKeysResult.Error });
+            
+            var keys = apiKeysResult.Value!
                 .Select(k => new ApiKeyInfo(k.Id, k.Name, k.UserId, k.RoleIds, k.CreatedAt, k.UpdatedAt));
 
             return Ok(keys);
@@ -45,25 +35,46 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(201, Type = typeof(ApiKeyCreatedResult))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
+        [RequirePermissionKey(APIKeyPermissions.CreateKey)]
         public async Task<ActionResult<ApiKeyCreatedResult>> CreateApiKey([FromBody] CreateApiKey command)
         {
-            var userId = GetCurrentUserId();
-            if (userId is null)
+            if(!User.IsLoggedIn())
                 return Unauthorized(new { error = "Authentication required." });
 
-            var merged = command with { RequestedBy = userId };
-            var result = await _securityService.CreateApiKeyAsync(merged, HttpContext.RequestAborted);
+            Guid? ownerId = null;
+            if(User.IsUserAuth())
+                ownerId = User.GetPrincipalId();
+            else if(User.IsApiKeyAuth())
+            {
+                var apiKeyResult = await apiKeyService.GetAPIKey(User.GetPrincipalId()!.Value);
+                if(!apiKeyResult.IsSuccess)
+                {
+                    return Unauthorized(new { error = "Authentication required." });
+                }
+                ownerId = apiKeyResult.Value?.UserId;
+            }
+            
+            if (ownerId is null)
+                return Unauthorized(new { error = "Authentication required." });
+
+            var result = await apiKeyService.GenerateNewAPIKey(command.Name, ownerId.Value, command.RoleIds);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorType switch
                 {
                     ErrorType.Unauthorized => Unauthorized(new { error = result.Error }),
+                    ErrorType.NotFound => NotFound(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }
 
-            return Created(string.Empty, result.Value);
+            var (rawKey, key) = result.Value!;
+            var response = new ApiKeyCreatedResult(
+                new ApiKeyInfo(key.Id, key.Name, key.UserId, key.RoleIds, key.CreatedAt, key.UpdatedAt),
+                rawKey);
+
+            return Created(string.Empty, response);
         }
 
         [HttpPost("{id}/regenerate")]
@@ -72,14 +83,10 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
+        [RequirePermissionKey(APIKeyPermissions.RegenerateKey)]
         public async Task<ActionResult<ApiKeyCreatedResult>> RegenerateApiKey([FromRoute] Guid id)
         {
-            var userId = GetCurrentUserId();
-            if (userId is null)
-                return Unauthorized(new { error = "Authentication required." });
-
-            var command = new RegenerateApiKey(id) { RequestedBy = userId };
-            var result = await _securityService.RegenerateApiKeyAsync(command, HttpContext.RequestAborted);
+            var result = await apiKeyService.RegenerateAPIKey(id);
 
             if (!result.IsSuccess)
             {
@@ -91,7 +98,19 @@ namespace Fuse.API.Controllers
                 };
             }
 
-            return Ok(result.Value);
+            var keyResult = await apiKeyService.GetAPIKey(id);
+            if(!keyResult.IsSuccess)
+                return BadRequest(new {error = keyResult.Error});
+
+            var key = keyResult.Value;
+            if (key is null)
+                return NotFound(new { error = $"API key with ID '{id}' not found." });
+
+            var response = new ApiKeyCreatedResult(
+                new ApiKeyInfo(key.Id, key.Name, key.UserId, key.RoleIds, key.CreatedAt, key.UpdatedAt),
+                result.Value!);
+
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
@@ -99,14 +118,10 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
+        [RequirePermissionKey(APIKeyPermissions.DeleteKey)]
         public async Task<IActionResult> DeleteApiKey([FromRoute] Guid id)
         {
-            var userId = GetCurrentUserId();
-            if (userId is null)
-                return Unauthorized(new { error = "Authentication required." });
-
-            var command = new DeleteApiKey(id) { RequestedBy = userId };
-            var result = await _securityService.DeleteApiKeyAsync(command, HttpContext.RequestAborted);
+            var result = await apiKeyService.DeleteAPIKey(id);
 
             if (!result.IsSuccess)
             {
@@ -119,12 +134,6 @@ namespace Fuse.API.Controllers
             }
 
             return NoContent();
-        }
-
-        private Guid? GetCurrentUserId()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Guid.TryParse(userId, out var id) ? id : (Guid?)null;
         }
     }
 }

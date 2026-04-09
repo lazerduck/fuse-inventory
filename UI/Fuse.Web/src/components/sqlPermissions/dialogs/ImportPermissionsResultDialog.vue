@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StatusBadge from '../../sqlPermissions/StatusBadge.vue'
-import type { ImportPermissionsResponse } from '../../../api/client'
+import type { ImportPermissionsResponse } from 'api/client'
 
 interface Props {
   modelValue: boolean

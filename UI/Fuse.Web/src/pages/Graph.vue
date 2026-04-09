@@ -101,7 +101,7 @@ import { useDataStores } from '../composables/useDataStores';
 import { useExternalResources } from '../composables/useExternalResources';
 import { useMessageBrokers } from '../composables/useMessageBrokers';
 import { useRisks } from '../composables/useRisks';
-import type { Risk } from '../api/client';
+import type { Risk } from 'api/client';
 
 type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none'
 type TraversalMode = 'direct' | 'full-chain' | 'critical-path'

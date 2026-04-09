@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import { CreateSqlAccountRequest, CreateSqlAccountResponse, PasswordSource } from '../api/client'
+import { CreateSqlAccountRequest, CreateSqlAccountResponse, PasswordSource } from 'api/client'
 
 export function useCreateSqlAccount() {
   const client = useFuseClient()
