@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
-import type { IPermissionAreaCatalog } from '../api/client'
+import type { IPermissionAreaCatalog } from 'api/client'
 
 export function usePermissionCatalog() {
   const client = useFuseClient()
