@@ -39,30 +39,34 @@
           
           <!-- Client Secret Credentials (only when authMode is ClientSecret) -->
           <template v-if="form.authMode === 'ClientSecret'">
+            <q-banner
+              v-if="allowSharedClientSecretCredentials"
+              dense
+              class="bg-blue-1 text-primary q-mb-sm col-span-2"
+            >
+              Shared Azure manager credentials are available. Leave these fields empty to use shared credentials for this provider.
+            </q-banner>
             <q-input
               v-model="form.credentials.tenantId"
-              label="Tenant ID*"
+              :label="allowSharedClientSecretCredentials ? 'Tenant ID' : 'Tenant ID*'"
               dense
               outlined
-              required
-              :rules="[val => !!val || 'Tenant ID is required for Client Secret authentication']"
+              :rules="[tenantIdRule]"
             />
             <q-input
               v-model="form.credentials.clientId"
-              label="Client ID*"
+              :label="allowSharedClientSecretCredentials ? 'Client ID' : 'Client ID*'"
               dense
               outlined
-              required
-              :rules="[val => !!val || 'Client ID is required for Client Secret authentication']"
+              :rules="[clientIdRule]"
             />
             <q-input
               v-model="form.credentials.clientSecret"
-              label="Client Secret*"
+              :label="allowSharedClientSecretCredentials ? 'Client Secret' : 'Client Secret*'"
               type="password"
               dense
               outlined
-              required
-              :rules="[val => !!val || 'Client Secret is required for Client Secret authentication']"
+              :rules="[clientSecretRule]"
             />
           </template>
 
@@ -140,6 +144,7 @@ interface Props {
   initialValue?: Partial<SecretProviderResponse> | null
   loading?: boolean
   disabled?: boolean
+  allowSharedClientSecretCredentials?: boolean
 }
 
 interface Emits {
@@ -151,7 +156,8 @@ const props = withDefaults(defineProps<Props>(), {
   mode: 'create',
   initialValue: null,
   loading: false,
-  disabled: false
+  disabled: false,
+  allowSharedClientSecretCredentials: false
 })
 const emit = defineEmits<Emits>()
 
@@ -188,6 +194,30 @@ const hasAnyCapability = computed(() =>
   form.capabilities.rotate || 
   form.capabilities.read
 )
+
+const hasAnyClientSecretCredentialInput = computed(() =>
+  !!form.credentials.tenantId ||
+  !!form.credentials.clientId ||
+  !!form.credentials.clientSecret
+)
+
+const shouldRequirePerProviderCredentials = computed(() =>
+  form.authMode === SecretProviderAuthMode.ClientSecret && !props.allowSharedClientSecretCredentials
+)
+
+const shouldValidateAllClientSecretFields = computed(() =>
+  form.authMode === SecretProviderAuthMode.ClientSecret &&
+  (shouldRequirePerProviderCredentials.value || hasAnyClientSecretCredentialInput.value)
+)
+
+const tenantIdRule = (val: string) =>
+  !shouldValidateAllClientSecretFields.value || !!val || 'Tenant ID is required when using per-provider Client Secret authentication'
+
+const clientIdRule = (val: string) =>
+  !shouldValidateAllClientSecretFields.value || !!val || 'Client ID is required when using per-provider Client Secret authentication'
+
+const clientSecretRule = (val: string) =>
+  !shouldValidateAllClientSecretFields.value || !!val || 'Client Secret is required when using per-provider Client Secret authentication'
 
 function parseCapabilities(capabilities?: string | number): { check: boolean; create: boolean; rotate: boolean; read: boolean } {
   if (typeof capabilities === 'string') {
