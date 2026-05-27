@@ -6,4 +6,7 @@ export const IntegrationPermissions = {
   SqlGrantsApply: 'sqlintegrations:grants:apply',
   AzureKeyVaultConnectionsCreate: 'secretproviders:create',
   AzureKeyVaultConnectionsDelete: 'secretproviders:delete',
+  AzureKeyVaultSecretsCreate: 'secretproviders:secrets:create',
+  AzureKeyVaultSecretsRotate: 'secretproviders:secrets:rotate',
+  AzureKeyVaultSecretsReveal: 'secretproviders:secrets:reveal',
 } as const
