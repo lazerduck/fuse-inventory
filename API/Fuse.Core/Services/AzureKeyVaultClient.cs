@@ -13,13 +13,16 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
 {
     private readonly ITokenCredentialFactory _credentialFactory;
     private readonly IKeyVaultSecretClientFactory _secretClientFactory;
+    private readonly IAzureIntegrationManagerService? _azureIntegrationManagerService;
 
     public AzureKeyVaultClient(
         ITokenCredentialFactory? credentialFactory = null,
-        IKeyVaultSecretClientFactory? secretClientFactory = null)
+        IKeyVaultSecretClientFactory? secretClientFactory = null,
+        IAzureIntegrationManagerService? azureIntegrationManagerService = null)
     {
         _credentialFactory = credentialFactory ?? new DefaultTokenCredentialFactory();
         _secretClientFactory = secretClientFactory ?? new DefaultKeyVaultSecretClientFactory();
+        _azureIntegrationManagerService = azureIntegrationManagerService;
     }
 
     public async Task<Result> TestConnectionAsync(Uri vaultUri, SecretProviderAuthMode authMode, SecretProviderCredentials? credentials)
@@ -53,7 +56,7 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
     {
         try
         {
-            var client = GetClient(provider);
+            var client = await GetClientAsync(provider);
             var response = await client.GetSecretAsync(secretName);
             return Result.Success();
         }
@@ -71,7 +74,7 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
     {
         try
         {
-            var client = GetClient(provider);
+            var client = await GetClientAsync(provider);
             await client.SetSecretAsync(secretName, secretValue);
             return Result.Success();
         }
@@ -89,7 +92,7 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
     {
         try
         {
-            var client = GetClient(provider);
+            var client = await GetClientAsync(provider);
             // Setting a new value creates a new version
             await client.SetSecretAsync(secretName, newSecretValue);
             return Result.Success();
@@ -108,7 +111,7 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
     {
         try
         {
-            var client = GetClient(provider);
+            var client = await GetClientAsync(provider);
             KeyVaultSecret secret;
             if (!string.IsNullOrEmpty(version))
             {
@@ -137,7 +140,7 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
     {
         try
         {
-            var client = GetClient(provider);
+            var client = await GetClientAsync(provider);
             var items = new List<SecretMetadata>();
 
             await foreach (var secretProps in client.GetPropertiesOfSecretsAsync())
@@ -162,11 +165,31 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
         }
     }
 
-    private IKeyVaultSecretClient GetClient(SecretProvider provider)
+    private async Task<IKeyVaultSecretClient> GetClientAsync(SecretProvider provider)
     {
-        var credential = _credentialFactory.Create(provider.AuthMode, provider.Credentials);
+        var credentials = await ResolveProviderCredentialsAsync(provider);
+        var credential = _credentialFactory.Create(provider.AuthMode, credentials);
         return _secretClientFactory.Create(provider.VaultUri, credential);
     }
+
+    private async Task<SecretProviderCredentials?> ResolveProviderCredentialsAsync(SecretProvider provider)
+    {
+        if (provider.AuthMode != SecretProviderAuthMode.ClientSecret)
+            return provider.Credentials;
+
+        var sharedCredentials = _azureIntegrationManagerService is null
+            ? null
+            : await _azureIntegrationManagerService.GetClientSecretCredentialsAsync();
+        return HasCompleteClientSecretCredentials(sharedCredentials)
+            ? sharedCredentials
+            : provider.Credentials;
+    }
+
+    private static bool HasCompleteClientSecretCredentials(SecretProviderCredentials? credentials)
+        => credentials is not null
+           && !string.IsNullOrWhiteSpace(credentials.TenantId)
+           && !string.IsNullOrWhiteSpace(credentials.ClientId)
+           && !string.IsNullOrWhiteSpace(credentials.ClientSecret);
 }
 
 // Default factories (internal) used when not injected

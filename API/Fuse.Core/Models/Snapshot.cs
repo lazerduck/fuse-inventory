@@ -21,7 +21,8 @@ public record Snapshot(
     IReadOnlyList<MessageBroker> MessageBrokers,
     SecurityState Security,
     SecurityContext SecurityContext,
-    PasswordGeneratorConfig? PasswordGeneratorConfig = null
+    PasswordGeneratorConfig? PasswordGeneratorConfig = null,
+    AzureIntegrationManager? AzureIntegrationManager = null
 )
 {
     public Snapshot(

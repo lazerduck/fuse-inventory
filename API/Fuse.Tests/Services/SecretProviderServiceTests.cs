@@ -42,6 +42,15 @@ public class SecretProviderServiceTests
         return mock;
     }
 
+    private static Mock<IAzureIntegrationManagerService> CreateMockAzureIntegrationManager(SecretProviderCredentials? sharedCredentials = null)
+    {
+        var mock = new Mock<IAzureIntegrationManagerService>();
+        mock.Setup(m => m.GetClientSecretCredentialsAsync()).ReturnsAsync(sharedCredentials);
+        mock.Setup(m => m.UpdateClientSecretCredentialsAsync(It.IsAny<SecretProviderCredentials>()))
+            .ReturnsAsync((SecretProviderCredentials creds) => Result<AzureIntegrationManager>.Success(new AzureIntegrationManager(creds, DateTime.UtcNow)));
+        return mock;
+    }
+
     [Fact]
     public async Task GetSecretProvidersAsync_ReturnsAllProviders()
     {
@@ -176,6 +185,54 @@ public class SecretProviderServiceTests
         Assert.False(result.IsSuccess);
         Assert.Contains("Client secret authentication requires", result.Error);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CreateSecretProviderAsync_WithSharedClientSecretCredentials_CreatesProvider()
+    {
+        var sharedCredentials = new SecretProviderCredentials("tenant-id", "client-id", "client-secret");
+        var store = NewStore();
+        var mockClient = CreateMockClient(testConnectionSuccess: true);
+        var mockManager = CreateMockAzureIntegrationManager(sharedCredentials);
+        var service = new SecretProviderService(store, mockClient.Object, mockManager.Object);
+        var command = new CreateSecretProvider(
+            "Test Provider",
+            new Uri("https://vault.azure.net"),
+            SecretProviderAuthMode.ClientSecret,
+            null,
+            SecretProviderCapabilities.Check
+        );
+
+        var result = await service.CreateSecretProviderAsync(command);
+
+        Assert.True(result.IsSuccess);
+        mockClient.Verify(c => c.TestConnectionAsync(
+            It.IsAny<Uri>(),
+            SecretProviderAuthMode.ClientSecret,
+            It.Is<SecretProviderCredentials>(creds => creds.ClientId == "client-id")), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateSecretProviderAsync_WithExplicitClientSecretCredentials_StoresCredentialsInManager()
+    {
+        var credentials = new SecretProviderCredentials("tenant-id", "client-id", "client-secret");
+        var store = NewStore();
+        var mockClient = CreateMockClient(testConnectionSuccess: true);
+        var mockManager = CreateMockAzureIntegrationManager();
+        var service = new SecretProviderService(store, mockClient.Object, mockManager.Object);
+        var command = new CreateSecretProvider(
+            "Test Provider",
+            new Uri("https://vault.azure.net"),
+            SecretProviderAuthMode.ClientSecret,
+            credentials,
+            SecretProviderCapabilities.Check
+        );
+
+        var result = await service.CreateSecretProviderAsync(command);
+
+        Assert.True(result.IsSuccess);
+        mockManager.Verify(m => m.UpdateClientSecretCredentialsAsync(credentials), Times.Once);
+        Assert.Null(result.Value!.Credentials);
     }
 
     [Fact]

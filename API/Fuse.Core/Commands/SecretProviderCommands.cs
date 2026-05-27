@@ -46,3 +46,7 @@ public record RevealSecret(
     string SecretName,
     string? Version
 );
+
+public record UpdateAzureIntegrationManager(
+    SecretProviderCredentials Credentials
+);

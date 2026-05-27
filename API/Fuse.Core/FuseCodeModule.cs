@@ -95,6 +95,7 @@ public static class FuseCodeModule
         services.AddScoped<IPasswordGeneratorService, PasswordGeneratorService>();
 
         // Register Secret Provider services
+        services.AddScoped<IAzureIntegrationManagerService, AzureIntegrationManagerService>();
         services.AddScoped<ISecretProviderService, SecretProviderService>();
         services.AddScoped<IAzureKeyVaultClient, AzureKeyVaultClient>();
         services.AddScoped<ISecretOperationService, SecretOperationService>();

@@ -14,13 +14,57 @@ public class SecretProviderController : ControllerBase
 {
     private readonly ISecretProviderService _secretProviderService;
     private readonly ISecretOperationService _secretOperationService;
+    private readonly IAzureIntegrationManagerService _azureIntegrationManagerService;
 
     public SecretProviderController(
         ISecretProviderService secretProviderService,
-        ISecretOperationService secretOperationService)
+        ISecretOperationService secretOperationService,
+        IAzureIntegrationManagerService azureIntegrationManagerService)
     {
         _secretProviderService = secretProviderService;
         _secretOperationService = secretOperationService;
+        _azureIntegrationManagerService = azureIntegrationManagerService;
+    }
+
+    [HttpGet("azure-manager")]
+    [SwaggerOperation(OperationId = "azureIntegrationManagerGET")]
+    [RequirePermissionKey(SecretProviderPermissions.ReadKey)]
+    [ProducesResponseType(200, Type = typeof(AzureIntegrationManagerResponse))]
+    public async Task<ActionResult<AzureIntegrationManagerResponse>> GetAzureIntegrationManager()
+    {
+        var manager = await _azureIntegrationManagerService.GetManagerAsync();
+        var credentials = manager?.ClientSecretCredentials;
+        var hasCredentials = credentials is not null
+                             && !string.IsNullOrWhiteSpace(credentials.TenantId)
+                             && !string.IsNullOrWhiteSpace(credentials.ClientId)
+                             && !string.IsNullOrWhiteSpace(credentials.ClientSecret);
+
+        return Ok(new AzureIntegrationManagerResponse(
+            HasClientSecretCredentials: hasCredentials,
+            TenantId: hasCredentials ? credentials!.TenantId : null,
+            ClientId: hasCredentials ? credentials!.ClientId : null,
+            UpdatedAt: hasCredentials ? manager!.UpdatedAt : null
+        ));
+    }
+
+    [HttpPut("azure-manager")]
+    [SwaggerOperation(OperationId = "azureIntegrationManagerPUT")]
+    [RequirePermissionKey(SecretProviderPermissions.UpdateKey)]
+    [ProducesResponseType(200, Type = typeof(AzureIntegrationManagerResponse))]
+    [ProducesResponseType(400)]
+    public async Task<ActionResult<AzureIntegrationManagerResponse>> UpdateAzureIntegrationManager([FromBody] UpdateAzureIntegrationManager command)
+    {
+        var result = await _azureIntegrationManagerService.UpdateClientSecretCredentialsAsync(command.Credentials);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.Error });
+
+        var manager = result.Value!;
+        return Ok(new AzureIntegrationManagerResponse(
+            HasClientSecretCredentials: true,
+            TenantId: manager.ClientSecretCredentials!.TenantId,
+            ClientId: manager.ClientSecretCredentials!.ClientId,
+            UpdatedAt: manager.UpdatedAt
+        ));
     }
 
     [HttpGet]

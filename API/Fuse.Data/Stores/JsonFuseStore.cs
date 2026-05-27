@@ -59,7 +59,8 @@ public sealed class JsonFuseStore : IFuseStore
                 MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct),
                 SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
-                PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct)
+                PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
+                AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct)
 
             );
 
@@ -121,6 +122,8 @@ public sealed class JsonFuseStore : IFuseStore
                 writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
             if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
                 writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
+            if (_cache is null || !ReferenceEquals(_cache.AzureIntegrationManager, snapshot.AzureIntegrationManager))
+                writeTasks.Add(WriteAsync("azureintegrationmanager.json", snapshot.AzureIntegrationManager, ct));
 
             if (writeTasks.Count > 0)
                 await Task.WhenAll(writeTasks);

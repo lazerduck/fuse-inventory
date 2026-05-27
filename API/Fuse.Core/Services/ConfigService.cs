@@ -281,7 +281,8 @@ public class ConfigService : IConfigService
                 MessageBrokers: current.MessageBrokers,
                 Security: current.Security,
                 SecurityContext: current.SecurityContext,
-                PasswordGeneratorConfig: current.PasswordGeneratorConfig
+                PasswordGeneratorConfig: current.PasswordGeneratorConfig,
+                AzureIntegrationManager: current.AzureIntegrationManager
             );
         }, ct);
         
