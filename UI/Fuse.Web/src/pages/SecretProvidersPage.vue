@@ -55,15 +55,28 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
+            <q-btn
+              flat
+              dense
+              round
+              icon="manage_search"
+              color="secondary"
+              @click="router.push({ name: 'keyVaultExplorer', params: { id: props.row.id } })"
+            >
+              <q-tooltip>Explore Vault</q-tooltip>
+            </q-btn>
             <q-btn 
               flat 
               dense 
               round 
               icon="edit" 
               color="primary" 
+              class="q-ml-xs"
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
               @click="openEditDialog(props.row)" 
-            />
+            >
+              <q-tooltip>Edit Provider</q-tooltip>
+            </q-btn>
             <q-btn
               flat
               dense
@@ -73,7 +86,9 @@
               class="q-ml-xs"
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsDelete)"
               @click="confirmDelete(props.row)"
-            />
+            >
+              <q-tooltip>Delete Provider</q-tooltip>
+            </q-btn>
           </q-td>
         </template>
         <template #no-data>
@@ -99,6 +114,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -137,6 +153,7 @@ interface SecretProviderFormModel {
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
+const router = useRouter()
 
 const pagination = { rowsPerPage: 10 }
 
