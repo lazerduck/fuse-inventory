@@ -106,16 +106,16 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-             <q-btn
-               flat
-               dense
-               round
-               icon="manage_search"
-               color="secondary"
-               @click="openExplorer(props.row)"
-             >
-               <q-tooltip>{{ isAppConfiguration(props.row) ? 'Explore App Configuration' : 'Explore Vault' }}</q-tooltip>
-             </q-btn>
+            <q-btn
+              flat
+              dense
+              round
+              icon="manage_search"
+              color="secondary"
+              @click="openExplorer(props.row)"
+            >
+              <q-tooltip>{{ isAppConfiguration(props.row) ? 'Explore App Configuration' : 'Explore Vault' }}</q-tooltip>
+            </q-btn>
             <q-btn 
               flat 
               dense 
