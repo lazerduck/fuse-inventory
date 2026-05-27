@@ -25,3 +25,11 @@ public record SecretMetadataResponse
     DateTimeOffset? UpdatedOn,
     string? ContentType
 );
+
+public record AzureIntegrationManagerResponse
+(
+    bool HasClientSecretCredentials,
+    string? TenantId,
+    string? ClientId,
+    DateTime? UpdatedAt
+);

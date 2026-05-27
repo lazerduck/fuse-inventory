@@ -113,6 +113,20 @@ public class AzureKeyVaultClientTests
         public IKeyVaultSecretClient Create(Uri vaultUri, TokenCredential credential) => Instance;
     }
 
+    private sealed class FakeAzureIntegrationManagerService : IAzureIntegrationManagerService
+    {
+        public SecretProviderCredentials? Credentials { get; set; }
+
+        public Task<AzureIntegrationManager?> GetManagerAsync()
+            => Task.FromResult(Credentials is null ? null : new AzureIntegrationManager(Credentials, DateTime.UtcNow));
+
+        public Task<SecretProviderCredentials?> GetClientSecretCredentialsAsync()
+            => Task.FromResult(Credentials);
+
+        public Task<Result<AzureIntegrationManager>> UpdateClientSecretCredentialsAsync(SecretProviderCredentials credentials)
+            => Task.FromResult(Result<AzureIntegrationManager>.Success(new AzureIntegrationManager(credentials, DateTime.UtcNow)));
+    }
+
     private static SecretProvider NewProvider(SecretProviderAuthMode mode, SecretProviderCapabilities caps, SecretProviderCredentials? creds = null) => new(
         Id: Guid.NewGuid(),
         Name: "prov",
@@ -241,6 +255,25 @@ public class AzureKeyVaultClientTests
         var result = await client.TestConnectionAsync(new Uri("https://unit-test.vault.azure.net"), SecretProviderAuthMode.ClientSecret, new SecretProviderCredentials(null, null, null));
         Assert.False(result.IsSuccess);
         Assert.Contains("Client secret credentials", result.Error);
+    }
+
+    [Fact]
+    public async Task ClientSecretProvider_UsesSharedManagerCredentials_WhenProviderCredentialsMissing()
+    {
+        var cf = new FakeCredentialFactory();
+        var sf = new FakeSecretClientFactory();
+        await sf.Instance.SetSecretAsync("shared-secret", "value");
+        var manager = new FakeAzureIntegrationManagerService
+        {
+            Credentials = new SecretProviderCredentials("tenant", "client", "secret")
+        };
+        var client = new AzureKeyVaultClient(cf, sf, manager);
+        var provider = NewProvider(SecretProviderAuthMode.ClientSecret, SecretProviderCapabilities.Read, null);
+
+        var result = await client.ReadSecretAsync(provider, "shared-secret");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("value", result.Value);
     }
 
     [Fact]

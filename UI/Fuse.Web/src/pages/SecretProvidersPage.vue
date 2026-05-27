@@ -23,6 +23,57 @@
     </q-banner>
 
     <q-card v-if="fuseStore.canRead" class="content-card">
+      <q-card-section class="section-header">
+        <div>
+          <div class="text-h6">Azure Integration Manager</div>
+          <p class="text-body2 text-grey-7 q-mt-xs q-mb-none">
+            Manage shared Azure Client Secret credentials used across key vault providers.
+          </p>
+        </div>
+        <q-btn
+          color="primary"
+          :label="hasSharedClientSecretCredentials ? 'Update Shared Credentials' : 'Set Shared Credentials'"
+          icon="key"
+          :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
+          @click="openAzureManagerDialog"
+        />
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <q-banner
+          v-if="azureManagerError"
+          dense
+          class="bg-red-1 text-negative q-mb-md"
+        >
+          {{ azureManagerError }}
+        </q-banner>
+
+        <q-skeleton v-if="isAzureManagerLoading" type="QToolbar" />
+
+        <template v-else>
+          <div class="row q-col-gutter-md items-center">
+            <div class="col-auto">
+              <q-chip
+                square
+                :color="hasSharedClientSecretCredentials ? 'positive' : 'grey-6'"
+                text-color="white"
+                :label="hasSharedClientSecretCredentials ? 'Shared credentials configured' : 'No shared credentials configured'"
+              />
+            </div>
+            <div class="col text-body2 text-grey-7">
+              Providers using Client Secret can omit per-provider credentials and inherit from this shared manager.
+            </div>
+          </div>
+          <div v-if="hasSharedClientSecretCredentials" class="q-mt-md text-body2 text-grey-8">
+            <div><strong>Tenant ID:</strong> {{ azureManager?.tenantId ?? 'Not set' }}</div>
+            <div><strong>Client ID:</strong> {{ azureManager?.clientId ?? 'Not set' }}</div>
+            <div><strong>Last Updated:</strong> {{ formatUpdatedAt(azureManager?.updatedAt) }}</div>
+          </div>
+        </template>
+      </q-card-section>
+    </q-card>
+
+    <q-card v-if="fuseStore.canRead" class="content-card">
       <q-card-section>
         <p class="text-body2 text-grey-7">
           Secret providers allow Fuse to securely manage credentials through Azure Key Vault.
@@ -105,9 +156,57 @@
         :initial-value="selectedProvider"
         :loading="formLoading"
         :disabled="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
+        :allow-shared-client-secret-credentials="hasSharedClientSecretCredentials"
         @submit="handleFormSubmit"
         @cancel="closeFormDialog"
       />
+    </q-dialog>
+
+    <q-dialog v-model="isAzureManagerDialogOpen" persistent>
+      <q-card class="form-dialog">
+        <q-card-section class="dialog-header">
+          <div class="text-h6">Shared Azure Credentials</div>
+          <q-btn flat round dense icon="close" @click="closeAzureManagerDialog" />
+        </q-card-section>
+        <q-separator />
+        <q-form @submit.prevent="submitAzureManagerCredentials">
+          <q-card-section class="form-grid">
+            <q-input
+              v-model="azureManagerForm.tenantId"
+              label="Tenant ID*"
+              dense
+              outlined
+              :rules="[val => !!val || 'Tenant ID is required']"
+            />
+            <q-input
+              v-model="azureManagerForm.clientId"
+              label="Client ID*"
+              dense
+              outlined
+              :rules="[val => !!val || 'Client ID is required']"
+            />
+            <q-input
+              v-model="azureManagerForm.clientSecret"
+              label="Client Secret*"
+              type="password"
+              dense
+              outlined
+              :rules="[val => !!val || 'Client Secret is required']"
+            />
+          </q-card-section>
+          <q-separator />
+          <q-card-actions align="right">
+            <q-btn flat label="Cancel" @click="closeAzureManagerDialog" />
+            <q-btn
+              color="primary"
+              type="submit"
+              label="Save Shared Credentials"
+              :loading="isUpdatingAzureManager"
+              :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
+            />
+          </q-card-actions>
+        </q-form>
+      </q-card>
     </q-dialog>
   </div>
 </template>
@@ -130,6 +229,7 @@ import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'
+import { useAzureIntegrationManager } from '../composables/useAzureIntegrationManager'
 import { getErrorMessage } from '../utils/error'
 import SecretProviderForm from '../components/secretProvider/SecretProviderForm.vue'
 
@@ -158,9 +258,20 @@ const router = useRouter()
 const pagination = { rowsPerPage: 10 }
 
 const { data, isLoading, error } = useSecretProviders()
+const {
+  data: azureManagerData,
+  isLoading: isAzureManagerLoading,
+  error: azureManagerQueryError,
+  updateMutation: updateAzureManagerMutation
+} = useAzureIntegrationManager()
 
 const secretProviders = computed(() => data.value ?? [])
 const secretProviderError = computed(() => (error.value ? getErrorMessage(error.value) : null))
+const azureManager = computed(() => azureManagerData.value)
+const azureManagerError = computed(() =>
+  azureManagerQueryError.value ? getErrorMessage(azureManagerQueryError.value) : null
+)
+const hasSharedClientSecretCredentials = computed(() => !!azureManager.value?.hasClientSecretCredentials)
 
 const columns: QTableColumn<SecretProviderResponse>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
@@ -172,6 +283,12 @@ const columns: QTableColumn<SecretProviderResponse>[] = [
 
 const isFormDialogOpen = ref(false)
 const selectedProvider = ref<SecretProviderResponse | null>(null)
+const isAzureManagerDialogOpen = ref(false)
+const azureManagerForm = ref({
+  tenantId: '',
+  clientId: '',
+  clientSecret: ''
+})
 
 function openCreateDialog() {
   selectedProvider.value = null
@@ -187,6 +304,30 @@ function openEditDialog(provider: SecretProviderResponse) {
 function closeFormDialog() {
   selectedProvider.value = null
   isFormDialogOpen.value = false
+}
+
+function openAzureManagerDialog() {
+  azureManagerForm.value = {
+    tenantId: azureManager.value?.tenantId ?? '',
+    clientId: azureManager.value?.clientId ?? '',
+    clientSecret: ''
+  }
+  isAzureManagerDialogOpen.value = true
+}
+
+function closeAzureManagerDialog() {
+  isAzureManagerDialogOpen.value = false
+}
+
+function formatUpdatedAt(value?: string | null): string {
+  if (!value) return 'Not set'
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  return parsed.toLocaleString()
 }
 
 function parseCapabilities(capabilities?: string | SecretProviderCapabilities): string[] {
@@ -259,6 +400,29 @@ const deleteMutation = useMutation({
 const formLoading = computed(() =>
   selectedProvider.value ? updateMutation.isPending.value : createMutation.isPending.value
 )
+
+const isUpdatingAzureManager = computed(() => updateAzureManagerMutation.isPending.value)
+
+function submitAzureManagerCredentials() {
+  updateAzureManagerMutation.mutate(
+    {
+      credentials: {
+        tenantId: azureManagerForm.value.tenantId,
+        clientId: azureManagerForm.value.clientId,
+        clientSecret: azureManagerForm.value.clientSecret
+      }
+    },
+    {
+      onSuccess: () => {
+        Notify.create({ type: 'positive', message: 'Shared Azure credentials updated' })
+        closeAzureManagerDialog()
+      },
+      onError: (err) => {
+        Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update shared Azure credentials') })
+      }
+    }
+  )
+}
 
 function handleFormSubmit(values: SecretProviderFormModel) {
   const capabilities = buildCapabilitiesEnum(values.capabilities)
