@@ -30,6 +30,9 @@ public class SecretOperationService : ISecretOperationService
         if (provider is null)
             return Result<IReadOnlyList<SecretMetadata>>.Failure($"Secret provider with ID '{providerId}' not found.", ErrorType.NotFound);
 
+        if (SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri))
+            return Result<IReadOnlyList<SecretMetadata>>.Failure("This integration points to Azure App Configuration. Use the App Configuration explorer endpoint instead.", ErrorType.Validation);
+
         if (!provider.Capabilities.HasFlag(SecretProviderCapabilities.Check))
             return Result<IReadOnlyList<SecretMetadata>>.Failure("This secret provider does not have Check capability enabled.");
 
@@ -43,6 +46,9 @@ public class SecretOperationService : ISecretOperationService
         
         if (provider is null)
             return Result.Failure($"Secret provider with ID '{command.ProviderId}' not found.", ErrorType.NotFound);
+
+        if (SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri))
+            return Result.Failure("Create secret is only supported for Azure Key Vault integrations.", ErrorType.Validation);
 
         if (!provider.Capabilities.HasFlag(SecretProviderCapabilities.Create))
             return Result.Failure("This secret provider does not have Create capability enabled.", ErrorType.Validation);
@@ -81,6 +87,9 @@ public class SecretOperationService : ISecretOperationService
         if (provider is null)
             return Result.Failure($"Secret provider with ID '{command.ProviderId}' not found.", ErrorType.NotFound);
 
+        if (SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri))
+            return Result.Failure("Rotate secret is only supported for Azure Key Vault integrations.", ErrorType.Validation);
+
         if (!provider.Capabilities.HasFlag(SecretProviderCapabilities.Rotate))
             return Result.Failure("This secret provider does not have Rotate capability enabled.", ErrorType.Validation);
 
@@ -117,6 +126,9 @@ public class SecretOperationService : ISecretOperationService
         
         if (provider is null)
             return Result<string>.Failure($"Secret provider with ID '{command.ProviderId}' not found.", ErrorType.NotFound);
+
+        if (SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri))
+            return Result<string>.Failure("Reveal secret is only supported for Azure Key Vault integrations.", ErrorType.Validation);
 
         if (!provider.Capabilities.HasFlag(SecretProviderCapabilities.Read))
             return Result<string>.Failure("This secret provider does not have Read capability enabled.", ErrorType.Validation);

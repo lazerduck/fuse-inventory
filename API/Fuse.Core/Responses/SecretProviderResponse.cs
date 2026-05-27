@@ -33,3 +33,15 @@ public record AzureIntegrationManagerResponse
     string? ClientId,
     DateTime? UpdatedAt
 );
+
+public record AppConfigurationEntryResponse
+(
+    string Key,
+    string? Value,
+    string? Label,
+    string? ContentType,
+    DateTimeOffset? LastModified,
+    bool IsLocked,
+    bool IsKeyVaultReference,
+    string? KeyVaultReferenceUri
+);

@@ -2,8 +2,8 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Secret Providers</h1>
-        <p class="subtitle">Manage Azure Key Vault secret providers for secure credential storage.</p>
+        <h1>Azure Integrations</h1>
+        <p class="subtitle">Manage Azure Key Vault and Azure App Configuration integrations.</p>
       </div>
       <q-btn 
         color="primary" 
@@ -106,16 +106,16 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
-              flat
-              dense
-              round
-              icon="manage_search"
-              color="secondary"
-              @click="router.push({ name: 'keyVaultExplorer', params: { id: props.row.id } })"
-            >
-              <q-tooltip>Explore Vault</q-tooltip>
-            </q-btn>
+             <q-btn
+               flat
+               dense
+               round
+               icon="manage_search"
+               color="secondary"
+               @click="openExplorer(props.row)"
+             >
+               <q-tooltip>{{ isAppConfiguration(props.row) ? 'Explore App Configuration' : 'Explore Vault' }}</q-tooltip>
+             </q-btn>
             <q-btn 
               flat 
               dense 
@@ -144,7 +144,7 @@
         </template>
         <template #no-data>
           <div class="q-pa-md text-grey-7">
-            No secret providers configured. Click "Add Provider" to configure Azure Key Vault integration.
+              No integrations configured. Click "Add Provider" to configure Azure Key Vault or App Configuration.
           </div>
         </template>
       </q-table>
@@ -231,6 +231,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useAzureIntegrationManager } from '../composables/useAzureIntegrationManager'
 import { getErrorMessage } from '../utils/error'
+import { isAppConfigurationEndpoint } from '../utils/secretProviders'
 import SecretProviderForm from '../components/secretProvider/SecretProviderForm.vue'
 
 interface SecretProviderFormModel {
@@ -275,7 +276,7 @@ const hasSharedClientSecretCredentials = computed(() => !!azureManager.value?.ha
 
 const columns: QTableColumn<SecretProviderResponse>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'vaultUri', label: 'Vault URI', field: 'vaultUri', align: 'left' },
+  { name: 'vaultUri', label: 'Endpoint URI', field: 'vaultUri', align: 'left' },
   { name: 'authMode', label: 'Auth Mode', field: 'authMode', align: 'left' },
   { name: 'capabilities', label: 'Capabilities', field: 'capabilities', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
@@ -474,6 +475,18 @@ function confirmDelete(provider: SecretProviderResponse) {
     cancel: true,
     persistent: true
   }).onOk(() => deleteMutation.mutate(provider.id!))
+}
+
+function isAppConfiguration(provider: SecretProviderResponse): boolean {
+  return isAppConfigurationEndpoint(provider.vaultUri)
+}
+
+function openExplorer(provider: SecretProviderResponse) {
+  if (!provider.id) return
+  router.push({
+    name: isAppConfiguration(provider) ? 'appConfigExplorer' : 'keyVaultExplorer',
+    params: { id: provider.id }
+  })
 }
 </script>
 

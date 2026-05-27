@@ -37,3 +37,13 @@ export function hasCapability(
   if (!provider) return false
   return parseCapabilities(provider.capabilities).includes(capability)
 }
+
+export function isAppConfigurationEndpoint(uri?: string | null): boolean {
+  if (!uri) return false
+
+  try {
+    return new URL(uri).hostname.toLowerCase().endsWith('.azconfig.io')
+  } catch {
+    return false
+  }
+}

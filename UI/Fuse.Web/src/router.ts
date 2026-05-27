@@ -135,6 +135,11 @@ const router = createRouter({
       component: () => import('./pages/KeyVaultExplorerPage.vue')
     },
     {
+      path: '/secret-providers/:id/app-configuration',
+      name: 'appConfigExplorer',
+      component: () => import('./pages/AppConfigurationExplorerPage.vue')
+    },
+    {
       path: '/sql-integrations',
       name: 'sqlIntegrations',
       component: () => import('./pages/SqlIntegrationsPage.vue')

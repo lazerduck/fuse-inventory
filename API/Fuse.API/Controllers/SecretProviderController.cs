@@ -14,15 +14,18 @@ public class SecretProviderController : ControllerBase
 {
     private readonly ISecretProviderService _secretProviderService;
     private readonly ISecretOperationService _secretOperationService;
+    private readonly IAppConfigurationOperationService _appConfigurationOperationService;
     private readonly IAzureIntegrationManagerService _azureIntegrationManagerService;
 
     public SecretProviderController(
         ISecretProviderService secretProviderService,
         ISecretOperationService secretOperationService,
+        IAppConfigurationOperationService appConfigurationOperationService,
         IAzureIntegrationManagerService azureIntegrationManagerService)
     {
         _secretProviderService = secretProviderService;
         _secretOperationService = secretOperationService;
+        _appConfigurationOperationService = appConfigurationOperationService;
         _azureIntegrationManagerService = azureIntegrationManagerService;
     }
 
@@ -223,6 +226,43 @@ public class SecretProviderController : ControllerBase
 
         var response = result.Value!
             .Select(s => new SecretMetadataResponse(s.Name, s.Enabled, s.UpdatedOn, s.ContentType));
+
+        return Ok(response);
+    }
+
+    [HttpGet("{providerId}/app-configuration")]
+    [SwaggerOperation(OperationId = "appConfigurationAll")]
+    [RequirePermissionKey(SecretProviderPermissions.ReadKey)]
+    [ProducesResponseType(200, Type = typeof(IEnumerable<AppConfigurationEntryResponse>))]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<ActionResult<IEnumerable<AppConfigurationEntryResponse>>> GetAppConfigurationEntries(
+        [FromRoute] Guid providerId,
+        [FromQuery] string? keySearch = null,
+        [FromQuery] string? keyPrefix = null,
+        [FromQuery] string? label = null)
+    {
+        var result = await _appConfigurationOperationService.ListKeyValuesAsync(providerId, keySearch, keyPrefix, label);
+
+        if (!result.IsSuccess)
+        {
+            return result.ErrorType switch
+            {
+                ErrorType.NotFound => NotFound(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        var response = result.Value!.Select(entry => new AppConfigurationEntryResponse(
+            Key: entry.Key,
+            Value: entry.Value,
+            Label: entry.Label,
+            ContentType: entry.ContentType,
+            LastModified: entry.LastModified,
+            IsLocked: entry.IsLocked,
+            IsKeyVaultReference: entry.IsKeyVaultReference,
+            KeyVaultReferenceUri: entry.KeyVaultReferenceUri
+        ));
 
         return Ok(response);
     }

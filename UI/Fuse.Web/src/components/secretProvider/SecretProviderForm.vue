@@ -18,12 +18,12 @@
           />
           <q-input
             v-model="form.vaultUri"
-            label="Vault URI*"
+            label="Endpoint URI*"
             dense
             outlined
             required
-            placeholder="https://your-vault-name.vault.azure.net/"
-            :rules="[val => !!val || 'Vault URI is required']"
+            placeholder="https://your-name.vault.azure.net/ or https://your-name.azconfig.io/"
+            :rules="[val => !!val || 'Endpoint URI is required']"
           />
           <q-select
             v-model="form.authMode"

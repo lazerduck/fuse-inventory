@@ -37,7 +37,12 @@
       This secret provider does not have the <strong>Check</strong> capability enabled. Secret listing is unavailable.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead && hasCheckCapability" class="content-card">
+    <q-banner v-if="provider && isAppConfigurationProvider" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      <template #avatar><q-icon name="warning" color="orange" /></template>
+      This integration points to Azure App Configuration. Use the App Configuration explorer for this endpoint.
+    </q-banner>
+
+    <q-card v-if="fuseStore.canRead && hasCheckCapability && !isAppConfigurationProvider" class="content-card">
       <q-card-section>
         <q-input
           v-model="searchQuery"
@@ -268,6 +273,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useSecretProviderSecrets } from '../composables/useSecretProviderSecrets'
 import { getErrorMessage } from '../utils/error'
+import { isAppConfigurationEndpoint } from '../utils/secretProviders'
 
 const route = useRoute()
 const router = useRouter()
@@ -282,8 +288,10 @@ const providerId = computed(() => route.params.id as string)
 
 const { data: providers } = useSecretProviders()
 const provider = computed(() => providers.value?.find(p => p.id === providerId.value) ?? null)
+const isAppConfigurationProvider = computed(() => isAppConfigurationEndpoint(provider.value?.vaultUri))
 
-const { data: secrets, isLoading, error, refetch } = useSecretProviderSecrets(providerId)
+const providerIdForSecrets = computed(() => (isAppConfigurationProvider.value ? null : providerId.value))
+const { data: secrets, isLoading, error, refetch } = useSecretProviderSecrets(providerIdForSecrets)
 
 const secretsError = computed(() => error.value ? getErrorMessage(error.value) : null)
 
