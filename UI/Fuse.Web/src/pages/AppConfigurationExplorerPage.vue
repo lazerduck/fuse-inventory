@@ -175,7 +175,7 @@ function closeFormDialog() {
 }
 
 function handleFormSubmit(values: { key: string; label: string; value: string }) {
-  const isCreate = !selectedEntry.value?.key
+  const isCreate = selectedEntry.value === null
 
   // Show confirmation dialog with before/after preview
   const oldValue = selectedEntry.value?.value ?? null

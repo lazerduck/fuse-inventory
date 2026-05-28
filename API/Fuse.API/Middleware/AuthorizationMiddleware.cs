@@ -25,8 +25,9 @@ public sealed class AuthorizationMiddleware
         var user = context.User;
         var endpoint = context.GetEndpoint();
         var endpointMetadata = endpoint?.Metadata;
-        var requiredKey = endpointMetadata
-            ?.GetMetadata<RequirePermissionKeyAttribute>()?.PermissionKey;
+        var permissionAttribute = endpointMetadata?.GetMetadata<RequirePermissionKeyAttribute>();
+        var requiredKey = permissionAttribute?.PermissionKey;
+        var requiredKeys = permissionAttribute?.PermissionKeys;
         var allowDuringSetup = endpointMetadata?.GetMetadata<AllowDuringSetupAttribute>() is not null;
 
         // Admins bypass all further checks
@@ -41,6 +42,8 @@ public sealed class AuthorizationMiddleware
 
         var snapshot = await fuseStore.GetAsync(cancellationToken);
         var posture = snapshot.SecurityContext.Posture;
+        // When the attribute specifies multiple keys, resolve the descriptor from the primary key.
+        // The RestrictedEditing short-circuit uses the most-permissive descriptor (any key allowed).
         var descriptor = ResolveDescriptor(requiredKey, permissionCatalogs);
 
         // During initial setup (no admin users yet), allow unauthenticated access to create
@@ -63,7 +66,7 @@ public sealed class AuthorizationMiddleware
         switch (posture)
         {
             case SecurityPosture.Unrestricted:
-                if (requiredKey is null)
+                if (requiredKeys is null)
                 {
                     await _next(context);
                     return;
@@ -75,7 +78,7 @@ public sealed class AuthorizationMiddleware
                     return;
                 }
 
-                if (await UserHasPermissionAsync(user, requiredKey, roleService, cancellationToken))
+                if (await UserHasAnyPermissionAsync(user, requiredKeys, roleService, cancellationToken))
                 {
                     await _next(context);
                     return;
@@ -87,7 +90,7 @@ public sealed class AuthorizationMiddleware
                 return;
 
             case SecurityPosture.RestrictedEditing:
-                if (requiredKey is null)
+                if (requiredKeys is null)
                 {
                     await _next(context);
                     return;
@@ -101,7 +104,7 @@ public sealed class AuthorizationMiddleware
                     return;
                 }
 
-                if (await UserHasPermissionAsync(user, requiredKey, roleService, cancellationToken))
+                if (await UserHasAnyPermissionAsync(user, requiredKeys, roleService, cancellationToken))
                 {
                     await _next(context);
                     return;
@@ -113,13 +116,13 @@ public sealed class AuthorizationMiddleware
                 return;
 
             case SecurityPosture.FullyRestricted:
-                if (requiredKey is null)
+                if (requiredKeys is null)
                 {
                     await _next(context);
                     return;
                 }
 
-                if (await UserHasPermissionAsync(user, requiredKey, roleService, cancellationToken))
+                if (await UserHasAnyPermissionAsync(user, requiredKeys, roleService, cancellationToken))
                 {
                     await _next(context);
                     return;
@@ -149,9 +152,9 @@ public sealed class AuthorizationMiddleware
         return null;
     }
 
-    private static async Task<bool> UserHasPermissionAsync(
+    private static async Task<bool> UserHasAnyPermissionAsync(
         ClaimsPrincipal user,
-        string requiredKey,
+        IReadOnlyList<string> requiredKeys,
         IFuseRoleService roleService,
         CancellationToken cancellationToken)
     {
@@ -172,7 +175,7 @@ public sealed class AuthorizationMiddleware
         if (!rolesResult.IsSuccess)
             return false;
 
-        return rolesResult.Value!
-            .Any(r => r.Permissions.Contains(requiredKey, StringComparer.OrdinalIgnoreCase));
+        var allPermissions = rolesResult.Value!.SelectMany(r => r.Permissions).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return requiredKeys.Any(key => allPermissions.Contains(key));
     }
 }

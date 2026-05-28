@@ -268,7 +268,7 @@ public class SecretProviderController : ControllerBase
 
     [HttpPut("{providerId}/app-configuration")]
     [SwaggerOperation(OperationId = "appConfigurationSet")]
-    [RequirePermissionKey(SecretProviderPermissions.AppConfigCreateKey)]
+    [RequirePermissionKey(SecretProviderPermissions.AppConfigCreateKey, SecretProviderPermissions.AppConfigUpdateKey)]
     [ProducesResponseType(200, Type = typeof(AppConfigurationEntryResponse))]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]

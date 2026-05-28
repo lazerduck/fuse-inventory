@@ -99,7 +99,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
-const isCreate = computed(() => !props.initialEntry?.key)
+const isCreate = computed(() => props.initialEntry === null)
 
 const form = reactive<FormModel>({
   key: '',
