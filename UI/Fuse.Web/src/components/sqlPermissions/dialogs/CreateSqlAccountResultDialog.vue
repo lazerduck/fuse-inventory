@@ -79,7 +79,7 @@ const dialogModel = computed({
 const passwordSourceLabel = computed(() => {
   switch (props.result?.passwordSource) {
     case PasswordSourceUsed.SecretProvider:
-      return 'Secret Provider'
+      return 'Azure Integration'
     case PasswordSourceUsed.Manual:
       return 'Manual Entry'
     case PasswordSourceUsed.NewSecret:

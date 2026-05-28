@@ -14,7 +14,7 @@
             dense
             outlined
             required
-            :rules="[val => !!val || 'Provider name is required']"
+            :rules="[val => !!val || 'Integration name is required']"
           />
           <q-input
             v-model="form.vaultUri"
@@ -44,7 +44,7 @@
               dense
               class="bg-blue-1 text-primary q-mb-sm col-span-2"
             >
-              Shared Azure manager credentials are available. Leave these fields empty to use shared credentials for this provider.
+              Shared Azure manager credentials are available. Leave these fields empty to use shared credentials for this integration.
             </q-banner>
             <q-input
               v-model="form.credentials.tenantId"
@@ -184,7 +184,7 @@ const form = reactive<SecretProviderFormModel>({
 })
 
 const isCreate = computed(() => props.mode === 'create')
-const title = computed(() => (isCreate.value ? 'Create Secret Provider' : 'Edit Secret Provider'))
+const title = computed(() => (isCreate.value ? 'Create Azure Integration' : 'Edit Azure Integration'))
 const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
 const loading = computed(() => props.loading)
 
@@ -211,13 +211,13 @@ const shouldValidateAllClientSecretFields = computed(() =>
 )
 
 const tenantIdRule = (val: string) =>
-  !shouldValidateAllClientSecretFields.value || !!val || 'Tenant ID is required when using per-provider Client Secret authentication'
+  !shouldValidateAllClientSecretFields.value || !!val || 'Tenant ID is required when using per-integration Client Secret authentication'
 
 const clientIdRule = (val: string) =>
-  !shouldValidateAllClientSecretFields.value || !!val || 'Client ID is required when using per-provider Client Secret authentication'
+  !shouldValidateAllClientSecretFields.value || !!val || 'Client ID is required when using per-integration Client Secret authentication'
 
 const clientSecretRule = (val: string) =>
-  !shouldValidateAllClientSecretFields.value || !!val || 'Client Secret is required when using per-provider Client Secret authentication'
+  !shouldValidateAllClientSecretFields.value || !!val || 'Client Secret is required when using per-integration Client Secret authentication'
 
 function parseCapabilities(capabilities?: string | number): { check: boolean; create: boolean; rotate: boolean; read: boolean } {
   if (typeof capabilities === 'string') {

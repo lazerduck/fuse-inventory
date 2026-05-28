@@ -19,7 +19,7 @@
     </q-banner>
 
     <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
-      You do not have permission to view secret providers. Please log in with appropriate credentials.
+      You do not have permission to view Azure integrations. Please log in with appropriate credentials.
     </q-banner>
 
     <q-card v-if="fuseStore.canRead" class="content-card">
@@ -27,7 +27,7 @@
         <div>
           <div class="text-h6">Azure Integration Manager</div>
           <p class="text-body2 text-grey-7 q-mt-xs q-mb-none">
-            Manage shared Azure Client Secret credentials used across key vault providers.
+            Manage shared Azure Client Secret credentials used across Azure integration endpoints.
           </p>
         </div>
         <q-btn
@@ -61,7 +61,7 @@
               />
             </div>
             <div class="col text-body2 text-grey-7">
-              Providers using Client Secret can omit per-provider credentials and inherit from this shared manager.
+              Integrations using Client Secret can omit per-integration credentials and inherit from this shared manager.
             </div>
           </div>
           <div v-if="hasSharedClientSecretCredentials" class="q-mt-md text-body2 text-grey-8">
@@ -76,8 +76,8 @@
     <q-card v-if="fuseStore.canRead" class="content-card">
       <q-card-section>
         <p class="text-body2 text-grey-7">
-          Secret providers allow Fuse to securely manage credentials through Azure Key Vault.
-          Configure providers with appropriate capabilities (Check, Create, Rotate, Read) based on your security requirements.
+          Azure integrations allow Fuse to securely manage credentials through Azure Key Vault and Azure App Configuration.
+          Configure integrations with appropriate capabilities (Check, Create, Rotate, Read) based on your security requirements.
         </p>
       </q-card-section>
 
@@ -126,7 +126,7 @@
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
               @click="openEditDialog(props.row)" 
             >
-              <q-tooltip>Edit Provider</q-tooltip>
+              <q-tooltip>Edit Integration</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -138,7 +138,7 @@
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsDelete)"
               @click="confirmDelete(props.row)"
             >
-              <q-tooltip>Delete Provider</q-tooltip>
+              <q-tooltip>Delete Integration</q-tooltip>
             </q-btn>
           </q-td>
         </template>

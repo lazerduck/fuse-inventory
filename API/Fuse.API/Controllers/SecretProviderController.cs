@@ -232,7 +232,7 @@ public class SecretProviderController : ControllerBase
 
     [HttpGet("{providerId}/app-configuration")]
     [SwaggerOperation(OperationId = "appConfigurationAll")]
-    [RequirePermissionKey(SecretProviderPermissions.ReadKey)]
+    [RequirePermissionKey(SecretProviderPermissions.AppConfigReadKey)]
     [ProducesResponseType(200, Type = typeof(IEnumerable<AppConfigurationEntryResponse>))]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]

@@ -97,7 +97,7 @@
             <template v-if="form.apiKeyKind === 'AzureKeyVault'">
               <q-select
                 v-model="form.apiKeyVaultProviderId"
-                label="Secret Provider"
+                label="Azure Integration"
                 dense
                 outlined
                 emit-value
@@ -105,7 +105,7 @@
                 clearable
                 :options="secretProviderOptions"
                 :disable="secretProviderOptions.length === 0"
-                :hint="secretProviderOptions.length === 0 ? 'No secret providers configured' : undefined"
+                :hint="secretProviderOptions.length === 0 ? 'No Azure integrations configured' : undefined"
               />
               <q-input v-model="form.apiKeyVaultSecretName" label="Secret Name" dense outlined />
               <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />

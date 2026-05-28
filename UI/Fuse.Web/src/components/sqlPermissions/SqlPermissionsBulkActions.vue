@@ -23,7 +23,7 @@
     <q-card-section class="text-caption">
       <div v-if="resolvableMissingCount > 0" class="row items-center q-gutter-xs">
         <q-icon name="person_add" color="positive" size="xs" />
-        <span>{{ resolvableMissingCount }} account(s) ready to create from Secret Providers</span>
+        <span>{{ resolvableMissingCount }} account(s) ready to create from Azure integrations</span>
       </div>
       <div v-if="resolvableDriftCount > 0" class="row items-center q-gutter-xs q-mt-xs">
         <q-icon name="sync" color="primary" size="xs" />
@@ -31,7 +31,7 @@
       </div>
       <div v-if="skippedAccountsCount > 0" class="row items-center q-gutter-xs text-orange q-mt-xs">
         <q-icon name="warning" color="orange" size="xs" />
-        <span>{{ skippedAccountsCount }} account(s) will be skipped (no Secret Provider linked)</span>
+        <span>{{ skippedAccountsCount }} account(s) will be skipped (no Azure integration linked)</span>
       </div>
     </q-card-section>
   </q-card>

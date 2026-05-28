@@ -14,7 +14,7 @@
             <q-icon name="person_add" color="positive" size="xs" />
             {{ resolvableMissingCount }} account(s) will be created
             <div class="text-grey-7 q-ml-lg">
-              Only accounts linked to a Secret Provider will be processed.
+              Only accounts linked to an Azure integration will be processed.
             </div>
           </div>
           <div v-if="resolvableDriftCount > 0" class="q-mb-sm">
@@ -23,7 +23,7 @@
           </div>
           <div v-if="skippedAccountsCount > 0" class="text-orange q-mb-sm">
             <q-icon name="warning" color="orange" size="xs" />
-            {{ skippedAccountsCount }} account(s) will be skipped (no Secret Provider linked)
+            {{ skippedAccountsCount }} account(s) will be skipped (no Azure integration linked)
           </div>
         </div>
 
@@ -31,8 +31,8 @@
           <template #avatar>
             <q-icon name="info" color="primary" />
           </template>
-          Passwords will be retrieved from linked Secret Providers.
-          Accounts without a Secret Provider link will be skipped.
+          Passwords will be retrieved from linked Azure integrations.
+          Accounts without an Azure integration link will be skipped.
         </q-banner>
       </q-card-section>
 
