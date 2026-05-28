@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Azure Integrations</h1>
+        <h1>Azure App Config & Key Vault</h1>
         <p class="subtitle">Manage Azure Key Vault and Azure App Configuration integrations.</p>
       </div>
       <q-btn 
         color="primary" 
-        label="Add Provider" 
+        label="Add Integration" 
         icon="add" 
         :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
         @click="openCreateDialog" 
@@ -144,7 +144,7 @@
         </template>
         <template #no-data>
           <div class="q-pa-md text-grey-7">
-              No integrations configured. Click "Add Provider" to configure Azure Key Vault or App Configuration.
+              No integrations configured. Click "Add Integration" to configure Azure Key Vault or App Configuration.
           </div>
         </template>
       </q-table>
