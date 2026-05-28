@@ -116,6 +116,31 @@ public class SecretOperationServiceTests
     }
 
     [Fact]
+    public async Task ListSecretsAsync_WithAppConfigurationEndpoint_ReturnsValidationFailure()
+    {
+        var provider = new SecretProvider(
+            Guid.NewGuid(),
+            "App Configuration",
+            new Uri("https://example.azconfig.io"),
+            SecretProviderAuthMode.ManagedIdentity,
+            null,
+            SecretProviderCapabilities.Check,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        var store = NewStore(providers: new[] { provider });
+        var mockClient = new Mock<IAzureKeyVaultClient>();
+        var auditService = new FakeAuditService();
+        var service = new SecretOperationService(store, mockClient.Object, auditService);
+
+        var result = await service.ListSecretsAsync(provider.Id);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("App Configuration", result.Error);
+        mockClient.Verify(c => c.ListSecretsAsync(It.IsAny<SecretProvider>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CreateSecretAsync_WithNonExistentProvider_ReturnsNotFound()
     {
         // Arrange

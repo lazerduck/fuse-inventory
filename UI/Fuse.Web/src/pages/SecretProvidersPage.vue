@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Secret Providers</h1>
-        <p class="subtitle">Manage Azure Key Vault secret providers for secure credential storage.</p>
+        <h1>Azure App Config & Key Vault</h1>
+        <p class="subtitle">Manage Azure Key Vault and Azure App Configuration integrations.</p>
       </div>
       <q-btn 
         color="primary" 
-        label="Add Provider" 
+        label="Add Integration" 
         icon="add" 
         :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
         @click="openCreateDialog" 
@@ -19,7 +19,7 @@
     </q-banner>
 
     <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
-      You do not have permission to view secret providers. Please log in with appropriate credentials.
+      You do not have permission to view Azure integrations. Please log in with appropriate credentials.
     </q-banner>
 
     <q-card v-if="fuseStore.canRead" class="content-card">
@@ -27,7 +27,7 @@
         <div>
           <div class="text-h6">Azure Integration Manager</div>
           <p class="text-body2 text-grey-7 q-mt-xs q-mb-none">
-            Manage shared Azure Client Secret credentials used across key vault providers.
+            Manage shared Azure Client Secret credentials used across Azure integration endpoints.
           </p>
         </div>
         <q-btn
@@ -61,7 +61,7 @@
               />
             </div>
             <div class="col text-body2 text-grey-7">
-              Providers using Client Secret can omit per-provider credentials and inherit from this shared manager.
+              Integrations using Client Secret can omit per-integration credentials and inherit from this shared manager.
             </div>
           </div>
           <div v-if="hasSharedClientSecretCredentials" class="q-mt-md text-body2 text-grey-8">
@@ -76,8 +76,8 @@
     <q-card v-if="fuseStore.canRead" class="content-card">
       <q-card-section>
         <p class="text-body2 text-grey-7">
-          Secret providers allow Fuse to securely manage credentials through Azure Key Vault.
-          Configure providers with appropriate capabilities (Check, Create, Rotate, Read) based on your security requirements.
+          Azure integrations allow Fuse to securely manage credentials through Azure Key Vault and Azure App Configuration.
+          Configure integrations with appropriate capabilities (Check, Create, Rotate, Read) based on your security requirements.
         </p>
       </q-card-section>
 
@@ -112,9 +112,9 @@
               round
               icon="manage_search"
               color="secondary"
-              @click="router.push({ name: 'keyVaultExplorer', params: { id: props.row.id } })"
+              @click="openExplorer(props.row)"
             >
-              <q-tooltip>Explore Vault</q-tooltip>
+              <q-tooltip>{{ isAppConfiguration(props.row) ? 'Explore App Configuration' : 'Explore Vault' }}</q-tooltip>
             </q-btn>
             <q-btn 
               flat 
@@ -126,7 +126,7 @@
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsCreate)"
               @click="openEditDialog(props.row)" 
             >
-              <q-tooltip>Edit Provider</q-tooltip>
+              <q-tooltip>Edit Integration</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -138,13 +138,13 @@
               :disable="!fuseStore.hasPermission(Permission.AzureKeyVaultConnectionsDelete)"
               @click="confirmDelete(props.row)"
             >
-              <q-tooltip>Delete Provider</q-tooltip>
+              <q-tooltip>Delete Integration</q-tooltip>
             </q-btn>
           </q-td>
         </template>
         <template #no-data>
           <div class="q-pa-md text-grey-7">
-            No secret providers configured. Click "Add Provider" to configure Azure Key Vault integration.
+              No integrations configured. Click "Add Integration" to configure Azure Key Vault or App Configuration.
           </div>
         </template>
       </q-table>
@@ -231,6 +231,7 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useAzureIntegrationManager } from '../composables/useAzureIntegrationManager'
 import { getErrorMessage } from '../utils/error'
+import { isAppConfigurationEndpoint } from '../utils/secretProviders'
 import SecretProviderForm from '../components/secretProvider/SecretProviderForm.vue'
 
 interface SecretProviderFormModel {
@@ -275,7 +276,7 @@ const hasSharedClientSecretCredentials = computed(() => !!azureManager.value?.ha
 
 const columns: QTableColumn<SecretProviderResponse>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'vaultUri', label: 'Vault URI', field: 'vaultUri', align: 'left' },
+  { name: 'vaultUri', label: 'Endpoint URI', field: 'vaultUri', align: 'left' },
   { name: 'authMode', label: 'Auth Mode', field: 'authMode', align: 'left' },
   { name: 'capabilities', label: 'Capabilities', field: 'capabilities', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
@@ -474,6 +475,18 @@ function confirmDelete(provider: SecretProviderResponse) {
     cancel: true,
     persistent: true
   }).onOk(() => deleteMutation.mutate(provider.id!))
+}
+
+function isAppConfiguration(provider: SecretProviderResponse): boolean {
+  return isAppConfigurationEndpoint(provider.vaultUri)
+}
+
+function openExplorer(provider: SecretProviderResponse) {
+  if (!provider.id) return
+  router.push({
+    name: isAppConfiguration(provider) ? 'appConfigExplorer' : 'keyVaultExplorer',
+    params: { id: provider.id }
+  })
 }
 </script>
 

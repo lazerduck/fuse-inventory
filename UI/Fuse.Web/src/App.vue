@@ -275,10 +275,10 @@
               v-if="fuseStore.canRead"
               data-tour-id="nav-secret-providers">
               <q-item-section avatar>
-                <q-icon name="vpn_key" />
+                <q-icon name="cloud" />
               </q-item-section>
               <q-item-section>
-                Secret Provider Integrations
+                Azure Config & Key Vault
               </q-item-section>
             </q-item>
 

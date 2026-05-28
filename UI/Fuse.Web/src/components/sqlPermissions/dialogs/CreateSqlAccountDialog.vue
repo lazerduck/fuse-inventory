@@ -29,7 +29,7 @@
             <template #avatar>
               <q-icon name="warning" color="orange" />
             </template>
-            This account is not linked to a Secret Provider.
+            This account is not linked to an Azure integration.
           </q-banner>
 
           <q-banner
@@ -40,7 +40,7 @@
             <template #avatar>
               <q-icon name="info" color="primary" />
             </template>
-            Password will be retrieved from the linked Secret Provider.
+            Password will be retrieved from the linked Azure integration.
           </q-banner>
 
           <q-input
@@ -124,7 +124,7 @@ watch(dialogModel, (isOpen) => {
 
 const passwordOptions = computed(() => [
   {
-    label: 'Retrieve from Secret Provider',
+    label: 'Retrieve from Azure integration',
     value: PasswordSource.SecretProvider,
     disable: !props.hasSecretProvider
   },

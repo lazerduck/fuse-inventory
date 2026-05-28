@@ -102,7 +102,7 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side v-if="scope.opt.hasSecretProvider">
-                  <q-badge color="green" label="Has Secret Provider" />
+                  <q-badge color="green" label="Has Azure Integration" />
                 </q-item-section>
               </q-item>
             </template>
@@ -110,7 +110,7 @@
             <template #selected-item="scope">
               <div class="row items-center">
                 <span>{{ scope.opt.label }}</span>
-                <q-badge v-if="scope.opt.hasSecretProvider" color="green" label="Has Secret Provider" class="q-ml-sm" />
+                <q-badge v-if="scope.opt.hasSecretProvider" color="green" label="Has Azure Integration" class="q-ml-sm" />
               </div>
             </template>
 
@@ -135,7 +135,7 @@
                 <template #avatar>
                   <q-icon name="vpn_key" color="primary" />
                 </template>
-                Password will be retrieved from the linked Secret Provider.
+                Password will be retrieved from the linked Azure integration.
               </q-banner>
             </template>
             <template v-else>
@@ -143,7 +143,7 @@
                 <template #avatar>
                   <q-icon name="warning" color="orange" />
                 </template>
-                This account doesn't have a Secret Provider linked. Please enter the password manually.
+                This account doesn't have an Azure integration linked. Please enter the password manually.
               </q-banner>
               <q-input 
                 v-model="form.manualPassword" 

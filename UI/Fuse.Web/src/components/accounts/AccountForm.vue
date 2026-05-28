@@ -31,7 +31,7 @@
     <template v-if="hasSecretProviders">
       <q-select
         v-model="form.secret.providerId"
-        label="Secret Provider"
+        label="Azure Integration"
         dense
         outlined
         emit-value
@@ -40,7 +40,7 @@
         :loading="providersLoading"
         :disable="providersLoading"
         clearable
-        hint="Select an Azure Key Vault provider or leave empty to use a plain reference"
+        hint="Select an Azure Key Vault/App Configuration integration or leave empty to use a plain reference"
       />
 
       <q-banner v-if="providerError" dense class="bg-red-1 text-negative q-mb-sm">
@@ -60,7 +60,7 @@
           :disable="!providerSupportsListing"
           use-input
           hide-bottom-space
-          hint="Select a secret stored in the provider"
+          hint="Select a secret stored in the integration"
         >
           <template #after>
             <q-btn
@@ -79,7 +79,7 @@
         </q-banner>
 
         <q-banner v-else-if="!providerSupportsListing" dense class="bg-orange-1 text-orange-9 q-mt-xs">
-          Selected provider does not have Check capability enabled.
+          Selected integration does not have Check capability enabled.
         </q-banner>
 
         <div class="secret-inline-actions" v-if="canCreateSecret">

@@ -9,16 +9,19 @@ public class SecretProviderService : ISecretProviderService
 {
     private readonly IFuseStore _fuseStore;
     private readonly IAzureKeyVaultClient _azureKeyVaultClient;
+    private readonly IAzureAppConfigurationClient _azureAppConfigurationClient;
     private readonly IAzureIntegrationManagerService _azureIntegrationManagerService;
 
     public SecretProviderService(
         IFuseStore fuseStore,
         IAzureKeyVaultClient azureKeyVaultClient,
-        IAzureIntegrationManagerService? azureIntegrationManagerService = null)
+        IAzureIntegrationManagerService? azureIntegrationManagerService = null,
+        IAzureAppConfigurationClient? azureAppConfigurationClient = null)
     {
         _fuseStore = fuseStore;
         _azureKeyVaultClient = azureKeyVaultClient;
         _azureIntegrationManagerService = azureIntegrationManagerService ?? new AzureIntegrationManagerService(fuseStore);
+        _azureAppConfigurationClient = azureAppConfigurationClient ?? new AzureAppConfigurationClient(azureIntegrationManagerService: _azureIntegrationManagerService);
     }
 
     public async Task<IReadOnlyList<SecretProvider>> GetSecretProvidersAsync()
@@ -38,7 +41,7 @@ public class SecretProviderService : ISecretProviderService
             return Result<SecretProvider>.Failure(validation.Error!, validation.ErrorType ?? ErrorType.Validation);
 
         // Test connection before creating
-        var testResult = await _azureKeyVaultClient.TestConnectionAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
+        var testResult = await TestConnectionInternalAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
         if (!testResult.IsSuccess)
             return Result<SecretProvider>.Failure($"Connection test failed: {testResult.Error}", ErrorType.Validation);
 
@@ -89,7 +92,7 @@ public class SecretProviderService : ISecretProviderService
         
         if (needsTest)
         {
-            var testResult = await _azureKeyVaultClient.TestConnectionAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
+            var testResult = await TestConnectionInternalAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
             if (!testResult.IsSuccess)
                 return Result<SecretProvider>.Failure($"Connection test failed: {testResult.Error}", ErrorType.Validation);
         }
@@ -155,7 +158,18 @@ public class SecretProviderService : ISecretProviderService
         if (!validation.IsSuccess)
             return validation;
 
-        return await _azureKeyVaultClient.TestConnectionAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
+        return await TestConnectionInternalAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
+    }
+
+    private Task<Result> TestConnectionInternalAsync(
+        Uri endpoint,
+        SecretProviderAuthMode authMode,
+        SecretProviderCredentials? credentials)
+    {
+        if (SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(endpoint))
+            return _azureAppConfigurationClient.TestConnectionAsync(endpoint, authMode, credentials);
+
+        return _azureKeyVaultClient.TestConnectionAsync(endpoint, authMode, credentials);
     }
 
     private Result ValidateSecretProviderCommand(string name, Uri vaultUri, SecretProviderCapabilities capabilities)

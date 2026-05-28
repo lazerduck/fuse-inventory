@@ -220,6 +220,14 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Reveal secret values (admin-only)
 - Reference Key Vault secrets from Account secret bindings
 
+### Azure App Configuration
+- Integrate with one or more Azure App Configuration instances
+- Two authentication modes: Managed Identity, Client Secret (including shared manager credentials)
+- Browse key-values from App Configuration within Fuse
+- Search keys and filter by key prefix and label
+- View key metadata: key, value/type, label, content type, last modified date, and locked status
+- Key Vault reference entries are explicitly identified and not shown as plain values
+
 ### SQL Permission Management
 - Connect to SQL databases and analyse current permissions
 - Compare expected permissions (from Account grants) against actual database permissions — drift detection
