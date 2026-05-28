@@ -9,4 +9,6 @@ export const IntegrationPermissions = {
   AzureKeyVaultSecretsCreate: 'secretproviders:secrets:create',
   AzureKeyVaultSecretsRotate: 'secretproviders:secrets:rotate',
   AzureKeyVaultSecretsReveal: 'secretproviders:secrets:reveal',
+  AppConfigCreate: 'secretproviders:appconfig:create',
+  AppConfigUpdate: 'secretproviders:appconfig:update',
 } as const

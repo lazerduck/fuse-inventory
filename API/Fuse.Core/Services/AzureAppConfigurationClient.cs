@@ -100,6 +100,74 @@ public class AzureAppConfigurationClient : IAzureAppConfigurationClient
         }
     }
 
+    public async Task<Result<AppConfigurationEntry?>> GetKeyValueAsync(SecretProvider provider, string key, string? label = null)
+    {
+        try
+        {
+            var client = await GetClientAsync(provider);
+            var setting = await client.GetConfigurationSettingAsync(key, label);
+            if (setting is null)
+                return Result<AppConfigurationEntry?>.Success(null);
+
+            var isKeyVaultReference = IsKeyVaultReference(setting);
+            return Result<AppConfigurationEntry?>.Success(new AppConfigurationEntry(
+                Key: setting.Key,
+                Value: isKeyVaultReference ? null : setting.Value,
+                Label: setting.Label,
+                ContentType: setting.ContentType,
+                LastModified: setting.LastModified,
+                IsLocked: setting.IsReadOnly ?? false,
+                IsKeyVaultReference: isKeyVaultReference,
+                KeyVaultReferenceUri: isKeyVaultReference ? TryExtractKeyVaultReferenceUri(setting.Value) : null
+            ));
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return Result<AppConfigurationEntry?>.Success(null);
+        }
+        catch (RequestFailedException ex)
+        {
+            return Result<AppConfigurationEntry?>.Failure($"Failed to get App Configuration key-value: {ex.Message}", ErrorType.Validation);
+        }
+        catch (Exception ex)
+        {
+            return Result<AppConfigurationEntry?>.Failure($"Failed to get App Configuration key-value: {ex.Message}", ErrorType.Validation);
+        }
+    }
+
+    public async Task<Result<AppConfigurationEntry>> SetKeyValueAsync(SecretProvider provider, string key, string? label, string value, string? contentType)
+    {
+        try
+        {
+            var client = await GetClientAsync(provider);
+            var setting = new ConfigurationSetting(key, value, label)
+            {
+                ContentType = contentType
+            };
+            var result = await client.SetConfigurationSettingAsync(setting);
+            var isKeyVaultReference = IsKeyVaultReference(result);
+            return Result<AppConfigurationEntry>.Success(new AppConfigurationEntry(
+                Key: result.Key,
+                Value: isKeyVaultReference ? null : result.Value,
+                Label: result.Label,
+                ContentType: result.ContentType,
+                LastModified: result.LastModified,
+                IsLocked: result.IsReadOnly ?? false,
+                IsKeyVaultReference: isKeyVaultReference,
+                KeyVaultReferenceUri: isKeyVaultReference ? TryExtractKeyVaultReferenceUri(result.Value) : null
+            ));
+        }
+        catch (RequestFailedException ex)
+        {
+            return Result<AppConfigurationEntry>.Failure($"Failed to set App Configuration key-value: {ex.Message}", ErrorType.Validation);
+        }
+        catch (Exception ex)
+        {
+            return Result<AppConfigurationEntry>.Failure($"Failed to set App Configuration key-value: {ex.Message}", ErrorType.Validation);
+        }
+    }
+
+
     private async Task<IAppConfigurationClient> GetClientAsync(SecretProvider provider)
     {
         var credentials = await ResolveProviderCredentialsAsync(provider);
@@ -168,5 +236,24 @@ internal sealed class AppConfigurationClientWrapper : IAppConfigurationClient
             LabelFilter = labelFilter
         };
         return _inner.GetConfigurationSettingsAsync(selector, ct);
+    }
+
+    public async Task<ConfigurationSetting?> GetConfigurationSettingAsync(string key, string? label = null, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _inner.GetConfigurationSettingAsync(key, label, ct);
+            return response.Value;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    public async Task<ConfigurationSetting> SetConfigurationSettingAsync(ConfigurationSetting setting, CancellationToken ct = default)
+    {
+        var response = await _inner.SetConfigurationSettingAsync(setting, cancellationToken: ct);
+        return response.Value;
     }
 }

@@ -1,3 +1,4 @@
+using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 
@@ -10,4 +11,6 @@ public interface IAppConfigurationOperationService
         string? keySearch = null,
         string? keyPrefix = null,
         string? label = null);
+
+    Task<Result<AppConfigurationEntry>> SetKeyValueAsync(SetAppConfigurationValue command, string userName, Guid? userId);
 }

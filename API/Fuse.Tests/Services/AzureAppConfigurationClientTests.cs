@@ -50,6 +50,8 @@ public class AzureAppConfigurationClientTests
         public bool ThrowAuth { get; set; }
         public bool ThrowList { get; set; }
         public List<ConfigurationSetting> Settings { get; } = new();
+        public ConfigurationSetting? SetResult { get; set; }
+        public bool ThrowOnSet { get; set; }
 
         public AsyncPageable<ConfigurationSetting> GetConfigurationSettingsAsync(string keyFilter = "*", string labelFilter = "*", CancellationToken ct = default)
         {
@@ -70,6 +72,29 @@ public class AzureAppConfigurationClientTests
 
             return AsyncPageable<ConfigurationSetting>.FromPages(
                 new[] { Page<ConfigurationSetting>.FromValues(filtered.ToList(), null, new TestResponse(200)) });
+        }
+
+        public Task<ConfigurationSetting?> GetConfigurationSettingAsync(string key, string? label = null, CancellationToken ct = default)
+        {
+            var match = Settings.FirstOrDefault(s =>
+                string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase) &&
+                (label == null || string.Equals(s.Label, label, StringComparison.OrdinalIgnoreCase)));
+            return Task.FromResult(match);
+        }
+
+        public Task<ConfigurationSetting> SetConfigurationSettingAsync(ConfigurationSetting setting, CancellationToken ct = default)
+        {
+            if (ThrowOnSet) throw new RequestFailedException(409, "locked");
+            var result = SetResult ?? setting;
+            // Update in-memory list
+            var existing = Settings.FindIndex(s =>
+                string.Equals(s.Key, setting.Key, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(s.Label, setting.Label, StringComparison.OrdinalIgnoreCase));
+            if (existing >= 0)
+                Settings[existing] = result;
+            else
+                Settings.Add(result);
+            return Task.FromResult(result);
         }
     }
 
@@ -169,5 +194,63 @@ public class AzureAppConfigurationClientTests
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!);
+    }
+
+    [Fact]
+    public async Task SetKeyValue_CreatesNewEntry_WhenKeyDoesNotExist()
+    {
+        var credentialFactory = new FakeCredentialFactory();
+        var appFactory = new FakeAppConfigurationClientFactory();
+        var client = new AzureAppConfigurationClient(credentialFactory, appFactory);
+
+        var result = await client.SetKeyValueAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity), "App:NewKey", null, "newvalue", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("App:NewKey", result.Value!.Key);
+        Assert.Equal("newvalue", result.Value.Value);
+    }
+
+    [Fact]
+    public async Task SetKeyValue_UpdatesExistingEntry()
+    {
+        var credentialFactory = new FakeCredentialFactory();
+        var appFactory = new FakeAppConfigurationClientFactory();
+        appFactory.Instance.Settings.Add(new ConfigurationSetting("App:Key", "old-value", "prod"));
+        var client = new AzureAppConfigurationClient(credentialFactory, appFactory);
+
+        var result = await client.SetKeyValueAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity), "App:Key", "prod", "new-value", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("App:Key", result.Value!.Key);
+        Assert.Equal("new-value", result.Value.Value);
+    }
+
+    [Fact]
+    public async Task GetKeyValue_ReturnsNull_WhenKeyDoesNotExist()
+    {
+        var credentialFactory = new FakeCredentialFactory();
+        var appFactory = new FakeAppConfigurationClientFactory();
+        var client = new AzureAppConfigurationClient(credentialFactory, appFactory);
+
+        var result = await client.GetKeyValueAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity), "missing-key");
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+    }
+
+    [Fact]
+    public async Task GetKeyValue_ReturnsEntry_WhenKeyExists()
+    {
+        var credentialFactory = new FakeCredentialFactory();
+        var appFactory = new FakeAppConfigurationClientFactory();
+        appFactory.Instance.Settings.Add(new ConfigurationSetting("App:Key", "stored-value"));
+        var client = new AzureAppConfigurationClient(credentialFactory, appFactory);
+
+        var result = await client.GetKeyValueAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity), "App:Key");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal("App:Key", result.Value!.Key);
+        Assert.Equal("stored-value", result.Value.Value);
     }
 }
