@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using System.Text.Json;
 
 namespace Fuse.Core.Services;
 
@@ -119,7 +120,7 @@ public class AppConfigurationOperationService : IAppConfigurationOperationServic
             userName: userName,
             userId: userId,
             entityId: provider.Id,
-            changeDetails: System.Text.Json.JsonSerializer.Serialize(auditDetails)
+            changeDetails: JsonSerializer.Serialize(auditDetails)
         ));
 
         return setResult;

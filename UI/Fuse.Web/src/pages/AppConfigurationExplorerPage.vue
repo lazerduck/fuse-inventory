@@ -174,17 +174,33 @@ function closeFormDialog() {
   isFormDialogOpen.value = false
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 function handleFormSubmit(values: { key: string; label: string; value: string }) {
   const isCreate = selectedEntry.value === null
 
-  // Show confirmation dialog with before/after preview
+  // Show confirmation dialog with before/after preview.
+  // All user-controlled values are HTML-escaped before interpolation to prevent XSS.
   const oldValue = selectedEntry.value?.value ?? null
+  const safeKey = escapeHtml(values.key)
+  const safeLabel = values.label ? escapeHtml(values.label) : ''
+  const safeOldValue = oldValue !== null ? escapeHtml(oldValue) : '(empty)'
+  const safeNewValue = escapeHtml(values.value)
+  const labelSuffix = safeLabel ? ` [${safeLabel}]` : ''
+
   const confirmMessage = isCreate
-    ? `Create new entry <strong>${values.key}</strong>${values.label ? ` [${values.label}]` : ''}?`
-    : `Update <strong>${values.key}</strong>${values.label ? ` [${values.label}]` : ''}?<br>
+    ? `Create new entry <strong>${safeKey}</strong>${labelSuffix}?`
+    : `Update <strong>${safeKey}</strong>${labelSuffix}?<br>
        <div class="q-mt-sm text-caption">
-         <div><strong>Current value:</strong> <code>${oldValue ?? '(empty)'}</code></div>
-         <div><strong>New value:</strong> <code>${values.value}</code></div>
+         <div><strong>Current value:</strong> <code>${safeOldValue}</code></div>
+         <div><strong>New value:</strong> <code>${safeNewValue}</code></div>
        </div>`
 
   Dialog.create({
