@@ -268,15 +268,13 @@ import { useFuseStore } from '../stores/FuseStore'
 import { useSecretProviders } from '../composables/useSecretProviders'
 import { useSecretProviderSecrets } from '../composables/useSecretProviderSecrets'
 import { getErrorMessage } from '../utils/error'
+import { hasCapability } from '../utils/secretProviders'
 
 const route = useRoute()
 const router = useRouter()
 const client = useFuseClient()
 const fuseStore = useFuseStore()
 const queryClient = useQueryClient()
-
-// Matches SecretProviderCapabilities flags on the backend
-const Capability = { Check: 1, Create: 2, Rotate: 4, Read: 8 } as const
 
 const providerId = computed(() => route.params.id as string)
 
@@ -289,29 +287,23 @@ const secretsError = computed(() => error.value ? getErrorMessage(error.value) :
 
 const hasCheckCapability = computed(() => {
   if (!provider.value) return true // don't show warning before provider loads
-  return hasCapability(Capability.Check)
+  return hasCapability(provider.value, 'Check')
 })
 
 const canCreateSecret = computed(() =>
   fuseStore.hasPermission(Permission.AzureKeyVaultSecretsCreate) &&
-  hasCapability(Capability.Create)
+  hasCapability(provider.value, 'Create')
 )
 
 const canRevealSecret = computed(() =>
   fuseStore.hasPermission(Permission.AzureKeyVaultSecretsReveal) &&
-  hasCapability(Capability.Read)
+  hasCapability(provider.value, 'Read')
 )
 
 const canUpdateSecret = computed(() =>
   fuseStore.hasPermission(Permission.AzureKeyVaultSecretsRotate) &&
-  hasCapability(Capability.Rotate)
+  hasCapability(provider.value, 'Rotate')
 )
-
-function hasCapability(flag: number): boolean {
-  if (!provider.value) return false
-  const caps = provider.value.capabilities as unknown as number
-  return typeof caps === 'number' ? (caps & flag) !== 0 : false
-}
 
 const searchQuery = ref('')
 
