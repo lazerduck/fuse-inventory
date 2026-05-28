@@ -82,6 +82,10 @@ public enum AuditAction
     SecretRotated,
     SecretRevealed,
     
+    // App Configuration operations
+    AppConfigurationKeyValueCreated,
+    AppConfigurationKeyValueUpdated,
+    
     // Config actions
     ConfigImported,
     ConfigExported,

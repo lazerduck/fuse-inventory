@@ -5,7 +5,6 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Responses;
 using Fuse.API.CurrentUser;
-
 namespace Fuse.API.Controllers;
 
 [ApiController]
@@ -265,6 +264,45 @@ public class SecretProviderController : ControllerBase
         ));
 
         return Ok(response);
+    }
+
+    [HttpPut("{providerId}/app-configuration")]
+    [SwaggerOperation(OperationId = "appConfigurationSet")]
+    [RequirePermissionKey(SecretProviderPermissions.AppConfigCreateKey)]
+    [ProducesResponseType(200, Type = typeof(AppConfigurationEntryResponse))]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<ActionResult<AppConfigurationEntryResponse>> SetAppConfigurationEntry(
+        [FromRoute] Guid providerId,
+        [FromBody] SetAppConfigurationValue command)
+    {
+        var merged = command with { ProviderId = providerId };
+        var username = User.GetUsername();
+        if (string.IsNullOrEmpty(username))
+            return new UnauthorizedResult();
+
+        var result = await _appConfigurationOperationService.SetKeyValueAsync(merged, username, User.GetPrincipalId());
+
+        if (!result.IsSuccess)
+        {
+            return result.ErrorType switch
+            {
+                ErrorType.NotFound => NotFound(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        var entry = result.Value!;
+        return Ok(new AppConfigurationEntryResponse(
+            Key: entry.Key,
+            Value: entry.Value,
+            Label: entry.Label,
+            ContentType: entry.ContentType,
+            LastModified: entry.LastModified,
+            IsLocked: entry.IsLocked,
+            IsKeyVaultReference: entry.IsKeyVaultReference,
+            KeyVaultReferenceUri: entry.KeyVaultReferenceUri
+        ));
     }
 
     [HttpPost("{providerId}/secrets")]

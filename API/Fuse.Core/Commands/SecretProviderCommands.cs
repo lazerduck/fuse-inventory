@@ -50,3 +50,11 @@ public record RevealSecret(
 public record UpdateAzureIntegrationManager(
     SecretProviderCredentials Credentials
 );
+
+public record SetAppConfigurationValue(
+    Guid ProviderId,
+    string Key,
+    string? Label,
+    string Value,
+    string? ContentType
+);

@@ -11,4 +11,6 @@ public interface IAzureAppConfigurationClient
         string? keySearch = null,
         string? keyPrefix = null,
         string? label = null);
+    Task<Result<AppConfigurationEntry?>> GetKeyValueAsync(SecretProvider provider, string key, string? label = null);
+    Task<Result<AppConfigurationEntry>> SetKeyValueAsync(SecretProvider provider, string key, string? label, string value, string? contentType);
 }
