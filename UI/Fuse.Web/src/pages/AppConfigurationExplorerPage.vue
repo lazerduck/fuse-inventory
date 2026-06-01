@@ -66,7 +66,7 @@
                 {{ props.row.keyVaultReferenceUri || 'Reference URI unavailable' }}
               </div>
             </template>
-            <span v-else>{{ props.row.value ?? '—' }}</span>
+            <span v-else :title="props.row.value || '—'">{{ truncate(props.row.value) }}</span>
           </q-td>
         </template>
         <template #body-cell-label="props">
@@ -181,6 +181,11 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+}
+
+function truncate(value?: string | null, maxLength = 100): string {
+  if (!value) return '—'
+  return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value
 }
 
 function handleFormSubmit(values: { key: string; label: string; value: string }) {
