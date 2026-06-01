@@ -215,6 +215,10 @@ public class ApplicationService : IApplicationService
                 return Result<ApplicationInstance>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
         }
 
+        var appConfigurationValidation = ValidateAppConfigurationAssociation(store, command.AppConfigurationProviderId);
+        if (!appConfigurationValidation.IsSuccess)
+            return Result<ApplicationInstance>.Failure(appConfigurationValidation.Error!, appConfigurationValidation);
+
         var now = DateTime.UtcNow;
         var inst = new ApplicationInstance(
             Id: Guid.NewGuid(),
@@ -228,7 +232,9 @@ public class ApplicationService : IApplicationService
             TagIds: tagIds,
             CreatedAt: now,
             UpdatedAt: now,
-            ApiKey: command.ApiKey
+            ApiKey: command.ApiKey,
+            AppConfigurationProviderId: command.AppConfigurationProviderId,
+            AppConfigurationKeySuffix: command.AppConfigurationKeySuffix
         );
 
         var updated = app with { Instances = app.Instances.Append(inst).ToList(), UpdatedAt = now };
@@ -275,6 +281,10 @@ public class ApplicationService : IApplicationService
                 return Result<ApplicationInstance>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
         }
 
+        var appConfigurationValidation = ValidateAppConfigurationAssociation(store, command.AppConfigurationProviderId);
+        if (!appConfigurationValidation.IsSuccess)
+            return Result<ApplicationInstance>.Failure(appConfigurationValidation.Error!, appConfigurationValidation);
+
         var updatedInst = inst with
         {
             EnvironmentId = command.EnvironmentId,
@@ -285,6 +295,8 @@ public class ApplicationService : IApplicationService
             Version = command.Version,
             TagIds = tagIds,
             ApiKey = command.ApiKey,
+            AppConfigurationProviderId = command.AppConfigurationProviderId,
+            AppConfigurationKeySuffix = command.AppConfigurationKeySuffix,
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -377,6 +389,21 @@ public class ApplicationService : IApplicationService
             return Result<string>.Success(inst.ApiKey.PlainReference ?? string.Empty);
         // Azure Key Vault bindings are not resolved here; callers should use the SecretProvider reveal endpoint
         return Result<string>.Failure("Azure Key Vault API keys must be retrieved via the secret provider reveal endpoint.", ErrorType.Validation);
+    }
+
+    private static Result ValidateAppConfigurationAssociation(Snapshot store, Guid? providerId)
+    {
+        if (providerId is null)
+            return Result.Success();
+
+        var provider = store.SecretProviders.FirstOrDefault(p => p.Id == providerId.Value);
+        if (provider is null)
+            return Result.Failure($"Secret provider with ID '{providerId}' not found.", ErrorType.Validation);
+
+        if (!SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri))
+            return Result.Failure($"Secret provider with ID '{providerId}' is not an Azure App Configuration endpoint.", ErrorType.Validation);
+
+        return Result.Success();
     }
 
     public async Task<Result<ApplicationPipeline>> CreatePipelineAsync(CreateApplicationPipeline command)

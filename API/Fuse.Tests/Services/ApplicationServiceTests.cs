@@ -166,6 +166,99 @@ public class ApplicationServiceTests
     }
 
     [Fact]
+    public async Task CreateInstance_NonAppConfigurationProvider_ReturnsValidation()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var keyVaultProvider = new SecretProvider(
+            Guid.NewGuid(),
+            "KeyVault",
+            new Uri("https://my-vault.vault.azure.net/"),
+            SecretProviderAuthMode.ManagedIdentity,
+            null,
+            SecretProviderCapabilities.Check,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, secretProviders: new[] { keyVaultProvider });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        var res = await service.CreateInstanceAsync(new CreateApplicationInstance(
+            app.Id,
+            env.Id,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            keyVaultProvider.Id,
+            ":ConnectionString"
+        ));
+
+        Assert.False(res.IsSuccess);
+        Assert.Equal(ErrorType.Validation, res.ErrorType);
+        Assert.Contains("not an Azure App Configuration endpoint", res.Error);
+    }
+
+    [Fact]
+    public async Task CreateAndUpdateInstance_PersistAppConfigurationAssociation()
+    {
+        var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
+        var app = new Application(Guid.NewGuid(), "A", null, null, null, null, null, null, null, new HashSet<Guid>(), Array.Empty<ApplicationInstance>(), Array.Empty<ApplicationPipeline>(), DateTime.UtcNow, DateTime.UtcNow);
+        var appConfigurationProvider = new SecretProvider(
+            Guid.NewGuid(),
+            "AppConfig",
+            new Uri("https://demo.azconfig.io"),
+            SecretProviderAuthMode.ManagedIdentity,
+            null,
+            SecretProviderCapabilities.Check,
+            DateTime.UtcNow,
+            DateTime.UtcNow
+        );
+        var store = NewStore(apps: new[] { app }, envs: new[] { env }, secretProviders: new[] { appConfigurationProvider });
+        var service = new ApplicationService(store, new FakeTagService(store), new FakeAuditService(), new FakeEnvironmentService(store), new FakeCurrentUser());
+
+        var created = await service.CreateInstanceAsync(new CreateApplicationInstance(
+            app.Id,
+            env.Id,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            appConfigurationProvider.Id,
+            ":ConnectionString"
+        ));
+
+        Assert.True(created.IsSuccess);
+        Assert.Equal(appConfigurationProvider.Id, created.Value!.AppConfigurationProviderId);
+        Assert.Equal(":ConnectionString", created.Value!.AppConfigurationKeySuffix);
+
+        var updated = await service.UpdateInstanceAsync(new UpdateApplicationInstance(
+            app.Id,
+            created.Value!.Id,
+            env.Id,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            appConfigurationProvider.Id,
+            ":ApiKey"
+        ));
+
+        Assert.True(updated.IsSuccess);
+        Assert.Equal(appConfigurationProvider.Id, updated.Value!.AppConfigurationProviderId);
+        Assert.Equal(":ApiKey", updated.Value!.AppConfigurationKeySuffix);
+    }
+
+    [Fact]
     public async Task UpdateInstance_ValidationFailures_AndSuccess()
     {
         var env = new EnvironmentInfo(Guid.NewGuid(), "E", null, new HashSet<Guid>());
@@ -570,7 +663,8 @@ public class ApplicationServiceTests
         IEnumerable<DataStore>? dataStores = null,
         IEnumerable<ExternalResource>? resources = null,
         IEnumerable<Account>? accounts = null,
-        IEnumerable<MessageBroker>? messageBrokers = null)
+        IEnumerable<MessageBroker>? messageBrokers = null,
+        IEnumerable<SecretProvider>? secretProviders = null)
     {
         var snapshot = new Snapshot(
             Applications: (apps ?? Array.Empty<Application>()).ToArray(),
@@ -582,7 +676,7 @@ public class ApplicationServiceTests
             Tags: (tags ?? Array.Empty<Tag>()).ToArray(),
             Environments: (envs ?? Array.Empty<EnvironmentInfo>()).ToArray(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-                SecretProviders: Array.Empty<SecretProvider>(),
+                SecretProviders: (secretProviders ?? Array.Empty<SecretProvider>()).ToArray(),
                 SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
                 Risks: Array.Empty<Risk>(),
                 MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),

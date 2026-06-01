@@ -1028,6 +1028,24 @@ namespace Fuse.Tests.ApiClient
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerGetAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerGetAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerPutAsync(UpdateAzureIntegrationManager body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerPutAsync(UpdateAzureIntegrationManager body, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<SecretProviderResponse>> ApiSecretProviderGetAsync();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -1097,6 +1115,24 @@ namespace Fuse.Tests.ApiClient
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task ApiSecretProviderSecretsPostAsync(System.Guid providerId, CreateSecret body, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AppConfigurationEntryResponse>> ApiSecretProviderAppConfigurationGetAsync(System.Guid providerId, string keySearch, string keyPrefix, string label);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AppConfigurationEntryResponse>> ApiSecretProviderAppConfigurationGetAsync(System.Guid providerId, string keySearch, string keyPrefix, string label, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AppConfigurationEntryResponse> ApiSecretProviderAppConfigurationPutAsync(System.Guid providerId, SetAppConfigurationValue body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<AppConfigurationEntryResponse> ApiSecretProviderAppConfigurationPutAsync(System.Guid providerId, SetAppConfigurationValue body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -12165,6 +12201,176 @@ namespace Fuse.Tests.ApiClient
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerGetAsync()
+        {
+            return ApiSecretProviderAzureManagerGetAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerGetAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/SecretProvider/azure-manager"
+                    urlBuilder_.Append("api/SecretProvider/azure-manager");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AzureIntegrationManagerResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerPutAsync(UpdateAzureIntegrationManager body)
+        {
+            return ApiSecretProviderAzureManagerPutAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<AzureIntegrationManagerResponse> ApiSecretProviderAzureManagerPutAsync(UpdateAzureIntegrationManager body, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/SecretProvider/azure-manager"
+                    urlBuilder_.Append("api/SecretProvider/azure-manager");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AzureIntegrationManagerResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<SecretProviderResponse>> ApiSecretProviderGetAsync()
         {
             return ApiSecretProviderGetAsync(System.Threading.CancellationToken.None);
@@ -12919,6 +13125,230 @@ namespace Fuse.Tests.ApiClient
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AppConfigurationEntryResponse>> ApiSecretProviderAppConfigurationGetAsync(System.Guid providerId, string keySearch, string keyPrefix, string label)
+        {
+            return ApiSecretProviderAppConfigurationGetAsync(providerId, keySearch, keyPrefix, label, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AppConfigurationEntryResponse>> ApiSecretProviderAppConfigurationGetAsync(System.Guid providerId, string keySearch, string keyPrefix, string label, System.Threading.CancellationToken cancellationToken)
+        {
+            if (providerId == null)
+                throw new System.ArgumentNullException("providerId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/SecretProvider/{providerId}/app-configuration"
+                    urlBuilder_.Append("api/SecretProvider/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(providerId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/app-configuration");
+                    urlBuilder_.Append('?');
+                    if (keySearch != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("keySearch")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(keySearch, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (keyPrefix != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("keyPrefix")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(keyPrefix, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (label != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("label")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(label, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<AppConfigurationEntryResponse>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<AppConfigurationEntryResponse> ApiSecretProviderAppConfigurationPutAsync(System.Guid providerId, SetAppConfigurationValue body)
+        {
+            return ApiSecretProviderAppConfigurationPutAsync(providerId, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<AppConfigurationEntryResponse> ApiSecretProviderAppConfigurationPutAsync(System.Guid providerId, SetAppConfigurationValue body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (providerId == null)
+                throw new System.ArgumentNullException("providerId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/SecretProvider/{providerId}/app-configuration"
+                    urlBuilder_.Append("api/SecretProvider/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(providerId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/app-configuration");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AppConfigurationEntryResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task ApiSecretProviderSecretsRotateAsync(System.Guid providerId, string secretName, RotateSecret body)
         {
             return ApiSecretProviderSecretsRotateAsync(providerId, secretName, body, System.Threading.CancellationToken.None);
@@ -13429,6 +13859,16 @@ namespace Fuse.Tests.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -16420,6 +16860,36 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class AppConfigurationEntryResponse
+    {
+
+        [Newtonsoft.Json.JsonProperty("key", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Key { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Value { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Label { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("contentType", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ContentType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("lastModified", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? LastModified { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("isLocked", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool IsLocked { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("isKeyVaultReference", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool IsKeyVaultReference { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("keyVaultReferenceUri", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string KeyVaultReferenceUri { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Application
     {
 
@@ -16506,6 +16976,12 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("apiKey", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public SecretBinding ApiKey { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appConfigurationProviderId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? AppConfigurationProviderId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appConfigurationKeySuffix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string AppConfigurationKeySuffix { get; set; }
 
     }
 
@@ -16741,83 +17217,89 @@ namespace Fuse.Tests.ApiClient
         [System.Runtime.Serialization.EnumMember(Value = @"SecretRevealed")]
         SecretRevealed = 50,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"AppConfigurationKeyValueCreated")]
+        AppConfigurationKeyValueCreated = 51,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AppConfigurationKeyValueUpdated")]
+        AppConfigurationKeyValueUpdated = 52,
+
         [System.Runtime.Serialization.EnumMember(Value = @"ConfigImported")]
-        ConfigImported = 51,
+        ConfigImported = 53,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ConfigExported")]
-        ConfigExported = 52,
+        ConfigExported = 54,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegrationDriftResolved")]
-        SqlIntegrationDriftResolved = 53,
+        SqlIntegrationDriftResolved = 55,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlAccountCreated")]
-        SqlAccountCreated = 54,
+        SqlAccountCreated = 56,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlIntegrationBulkResolved")]
-        SqlIntegrationBulkResolved = 55,
+        SqlIntegrationBulkResolved = 57,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlPermissionsImported")]
-        SqlPermissionsImported = 56,
+        SqlPermissionsImported = 58,
 
         [System.Runtime.Serialization.EnumMember(Value = @"SqlOrphanPrincipalImported")]
-        SqlOrphanPrincipalImported = 57,
+        SqlOrphanPrincipalImported = 59,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionCreated")]
-        PositionCreated = 58,
+        PositionCreated = 60,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionUpdated")]
-        PositionUpdated = 59,
+        PositionUpdated = 61,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PositionDeleted")]
-        PositionDeleted = 60,
+        PositionDeleted = 62,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeCreated")]
-        ResponsibilityTypeCreated = 61,
+        ResponsibilityTypeCreated = 63,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeUpdated")]
-        ResponsibilityTypeUpdated = 62,
+        ResponsibilityTypeUpdated = 64,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityTypeDeleted")]
-        ResponsibilityTypeDeleted = 63,
+        ResponsibilityTypeDeleted = 65,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentCreated")]
-        ResponsibilityAssignmentCreated = 64,
+        ResponsibilityAssignmentCreated = 66,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentUpdated")]
-        ResponsibilityAssignmentUpdated = 65,
+        ResponsibilityAssignmentUpdated = 67,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ResponsibilityAssignmentDeleted")]
-        ResponsibilityAssignmentDeleted = 66,
+        ResponsibilityAssignmentDeleted = 68,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskCreated")]
-        RiskCreated = 67,
+        RiskCreated = 69,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskUpdated")]
-        RiskUpdated = 68,
+        RiskUpdated = 70,
 
         [System.Runtime.Serialization.EnumMember(Value = @"RiskDeleted")]
-        RiskDeleted = 69,
+        RiskDeleted = 71,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerCreated")]
-        MessageBrokerCreated = 70,
+        MessageBrokerCreated = 72,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerUpdated")]
-        MessageBrokerUpdated = 71,
+        MessageBrokerUpdated = 73,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MessageBrokerDeleted")]
-        MessageBrokerDeleted = 72,
+        MessageBrokerDeleted = 74,
 
         [System.Runtime.Serialization.EnumMember(Value = @"IdentityCreated")]
-        IdentityCreated = 73,
+        IdentityCreated = 75,
 
         [System.Runtime.Serialization.EnumMember(Value = @"IdentityUpdated")]
-        IdentityUpdated = 74,
+        IdentityUpdated = 76,
 
         [System.Runtime.Serialization.EnumMember(Value = @"IdentityDeleted")]
-        IdentityDeleted = 75,
+        IdentityDeleted = 77,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ChangeReverted")]
-        ChangeReverted = 76,
+        ChangeReverted = 78,
 
     }
 
@@ -16958,6 +17440,24 @@ namespace Fuse.Tests.ApiClient
 
         [System.Runtime.Serialization.EnumMember(Value = @"Other")]
         Other = 7,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class AzureIntegrationManagerResponse
+    {
+
+        [Newtonsoft.Json.JsonProperty("hasClientSecretCredentials", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool HasClientSecretCredentials { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tenantId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string TenantId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("clientId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ClientId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("updatedAt", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? UpdatedAt { get; set; }
 
     }
 
@@ -17357,6 +17857,12 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("apiKey", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public SecretBinding ApiKey { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appConfigurationProviderId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? AppConfigurationProviderId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appConfigurationKeySuffix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string AppConfigurationKeySuffix { get; set; }
 
     }
 
@@ -18983,6 +19489,27 @@ namespace Fuse.Tests.ApiClient
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SetAppConfigurationValue
+    {
+
+        [Newtonsoft.Json.JsonProperty("providerId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid ProviderId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("key", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Key { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Label { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Value { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("contentType", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string ContentType { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class SqlAccountCreationOperation
     {
 
@@ -19495,6 +20022,12 @@ namespace Fuse.Tests.ApiClient
         [Newtonsoft.Json.JsonProperty("apiKey", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public SecretBinding ApiKey { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("appConfigurationProviderId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? AppConfigurationProviderId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appConfigurationKeySuffix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string AppConfigurationKeySuffix { get; set; }
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -19512,6 +20045,15 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("pipelineUri", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Uri PipelineUri { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UpdateAzureIntegrationManager
+    {
+
+        [Newtonsoft.Json.JsonProperty("credentials", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public SecretProviderCredentials Credentials { get; set; }
 
     }
 

@@ -37,6 +37,34 @@
           <TagSelect v-model="form.tagIds" />
         </div>
 
+        <q-separator class="q-my-md" />
+        <div class="text-subtitle2 q-mb-sm">Azure App Configuration</div>
+        <div class="text-caption text-grey-7 q-mb-md">
+          Optional association for loading instance configuration from Azure App Configuration.
+        </div>
+        <div class="form-grid">
+          <q-select
+            v-model="form.appConfigurationProviderId"
+            label="App Configuration Integration"
+            dense
+            outlined
+            emit-value
+            map-options
+            clearable
+            :options="appConfigurationProviderOptions"
+            :disable="appConfigurationProviderOptions.length === 0"
+            :hint="appConfigurationProviderOptions.length === 0 ? 'No Azure App Configuration integrations configured' : undefined"
+          />
+          <q-input
+            v-model="form.appConfigurationKeySuffix"
+            label="Key Filter"
+            dense
+            outlined
+            clearable
+            hint="Type a key prefix, or enter a leading ':' to filter by suffix (e.g. :ConnectionString)"
+          />
+        </div>
+
         <slot />
       </q-card-section>
       <q-separator />
@@ -53,6 +81,8 @@ import { computed, onMounted, reactive, watch } from 'vue'
 import type { ApplicationInstance } from 'api/client'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
+import { useSecretProviders } from '../../composables/useSecretProviders'
+import { isAppConfigurationEndpoint } from '../../utils/secretProviders'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
@@ -65,6 +95,8 @@ interface ApplicationInstanceFormModel {
   openApiUri: string
   version: string
   tagIds: string[]
+  appConfigurationProviderId: string | null
+  appConfigurationKeySuffix: string
 }
 
 interface Props {
@@ -89,9 +121,15 @@ const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
+const secretProvidersQuery = useSecretProviders()
 
 const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
+const appConfigurationProviderOptions = computed(() =>
+  (secretProvidersQuery.data.value ?? [])
+    .filter((provider) => !!provider.id && isAppConfigurationEndpoint(provider.vaultUri))
+    .map((provider) => ({ label: provider.name ?? provider.id!, value: provider.id! }))
+)
 
 const form = reactive<ApplicationInstanceFormModel>({
   environmentId: null,
@@ -100,7 +138,9 @@ const form = reactive<ApplicationInstanceFormModel>({
   healthUri: '',
   openApiUri: '',
   version: '',
-  tagIds: []
+  tagIds: [],
+  appConfigurationProviderId: null,
+  appConfigurationKeySuffix: ''
 })
 
 const isCreate = computed(() => props.mode === 'create')
@@ -117,6 +157,8 @@ function applyInitial(value?: Partial<ApplicationInstance> | null) {
     form.openApiUri = ''
     form.version = ''
     form.tagIds = []
+    form.appConfigurationProviderId = null
+    form.appConfigurationKeySuffix = ''
     return
   }
   form.environmentId = value.environmentId ?? null
@@ -126,6 +168,8 @@ function applyInitial(value?: Partial<ApplicationInstance> | null) {
   form.openApiUri = value.openApiUri ?? ''
   form.version = value.version ?? ''
   form.tagIds = [...(value.tagIds ?? [])]
+  form.appConfigurationProviderId = value.appConfigurationProviderId ?? null
+  form.appConfigurationKeySuffix = value.appConfigurationKeySuffix ?? ''
 }
 
 onMounted(() => applyInitial(props.initialValue))

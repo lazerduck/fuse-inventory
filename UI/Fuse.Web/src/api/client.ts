@@ -634,6 +634,17 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    azureIntegrationManagerGET(signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
 
     /**
@@ -674,6 +685,20 @@ export interface IFuseApiClient {
      * @return Created
      */
     secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param keySearch (optional) 
+     * @param keyPrefix (optional) 
+     * @param label (optional) 
+     * @return OK
+     */
+    appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]>;
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse>;
 
     /**
      * @param body (optional) 
@@ -6834,6 +6859,94 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    azureIntegrationManagerGET(signal?: AbortSignal): Promise<AzureIntegrationManagerResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/azure-manager";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAzureIntegrationManagerGET(_response);
+        });
+    }
+
+    protected processAzureIntegrationManagerGET(response: Response): Promise<AzureIntegrationManagerResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AzureIntegrationManagerResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AzureIntegrationManagerResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/azure-manager";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAzureIntegrationManagerPUT(_response);
+        });
+    }
+
+    protected processAzureIntegrationManagerPUT(response: Response): Promise<AzureIntegrationManagerResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AzureIntegrationManagerResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AzureIntegrationManagerResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]> {
         let url_ = this.baseUrl + "/api/SecretProvider";
         url_ = url_.replace(/[?&]$/, "");
@@ -7250,6 +7363,143 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
+     * @param keySearch (optional) 
+     * @param keyPrefix (optional) 
+     * @param label (optional) 
+     * @return OK
+     */
+    appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/app-configuration?";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        if (keySearch === null)
+            throw new globalThis.Error("The parameter 'keySearch' cannot be null.");
+        else if (keySearch !== undefined)
+            url_ += "keySearch=" + encodeURIComponent("" + keySearch) + "&";
+        if (keyPrefix === null)
+            throw new globalThis.Error("The parameter 'keyPrefix' cannot be null.");
+        else if (keyPrefix !== undefined)
+            url_ += "keyPrefix=" + encodeURIComponent("" + keyPrefix) + "&";
+        if (label === null)
+            throw new globalThis.Error("The parameter 'label' cannot be null.");
+        else if (label !== undefined)
+            url_ += "label=" + encodeURIComponent("" + label) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAppConfigurationAll(_response);
+        });
+    }
+
+    protected processAppConfigurationAll(response: Response): Promise<AppConfigurationEntryResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(AppConfigurationEntryResponse.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AppConfigurationEntryResponse[]>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse> {
+        let url_ = this.baseUrl + "/api/SecretProvider/{providerId}/app-configuration";
+        if (providerId === undefined || providerId === null)
+            throw new globalThis.Error("The parameter 'providerId' must be defined.");
+        url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAppConfigurationSet(_response);
+        });
+    }
+
+    protected processAppConfigurationSet(response: Response): Promise<AppConfigurationEntryResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AppConfigurationEntryResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AppConfigurationEntryResponse>(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -7536,6 +7786,13 @@ export class FuseApiClient implements IFuseApiClient {
             let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Conflict", status, _responseText, _headers, result409);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -9426,6 +9683,70 @@ export interface IApiKeyInfo {
     updatedAt?: Date;
 }
 
+export class AppConfigurationEntryResponse implements IAppConfigurationEntryResponse {
+    key?: string | undefined;
+    value?: string | undefined;
+    label?: string | undefined;
+    contentType?: string | undefined;
+    lastModified?: Date | undefined;
+    isLocked?: boolean;
+    isKeyVaultReference?: boolean;
+    keyVaultReferenceUri?: string | undefined;
+
+    constructor(data?: IAppConfigurationEntryResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.value = _data["value"];
+            this.label = _data["label"];
+            this.contentType = _data["contentType"];
+            this.lastModified = _data["lastModified"] ? new Date(_data["lastModified"].toString()) : undefined as any;
+            this.isLocked = _data["isLocked"];
+            this.isKeyVaultReference = _data["isKeyVaultReference"];
+            this.keyVaultReferenceUri = _data["keyVaultReferenceUri"];
+        }
+    }
+
+    static fromJS(data: any): AppConfigurationEntryResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AppConfigurationEntryResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["value"] = this.value;
+        data["label"] = this.label;
+        data["contentType"] = this.contentType;
+        data["lastModified"] = this.lastModified ? this.lastModified.toISOString() : undefined as any;
+        data["isLocked"] = this.isLocked;
+        data["isKeyVaultReference"] = this.isKeyVaultReference;
+        data["keyVaultReferenceUri"] = this.keyVaultReferenceUri;
+        return data;
+    }
+}
+
+export interface IAppConfigurationEntryResponse {
+    key?: string | undefined;
+    value?: string | undefined;
+    label?: string | undefined;
+    contentType?: string | undefined;
+    lastModified?: Date | undefined;
+    isLocked?: boolean;
+    isKeyVaultReference?: boolean;
+    keyVaultReferenceUri?: string | undefined;
+}
+
 export class Application implements IApplication {
     id?: string;
     name?: string | undefined;
@@ -9551,6 +9872,8 @@ export class ApplicationInstance implements IApplicationInstance {
     createdAt?: Date;
     updatedAt?: Date;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 
     constructor(data?: IApplicationInstance) {
         if (data) {
@@ -9583,6 +9906,8 @@ export class ApplicationInstance implements IApplicationInstance {
             this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
             this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
             this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
+            this.appConfigurationProviderId = _data["appConfigurationProviderId"];
+            this.appConfigurationKeySuffix = _data["appConfigurationKeySuffix"];
         }
     }
 
@@ -9615,6 +9940,8 @@ export class ApplicationInstance implements IApplicationInstance {
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
         data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
+        data["appConfigurationProviderId"] = this.appConfigurationProviderId;
+        data["appConfigurationKeySuffix"] = this.appConfigurationKeySuffix;
         return data;
     }
 }
@@ -9632,6 +9959,8 @@ export interface IApplicationInstance {
     createdAt?: Date;
     updatedAt?: Date;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 }
 
 export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
@@ -9886,6 +10215,8 @@ export enum AuditAction {
     SecretCreated = "SecretCreated",
     SecretRotated = "SecretRotated",
     SecretRevealed = "SecretRevealed",
+    AppConfigurationKeyValueCreated = "AppConfigurationKeyValueCreated",
+    AppConfigurationKeyValueUpdated = "AppConfigurationKeyValueUpdated",
     ConfigImported = "ConfigImported",
     ConfigExported = "ConfigExported",
     SqlIntegrationDriftResolved = "SqlIntegrationDriftResolved",
@@ -10067,6 +10398,54 @@ export enum AuthKind {
     ManagedIdentity = "ManagedIdentity",
     Certificate = "Certificate",
     Other = "Other",
+}
+
+export class AzureIntegrationManagerResponse implements IAzureIntegrationManagerResponse {
+    hasClientSecretCredentials?: boolean;
+    tenantId?: string | undefined;
+    clientId?: string | undefined;
+    updatedAt?: Date | undefined;
+
+    constructor(data?: IAzureIntegrationManagerResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.hasClientSecretCredentials = _data["hasClientSecretCredentials"];
+            this.tenantId = _data["tenantId"];
+            this.clientId = _data["clientId"];
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AzureIntegrationManagerResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AzureIntegrationManagerResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["hasClientSecretCredentials"] = this.hasClientSecretCredentials;
+        data["tenantId"] = this.tenantId;
+        data["clientId"] = this.clientId;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAzureIntegrationManagerResponse {
+    hasClientSecretCredentials?: boolean;
+    tenantId?: string | undefined;
+    clientId?: string | undefined;
+    updatedAt?: Date | undefined;
 }
 
 export class AzureKeyVaultBinding implements IAzureKeyVaultBinding {
@@ -11099,6 +11478,8 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
     version?: string | undefined;
     tagIds?: string[] | undefined;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 
     constructor(data?: ICreateApplicationInstance) {
         if (data) {
@@ -11124,6 +11505,8 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
                     this.tagIds!.push(item);
             }
             this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
+            this.appConfigurationProviderId = _data["appConfigurationProviderId"];
+            this.appConfigurationKeySuffix = _data["appConfigurationKeySuffix"];
         }
     }
 
@@ -11149,6 +11532,8 @@ export class CreateApplicationInstance implements ICreateApplicationInstance {
                 data["tagIds"].push(item);
         }
         data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
+        data["appConfigurationProviderId"] = this.appConfigurationProviderId;
+        data["appConfigurationKeySuffix"] = this.appConfigurationKeySuffix;
         return data;
     }
 }
@@ -11163,6 +11548,8 @@ export interface ICreateApplicationInstance {
     version?: string | undefined;
     tagIds?: string[] | undefined;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 }
 
 export class CreateApplicationPipeline implements ICreateApplicationPipeline {
@@ -14617,6 +15004,58 @@ export interface ISecurityUserInfo {
     updatedAt?: Date;
 }
 
+export class SetAppConfigurationValue implements ISetAppConfigurationValue {
+    providerId?: string;
+    key?: string | undefined;
+    label?: string | undefined;
+    value?: string | undefined;
+    contentType?: string | undefined;
+
+    constructor(data?: ISetAppConfigurationValue) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.providerId = _data["providerId"];
+            this.key = _data["key"];
+            this.label = _data["label"];
+            this.value = _data["value"];
+            this.contentType = _data["contentType"];
+        }
+    }
+
+    static fromJS(data: any): SetAppConfigurationValue {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetAppConfigurationValue();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["providerId"] = this.providerId;
+        data["key"] = this.key;
+        data["label"] = this.label;
+        data["value"] = this.value;
+        data["contentType"] = this.contentType;
+        return data;
+    }
+}
+
+export interface ISetAppConfigurationValue {
+    providerId?: string;
+    key?: string | undefined;
+    label?: string | undefined;
+    value?: string | undefined;
+    contentType?: string | undefined;
+}
+
 export class SqlAccountCreationOperation implements ISqlAccountCreationOperation {
     operationType?: string | undefined;
     database?: string | undefined;
@@ -15725,6 +16164,8 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
     version?: string | undefined;
     tagIds?: string[] | undefined;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 
     constructor(data?: IUpdateApplicationInstance) {
         if (data) {
@@ -15751,6 +16192,8 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
                     this.tagIds!.push(item);
             }
             this.apiKey = _data["apiKey"] ? SecretBinding.fromJS(_data["apiKey"]) : undefined as any;
+            this.appConfigurationProviderId = _data["appConfigurationProviderId"];
+            this.appConfigurationKeySuffix = _data["appConfigurationKeySuffix"];
         }
     }
 
@@ -15777,6 +16220,8 @@ export class UpdateApplicationInstance implements IUpdateApplicationInstance {
                 data["tagIds"].push(item);
         }
         data["apiKey"] = this.apiKey ? this.apiKey.toJSON() : undefined as any;
+        data["appConfigurationProviderId"] = this.appConfigurationProviderId;
+        data["appConfigurationKeySuffix"] = this.appConfigurationKeySuffix;
         return data;
     }
 }
@@ -15792,6 +16237,8 @@ export interface IUpdateApplicationInstance {
     version?: string | undefined;
     tagIds?: string[] | undefined;
     apiKey?: SecretBinding;
+    appConfigurationProviderId?: string | undefined;
+    appConfigurationKeySuffix?: string | undefined;
 }
 
 export class UpdateApplicationPipeline implements IUpdateApplicationPipeline {
@@ -15840,6 +16287,42 @@ export interface IUpdateApplicationPipeline {
     pipelineId?: string;
     name?: string | undefined;
     pipelineUri?: string | undefined;
+}
+
+export class UpdateAzureIntegrationManager implements IUpdateAzureIntegrationManager {
+    credentials?: SecretProviderCredentials;
+
+    constructor(data?: IUpdateAzureIntegrationManager) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.credentials = _data["credentials"] ? SecretProviderCredentials.fromJS(_data["credentials"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UpdateAzureIntegrationManager {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateAzureIntegrationManager();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["credentials"] = this.credentials ? this.credentials.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUpdateAzureIntegrationManager {
+    credentials?: SecretProviderCredentials;
 }
 
 export class UpdateDataStore implements IUpdateDataStore {

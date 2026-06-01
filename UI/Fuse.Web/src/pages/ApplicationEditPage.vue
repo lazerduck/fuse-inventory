@@ -282,6 +282,8 @@ interface ApplicationInstanceFormModel {
   openApiUri: string
   version: string
   tagIds: string[]
+  appConfigurationProviderId: string | null
+  appConfigurationKeySuffix: string
 }
 
 const route = useRoute()
@@ -519,7 +521,9 @@ function handleSubmitInstance(model: ApplicationInstanceFormModel) {
     healthUri: model.healthUri || undefined,
     openApiUri: model.openApiUri || undefined,
     version: model.version || undefined,
-    tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+    tagIds: model.tagIds.length ? [...model.tagIds] : undefined,
+    appConfigurationProviderId: model.appConfigurationProviderId || undefined,
+    appConfigurationKeySuffix: model.appConfigurationKeySuffix || undefined
   })
   createInstanceMutation.mutate({ appId: application.value.id!, payload })
 }

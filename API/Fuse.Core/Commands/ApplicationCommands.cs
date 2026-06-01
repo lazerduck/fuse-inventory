@@ -42,7 +42,9 @@ public record CreateApplicationInstance(
     Uri? OpenApiUri,
     string? Version,
     HashSet<Guid>? TagIds = null,
-    SecretBinding? ApiKey = null
+    SecretBinding? ApiKey = null,
+    Guid? AppConfigurationProviderId = null,
+    string? AppConfigurationKeySuffix = null
 );
 
 public record UpdateApplicationInstance(
@@ -55,7 +57,9 @@ public record UpdateApplicationInstance(
     Uri? OpenApiUri,
     string? Version,
     HashSet<Guid>? TagIds = null,
-    SecretBinding? ApiKey = null
+    SecretBinding? ApiKey = null,
+    Guid? AppConfigurationProviderId = null,
+    string? AppConfigurationKeySuffix = null
 );
 
 public record DeleteApplicationInstance(

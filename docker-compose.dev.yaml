@@ -11,6 +11,10 @@ services:
     volumes:
       - ./test-data:/app/data
     container_name: fuse-api-dev
+    develop:
+      watch:
+      - action: rebuild
+        path: ./API
 
   fuse-ui:
     image: node:20-alpine
@@ -24,6 +28,11 @@ services:
     environment:
       - VITE_API_BASE_URL=http://localhost:8080
     container_name: fuse-ui-dev
+    develop:
+      watch:
+      - action: sync
+        path: ./UI/Fuse.Web/src
+        target: /app/frontend/src
 
 volumes:
   fuse-ui-node-modules:

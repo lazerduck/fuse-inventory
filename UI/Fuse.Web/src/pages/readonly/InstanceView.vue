@@ -169,6 +169,58 @@
         </div>
       </section>
 
+      <section class="detail-section">
+        <h3 class="section-subtitle">
+          <q-icon name="settings_suggest" size="20px" />
+          App Configuration
+        </h3>
+        <div v-if="!instance.appConfigurationProviderId" class="empty-value">
+          No App Configuration association configured for this instance.
+        </div>
+        <div v-else class="url-list">
+          <div class="url-item">
+            <span class="url-label">Integration</span>
+            <span class="url-value">{{ appConfigurationProviderName }}</span>
+          </div>
+          <div class="url-item">
+            <span class="url-label">Key suffix filter</span>
+            <span class="url-value">{{ appConfigurationKeySuffixDisplay }}</span>
+          </div>
+
+          <q-btn
+            flat
+            dense
+            color="primary"
+            :icon="isAppConfigurationExpanded ? 'expand_less' : 'expand_more'"
+            :label="isAppConfigurationExpanded ? 'Hide Configuration' : 'Show Configuration'"
+            @click="isAppConfigurationExpanded = !isAppConfigurationExpanded"
+          />
+
+          <div v-if="isAppConfigurationExpanded" class="q-mt-sm">
+            <div v-if="isAppConfigurationLoading" class="empty-value">Loading configuration…</div>
+            <div v-else-if="appConfigurationError" class="empty-value text-negative">{{ appConfigurationError }}</div>
+            <div v-else-if="filteredAppConfigurationEntries.length === 0" class="empty-value">
+              No matching App Configuration entries found.
+            </div>
+            <q-list v-else bordered separator class="identity-list">
+              <q-item v-for="entry in filteredAppConfigurationEntries" :key="`${entry.key}:${entry.label ?? ''}`">
+                <q-item-section>
+                  <q-item-label>{{ entry.key }}</q-item-label>
+                  <q-item-label caption>
+                    {{ entry.label || 'No label' }}
+                    <span v-if="entry.isKeyVaultReference"> · Key Vault reference</span>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <q-item-label caption>{{ formatAppConfigurationEntryValue(entry.value) }}</q-item-label>
+                  <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </div>
+      </section>
+
       <!-- Dependents (reverse dependencies) -->
       <section class="detail-section">
         <h3 class="section-subtitle">
@@ -203,7 +255,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'
 import type { HigherItem, LowerItem } from '../../types/readonly'
 import { useApplications } from '../../composables/useApplications'
@@ -213,8 +265,11 @@ import { useIdentities } from '../../composables/useIdentities'
 import { useAccounts } from '../../composables/useAccounts'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
+import { useSecretProviders } from '../../composables/useSecretProviders'
+import { useAppConfigurationEntries } from '../../composables/useAppConfigurationEntries'
 import { useTags } from '../../composables/useTags'
 import { DependencyAuthKind, DependencySeverity, TargetKind, type TagColor } from 'api/client'
+import { getErrorMessage } from '../../utils/error'
 
 const route = useRoute()
 const router = useRouter()
@@ -228,12 +283,14 @@ const { data: identitiesData, isLoading: identitiesLoading } = useIdentities()
 const { lookup: accountLookup, isLoading: accountsLoading } = useAccounts()
 const { data: dataStoresData, isLoading: dataStoresLoading } = useDataStores()
 const { data: externalResourcesData, isLoading: externalLoading } = useExternalResources()
+const { data: secretProvidersData, isLoading: secretProvidersLoading } = useSecretProviders()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+const isAppConfigurationExpanded = ref(false)
 
 const isLoading = computed(() => 
   appsLoading.value || envsLoading.value || platformsLoading.value || 
   identitiesLoading.value || accountsLoading.value || dataStoresLoading.value || 
-  externalLoading.value || tagsLoading.value
+  externalLoading.value || secretProvidersLoading.value || tagsLoading.value
 )
 
 // Find the application and instance by instance ID
@@ -251,6 +308,38 @@ const applicationAndInstance = computed(() => {
 
 const application = computed(() => applicationAndInstance.value?.application)
 const instance = computed(() => applicationAndInstance.value?.instance)
+const appConfigurationProviderId = computed(() => instance.value?.appConfigurationProviderId ?? null)
+const appConfigurationKeySuffix = computed(() => (instance.value?.appConfigurationKeySuffix ?? '').trim())
+const appConfigurationProvider = computed(() =>
+  (secretProvidersData.value ?? []).find((provider) => provider.id === appConfigurationProviderId.value) ?? null
+)
+const appConfigurationProviderName = computed(() =>
+  appConfigurationProvider.value?.name ?? appConfigurationProvider.value?.id ?? 'Unknown integration'
+)
+const appConfigurationKeySuffixDisplay = computed(() => appConfigurationKeySuffix.value || 'None')
+
+const appConfigurationFilters = {
+  keySearch: ref(''),
+  keyPrefix: ref(''),
+  label: ref('')
+}
+
+const {
+  data: appConfigurationEntries,
+  isLoading: isAppConfigurationLoading,
+  error: appConfigurationErrorRef
+} = useAppConfigurationEntries(appConfigurationProviderId, appConfigurationFilters)
+
+const filteredAppConfigurationEntries = computed(() => {
+  const entries = appConfigurationEntries.value ?? []
+  const suffix = appConfigurationKeySuffix.value
+  if (!suffix) return entries
+  return entries.filter((entry) => entry.key?.toLowerCase().endsWith(suffix.toLowerCase()))
+})
+
+const appConfigurationError = computed(() =>
+  appConfigurationErrorRef.value ? getErrorMessage(appConfigurationErrorRef.value) : null
+)
 
 // Environment info
 const environment = computed(() => {
@@ -461,6 +550,17 @@ function goBack() {
 
 function navigateToIdentity(identityId: string) {
   router.push(`/view/identity/${identityId}`)
+}
+
+function formatAppConfigurationEntryValue(value?: string | null): string {
+  if (!value) return '—'
+  return value.length > 60 ? `${value.slice(0, 60)}...` : value
+}
+
+function formatDate(value?: string | null): string {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
 }
 </script>
 

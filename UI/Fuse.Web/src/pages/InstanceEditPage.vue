@@ -111,6 +111,68 @@
               <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />
             </template>
           </div>
+
+          <q-separator class="q-my-md" />
+          <div class="text-subtitle2 q-mb-sm">Azure App Configuration</div>
+          <div class="text-caption text-grey-7 q-mb-md">
+            Optional association to load this instance configuration from Azure App Configuration.
+          </div>
+          <div class="form-grid">
+            <q-select
+              v-model="form.appConfigurationProviderId"
+              label="App Configuration Integration"
+              dense
+              outlined
+              emit-value
+              map-options
+              clearable
+              :options="appConfigurationProviderOptions"
+              :disable="appConfigurationProviderOptions.length === 0"
+              :hint="appConfigurationProviderOptions.length === 0 ? 'No Azure App Configuration integrations configured' : undefined"
+            />
+            <q-input
+              v-model="form.appConfigurationKeySuffix"
+              label="Key Filter"
+              dense
+              outlined
+              clearable
+              hint="Type a key prefix, or enter a leading ':' to filter by suffix (e.g. :ConnectionString)"
+            />
+          </div>
+
+          <div class="q-mt-sm">
+            <q-btn
+              flat
+              dense
+              color="primary"
+              :disable="!form.appConfigurationProviderId"
+              :icon="isAppConfigurationExpanded ? 'expand_less' : 'expand_more'"
+              :label="isAppConfigurationExpanded ? 'Hide Configuration Preview' : 'Show Configuration Preview'"
+              @click="isAppConfigurationExpanded = !isAppConfigurationExpanded"
+            />
+            <div v-if="isAppConfigurationExpanded" class="q-mt-sm">
+              <div v-if="appConfigurationEntriesLoading" class="text-caption text-grey-7">Loading App Configuration…</div>
+              <div v-else-if="appConfigurationEntriesError" class="text-caption text-negative">{{ appConfigurationEntriesError }}</div>
+              <div v-else-if="filteredAppConfigurationEntries.length === 0" class="text-caption text-grey-7">
+                No matching App Configuration entries found.
+              </div>
+              <q-list v-else bordered separator>
+                <q-item v-for="entry in filteredAppConfigurationEntries" :key="`${entry.key}:${entry.label ?? ''}`">
+                  <q-item-section>
+                    <q-item-label>{{ entry.key }}</q-item-label>
+                    <q-item-label caption>
+                      {{ entry.label || 'No label' }}
+                      <span v-if="entry.isKeyVaultReference"> · Key Vault reference</span>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side top>
+                    <q-item-label caption>{{ truncate(entry.value) }}</q-item-label>
+                    <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </div>
+          </div>
         </q-card-section>
         <q-separator />
         <q-card-actions align="right">
@@ -163,6 +225,8 @@ import { usePlatforms } from '../composables/usePlatforms'
 import { getErrorMessage } from '../utils/error'
 import DependencyInlineTable from '../components/applications/DependencyInlineTable.vue'
 import { useSecretProviders } from '../composables/useSecretProviders'
+import { isAppConfigurationEndpoint } from '../utils/secretProviders'
+import { useAppConfigurationEntries } from '../composables/useAppConfigurationEntries'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,10 +238,16 @@ const applicationId = computed(() => route.params.applicationId as string)
 const instanceId = computed(() => route.params.instanceId as string)
 
 const showApiKey = ref(false)
+const isAppConfigurationExpanded = ref(false)
 const secretProvidersQuery = useSecretProviders()
 const secretProviderOptions = computed(() =>
   (secretProvidersQuery.data.value ?? [])
     .filter((p) => !!p.id)
+    .map((p) => ({ label: p.name ?? p.id!, value: p.id! }))
+)
+const appConfigurationProviderOptions = computed(() =>
+  (secretProvidersQuery.data.value ?? [])
+    .filter((p) => !!p.id && isAppConfigurationEndpoint(p.vaultUri))
     .map((p) => ({ label: p.name ?? p.id!, value: p.id! }))
 )
 
@@ -239,8 +309,42 @@ const form = reactive({
   apiKeyValue: '',
   apiKeyVaultProviderId: null as string | null,
   apiKeyVaultSecretName: '',
-  apiKeyVaultVersion: ''
+  apiKeyVaultVersion: '',
+  appConfigurationProviderId: null as string | null,
+  appConfigurationKeySuffix: ''
 })
+
+const appConfigurationProviderId = computed(() => form.appConfigurationProviderId)
+const appConfigurationFilters = {
+  keySearch: ref(''),
+  keyPrefix: ref(''),
+  label: ref('')
+}
+
+const {
+  data: appConfigurationEntries,
+  isLoading: appConfigurationEntriesLoading,
+  error: appConfigurationEntriesErrorRef
+} = useAppConfigurationEntries(appConfigurationProviderId, appConfigurationFilters)
+
+const filteredAppConfigurationEntries = computed(() => {
+  const entries = appConfigurationEntries.value ?? []
+  const filterText = (form.appConfigurationKeySuffix ?? '').trim()
+  if (!filterText) return entries
+
+  const normalizedFilter = filterText.toLowerCase()
+  if (normalizedFilter.startsWith(':')) {
+    return entries.filter((entry) => entry.key?.toLowerCase().endsWith(normalizedFilter))
+  }
+
+  return entries.filter((entry) => entry.key?.toLowerCase().includes(normalizedFilter))
+})
+
+const appConfigurationEntriesError = computed(() =>
+  appConfigurationEntriesErrorRef.value
+    ? getErrorMessage(appConfigurationEntriesErrorRef.value, 'Unable to load App Configuration entries')
+    : null
+)
 
 watch(instance, (inst) => {
   if (inst) {
@@ -272,6 +376,8 @@ watch(instance, (inst) => {
       form.apiKeyVaultSecretName = apiKey.azureKeyVault?.secretName ?? ''
       form.apiKeyVaultVersion = apiKey.azureKeyVault?.version ?? ''
     }
+    form.appConfigurationProviderId = inst.appConfigurationProviderId ?? null
+    form.appConfigurationKeySuffix = inst.appConfigurationKeySuffix ?? ''
   }
 }, { immediate: true })
 
@@ -343,9 +449,22 @@ function handleSubmitInstance() {
     openApiUri: form.openApiUri || undefined,
     version: form.version || undefined,
     tagIds: form.tagIds.length ? [...form.tagIds] : undefined,
-    apiKey: buildApiKeyBinding()
+    apiKey: buildApiKeyBinding(),
+    appConfigurationProviderId: form.appConfigurationProviderId || undefined,
+    appConfigurationKeySuffix: form.appConfigurationKeySuffix || undefined
   })
   updateInstanceMutation.mutate({ appId: applicationId.value, instanceId: instanceId.value, payload })
+}
+
+function truncate(value?: string | null, maxLength = 60): string {
+  if (!value) return '—'
+  return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value
+}
+
+function formatDate(value?: string | null): string {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
 }
 
 function confirmInstanceDelete() {
