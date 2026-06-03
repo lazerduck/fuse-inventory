@@ -7,6 +7,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Helpers;
     using Fuse.Core.Responses;
     using Fuse.Core.Areas.Application;
+    using System.Formats.Asn1;
 
     [ApiController]
     [Route("api/[controller]")]
@@ -14,11 +15,13 @@ namespace Fuse.API.Controllers
     {
         private readonly IApplicationService _appService;
         private readonly IKumaHealthService _healthService;
+        private readonly IApplicationHealthService _applicationHealthService;
 
-        public ApplicationController(IApplicationService appService, IKumaHealthService healthService)
+        public ApplicationController(IApplicationService appService, IKumaHealthService healthService, IApplicationHealthService applicationHealthService)
         {
             _appService = appService;
             _healthService = healthService;
+            _applicationHealthService = applicationHealthService;
         }
 
         // Applications
@@ -28,6 +31,13 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Application>))]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
             => Ok(await _appService.GetApplicationsAsync());
+
+        [HttpGet("health")]
+        [SwaggerOperation(OperationId = "applicationHealth")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<ApplicationHealth>))]
+        public async Task<ActionResult<IEnumerable<ApplicationHealth>>> GetApplicationsHealth() 
+            => Ok(await _applicationHealthService.GetAllApplicationHealths());
 
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "applicationGET")]

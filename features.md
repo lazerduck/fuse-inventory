@@ -227,6 +227,7 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Search keys and filter by key prefix and label
 - View key metadata: key, value/type, label, content type, last modified date, and locked status
 - Key Vault reference entries are explicitly identified and not shown as plain values
+- App config can be associated with an app instance and key suffix to display the config
 
 ### SQL Permission Management
 - Connect to SQL databases and analyse current permissions

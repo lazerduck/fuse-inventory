@@ -129,6 +129,11 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    applicationHealth(signal?: AbortSignal): Promise<ApplicationHealth[]>;
+
+    /**
+     * @return OK
+     */
     applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
 
     /**
@@ -1983,6 +1988,51 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<Application>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    applicationHealth(signal?: AbortSignal): Promise<ApplicationHealth[]> {
+        let url_ = this.baseUrl + "/api/Application/health";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApplicationHealth(_response);
+        });
+    }
+
+    protected processApplicationHealth(response: Response): Promise<ApplicationHealth[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ApplicationHealth.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ApplicationHealth[]>(null as any);
     }
 
     /**
@@ -9859,6 +9909,78 @@ export interface IApplication {
     updatedAt?: Date;
 }
 
+export class ApplicationHealth implements IApplicationHealth {
+    applicationId?: string;
+    versionSet?: boolean;
+    descriptionSet?: boolean;
+    ownerSet?: boolean;
+    frameworkSet?: boolean;
+    tagCount?: number;
+    pipelineCount?: number;
+    instanceHealths?: ApplicationInstanceHealth[] | undefined;
+
+    constructor(data?: IApplicationHealth) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.applicationId = _data["applicationId"];
+            this.versionSet = _data["versionSet"];
+            this.descriptionSet = _data["descriptionSet"];
+            this.ownerSet = _data["ownerSet"];
+            this.frameworkSet = _data["frameworkSet"];
+            this.tagCount = _data["tagCount"];
+            this.pipelineCount = _data["pipelineCount"];
+            if (Array.isArray(_data["instanceHealths"])) {
+                this.instanceHealths = [] as any;
+                for (let item of _data["instanceHealths"])
+                    this.instanceHealths!.push(ApplicationInstanceHealth.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ApplicationHealth {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApplicationHealth();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["applicationId"] = this.applicationId;
+        data["versionSet"] = this.versionSet;
+        data["descriptionSet"] = this.descriptionSet;
+        data["ownerSet"] = this.ownerSet;
+        data["frameworkSet"] = this.frameworkSet;
+        data["tagCount"] = this.tagCount;
+        data["pipelineCount"] = this.pipelineCount;
+        if (Array.isArray(this.instanceHealths)) {
+            data["instanceHealths"] = [];
+            for (let item of this.instanceHealths)
+                data["instanceHealths"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IApplicationHealth {
+    applicationId?: string;
+    versionSet?: boolean;
+    descriptionSet?: boolean;
+    ownerSet?: boolean;
+    frameworkSet?: boolean;
+    tagCount?: number;
+    pipelineCount?: number;
+    instanceHealths?: ApplicationInstanceHealth[] | undefined;
+}
+
 export class ApplicationInstance implements IApplicationInstance {
     id?: string;
     environmentId?: string;
@@ -10025,6 +10147,70 @@ export interface IApplicationInstanceDependency {
     accountId?: string | undefined;
     identityId?: string | undefined;
     severity?: DependencySeverity;
+}
+
+export class ApplicationInstanceHealth implements IApplicationInstanceHealth {
+    instanceId?: string;
+    platformSet?: boolean;
+    baseUriSet?: boolean;
+    healthUriSet?: boolean;
+    openApiUriSet?: boolean;
+    versionSet?: boolean;
+    dependencyCount?: number;
+    tagCount?: number;
+
+    constructor(data?: IApplicationInstanceHealth) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.instanceId = _data["instanceId"];
+            this.platformSet = _data["platformSet"];
+            this.baseUriSet = _data["baseUriSet"];
+            this.healthUriSet = _data["healthUriSet"];
+            this.openApiUriSet = _data["openApiUriSet"];
+            this.versionSet = _data["versionSet"];
+            this.dependencyCount = _data["dependencyCount"];
+            this.tagCount = _data["tagCount"];
+        }
+    }
+
+    static fromJS(data: any): ApplicationInstanceHealth {
+        data = typeof data === 'object' ? data : {};
+        let result = new ApplicationInstanceHealth();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["instanceId"] = this.instanceId;
+        data["platformSet"] = this.platformSet;
+        data["baseUriSet"] = this.baseUriSet;
+        data["healthUriSet"] = this.healthUriSet;
+        data["openApiUriSet"] = this.openApiUriSet;
+        data["versionSet"] = this.versionSet;
+        data["dependencyCount"] = this.dependencyCount;
+        data["tagCount"] = this.tagCount;
+        return data;
+    }
+}
+
+export interface IApplicationInstanceHealth {
+    instanceId?: string;
+    platformSet?: boolean;
+    baseUriSet?: boolean;
+    healthUriSet?: boolean;
+    openApiUriSet?: boolean;
+    versionSet?: boolean;
+    dependencyCount?: number;
+    tagCount?: number;
 }
 
 export class ApplicationPipeline implements IApplicationPipeline {
