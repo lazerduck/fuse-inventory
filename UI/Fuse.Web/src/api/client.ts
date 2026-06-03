@@ -134,6 +134,11 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    applicationHealthByAppId(appId: string, signal?: AbortSignal): Promise<ApplicationHealth>;
+
+    /**
+     * @return OK
+     */
     applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
 
     /**
@@ -2033,6 +2038,54 @@ export class FuseApiClient implements IFuseApiClient {
             });
         }
         return Promise.resolve<ApplicationHealth[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    applicationHealthByAppId(appId: string, signal?: AbortSignal): Promise<ApplicationHealth> {
+        let url_ = this.baseUrl + "/api/Application/health/{appId}";
+        if (appId === undefined || appId === null)
+            throw new globalThis.Error("The parameter 'appId' must be defined.");
+        url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApplicationHealthByAppId(_response);
+        });
+    }
+
+    protected processApplicationHealthByAppId(response: Response): Promise<ApplicationHealth> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ApplicationHealth.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ApplicationHealth>(null as any);
     }
 
     /**

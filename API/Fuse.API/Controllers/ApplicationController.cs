@@ -39,6 +39,14 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<IEnumerable<ApplicationHealth>>> GetApplicationsHealth() 
             => Ok(await _applicationHealthService.GetAllApplicationHealths());
 
+        [HttpGet("health/{appId}")]
+        [SwaggerOperation(OperationId = "applicationHealthByAppId")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
+        [ProducesResponseType(200, Type = typeof(ApplicationHealth))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<ApplicationHealth>> GetApplicationHealthByAppId([FromRoute] Guid appId) 
+            => Ok(await _applicationHealthService.GetApplicationHealth(appId));
+
         [HttpGet("{id}")]
         [SwaggerOperation(OperationId = "applicationGET")]
         [RequirePermissionKey(ApplicationPermissions.ReadKey)]

@@ -43,6 +43,7 @@ public static class FuseCodeModule
         services.AddScoped<IExternalResourceService, ExternalResourceService>();
         services.AddScoped<IMessageBrokerService, MessageBrokerService>();
         services.AddScoped<IApplicationService, ApplicationService>();
+        services.AddScoped<IApplicationHealthService, ApplicationHealthService>();
         services.AddScoped<IAccountSqlInspector, AccountSqlInspector>();
         services.AddScoped<ISqlPermissionsInspector, SqlPermissionsInspector>();
         services.AddScoped<IAccountService, AccountService>();

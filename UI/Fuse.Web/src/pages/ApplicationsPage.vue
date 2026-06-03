@@ -19,6 +19,10 @@
       {{ applicationsError }}
     </q-banner>
 
+    <q-banner v-if="applicationCompletenessError" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      {{ applicationCompletenessError }}
+    </q-banner>
+
     <q-banner v-if="!fuseStore.hasPermission(Permission.ApplicationsRead)" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view applications. Please log in with appropriate credentials.
     </q-banner>
@@ -30,7 +34,7 @@
         :rows="applications ?? []"
         :columns="columns"
         row-key="id"
-        :loading="applicationsLoading"
+        :loading="applicationsLoading || applicationCompletenessLoading"
         :pagination="pagination"
         :filter="filter"
         data-tour-id="applications-table"
@@ -59,6 +63,15 @@
               />
             </div>
             <span v-else class="text-grey">—</span>
+          </q-td>
+        </template>
+
+        <template #body-cell-completeness="props">
+          <q-td :props="props">
+            <ApplicationCompletenessIndicator
+              :app="props.row"
+              :completeness="applicationCompletenessLookup.get(props.row.id ?? '')"
+            />
           </q-td>
         </template>
 
@@ -183,6 +196,7 @@ import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import {
   Application,
+  ApplicationHealth,
   CreateApplication,
 } from 'api/client'
 import { Permission } from 'permissions'
@@ -192,6 +206,7 @@ import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
 import TagChip from '../components/tags/TagChip.vue'
+import ApplicationCompletenessIndicator from '../components/applications/ApplicationCompletenessIndicator.vue'
 
 interface ApplicationForm {
   name: string
@@ -226,6 +241,27 @@ const applicationsError = computed(() =>
   applicationsErrorRef.value ? getErrorMessage(applicationsErrorRef.value) : null
 )
 
+const { data: applicationCompletenessData, isLoading: applicationCompletenessLoadingRef, error: applicationCompletenessErrorRef } = useQuery({
+  queryKey: ['applicationCompleteness'],
+  queryFn: () => client.applicationHealth(),
+  enabled: computed(() => fuseStore.hasPermission(Permission.ApplicationsRead))
+})
+
+const applicationCompletenessLoading = computed(() => applicationCompletenessLoadingRef.value)
+const applicationCompletenessError = computed(() =>
+  applicationCompletenessErrorRef.value ? getErrorMessage(applicationCompletenessErrorRef.value, 'Unable to load application completeness') : null
+)
+
+const applicationCompletenessLookup = computed(() => {
+  const map = new Map<string, ApplicationHealth>()
+  for (const entry of applicationCompletenessData.value ?? []) {
+    if (entry.applicationId) {
+      map.set(entry.applicationId, entry)
+    }
+  }
+  return map
+})
+
 const tagsStore = useTags()
 
 const tagOptions = tagsStore.options
@@ -233,6 +269,7 @@ const tagInfoLookup = tagsStore.tagInfoLookup
 
 const columns: QTableColumn<Application>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
+  { name: 'completeness', label: 'Completeness', field: 'id', align: 'left' },
   { name: 'version', label: 'Version', field: 'version', align: 'left', sortable: true },
   { name: 'owner', label: 'Owner', field: 'owner', align: 'left' },
   { name: 'repositoryUri', label: 'Repository', field: 'repositoryUri', align: 'left' },
