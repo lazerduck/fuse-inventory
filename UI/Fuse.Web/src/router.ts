@@ -165,6 +165,11 @@ const router = createRouter({
       component: () => import('./pages/ActivitiesPage.vue')
     },
     {
+      path: '/insights/documentation-completeness',
+      name: 'documentationCompleteness',
+      component: () => import('./pages/DocumentationCompletenessPage.vue')
+    },
+    {
       path: '/blast-radius',
       name: 'blastRadius',
       component: () => import('./pages/BlastRadiusPage.vue')
