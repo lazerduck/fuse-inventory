@@ -52,7 +52,8 @@ public class AccountServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (messageBrokers ?? Array.Empty<MessageBroker>()).ToArray(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContext: SecurityContextHelper.Get
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -783,7 +784,8 @@ public class AccountServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: new[] { broker1, broker2, broker3 },
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContext: SecurityContextHelper.Get
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
 
         var store = new InMemoryFuseStore(snapshot);

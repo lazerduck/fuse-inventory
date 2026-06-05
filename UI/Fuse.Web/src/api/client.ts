@@ -214,6 +214,17 @@ export interface IFuseApiClient {
     dependenciesDELETE(appId: string, instanceId: string, dependencyId: string, signal?: AbortSignal): Promise<void>;
 
     /**
+     * @return OK
+     */
+    getAppSettings(signal?: AbortSignal): Promise<AppSettings>;
+
+    /**
+     * @param body (optional) 
+     * @return No Content
+     */
+    updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void>;
+
+    /**
      * @param startTime (optional) 
      * @param endTime (optional) 
      * @param action (optional) 
@@ -2881,6 +2892,90 @@ export class FuseApiClient implements IFuseApiClient {
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getAppSettings(signal?: AbortSignal): Promise<AppSettings> {
+        let url_ = this.baseUrl + "/api/AppSettings";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAppSettings(_response);
+        });
+    }
+
+    protected processGetAppSettings(response: Response): Promise<AppSettings> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AppSettings.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AppSettings>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return No Content
+     */
+    updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/AppSettings";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateAppSettings(_response);
+        });
+    }
+
+    protected processUpdateAppSettings(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -9848,6 +9943,42 @@ export interface IAppConfigurationEntryResponse {
     isLocked?: boolean;
     isKeyVaultReference?: boolean;
     keyVaultReferenceUri?: string | undefined;
+}
+
+export class AppSettings implements IAppSettings {
+    incompleteDataWarningEnabled?: boolean;
+
+    constructor(data?: IAppSettings) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.incompleteDataWarningEnabled = _data["incompleteDataWarningEnabled"];
+        }
+    }
+
+    static fromJS(data: any): AppSettings {
+        data = typeof data === 'object' ? data : {};
+        let result = new AppSettings();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["incompleteDataWarningEnabled"] = this.incompleteDataWarningEnabled;
+        return data;
+    }
+}
+
+export interface IAppSettings {
+    incompleteDataWarningEnabled?: boolean;
 }
 
 export class Application implements IApplication {

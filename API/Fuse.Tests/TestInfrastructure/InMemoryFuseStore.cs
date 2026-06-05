@@ -30,7 +30,8 @@ public sealed class InMemoryFuseStore : IFuseStore
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            SecurityContextHelper.Get,
+            new AppSettings()
         );
     }
 
@@ -40,6 +41,11 @@ public sealed class InMemoryFuseStore : IFuseStore
 
     public Task<Snapshot> GetAsync(CancellationToken ct = default)
         => Task.FromResult(_snapshot);
+
+    public Task<T> GetAsync<T>(Func<Snapshot, T> selector, CancellationToken ct = default)
+    {
+        return Task.FromResult(selector(_snapshot));
+    }
 
     public Task<Snapshot> LoadAsync(CancellationToken ct = default)
         => Task.FromResult(_snapshot);

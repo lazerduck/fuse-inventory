@@ -48,7 +48,8 @@ public class MessageBrokerServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: (brokers ?? Array.Empty<MessageBroker>()).ToArray(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            SecurityContextHelper.Get,
+            new AppSettings()
         );
         return new InMemoryFuseStore(snapshot);
     }

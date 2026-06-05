@@ -27,7 +27,7 @@ public class AccountService : IAccountService
 
     public async Task<Result<Account>> CreateAccountAsync(CreateAccount command)
     {
-        var tagIds = command.TagIds ?? new HashSet<Guid>();
+        var tagIds = command.TagIds ?? [];
 
         var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;

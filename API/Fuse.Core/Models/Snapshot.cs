@@ -21,6 +21,7 @@ public record Snapshot(
     IReadOnlyList<MessageBroker> MessageBrokers,
     SecurityState Security,
     SecurityContext SecurityContext,
+    AppSettings AppSettings,
     PasswordGeneratorConfig? PasswordGeneratorConfig = null,
     AzureIntegrationManager? AzureIntegrationManager = null
 )
@@ -60,7 +61,8 @@ public record Snapshot(
         Array.Empty<Risk>(),
         Array.Empty<MessageBroker>(),
         Security,
-        SecurityContext
+        SecurityContext,
+        new AppSettings()
     )
     {
     }
@@ -106,7 +108,8 @@ public record Snapshot(
             Array.Empty<FuseUser>(),
             Array.Empty<FuseApiKey>(),
             Array.Empty<Session>()
-        )
+        ),
+        new AppSettings()
     )
     {
     }
@@ -128,7 +131,8 @@ public record Snapshot(
         IReadOnlyList<ResponsibilityAssignment> ResponsibilityAssignments,
         IReadOnlyList<Risk> Risks,
         SecurityState Security,
-        SecurityContext SecurityContext
+        SecurityContext SecurityContext,
+        AppSettings AppSettings
     ) : this(
         Applications,
         DataStores,
@@ -147,7 +151,8 @@ public record Snapshot(
         Risks,
         Array.Empty<MessageBroker>(),
         Security,
-        SecurityContext
+        SecurityContext,
+        AppSettings
     )
     {
     }

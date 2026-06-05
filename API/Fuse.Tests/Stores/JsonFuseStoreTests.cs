@@ -177,7 +177,8 @@ public class JsonFuseStoreTests : IDisposable
             ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
             Risks: Array.Empty<Risk>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContextHelper.Get
+            SecurityContextHelper.Get,
+            new AppSettings()
         );
 
         await store.SaveAsync(snapshot);

@@ -364,7 +364,8 @@ public class AuthorizationMiddlewareUnitTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContext: new SecurityContext(posture, Array.Empty<FuseRole>(), users, Array.Empty<FuseApiKey>(), Array.Empty<Session>())
+            SecurityContext: new SecurityContext(posture, Array.Empty<FuseRole>(), users, Array.Empty<FuseApiKey>(), Array.Empty<Session>()),
+            AppSettings: new AppSettings()
         );
 
     private static FuseUser NewAdminUser()

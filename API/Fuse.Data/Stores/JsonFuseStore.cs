@@ -34,6 +34,12 @@ public sealed class JsonFuseStore : IFuseStore
 
     public async Task<Snapshot> GetAsync(CancellationToken ct = default)
         => _cache is not null ? _cache : await LoadAsync(ct);
+    
+    public async Task<T> GetAsync<T>(Func<Snapshot, T> selector, CancellationToken ct = default)
+    {
+        var snapshot = _cache ?? await LoadAsync(ct);
+        return selector(snapshot);
+    }
 
     public async Task<Snapshot> LoadAsync(CancellationToken ct = default)
     {
@@ -59,6 +65,7 @@ public sealed class JsonFuseStore : IFuseStore
                 MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
                 Security: await ReadSecurityAsync("security.json", ct),
                 SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
+                AppSettings: await ReadObjectAsync<AppSettings>("appsettings.json", ct) ?? new AppSettings(),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
                 AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct)
 
@@ -122,6 +129,8 @@ public sealed class JsonFuseStore : IFuseStore
                 writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
             if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
                 writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
+            if (_cache is null || !ReferenceEquals(_cache.AppSettings, snapshot.AppSettings))
+                writeTasks.Add(WriteAsync("appsettings.json", snapshot.AppSettings, ct));
             if (_cache is null || !ReferenceEquals(_cache.AzureIntegrationManager, snapshot.AzureIntegrationManager))
                 writeTasks.Add(WriteAsync("azureintegrationmanager.json", snapshot.AzureIntegrationManager, ct));
 

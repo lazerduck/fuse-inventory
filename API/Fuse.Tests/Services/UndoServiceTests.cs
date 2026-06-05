@@ -49,7 +49,8 @@ public class UndoServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContext: SecurityContextHelper.Get
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
 
         var store = new InMemoryFuseStore(snapshot);
@@ -198,7 +199,8 @@ public class UndoServiceTests
             Risks: Array.Empty<Risk>(),
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-            SecurityContext: SecurityContextHelper.Get
+            SecurityContext: SecurityContextHelper.Get,
+            AppSettings: new AppSettings()
         );
 
         var store = new InMemoryFuseStore(snapshot);

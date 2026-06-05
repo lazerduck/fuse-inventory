@@ -30,6 +30,7 @@ public class PasswordGeneratorServiceTests
             MessageBrokers: Array.Empty<MessageBroker>(),
             Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
             SecurityContextHelper.Get,
+            AppSettings: new AppSettings(),
             PasswordGeneratorConfig: config
         );
         return new InMemoryFuseStore(snapshot);
