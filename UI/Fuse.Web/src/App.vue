@@ -217,7 +217,7 @@
             </q-item>
 
             <q-item clickable v-ripple :to="{ name: 'documentationCompleteness' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.ApplicationsRead)">
+              v-if="fuseStore.hasPermission(Permission.ApplicationsRead) && isIncompleteDataWarningEnabled">
               <q-item-section avatar>
                 <q-icon name="fact_check" />
               </q-item-section>
@@ -305,13 +305,23 @@
           </q-expansion-item>
 
           <q-expansion-item label="Administration" icon="settings" dense expand-separator>
-            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
-              data-tour-id="nav-config">
+            <q-item clickable v-ripple :to="{ name: 'appSettings' }" active-class="bg-primary text-white"
+              data-tour-id="nav-app-settings">
               <q-item-section avatar>
                 <q-icon name="settings" />
               </q-item-section>
               <q-item-section>
-                Config
+                Settings
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
+              data-tour-id="nav-config">
+              <q-item-section avatar>
+                <q-icon name="notes" />
+              </q-item-section>
+              <q-item-section>
+                Config Export
               </q-item-section>
             </q-item>
 
@@ -419,6 +429,10 @@ const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const applicationsQuery = useApplications()
 const kumaIntegrationsQuery = useKumaIntegrations()
+
+fuseStore.fetchStatus()
+
+const isIncompleteDataWarningEnabled = computed(() => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false)
 
 const hasKumaIntegration = computed(() => (kumaIntegrationsQuery.data.value ?? []).length > 0)
 

@@ -20,7 +20,7 @@ public class AppSettingsController(IAppSettingsService appSettingsService) : Con
 
     [HttpPut]
     [SwaggerOperation(OperationId = "updateAppSettings")]
-    [Authorize(AppSettingsPermissions.UpdateKey)]
+    [RequirePermissionKey(AppSettingsPermissions.UpdateKey)]
     [ProducesResponseType(204)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> UpdateAppSettings([FromBody] AppSettings updatedSettings)

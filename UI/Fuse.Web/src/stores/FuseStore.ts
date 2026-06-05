@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { useFuseClient } from "../composables/useFuseClient";
 import { useAuthToken } from "../composables/useAuthToken";
-import { LogoutSecurityUser, SecurityPosture } from "api/client";
+import { AppSettings, LogoutSecurityUser, SecurityPosture } from "api/client";
 import { type SecurityUserInfo, type LoginSecurityUser } from "api/client";
 
 // Default Admin Role ID (matches PermissionService.DefaultAdminRoleId)
@@ -37,7 +37,8 @@ export const useFuseStore = defineStore("fuse", {
     securityPosture: null as SecurityPosture | null,
     currentUser: null as SecurityUserInfo | null,
     sessionToken: null as string | null,
-    userPermissions: null as Permission[] | null
+    userPermissions: null as Permission[] | null,
+    appSettings: null as AppSettings | null
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
@@ -137,12 +138,27 @@ export const useFuseStore = defineStore("fuse", {
       this.securityPosture = status.posture || null;
       this.currentUser = status.currentUser || null;
 
+      this.appSettings = await fuseClient().getAppSettings().catch(() => null);
+
       if (!this.currentUser) {
         this.sessionToken = null;
         this.userPermissions = null;
       } else {
         await this.resolveUserPermissions();
       }
+    },
+    async updateAppSettings(changes: Partial<AppSettings>) {
+      if (!this.appSettings) {
+        return;
+      }
+
+      const updatedSettings = new AppSettings({
+        ...this.appSettings,
+        ...changes,
+      });
+
+      await fuseClient().updateAppSettings(updatedSettings);
+      this.appSettings = updatedSettings;
     },
     async login(credentials: LoginSecurityUser) {
       const session = await fuseClient().login(credentials);

@@ -26,6 +26,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Services;
 using Fuse.Core.Services.Startup;
 using Microsoft.Extensions.DependencyInjection;
+using Fuse.Core.Areas.AppSettings;
 
 namespace Fuse.Core;
 
@@ -55,6 +56,7 @@ public static class FuseCodeModule
         services.AddScoped<IFuseUserSessionService, FuseUserSessionService>();
         services.AddScoped<IFuseSecurityService, FuseSecurityService>();
         services.AddScoped<IFuseAPIKeyService, FuseAPIKeyService>();
+        services.AddScoped<IAppSettingsService, AppSettingsService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
@@ -79,6 +81,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, RolePermissions>();
         services.AddSingleton<AreaPermissions, SecuritySettingsPermissions>();
         services.AddSingleton<AreaPermissions, UserAccountPermissions>();
+        services.AddSingleton<AreaPermissions, AppSettingsPermissions>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();

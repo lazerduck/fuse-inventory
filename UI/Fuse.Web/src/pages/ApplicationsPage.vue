@@ -267,15 +267,24 @@ const tagsStore = useTags()
 const tagOptions = tagsStore.options
 const tagInfoLookup = tagsStore.tagInfoLookup
 
-const columns: QTableColumn<Application>[] = [
-  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'completeness', label: 'Completeness', field: 'id', align: 'left' },
-  { name: 'version', label: 'Version', field: 'version', align: 'left', sortable: true },
-  { name: 'owner', label: 'Owner', field: 'owner', align: 'left' },
-  { name: 'repositoryUri', label: 'Repository', field: 'repositoryUri', align: 'left' },
-  { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
-  { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
-]
+const columns = computed<QTableColumn<Application>[]>(() => {
+  const output: QTableColumn<Application>[] = [
+    { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
+    { name: 'completeness', label: 'Completeness', field: 'id', align: 'left' },
+    { name: 'version', label: 'Version', field: 'version', align: 'left', sortable: true },
+    { name: 'owner', label: 'Owner', field: 'owner', align: 'left' },
+    { name: 'repositoryUri', label: 'Repository', field: 'repositoryUri', align: 'left' },
+    { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
+    { name: 'actions', label: '', field: (row: Application) => row.id, align: 'right' }
+  ];
+
+  if (!fuseStore.appSettings?.incompleteDataWarningEnabled) {
+    // If the incomplete data warning is disabled, hide the completeness column
+    return output.filter(col => col.name !== 'completeness')
+  }
+
+  return output;
+});
 
 const isCreateDialogOpen = ref(false)
 
