@@ -7,11 +7,12 @@ using Fuse.Core.Models;
 
 namespace Fuse.Data.Stores;
 
-public sealed class JsonFuseStore : IFuseStore
+public sealed class JsonFuseStore : IFuseStore, IDisposable
 {
     private readonly JsonFuseStoreOptions _options;
     private readonly SemaphoreSlim _mutex = new(1, 1);
     private Snapshot? _cache;
+    private bool _disposed;
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -222,5 +223,13 @@ public sealed class JsonFuseStore : IFuseStore
             await JsonSerializer.SerializeAsync(fs, value, Json, ct);
         }
         File.Move(tmp, path, overwrite: true);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _mutex.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
