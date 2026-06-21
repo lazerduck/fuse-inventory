@@ -1,9 +1,9 @@
 <template>
-  <q-page class="bg-white">
+  <div class="bg-white">
     <!-- Hero -->
     <section class="features-hero section section--alt">
       <div class="container container--narrow">
-        <q-badge color="primary" outline class="features-hero__badge">Features</q-badge>
+        <span class="page-badge">Features</span>
         <h1 class="features-hero__title">
           Built for teams who need visibility, not overhead.
         </h1>
@@ -14,12 +14,12 @@
     </section>
 
     <!-- Feature sections -->
-    <div class="container container--narrow">
+    <div class="container container--feature">
 
       <!-- Inventory Management -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-grip" color="primary" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-grip feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
           <h2>Complete Inventory Model</h2>
           <p>
             Track everything from high-level applications down to individual credentials. Fuse-Inventory models your infrastructure the way real teams think about it.
@@ -43,7 +43,7 @@
           <img src="@/assets/dependency-graph.webp" alt="Dependency graph" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-circle-nodes" color="primary" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-circle-nodes feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
           <h2>Dependency Mapping &amp; Graph</h2>
           <p>
             See every connection in your stack. Fuse-Inventory tracks dependencies between instances, data stores, external services, and message brokers — then renders them as an interactive, filterable graph.
@@ -61,7 +61,7 @@
       <!-- Blast Radius -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-bolt" color="warning" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-bolt feature-split__icon" style="font-size: 36px; color: #f59e0b;"></i>
           <h2>Blast Radius Analysis</h2>
           <p>
             What breaks if this service dies? Fuse-Inventory simulates failures across your dependency graph to show you exactly which systems are affected — directly and indirectly.
@@ -84,7 +84,7 @@
           <img src="@/assets/account-edit.webp" alt="Account management" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-key" color="primary" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-key feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
           <h2>Credential &amp; Access Management</h2>
           <p>
             Track every credential your systems need — API keys, passwords, certificates, connection strings. Link them to specific targets with database grants and role-based access.
@@ -102,7 +102,7 @@
       <!-- Integrations -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-link" color="primary" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-link feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
           <h2>Deep Integrations</h2>
           <p>
             Fuse-Inventory doesn't just store your data — it connects to the systems you already use.
@@ -125,7 +125,7 @@
           <img src="@/assets/risks.webp" alt="Risk tracking" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-triangle-exclamation" color="negative" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-triangle-exclamation feature-split__icon" style="font-size: 36px; color: #dc2626;"></i>
           <h2>Risk &amp; Governance</h2>
           <p>
             Track risks, responsibilities, and compliance gaps. Link them to specific resources so nothing falls through the cracks.
@@ -142,7 +142,7 @@
       <!-- Documentation Mode -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="fa-solid fa-book-open" color="primary" size="36px" class="feature-split__icon" />
+          <i class="fa-solid fa-book-open feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
           <h2>Documentation Mode</h2>
           <p>
             Share infrastructure knowledge without exposing credentials. Documentation Mode provides read-only, public-facing pages with global search — no login required.
@@ -169,33 +169,18 @@
           Browse through real screenshots or fire up a container and try it yourself.
         </p>
         <div class="hero__actions" style="justify-content: center;">
-          <q-btn
-            unelevated
-            size="lg"
-            color="white"
-            text-color="primary"
-            label="View Screenshots"
-            @click="router.push('/screenshots')"
-          />
-          <q-btn
-            outline
-            size="lg"
-            color="white"
-            label="Get Started"
-            icon="fab fa-docker"
-            href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory"
-            target="_blank"
-          />
+          <a class="cta-btn cta-btn--solid" href="/screenshots">View Screenshots</a>
+          <a class="cta-btn cta-btn--outline" href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory" target="_blank">
+            <i class="fab fa-docker"></i> Get Started
+          </a>
         </div>
       </div>
     </section>
 
-  </q-page>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-const router = useRouter()
 </script>
 
 <style scoped>
@@ -227,13 +212,50 @@ const router = useRouter()
   line-height: 1.6;
 }
 
-/* Feature split */
+.container--feature {
+  max-width: 1280px;
+}
+
+/* CTA buttons */
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cta-btn:hover {
+  opacity: 0.85;
+}
+
+.cta-btn--solid {
+  background: white;
+  color: #1976d2;
+  border: none;
+}
+
+.cta-btn--outline {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255,255,255,0.7);
+}
 .feature-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
   align-items: center;
-  padding: 4rem 0;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  background: white;
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(26, 26, 46, 0.08);
 }
 
 .feature-split:not(:first-child) {
@@ -291,14 +313,32 @@ const router = useRouter()
 
 .feature-split__image img {
   width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
   border: 1px solid rgba(0,0,0,0.06);
 }
 
-/* CTA */
-.cta-section {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: white;
+@media (max-width: 959px) {
+  .container--feature {
+    max-width: 960px;
+  }
+
+  .feature-split {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem;
+  }
 }
+
+@media (max-width: 599px) {
+  .container--feature {
+    max-width: 100%;
+  }
+
+  .feature-split {
+    padding: 1.5rem;
+  }
+}
+
+/* CTA */
 </style>
