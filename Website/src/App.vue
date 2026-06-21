@@ -60,4 +60,80 @@ html, body {
 #app {
   height: 100%;
 }
+
+.marketing-footer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 3rem 2rem;
+  margin-top: 4rem;
+}
+
+.marketing-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.marketing-footer__title {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.marketing-footer__tagline {
+  display: block;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.marketing-footer__links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.marketing-footer__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.marketing-footer__links a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.marketing-footer__links svg {
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.marketing-footer__links a:hover svg {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .marketing-footer__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .marketing-footer__links {
+    flex-wrap: wrap;
+  }
+}
 </style>

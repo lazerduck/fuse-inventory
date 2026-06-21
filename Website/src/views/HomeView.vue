@@ -251,30 +251,44 @@ function scrollTo(id: string) {
 .cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.75rem;
-  font-size: 1rem;
+  gap: 0.75rem;
+  padding: 0.875rem 2rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 10px;
   text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
   border: 2px solid transparent;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .cta-btn:hover {
-  opacity: 0.85;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
 }
 
 .cta-btn--solid {
-  background: #1976d2;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
   color: white;
+}
+
+.cta-btn--solid:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #1454aa 100%);
 }
 
 .cta-btn--outline {
   background: transparent;
-  color: #1976d2;
-  border-color: rgba(25, 118, 210, 0.35);
+  color: white;
+  border: 2px solid white;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.cta-btn--outline:hover {
+  background: white;
+  color: #1a1a2e;
+  box-shadow: 0 12px 24px rgba(255, 255, 255, 0.3);
 }
 
 .hero__image {
@@ -449,7 +463,7 @@ function scrollTo(id: string) {
 @media (max-width: 959px) {
   .hero {
     grid-template-columns: 1fr;
-    padding: 3rem 0;
+    padding: 5rem 0 3rem 0;
     min-height: auto;
   }
   .hero__content {
@@ -467,6 +481,9 @@ function scrollTo(id: string) {
 }
 
 @media (max-width: 599px) {
+  .hero {
+    padding: 6rem 0 3rem 0;
+  }
   .hero__title {
     font-size: 2rem;
   }
