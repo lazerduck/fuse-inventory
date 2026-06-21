@@ -1,9 +1,9 @@
 <template>
-  <q-page class="bg-grey-2">
+  <div class="bg-grey-2">
     <!-- Header -->
     <section class="screenshots-hero section section--alt">
-      <div class="container container--narrow">
-        <q-badge color="primary" outline class="screenshots-hero__badge">Screenshots</q-badge>
+      <div class="container container--screenshots-hero">
+        <span class="page-badge screenshots-hero__badge">Screenshots</span>
         <h1 class="screenshots-hero__title">See it in action</h1>
         <p class="screenshots-hero__subtitle">
           A look at the Fuse-Inventory interface — dark mode by default, responsive, and designed for information density.
@@ -13,14 +13,14 @@
 
     <!-- Gallery -->
     <section class="gallery-section section">
-      <div class="container">
+      <div class="container container--screenshots">
         <div class="gallery-grid">
 
           <div class="gallery-item gallery-item--large">
             <div class="gallery-item__frame">
               <img src="@/assets/home-dashboard.webp" alt="Dashboard overview" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -33,7 +33,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/dependency-graph.webp" alt="Dependency graph" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -46,7 +46,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/blast-radius.webp" alt="Blast radius analysis" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -59,7 +59,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/azure-integration.webp" alt="Azure Key Vault integration" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -72,7 +72,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/documentation-mode.webp" alt="Documentation mode" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -85,7 +85,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/account-edit.webp" alt="Account credentials management" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -98,7 +98,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/audit.webp" alt="Audit log" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -111,7 +111,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/risks.webp" alt="Risk management" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -124,7 +124,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/documentation-mode.webp" alt="Documentation completeness" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -137,7 +137,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/configuration.webp" alt="App configuration" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -150,7 +150,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/security.webp" alt="Security settings" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -163,7 +163,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/password-generator.webp" alt="Password generator" />
               <div class="gallery-item__overlay">
-                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
+                <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
             </div>
             <div class="gallery-item__info">
@@ -188,31 +188,18 @@
   -p 8080:8080 \
   -v $(pwd)/data:/app/data \
   ghcr.io/lazerduck/fuse-inventory:latest</code></pre>
-        <div class="hero__actions" style="justify-content: center;">
-          <q-btn
-            unelevated
-            size="lg"
-            color="white"
-            text-color="primary"
-            label="Get Started"
-            icon="fab fa-docker"
-            href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory"
-            target="_blank"
-          />
-          <q-btn
-            outline
-            size="lg"
-            color="white"
-            label="View on GitHub"
-            icon="fab fa-github"
-            href="https://github.com/lazerduck/fuse-inventory"
-            target="_blank"
-          />
+        <div class="hero__actions hero__actions--center">
+          <a class="cta-btn cta-btn--solid" href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory" target="_blank">
+            <i class="fab fa-docker"></i> Get Started
+          </a>
+          <a class="cta-btn cta-btn--outline" href="https://github.com/lazerduck/fuse-inventory" target="_blank">
+            <i class="fab fa-github"></i> View on GitHub
+          </a>
         </div>
       </div>
     </section>
 
-  </q-page>
+  </div>
 </template>
 
 <style scoped>
@@ -244,6 +231,14 @@
   line-height: 1.6;
 }
 
+.container--screenshots-hero {
+  max-width: 960px;
+}
+
+.container--screenshots {
+  max-width: 1440px;
+}
+
 /* Gallery */
 .gallery-section {
   padding: 4rem 0;
@@ -251,19 +246,27 @@
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
 }
 
 .gallery-item--large {
   grid-column: span 2;
 }
 
+.gallery-item {
+  background: white;
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 22px;
+  padding: 1rem;
+  box-shadow: 0 18px 48px rgba(26, 26, 46, 0.08);
+}
+
 .gallery-item__frame {
   position: relative;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.06);
   box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
@@ -292,12 +295,17 @@
   transition: opacity 0.2s;
 }
 
+.gallery-item__overlay-icon {
+  color: white;
+  font-size: 24px;
+}
+
 .gallery-item__frame:hover .gallery-item__overlay {
   opacity: 1;
 }
 
 .gallery-item__info {
-  padding: 1rem 0.25rem;
+  padding: 1rem 0.25rem 0.25rem;
 }
 
 .gallery-item__info h3 {
@@ -312,6 +320,35 @@
   color: #4a4a6a;
   margin: 0;
   line-height: 1.4;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cta-btn:hover {
+  opacity: 0.85;
+}
+
+.cta-btn--solid {
+  background: white;
+  color: #1976d2;
+  border: none;
+}
+
+.cta-btn--outline {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255,255,255,0.7);
 }
 
 /* CTA */
@@ -338,8 +375,20 @@
   font-family: 'Fira Code', 'JetBrains Mono', monospace;
 }
 
+.hero__actions--center {
+  justify-content: center;
+}
+
 /* Responsive */
 @media (max-width: 959px) {
+  .container--screenshots {
+    max-width: 960px;
+  }
+
+  .container--screenshots-hero {
+    max-width: 960px;
+  }
+
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -349,6 +398,11 @@
 }
 
 @media (max-width: 599px) {
+  .container--screenshots,
+  .container--screenshots-hero {
+    max-width: 100%;
+  }
+
   .gallery-grid {
     grid-template-columns: 1fr;
   }
