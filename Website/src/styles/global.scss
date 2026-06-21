@@ -1,0 +1,19 @@
+// Global styles for Fuse-Inventory marketing site
+// Quasar provides its own CSS; this adds our own layer on top.
+
+// Smooth scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Custom font for body text
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Soft background used for card accents
+.bg-primary-soft {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+}

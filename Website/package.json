@@ -1,0 +1,25 @@
+{
+  "name": "fuse-inventory-website",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.17.0",
+    "pinia": "^3.0.4",
+    "quasar": "^2.18.5",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "sass": "^1.93.3",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.2",
+    "vue-tsc": "^3.1.0"
+  }
+}
