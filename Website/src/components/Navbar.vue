@@ -125,8 +125,6 @@ onUnmounted(() => {
 }
 
 .marketing-header__inner {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 0 2rem;
   height: 72px;
   display: flex;
@@ -135,6 +133,8 @@ onUnmounted(() => {
   /* Always have a solid background bar */
   background: #0a0a18;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  /* Full width */
+  width: 100%;
 }
 
 /* Scrolled state: add blur overlay on top of solid background */
