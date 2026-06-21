@@ -19,7 +19,7 @@
       <!-- Inventory Management -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="apps" color="primary" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-grip" color="primary" size="36px" class="feature-split__icon" />
           <h2>Complete Inventory Model</h2>
           <p>
             Track everything from high-level applications down to individual credentials. Fuse-Inventory models your infrastructure the way real teams think about it.
@@ -43,7 +43,7 @@
           <img src="@/assets/dependency-graph.webp" alt="Dependency graph" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="hub" color="primary" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-circle-nodes" color="primary" size="36px" class="feature-split__icon" />
           <h2>Dependency Mapping &amp; Graph</h2>
           <p>
             See every connection in your stack. Fuse-Inventory tracks dependencies between instances, data stores, external services, and message brokers — then renders them as an interactive, filterable graph.
@@ -61,7 +61,7 @@
       <!-- Blast Radius -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="bolt" color="warning" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-bolt" color="warning" size="36px" class="feature-split__icon" />
           <h2>Blast Radius Analysis</h2>
           <p>
             What breaks if this service dies? Fuse-Inventory simulates failures across your dependency graph to show you exactly which systems are affected — directly and indirectly.
@@ -84,7 +84,7 @@
           <img src="@/assets/account-edit.webp" alt="Account management" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="key" color="primary" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-key" color="primary" size="36px" class="feature-split__icon" />
           <h2>Credential &amp; Access Management</h2>
           <p>
             Track every credential your systems need — API keys, passwords, certificates, connection strings. Link them to specific targets with database grants and role-based access.
@@ -102,7 +102,7 @@
       <!-- Integrations -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="integration_instructions" color="primary" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-link" color="primary" size="36px" class="feature-split__icon" />
           <h2>Deep Integrations</h2>
           <p>
             Fuse-Inventory doesn't just store your data — it connects to the systems you already use.
@@ -125,7 +125,7 @@
           <img src="@/assets/risks.webp" alt="Risk tracking" />
         </div>
         <div class="feature-split__text">
-          <q-icon name="warning" color="negative" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-triangle-exclamation" color="negative" size="36px" class="feature-split__icon" />
           <h2>Risk &amp; Governance</h2>
           <p>
             Track risks, responsibilities, and compliance gaps. Link them to specific resources so nothing falls through the cracks.
@@ -142,7 +142,7 @@
       <!-- Documentation Mode -->
       <section class="feature-split">
         <div class="feature-split__text">
-          <q-icon name="description" color="primary" size="36px" class="feature-split__icon" />
+          <q-icon name="fa-solid fa-book-open" color="primary" size="36px" class="feature-split__icon" />
           <h2>Documentation Mode</h2>
           <p>
             Share infrastructure knowledge without exposing credentials. Documentation Mode provides read-only, public-facing pages with global search — no login required.

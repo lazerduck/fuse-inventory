@@ -14,9 +14,6 @@ app.use(router)
 app.use(Quasar, {
   config: {
     notify: {}
-  },
-  icons: {
-    iconSet: 'fontAwesome6'
   }
 })
 

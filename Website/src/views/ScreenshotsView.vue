@@ -20,7 +20,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/home-dashboard.webp" alt="Dashboard overview" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -33,7 +33,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/dependency-graph.webp" alt="Dependency graph" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -46,7 +46,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/blast-radius.webp" alt="Blast radius analysis" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -59,7 +59,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/azure-integration.webp" alt="Azure Key Vault integration" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -72,7 +72,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/documentation-mode.webp" alt="Documentation mode" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -85,7 +85,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/account-edit.webp" alt="Account credentials management" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -98,7 +98,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/audit.webp" alt="Audit log" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -111,7 +111,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/risks.webp" alt="Risk management" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -124,7 +124,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/documentation-mode.webp" alt="Documentation completeness" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -137,7 +137,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/configuration.webp" alt="App configuration" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -150,7 +150,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/security.webp" alt="Security settings" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">
@@ -163,7 +163,7 @@
             <div class="gallery-item__frame">
               <img src="@/assets/password-generator.webp" alt="Password generator" />
               <div class="gallery-item__overlay">
-                <q-icon name="zoom_in" size="24px" color="white" />
+                <q-icon name="fa-solid fa-magnifying-glass-plus" size="24px" color="white" />
               </div>
             </div>
             <div class="gallery-item__info">

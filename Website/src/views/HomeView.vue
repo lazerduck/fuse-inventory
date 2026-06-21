@@ -62,7 +62,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="dashboard" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-display" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">Live Dashboard</h3>
             <p>
@@ -73,7 +73,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="hub" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-network-wired" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">Dependency Graph</h3>
             <p>
@@ -84,7 +84,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="bolt" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-bolt" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">Blast Radius</h3>
             <p>
@@ -95,7 +95,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="shield" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-shield-halved" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">SQL Drift Detection</h3>
             <p>
@@ -106,7 +106,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="lock" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-vault" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">Azure Key Vault</h3>
             <p>
@@ -117,7 +117,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="description" size="32px" color="primary" />
+              <q-icon name="fa-solid fa-book" size="32px" color="primary" />
             </div>
             <h3 class="feature-card__title">Documentation Mode</h3>
             <p>
@@ -138,27 +138,27 @@
         </h2>
         <div class="architecture-grid">
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>Self-hosted — your data stays on your disk</span>
           </div>
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>Single Docker container — deploy in one command</span>
           </div>
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>YAML or JSON export — portability without lock-in</span>
           </div>
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>Full audit log — every change tracked</span>
           </div>
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>Three security modes — open, read-only, or locked down</span>
           </div>
           <div class="arch-item">
-            <q-icon name="check_circle" color="positive" size="24px" />
+            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
             <span>Open source — MIT licensed</span>
           </div>
         </div>

@@ -133,8 +133,9 @@ onUnmounted(() => {
   /* Always have a solid background bar */
   background: #0a0a18;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  /* Full width */
+  /* Full width - no max-width constraint */
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* Scrolled state: add blur overlay on top of solid background */
