@@ -1,12 +1,10 @@
 <template>
-  <q-page class="bg-white">
+  <div class="bg-white">
 
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero__content container">
-        <q-badge color="primary" class="hero__badge" outline>
-          ⚡ Open Source &amp; Self-Hosted
-        </q-badge>
+        <span class="page-badge hero__badge">⚡ Open Source &amp; Self-Hosted</span>
         <h1 class="hero__title">
           Know exactly what you've got deployed.
         </h1>
@@ -14,21 +12,12 @@
           Fuse-Inventory is a self-hosted configuration management database that gives DevOps teams a single, living map of their entire infrastructure — applications, dependencies, credentials, and risk.
         </p>
         <div class="hero__actions">
-          <q-btn
-            unelevated
-            size="lg"
-            color="primary"
-            label="Get Started"
-            @click="scrollTo('features')"
-          />
-          <q-btn
-            flat
-            size="lg"
-            label="View on GitHub"
-            icon="fab fa-github"
-            href="https://github.com/lazerduck/fuse-inventory"
-            target="_blank"
-          />
+          <button class="cta-btn cta-btn--solid" type="button" @click="scrollTo('features')">
+            Get Started
+          </button>
+          <a class="cta-btn cta-btn--outline" href="https://github.com/lazerduck/fuse-inventory" target="_blank">
+            <i class="fab fa-github"></i> View on GitHub
+          </a>
         </div>
       </div>
       <div class="hero__hero-image">
@@ -138,27 +127,27 @@
         </h2>
         <div class="architecture-grid">
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>Self-hosted — your data stays on your disk</span>
           </div>
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>Single Docker container — deploy in one command</span>
           </div>
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>YAML or JSON export — portability without lock-in</span>
           </div>
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>Full audit log — every change tracked</span>
           </div>
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>Three security modes — open, read-only, or locked down</span>
           </div>
           <div class="arch-item">
-            <q-icon name="fa-solid fa-check" color="positive" size="24px" />
+            <i class="fa-solid fa-check feature-check-icon"></i>
             <span>Open source — MIT licensed</span>
           </div>
         </div>
@@ -179,31 +168,18 @@
   -p 8080:8080 \
   -v $(pwd)/data:/app/data \
   ghcr.io/lazerduck/fuse-inventory:latest</code></pre>
-        <div class="hero__actions" style="justify-content: center;">
-          <q-btn
-            unelevated
-            size="lg"
-            color="white"
-            text-color="primary"
-            label="Get Started on Docker Hub"
-            icon="fab fa-docker"
-            href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory"
-            target="_blank"
-          />
-          <q-btn
-            outline
-            size="lg"
-            color="white"
-            label="View on GitHub"
-            icon="fab fa-github"
-            href="https://github.com/lazerduck/fuse-inventory"
-            target="_blank"
-          />
+        <div class="hero__actions hero__actions--center">
+          <a class="cta-btn cta-btn--solid" href="https://github.com/users/lazerduck/packages/container/package/fuse-inventory" target="_blank">
+            <i class="fab fa-docker"></i> Get Started on Docker Hub
+          </a>
+          <a class="cta-btn cta-btn--outline" href="https://github.com/lazerduck/fuse-inventory" target="_blank">
+            <i class="fab fa-github"></i> View on GitHub
+          </a>
         </div>
       </div>
     </section>
 
-  </q-page>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -232,6 +208,18 @@ function scrollTo(id: string) {
   margin-bottom: 1.5rem;
 }
 
+.page-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  padding: 0.2em 0.65em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .hero__title {
   font-size: 3.5rem;
   font-weight: 800;
@@ -254,6 +242,39 @@ function scrollTo(id: string) {
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.hero__actions--center {
+  justify-content: center;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border: 2px solid transparent;
+}
+
+.cta-btn:hover {
+  opacity: 0.85;
+}
+
+.cta-btn--solid {
+  background: #1976d2;
+  color: white;
+}
+
+.cta-btn--outline {
+  background: transparent;
+  color: #1976d2;
+  border-color: rgba(25, 118, 210, 0.35);
 }
 
 .hero__image {
@@ -364,6 +385,10 @@ function scrollTo(id: string) {
   gap: 0.75rem;
   font-size: 1.05rem;
   color: #3a3a5a;
+}
+
+.feature-check-icon {
+  color: #00c853;
 }
 
 /* CTA */
