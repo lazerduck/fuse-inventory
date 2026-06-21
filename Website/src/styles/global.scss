@@ -1,0 +1,105 @@
+// Global styles for Fuse-Inventory marketing site
+// Quasar provides its own CSS; this adds our own layer on top.
+
+// Smooth scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Custom font for body text
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Soft background used for card accents
+.bg-primary-soft {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+}
+
+// Layout containers
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.container--narrow {
+  max-width: 960px;
+}
+
+// Section utilities
+.section {
+  padding: 5rem 0;
+}
+
+.section--alt {
+  background: #f8f9fc;
+}
+
+.text-center {
+  text-align: center;
+}
+
+// Shared action button row
+.hero__actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+// Shared section typography
+.section__title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.section__description {
+  font-size: 1.15rem;
+  text-align: center;
+  color: #4a4a6a;
+  max-width: 650px;
+  margin: 0 auto 3.5rem;
+  line-height: 1.6;
+}
+
+// Shared CTA section
+.cta-section {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+}
+
+.cta-section__title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  color: white;
+}
+
+.cta-section__subtitle {
+  font-size: 1.15rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 2.5rem;
+}
+
+// Shared page badge (replaces q-badge)
+.page-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  padding: 0.2em 0.65em;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
