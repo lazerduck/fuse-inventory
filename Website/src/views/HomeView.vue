@@ -101,6 +101,7 @@
             <p>
               Connect to your databases and detect permission drift between expected grants and actual database ACLs. Fix it in one click.
             </p>
+            <img src="@/assets/security.webp" alt="SQL drift detection view" class="feature-card__img" />
           </div>
 
           <div class="feature-card">
@@ -111,6 +112,7 @@
             <p>
               Browse, create, and rotate secrets directly from Fuse. Reference Key Vault secrets from your account configurations — no manual copy-paste.
             </p>
+            <img src="@/assets/azure-integration.webp" alt="Azure Key Vault integration" class="feature-card__img" />
           </div>
 
           <div class="feature-card">
@@ -121,6 +123,7 @@
             <p>
               Share infrastructure knowledge without exposing credentials. Read-only, public-facing pages — no login required.
             </p>
+            <img src="@/assets/documentation-mode.webp" alt="Documentation mode" class="feature-card__img" />
           </div>
 
         </div>

@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import { Quasar } from 'quasar'
 import App from './App.vue'
 import router from './router'
-import '@quasar/extras/material-icons/material-icons.css'
+import '@fortawesome/fontawesome-free/css/all.css'
 import 'quasar/src/css/index.sass'
 import './styles/global.scss'
 
@@ -14,6 +14,9 @@ app.use(router)
 app.use(Quasar, {
   config: {
     notify: {}
+  },
+  icons: {
+    iconSet: 'fontAwesome6'
   }
 })
 
