@@ -84,8 +84,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import homeDashboard from '@/assets/home-dashboard.webp'
-import dependencyGraph from '@/assets/dependency-graph.webp'
+import homeDashboard from '@/assets/home-dashboard.png'
+import dependencyGraph from '@/assets/dependency-graph.png'
 import blastRadius from '@/assets/blast-radius.webp'
 import azureIntegration from '@/assets/azure-integration.webp'
 import documentationMode from '@/assets/documentation-mode.webp'

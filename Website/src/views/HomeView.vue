@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="hero__hero-image">
-        <img src="@/assets/home-dashboard.webp" alt="Fuse-Inventory dashboard showing infrastructure overview" class="hero__image" />
+        <img src="@/assets/home-dashboard.png" alt="Fuse-Inventory dashboard showing infrastructure overview" class="hero__image" />
       </div>
     </section>
 
@@ -57,7 +57,7 @@
             <p>
               Explore your entire estate at a glance — applications, platforms, environments, and external resources in a clean, filterable grid.
             </p>
-            <img src="@/assets/home-dashboard.webp" alt="Dashboard view" class="feature-card__img" />
+            <img src="@/assets/home-dashboard.png" alt="Dashboard view" class="feature-card__img" />
           </div>
 
           <div class="feature-card">
@@ -68,7 +68,7 @@
             <p>
               Visualize every connection in your stack with interactive, color-coded node diagrams. See how your services, databases, and external APIs relate.
             </p>
-            <img src="@/assets/dependency-graph.webp" alt="Dependency graph visualization" class="feature-card__img" />
+            <img src="@/assets/dependency-graph.png" alt="Dependency graph visualization" class="feature-card__img" />
           </div>
 
           <div class="feature-card">
