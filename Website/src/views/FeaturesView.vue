@@ -33,14 +33,14 @@
           </ul>
         </div>
         <div class="feature-split__image">
-          <img src="@/assets/home-dashboard.webp" alt="Inventory dashboard" />
+          <img src="@/assets/home-dashboard.png" alt="Inventory dashboard" />
         </div>
       </section>
 
       <!-- Dependencies & Graph -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
-          <img src="@/assets/dependency-graph.webp" alt="Dependency graph" />
+          <img src="@/assets/dependency-graph.png" alt="Dependency graph" />
         </div>
         <div class="feature-split__text">
           <i class="fa-solid fa-circle-nodes feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
