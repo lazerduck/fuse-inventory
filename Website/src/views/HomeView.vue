@@ -62,7 +62,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-display" size="32px" color="primary" />
+              <i class="fa-solid fa-display" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">Live Dashboard</h3>
             <p>
@@ -73,7 +73,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-network-wired" size="32px" color="primary" />
+              <i class="fa-solid fa-network-wired" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">Dependency Graph</h3>
             <p>
@@ -84,7 +84,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-bolt" size="32px" color="primary" />
+              <i class="fa-solid fa-bolt" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">Blast Radius</h3>
             <p>
@@ -95,7 +95,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-shield-halved" size="32px" color="primary" />
+              <i class="fa-solid fa-shield-halved" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">SQL Drift Detection</h3>
             <p>
@@ -106,7 +106,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-vault" size="32px" color="primary" />
+              <i class="fa-solid fa-vault" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">Azure Key Vault</h3>
             <p>
@@ -117,7 +117,7 @@
 
           <div class="feature-card">
             <div class="feature-card__icon bg-primary-soft">
-              <q-icon name="fa-solid fa-book" size="32px" color="primary" />
+              <i class="fa-solid fa-book" style="font-size: 32px; color: #1976d2;"></i>
             </div>
             <h3 class="feature-card__title">Documentation Mode</h3>
             <p>
