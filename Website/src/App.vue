@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
+import fuseLogo from '@/assets/fuse-logo.png'
 </script>
 
 <template>
@@ -11,9 +12,12 @@ import Navbar from '@/components/Navbar.vue'
     </main>
     <footer class="marketing-footer">
       <div class="marketing-footer__inner">
-        <div>
-          <span class="marketing-footer__title">Fuse Inventory</span>
-          <span class="marketing-footer__tagline">Self-hosted infrastructure inventory</span>
+        <div class="marketing-footer__brand">
+          <img :src="fuseLogo" alt="Fuse Inventory logo" class="marketing-footer__logo" />
+          <div>
+            <span class="marketing-footer__title">Fuse Inventory</span>
+            <span class="marketing-footer__tagline">Self-hosted infrastructure inventory</span>
+          </div>
         </div>
         <div class="marketing-footer__links">
           <a
@@ -73,6 +77,23 @@ html, body {
   gap: 2rem;
 }
 
+.marketing-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.marketing-footer__logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
 .marketing-footer__title {
   display: block;
   font-size: 1.25rem;
@@ -126,6 +147,11 @@ html, body {
   .marketing-footer__inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .marketing-footer__logo {
+    width: 42px;
+    height: 42px;
   }
   
   .marketing-footer__links {

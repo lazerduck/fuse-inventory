@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import fuseLogo from '@/assets/fuse-logo.png'
 
 const menuVisible = ref(false)
 const scrolled = ref(false)
@@ -40,10 +41,7 @@ onUnmounted(() => {
     <div class="marketing-header__inner">
       <!-- Brand -->
       <a href="/" class="marketing-header__brand" @click.prevent="navigate('/')">
-        <svg class="marketing-header__logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" stroke-width="2"/>
-          <path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <img :src="fuseLogo" alt="Fuse Inventory logo" class="marketing-header__logo" />
         <span>Fuse Inventory</span>
       </a>
 
@@ -161,9 +159,14 @@ onUnmounted(() => {
 }
 
 .marketing-header__logo {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
+  object-fit: contain;
+  padding: 0.2rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .marketing-header__brand span {
@@ -350,6 +353,11 @@ onUnmounted(() => {
 
   .marketing-header__mobile {
     padding: 0.25rem 0;
+  }
+
+  .marketing-header__logo {
+    width: 30px;
+    height: 30px;
   }
 
   .marketing-header__brand span {
