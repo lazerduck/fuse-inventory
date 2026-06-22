@@ -61,6 +61,11 @@ export function useSqlPermissionsActions(integrationId: MaybeRef<string | null |
     if (!integrationKey.value) return
 
     const uniqueAccountIds = getUniqueAccountIds(accountIds)
+
+    await client
+      .refreshPOST(integrationKey.value)
+      .catch((err) => console.warn('Failed to refresh SQL permissions overview', integrationKey.value, err))
+
     if (uniqueAccountIds.length) {
       await Promise.all(
         uniqueAccountIds.map((id) =>

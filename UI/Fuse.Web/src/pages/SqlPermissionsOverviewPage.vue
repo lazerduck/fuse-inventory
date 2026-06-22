@@ -4,7 +4,7 @@
       :integration-name="data?.overview?.integrationName"
       :is-fetching="isFetching"
       @back="router.push({ name: 'sqlIntegrations' })"
-      @refresh="() => refetch()"
+      @refresh="() => refresh()"
     />
 
     <div v-if="isLoading" class="q-pa-xl text-center">
@@ -18,7 +18,7 @@
       </template>
       Unable to load permissions overview. Please try again.
       <template #action>
-        <q-btn flat label="Retry" @click="() => refetch()" />
+        <q-btn flat label="Retry" @click="() => refresh()" />
       </template>
     </q-banner>
 
@@ -170,7 +170,7 @@ const router = useRouter()
 const fuseStore = useFuseStore()
 
 const integrationId = computed(() => route.params.id as string)
-const { data, isLoading, isFetching, error, refetch } = useSqlPermissionsOverview(integrationId)
+const { data, isLoading, isFetching, error, refresh } = useSqlPermissionsOverview(integrationId)
 const { data: sqlIntegrations } = useSqlIntegrations()
 
 const {
