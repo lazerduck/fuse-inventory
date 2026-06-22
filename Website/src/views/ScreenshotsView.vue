@@ -85,6 +85,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import homeDashboard from '@/assets/home-dashboard.png'
+import sqlIntegration from '@/assets/SQL_integration.png'
 import dependencyGraph from '@/assets/dependency-graph.png'
 import blastRadius from '@/assets/blast-radius.webp'
 import azureIntegration from '@/assets/azure-integration.webp'
@@ -171,6 +172,12 @@ const galleryItems: GalleryItem[] = [
     description: 'Three security modes, role-based access, API keys, and user management.',
     alt: 'Security settings',
     src: security
+  },
+  {
+    title: 'SQL Drift Detection',
+    description: 'Connect to your databases and detect permission drift between expected grants and actual database ACLs — with one-click import for unmanaged principals.',
+    alt: 'SQL drift detection dashboard',
+    src: sqlIntegration
   },
   {
     title: 'Password Generator',

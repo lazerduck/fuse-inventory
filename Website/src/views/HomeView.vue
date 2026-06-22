@@ -88,9 +88,9 @@
             </div>
             <h3 class="feature-card__title">SQL Drift Detection</h3>
             <p>
-              Connect to your databases and detect permission drift between expected grants and actual database ACLs. Fix it in one click.
+              Connect to your databases and detect permission drift between expected grants and actual database ACLs. Identify unmanaged principals and import them in one click.
             </p>
-            <img src="@/assets/security.webp" alt="SQL drift detection view" class="feature-card__img" />
+            <img src="@/assets/SQL_integration.png" alt="SQL drift detection view" class="feature-card__img" />
           </div>
 
           <div class="feature-card">

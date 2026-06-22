@@ -119,6 +119,27 @@
         </div>
       </section>
 
+      <!-- SQL Drift Detection -->
+      <section class="feature-split feature-split--reverse">
+        <div class="feature-split__image">
+          <img src="@/assets/SQL_integration.png" alt="SQL drift detection dashboard" />
+        </div>
+        <div class="feature-split__text">
+          <i class="fa-solid fa-shield-halved feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
+          <h2>SQL Permission Drift Detection</h2>
+          <p>
+            Connect Fuse-Inventory to your SQL instances and continuously compare what your inventory says against what the database actually has. Instantly spot missing accounts, extra permissions, and grants that have drifted from your defined model.
+          </p>
+          <ul class="feature-list">
+            <li>Compares inventory account permissions against live database ACLs</li>
+            <li>Detects missing principals, extra grants, and permission mismatches</li>
+            <li>Import unmanaged SQL principals directly into your inventory in one click</li>
+            <li>Push permissions from Fuse to the database — grant what you've defined without leaving the UI</li>
+            <li>Flags accounts with no SQL principal configured so nothing slips through</li>
+          </ul>
+        </div>
+      </section>
+
       <!-- Risk & Governance -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
