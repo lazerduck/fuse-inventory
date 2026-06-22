@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="hero__hero-image">
-        <img src="@/assets/home-dashboard.png" alt="Fuse-Inventory dashboard showing infrastructure overview" class="hero__image" />
+        <img src="@/assets/home-dashboard.webp" alt="Fuse-Inventory dashboard showing infrastructure overview" class="hero__image" fetchpriority="high" decoding="async" />
       </div>
     </section>
 
@@ -57,7 +57,7 @@
             <p>
               Explore your entire estate at a glance — applications, platforms, environments, and external resources in a clean, filterable grid.
             </p>
-            <img src="@/assets/home-dashboard.png" alt="Dashboard view" class="feature-card__img" />
+            <img src="@/assets/home-dashboard.webp" alt="Dashboard view" class="feature-card__img" loading="lazy" decoding="async" />
           </div>
 
           <div class="feature-card">
@@ -68,7 +68,7 @@
             <p>
               Visualize every connection in your stack with interactive, color-coded node diagrams. See how your services, databases, and external APIs relate.
             </p>
-            <img src="@/assets/dependency-graph.png" alt="Dependency graph visualization" class="feature-card__img" />
+            <img src="@/assets/dependency-graph.webp" alt="Dependency graph visualization" class="feature-card__img" loading="lazy" decoding="async" />
           </div>
 
           <div class="feature-card">
@@ -90,7 +90,7 @@
             <p>
               Connect to your databases and detect permission drift between expected grants and actual database ACLs. Identify unmanaged principals and import them in one click.
             </p>
-            <img src="@/assets/SQL_integration.png" alt="SQL drift detection view" class="feature-card__img" />
+            <img src="@/assets/SQL_integration.webp" alt="SQL drift detection view" class="feature-card__img" loading="lazy" decoding="async" />
           </div>
 
           <div class="feature-card">
@@ -101,7 +101,7 @@
             <p>
               Browse, create, and rotate secrets directly from Fuse. Reference Key Vault secrets from your account configurations — no manual copy-paste.
             </p>
-            <img src="@/assets/azure-integration.webp" alt="Azure Key Vault integration" class="feature-card__img" />
+            <img src="@/assets/azure-integration.webp" alt="Azure Key Vault integration" class="feature-card__img" loading="lazy" decoding="async" />
           </div>
 
           <div class="feature-card">
@@ -112,7 +112,7 @@
             <p>
               Share infrastructure knowledge without exposing credentials. Read-only, public-facing pages — no login required.
             </p>
-            <img src="@/assets/documentation-mode.webp" alt="Documentation mode" class="feature-card__img" />
+            <img src="@/assets/documentation-mode.webp" alt="Documentation mode" class="feature-card__img" loading="lazy" decoding="async" />
           </div>
 
         </div>

@@ -1,0 +1,17 @@
+# Fuse Inventory
+
+Fuse Inventory is a self-hosted infrastructure inventory and dependency mapping tool for DevOps teams. It helps model applications, environments, platforms, dependencies, credentials, risk, and documentation in one place.
+
+## Key pages
+- Home: https://fuse-inventory.dev/
+- Features: https://fuse-inventory.dev/features
+- Screenshots: https://fuse-inventory.dev/screenshots
+
+## Useful references
+- GitHub repository: https://github.com/lazerduck/fuse-inventory
+- Container image: https://github.com/users/lazerduck/packages/container/package/fuse-inventory
+- Main README: https://github.com/lazerduck/fuse-inventory/blob/main/README.md
+
+## Notes
+- The site is a Vue single-page app.
+- Crawl files are available at /robots.txt and /sitemap.xml.

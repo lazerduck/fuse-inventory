@@ -24,7 +24,7 @@
               :aria-label="`Open ${item.title} screenshot`"
               @click="openLightbox(item)"
             >
-              <img :src="item.src" :alt="item.alt" />
+              <img :src="item.src" :alt="item.alt" loading="lazy" decoding="async" />
               <div class="gallery-item__overlay">
                 <i class="fa-solid fa-magnifying-glass-plus gallery-item__overlay-icon"></i>
               </div>
@@ -74,7 +74,7 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
         <figure class="lightbox__panel">
-          <img :src="lightboxImage.src" :alt="lightboxImage.alt" class="lightbox__image" />
+          <img :src="lightboxImage.src" :alt="lightboxImage.alt" class="lightbox__image" decoding="async" />
           <figcaption class="lightbox__caption">{{ lightboxImage.alt }}</figcaption>
         </figure>
       </div>
@@ -84,9 +84,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import homeDashboard from '@/assets/home-dashboard.png'
-import sqlIntegration from '@/assets/SQL_integration.png'
-import dependencyGraph from '@/assets/dependency-graph.png'
+import homeDashboard from '@/assets/home-dashboard.webp'
+import sqlIntegration from '@/assets/SQL_integration.webp'
+import dependencyGraph from '@/assets/dependency-graph.webp'
 import blastRadius from '@/assets/blast-radius.webp'
 import azureIntegration from '@/assets/azure-integration.webp'
 import documentationMode from '@/assets/documentation-mode.webp'

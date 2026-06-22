@@ -33,14 +33,14 @@
           </ul>
         </div>
         <div class="feature-split__image">
-          <img src="@/assets/home-dashboard.png" alt="Inventory dashboard" />
+          <img src="@/assets/home-dashboard.webp" alt="Inventory dashboard" loading="lazy" decoding="async" />
         </div>
       </section>
 
       <!-- Dependencies & Graph -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
-          <img src="@/assets/dependency-graph.png" alt="Dependency graph" />
+          <img src="@/assets/dependency-graph.webp" alt="Dependency graph" loading="lazy" decoding="async" />
         </div>
         <div class="feature-split__text">
           <i class="fa-solid fa-circle-nodes feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
@@ -74,14 +74,14 @@
           </ul>
         </div>
         <div class="feature-split__image">
-          <img src="@/assets/blast-radius.webp" alt="Blast radius analysis" />
+          <img src="@/assets/blast-radius.webp" alt="Blast radius analysis" loading="lazy" decoding="async" />
         </div>
       </section>
 
       <!-- Credentials & Accounts -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
-          <img src="@/assets/account-edit.webp" alt="Account management" />
+          <img src="@/assets/account-edit.webp" alt="Account management" loading="lazy" decoding="async" />
         </div>
         <div class="feature-split__text">
           <i class="fa-solid fa-key feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
@@ -115,14 +115,14 @@
           </ul>
         </div>
         <div class="feature-split__image">
-          <img src="@/assets/azure-integration.webp" alt="Azure integrations" />
+          <img src="@/assets/azure-integration.webp" alt="Azure integrations" loading="lazy" decoding="async" />
         </div>
       </section>
 
       <!-- SQL Drift Detection -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
-          <img src="@/assets/SQL_integration.png" alt="SQL drift detection dashboard" />
+          <img src="@/assets/SQL_integration.webp" alt="SQL drift detection dashboard" loading="lazy" decoding="async" />
         </div>
         <div class="feature-split__text">
           <i class="fa-solid fa-shield-halved feature-split__icon" style="font-size: 36px; color: #1976d2;"></i>
@@ -143,7 +143,7 @@
       <!-- Risk & Governance -->
       <section class="feature-split feature-split--reverse">
         <div class="feature-split__image">
-          <img src="@/assets/risks.webp" alt="Risk tracking" />
+          <img src="@/assets/risks.webp" alt="Risk tracking" loading="lazy" decoding="async" />
         </div>
         <div class="feature-split__text">
           <i class="fa-solid fa-triangle-exclamation feature-split__icon" style="font-size: 36px; color: #dc2626;"></i>
@@ -176,7 +176,7 @@
           </ul>
         </div>
         <div class="feature-split__image">
-          <img src="@/assets/documentation-mode.webp" alt="Documentation mode" />
+          <img src="@/assets/documentation-mode.webp" alt="Documentation mode" loading="lazy" decoding="async" />
         </div>
       </section>
 
