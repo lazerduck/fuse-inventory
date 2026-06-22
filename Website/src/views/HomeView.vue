@@ -148,7 +148,7 @@
           </div>
           <div class="arch-item">
             <i class="fa-solid fa-check feature-check-icon"></i>
-            <span>Open source — MIT licensed</span>
+            <span>Open source — MPL 2.0 licensed</span>
           </div>
         </div>
       </div>
@@ -278,17 +278,21 @@ function scrollTo(id: string) {
 }
 
 .cta-btn--outline {
-  background: transparent;
-  color: white;
+  background: white;
+  color: #1976d2;
   border: 2px solid white;
   font-weight: 700;
   box-shadow: none;
 }
 
 .cta-btn--outline:hover {
-  background: white;
-  color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1976d2;
   box-shadow: 0 12px 24px rgba(255, 255, 255, 0.3);
+}
+
+.hero__hero-image {
+  padding-right: 2rem;
 }
 
 .hero__image {

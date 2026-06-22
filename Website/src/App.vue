@@ -31,11 +31,7 @@ import Navbar from '@/components/Navbar.vue'
             target="_blank"
             rel="noopener"
           >
-            <svg height="18" viewBox="-5 -4 20 20" width="18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 0h24v24H0z" fill="none"/>
-              <path d="M13 3h-2v2h2V3zm4 4h-2v2h2V7zm-8 0H7v2h2V7zm4 4h-2v2h2v-2zm-8 0H7v2h2v-2zm8 4h-2v2h2v-2zm-4 0H9v2h2v-2zm-4 0H7v2h2v-2zm-4 0H3v2h2v-2zm12-8h2v2h-2V7zm-2 4h2v2h-2v-2zm2 8h2v2h-2v-2zm-4-4h2v2h-2v-2zm-4 0h2v2h-2v-2zm-4 0h2v2H7v-2zm-4 0h2v2H3v-2zm12-4h2v2h-2v-2zm-2 4h2v2h-2v-2zm-4 4h2v2h-2v-2zm-4 0h2v2H7v-2zm-4 0h2v2H3v-2z"/>
-            </svg>
-            Docker Hub
+            Container Registry
           </a>
           <a
             href="https://github.com/lazerduck/fuse-inventory/blob/main/README.md"
