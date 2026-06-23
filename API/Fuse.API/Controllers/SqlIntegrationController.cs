@@ -53,17 +53,14 @@ namespace Fuse.API.Controllers
                 return Ok(new CachedPermissionsOverviewResponse(cached.Overview, cached.CachedAt, IsCached: true));
             }
 
-            // Cache miss: fall back to fresh data
-            var result = await _service.GetPermissionsOverviewAsync(id, ct);
-            if (!result.IsSuccess)
+            // Cache miss: rebuild using the same bulk refresh path as the manual refresh endpoint.
+            var refreshed = await _cache.RefreshIntegrationAsync(id, ct);
+            if (refreshed is null)
             {
-                return result.ErrorType switch
-                {
-                    ErrorType.NotFound => NotFound(new { error = result.Error }),
-                    _ => BadRequest(new { error = result.Error })
-                };
+                return NotFound(new { error = $"SQL integration '{id}' not found or could not be refreshed." });
             }
-            return Ok(new CachedPermissionsOverviewResponse(result.Value!, CachedAt: null, IsCached: false));
+
+            return Ok(new CachedPermissionsOverviewResponse(refreshed.Overview, refreshed.CachedAt, IsCached: true));
         }
 
         [HttpPost("{id}/permissions-overview/refresh")]

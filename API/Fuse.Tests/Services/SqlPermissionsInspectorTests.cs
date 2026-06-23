@@ -111,13 +111,33 @@ public class SqlPermissionsInspectorTests
             .Setup(i => i.GetAllPrincipalNamesAsync(It.IsAny<SqlIntegration>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((true, new List<string> { "managed", "orphan" }, null));
 
+        // The batch overview query now uses GetPrincipalPermissionsBatchAsync for managed principals
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "managed", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("managed", true, new List<SqlActualGrant>()), null));
+            .Setup(i => i.GetPrincipalPermissionsBatchAsync(It.IsAny<SqlIntegration>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .Returns(async (SqlIntegration sqlIntegration, IReadOnlyList<string> principalNames, CancellationToken ct) =>
+            {
+                var map = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
+                foreach (var name in principalNames)
+                {
+                    if (name == "managed")
+                    {
+                        map[name] = new SqlPrincipalPermissions(name, true, new List<SqlActualGrant>());
+                    }
+                    else
+                    {
+                        map[name] = new SqlPrincipalPermissions(name, false, Array.Empty<SqlActualGrant>());
+                    }
+                }
+                return (true, map, (string?)null);
+            });
 
+        // Orphan batch query also uses the batch method
         mockInspector
-            .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "orphan", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, new SqlPrincipalPermissions("orphan", true, new List<SqlActualGrant>()), null));
+            .Setup(i => i.GetPrincipalPermissionsBatchAsync(It.IsAny<SqlIntegration>(), It.Is<IReadOnlyList<string>>(l => l.Count == 1 && l[0] == "orphan"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["orphan"] = new SqlPrincipalPermissions("orphan", true, new List<SqlActualGrant>())
+            }, null));
 
         var facade = new SqlPermissionsInspector(mockInspector.Object);
         var overview = await facade.GetOverviewAsync(integration, store.Current!, CancellationToken.None);
