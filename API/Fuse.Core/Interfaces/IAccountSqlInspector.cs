@@ -97,4 +97,18 @@ public interface IAccountSqlInspector
     Task<(bool IsSuccessful, IReadOnlyList<SqlPrincipalPermissions> Principals, string? ErrorMessage)> GetAllPrincipalsAsync(
         SqlIntegration sqlIntegration,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Queries SQL for the actual permissions of multiple principals in a single round-trip.
+    /// Each principal gets its own connection in the original implementation; this batch method
+    /// scans all databases once and splits the result in C#. Use when requesting N principals.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalNames">The SQL principal names to inspect.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Map of principal name to their actual permissions, or error information.</returns>
+    Task<(bool IsSuccessful, IReadOnlyDictionary<string, SqlPrincipalPermissions> PermissionsMap, string? ErrorMessage)> GetPrincipalPermissionsBatchAsync(
+        SqlIntegration sqlIntegration,
+        IReadOnlyList<string> principalNames,
+        CancellationToken ct = default);
 }

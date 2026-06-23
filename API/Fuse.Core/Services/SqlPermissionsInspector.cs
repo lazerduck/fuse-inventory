@@ -107,60 +107,95 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
             .Select(a => a.UserName!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        const int maxConcurrency = 4;
-        var accountStatuses = new List<SqlAccountPermissionsStatus>();
-        var throttler = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+        // Collect all managed principal names for batch query
+        var managedPrincipalList = associatedAccounts
+            .Where(a => !string.IsNullOrWhiteSpace(a.UserName))
+            .Select(a => a.UserName!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-        var accountTasks = associatedAccounts.Select(async account =>
+        // Batch query: single SQL call fetches all principals' permissions at once
+        // instead of N individual calls (one per principal). Each database is scanned
+        // ONCE for all principals instead of N times.
+        IReadOnlyDictionary<string, SqlPrincipalPermissions> permissionsMap = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
+        string? batchError = null;
+
+        if (managedPrincipalList.Count > 0)
         {
-            await throttler.WaitAsync(ct);
-            try
+            var (batchOk, batchMap, batchMsg) = await _sqlInspector.GetPrincipalPermissionsBatchAsync(
+                integration, managedPrincipalList, ct);
+
+            if (batchOk)
             {
-                var principalName = account.UserName;
-                if (string.IsNullOrWhiteSpace(principalName))
-                {
-                    return new SqlAccountPermissionsStatus(
-                        AccountId: account.Id,
-                        AccountName: GetAccountDisplayName(account, snapshot),
-                        PrincipalName: null,
-                        Status: SyncStatus.NotApplicable,
-                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                        ErrorMessage: "Account has no username configured for SQL principal mapping.");
-                }
+                permissionsMap = batchMap;
+            }
+            else
+            {
+                batchError = batchMsg ?? "Failed to retrieve SQL permissions.";
+            }
+        }
 
-                var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
-                    integration, principalName, ct);
+        // Build account statuses from the batch result
+        var accountStatuses = new List<SqlAccountPermissionsStatus>();
 
-                if (!isSuccessful || actualPermissions is null)
+        foreach (var account in associatedAccounts)
+        {
+            var principalName = account.UserName;
+            if (string.IsNullOrWhiteSpace(principalName))
+            {
+                accountStatuses.Add(new SqlAccountPermissionsStatus(
+                    AccountId: account.Id,
+                    AccountName: GetAccountDisplayName(account, snapshot),
+                    PrincipalName: null,
+                    Status: SyncStatus.NotApplicable,
+                    PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                    ErrorMessage: "Account has no username configured for SQL principal mapping."));
+                continue;
+            }
+
+            if (permissionsMap.TryGetValue(principalName, out var actualPermissions) && actualPermissions != null)
+            {
+                // If batch query succeeded for this principal, use it
+                if (actualPermissions.Exists)
                 {
-                    return new SqlAccountPermissionsStatus(
+                    var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
+                    var status = SqlPermissionDiff.ComputeStatus(actualPermissions, comparisons);
+
+                    accountStatuses.Add(new SqlAccountPermissionsStatus(
                         AccountId: account.Id,
                         AccountName: GetAccountDisplayName(account, snapshot),
                         PrincipalName: principalName,
-                        Status: SyncStatus.Error,
-                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                        ErrorMessage: errorMessage ?? "Failed to retrieve SQL permissions.");
+                        Status: status,
+                        PermissionComparisons: comparisons,
+                        ErrorMessage: null));
                 }
-
-                var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
-                var status = SqlPermissionDiff.ComputeStatus(actualPermissions, comparisons);
-
-                return new SqlAccountPermissionsStatus(
+                else
+                {
+                    // Principal doesn't exist in SQL
+                    accountStatuses.Add(new SqlAccountPermissionsStatus(
+                        AccountId: account.Id,
+                        AccountName: GetAccountDisplayName(account, snapshot),
+                        PrincipalName: principalName,
+                        Status: SyncStatus.MissingPrincipal,
+                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                        ErrorMessage: null));
+                }
+            }
+            else if (batchError != null)
+            {
+                // Batch query failed for this principal
+                accountStatuses.Add(new SqlAccountPermissionsStatus(
                     AccountId: account.Id,
                     AccountName: GetAccountDisplayName(account, snapshot),
                     PrincipalName: principalName,
-                    Status: status,
-                    PermissionComparisons: comparisons,
-                    ErrorMessage: null);
+                    Status: SyncStatus.Error,
+                    PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                    ErrorMessage: batchError));
             }
-            finally
-            {
-                throttler.Release();
-            }
-        }).ToList();
+        }
 
-        accountStatuses.AddRange(await Task.WhenAll(accountTasks));
-
+        // Orphan principals: query all SQL principals, then find those not in managedPrincipalNames
+        // Also use batch query for orphans to keep it efficient
         var orphanPrincipals = new List<SqlOrphanPrincipal>();
         var (principalNamesSuccess, principalNames, _) = await _sqlInspector.GetAllPrincipalNamesAsync(integration, ct);
         if (principalNamesSuccess && principalNames is not null)
@@ -170,30 +205,22 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var orphanTasks = orphanNames.Select(async orphanName =>
+            if (orphanNames.Count > 0)
             {
-                await throttler.WaitAsync(ct);
-                try
+                // Use batch query for orphans too
+                var (orphanOk, orphanMap, _) = await _sqlInspector.GetPrincipalPermissionsBatchAsync(
+                    integration, orphanNames, ct);
+
+                if (orphanOk && orphanMap != null)
                 {
-                    var (isSuccessful, permissions, _) = await _sqlInspector.GetPrincipalPermissionsAsync(
-                        integration, orphanName, ct);
-                    if (!isSuccessful || permissions is null || !permissions.Exists)
+                    foreach (var orph in orphanMap.Values.Where(o => o.Exists && o.PrincipalName is not null))
                     {
-                        return null;
+                        orphanPrincipals.Add(new SqlOrphanPrincipal(
+                            orph.PrincipalName!,
+                            orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
                     }
-
-                    return new SqlOrphanPrincipal(
-                        orphanName,
-                        permissions.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList());
                 }
-                finally
-                {
-                    throttler.Release();
-                }
-            }).ToList();
-
-            var orphanResults = await Task.WhenAll(orphanTasks);
-            orphanPrincipals.AddRange(orphanResults.Where(o => o is not null)!);
+            }
         }
 
         var summary = new SqlPermissionsOverviewSummary(
