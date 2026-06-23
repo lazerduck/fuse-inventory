@@ -847,26 +847,29 @@ public class AccountSqlInspector : IAccountSqlInspector
             await using var connection = new SqlConnection(sanitizedConnectionString);
             await connection.OpenAsync(ct);
 
-            // Batch approach: build one UNION ALL query that scans ALL databases for ALL principals
-            // at once (no WHERE filter on principal name), returns (PrincipalName, DatabaseName, SchemaName, PermissionName),
-            // then we filter/split by the requested principals in C#.
-            // This replaces N individual queries with ONE query that scans each database ONCE.
+            // Build an IN clause restricted to only the requested principals so the query
+            // returns rows for those principals only instead of scanning all principals.
+            var principalInClause = "(" + string.Join(", ", validPrincipals.Select(n => "N'" + EscapeStringLiteral(n) + "'")) + ")";
+            var validPrincipalsSet = new HashSet<string>(validPrincipals, StringComparer.OrdinalIgnoreCase);
 
             // Step 1: Get list of online databases
             var onlineDatabases = await GetOnlineDatabasesFromMasterAsync(connection, ct);
 
             if (onlineDatabases.Count == 0)
             {
-                // No databases to scan — all principals "exist" with no grants
+                // No databases to scan — check server-level existence for each principal
+                var existingWhenNoDbs = await GetExistingServerPrincipalsAsync(connection, validPrincipals, principalInClause, ct);
                 var result = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
                 foreach (var name in validPrincipals)
                 {
-                    result[name] = new SqlPrincipalPermissions(name, true, Array.Empty<SqlActualGrant>());
+                    result[name] = new SqlPrincipalPermissions(name, existingWhenNoDbs.Contains(name), Array.Empty<SqlActualGrant>());
                 }
                 return (true, result, null);
             }
 
-            // Step 2: Build UNION ALL query across all databases (two parts: direct perms + role perms)
+            // Step 2: Build UNION ALL query across all databases (two parts: direct perms + role perms),
+            // filtered to only the requested principals via the IN clause.
+            // This replaces N individual queries with ONE query that scans each database ONCE.
             var unionParts = new List<string>();
 
             foreach (var dbName in onlineDatabases)
@@ -884,7 +887,8 @@ public class AccountSqlInspector : IAccountSqlInspector
                     + "INNER JOIN " + q + ".sys.database_principals dp ON p.grantee_principal_id = dp.principal_id "
                     + "LEFT JOIN " + q + ".sys.objects o ON p.major_id = o.object_id AND p.class = 1 "
                     + "WHERE p.state_desc IN ('GRANT', 'GRANT_WITH_GRANT_OPTION') "
-                    + "AND p.class IN (0, 1, 3)";
+                    + "AND p.class IN (0, 1, 3) "
+                    + "AND dp.name IN " + principalInClause;
                 unionParts.Add(part1);
 
                 // Part 2: role memberships (built-in roles only)
@@ -908,7 +912,8 @@ public class AccountSqlInspector : IAccountSqlInspector
                     + "('db_executor', 'EXECUTE') "
                     + ") AS RolePerms(RoleName, PermissionName) "
                     + "WHERE RolePerms.RoleName = r.name) perms "
-                    + "WHERE r.name IN ('db_datareader', 'db_datawriter', 'db_owner', 'db_ddladmin', 'db_executor')";
+                    + "WHERE r.name IN ('db_datareader', 'db_datawriter', 'db_owner', 'db_ddladmin', 'db_executor') "
+                    + "AND dp.name IN " + principalInClause;
                 unionParts.Add(part2);
             }
 
@@ -936,12 +941,13 @@ public class AccountSqlInspector : IAccountSqlInspector
                 }
             }
 
-            // Step 3: Group by principal name and build the result dictionary
+            // Step 3: Group by principal name and build the result dictionary,
+            // restricted to only the requested principals.
             var resultMap = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
 
-            // Group rows by principal
+            // Group rows by principal (only for requested principals)
             var grouped = allRows
-                .Where(r => !string.IsNullOrWhiteSpace(r.PrincipalName))
+                .Where(r => !string.IsNullOrWhiteSpace(r.PrincipalName) && validPrincipalsSet.Contains(r.PrincipalName!))
                 .GroupBy(r => r.PrincipalName!, StringComparer.OrdinalIgnoreCase);
 
             foreach (var group in grouped)
@@ -973,12 +979,16 @@ public class AccountSqlInspector : IAccountSqlInspector
                 resultMap[principalName] = new SqlPrincipalPermissions(principalName, true, grants);
             }
 
-            // Principals not found in SQL are still in the dictionary (with Exists=false)
-            foreach (var name in validPrincipals)
+            // Principals not found in the permissions rows may still exist at the server level
+            // (e.g. a login with no grants). Check existence to correctly set Exists=true/false.
+            var missingPrincipals = validPrincipals.Where(n => !resultMap.ContainsKey(n)).ToList();
+            if (missingPrincipals.Count > 0)
             {
-                if (!resultMap.ContainsKey(name))
+                var missingInClause = "(" + string.Join(", ", missingPrincipals.Select(n => "N'" + EscapeStringLiteral(n) + "'")) + ")";
+                var existingSet = await GetExistingServerPrincipalsAsync(connection, missingPrincipals, missingInClause, ct);
+                foreach (var name in missingPrincipals)
                 {
-                    resultMap[name] = new SqlPrincipalPermissions(name, false, Array.Empty<SqlActualGrant>());
+                    resultMap[name] = new SqlPrincipalPermissions(name, existingSet.Contains(name), Array.Empty<SqlActualGrant>());
                 }
             }
 
@@ -1012,7 +1022,7 @@ public class AccountSqlInspector : IAccountSqlInspector
     }
 
     /// <summary>
-    /// Gets the list of online databases (excluding system databases) from master context.
+    /// Gets the list of online databases (including system databases) from master context.
     /// </summary>
     private static async Task<List<string>> GetOnlineDatabasesFromMasterAsync(SqlConnection connection, CancellationToken ct)
     {
@@ -1033,5 +1043,28 @@ public class AccountSqlInspector : IAccountSqlInspector
             }
         }
         return databases;
+    }
+
+    /// <summary>
+    /// Returns the subset of <paramref name="principalNames"/> that exist as server-level logins.
+    /// </summary>
+    private static async Task<HashSet<string>> GetExistingServerPrincipalsAsync(
+        SqlConnection connection,
+        IReadOnlyList<string> principalNames,
+        string principalInClause,
+        CancellationToken ct)
+    {
+        var query = $"SELECT name FROM sys.server_principals WHERE name IN {principalInClause} AND type IN ('S', 'U', 'G', 'E', 'X')";
+
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        await using (var command = new SqlCommand(query, connection))
+        await using (var reader = await command.ExecuteReaderAsync(ct))
+        {
+            while (await reader.ReadAsync(ct))
+            {
+                existing.Add(reader.GetString(0));
+            }
+        }
+        return existing;
     }
 }

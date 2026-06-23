@@ -213,11 +213,14 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
 
                 if (orphanOk && orphanMap != null)
                 {
-                    foreach (var orph in orphanMap.Values.Where(o => o.Exists && o.PrincipalName is not null))
+                    foreach (var name in orphanNames)
                     {
-                        orphanPrincipals.Add(new SqlOrphanPrincipal(
-                            orph.PrincipalName!,
-                            orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
+                        if (orphanMap.TryGetValue(name, out var orph) && orph.Exists && orph.PrincipalName is not null)
+                        {
+                            orphanPrincipals.Add(new SqlOrphanPrincipal(
+                                orph.PrincipalName!,
+                                orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
+                        }
                     }
                 }
             }
