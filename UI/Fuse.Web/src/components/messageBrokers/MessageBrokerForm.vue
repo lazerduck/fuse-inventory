@@ -239,7 +239,12 @@ function applyInitialValue(value?: Partial<MessageBroker> | null) {
 onMounted(() => applyInitialValue(props.initialValue))
 watch(() => props.initialValue, (v) => applyInitialValue(v))
 
-function handleSubmit() {
+async function handleSubmit() {
+  const valid = await formRef.value?.validate?.()
+  if (valid === false) {
+    return
+  }
+
   emit('submit', { ...form })
 }
 </script>

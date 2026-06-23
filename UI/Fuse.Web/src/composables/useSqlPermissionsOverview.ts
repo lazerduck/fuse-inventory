@@ -1,5 +1,6 @@
 import { computed, toValue, type MaybeRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
+import { Notify } from 'quasar'
 import { useFuseClient } from './useFuseClient'
 
 export function useSqlPermissionsOverview(sqlIntegrationId: MaybeRef<string | null | undefined>) {
@@ -19,9 +20,15 @@ export function useSqlPermissionsOverview(sqlIntegrationId: MaybeRef<string | nu
       return query.refetch()
     }
 
-    const refreshed = await client.refreshPOST(integrationId.value)
-    query.data.value = refreshed
-    return refreshed
+    try {
+      const refreshed = await client.refreshPOST(integrationId.value)
+      query.data.value = refreshed
+      Notify.create({ type: 'positive', message: 'SQL permissions overview refreshed' })
+      return refreshed
+    } catch (error) {
+      Notify.create({ type: 'negative', message: 'Failed to refresh SQL permissions overview' })
+      throw error
+    }
   }
 
   return {
