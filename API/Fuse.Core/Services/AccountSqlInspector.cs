@@ -854,7 +854,13 @@ public class AccountSqlInspector : IAccountSqlInspector
             // number of principals. Sending a very large pre-assembled UNION ALL query
             // from C# causes SQL Server to allocate a Large Object in tempdb for the query
             // text, which can exhaust tempdb space.
-            const string createTempTable = "CREATE TABLE #Principals (Name NVARCHAR(128) NOT NULL);";
+            //
+            // COLLATE DATABASE_DEFAULT ensures the column uses the current connection's
+            // database collation rather than tempdb's collation (which may differ on
+            // servers configured with a non-default collation). The JOIN in the dynamic
+            // SQL also collates dp.name to DATABASE_DEFAULT so both sides always match,
+            // regardless of the individual user-database collation.
+            const string createTempTable = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL);";
             await using (var cmd = new SqlCommand(createTempTable, connection))
             {
                 await cmd.ExecuteNonQueryAsync(ct);
@@ -894,14 +900,14 @@ public class AccountSqlInspector : IAccountSqlInspector
                     + 'FROM ' + QUOTENAME(name) + '.sys.database_permissions p '
                     + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON p.grantee_principal_id = dp.principal_id '
                     + 'LEFT JOIN ' + QUOTENAME(name) + '.sys.objects o ON p.major_id = o.object_id AND p.class = 1 '
-                    + 'INNER JOIN #Principals pr ON dp.name = pr.Name '
+                    + 'INNER JOIN #Principals pr ON dp.name COLLATE DATABASE_DEFAULT = pr.Name '
                     + 'WHERE p.state_desc IN (''GRANT'', ''GRANT_WITH_GRANT_OPTION'') AND p.class IN (0, 1, 3) '
                     + 'UNION ALL '
                     + 'SELECT dp.name, ''' + REPLACE(name, '''', '''''') + ''', NULL AS SchemaName, perms.PermissionName '
                     + 'FROM ' + QUOTENAME(name) + '.sys.database_role_members rm '
                     + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id '
                     + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id '
-                    + 'INNER JOIN #Principals pr ON dp.name = pr.Name '
+                    + 'INNER JOIN #Principals pr ON dp.name COLLATE DATABASE_DEFAULT = pr.Name '
                     + 'CROSS APPLY (SELECT PermissionName FROM (VALUES '
                     + '(''db_datareader'', ''SELECT''), '
                     + '(''db_datawriter'', ''INSERT''), '
