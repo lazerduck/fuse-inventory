@@ -892,7 +892,7 @@ public class AccountSqlInspector : IAccountSqlInspector
                 DECLARE @SQL NVARCHAR(MAX) = N'';
 
                 SELECT @SQL = @SQL +
-                    'SELECT dp.name AS PrincipalName, ''' + REPLACE(name, '''', '''''') + ''' AS DatabaseName, '
+                    'SELECT dp.name COLLATE DATABASE_DEFAULT AS PrincipalName, ''' + REPLACE(name, '''', '''''') + ''' AS DatabaseName, '
                     + 'CASE WHEN p.class = 0 THEN CAST(NULL AS NVARCHAR(128)) '
                     + 'WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id) '
                     + 'ELSE SCHEMA_NAME(o.schema_id) END AS SchemaName, '
@@ -903,7 +903,7 @@ public class AccountSqlInspector : IAccountSqlInspector
                     + 'INNER JOIN #Principals pr ON dp.name COLLATE DATABASE_DEFAULT = pr.Name '
                     + 'WHERE p.state_desc IN (''GRANT'', ''GRANT_WITH_GRANT_OPTION'') AND p.class IN (0, 1, 3) '
                     + 'UNION ALL '
-                    + 'SELECT dp.name, ''' + REPLACE(name, '''', '''''') + ''', NULL AS SchemaName, perms.PermissionName '
+                    + 'SELECT dp.name COLLATE DATABASE_DEFAULT, ''' + REPLACE(name, '''', '''''') + ''', NULL AS SchemaName, perms.PermissionName '
                     + 'FROM ' + QUOTENAME(name) + '.sys.database_role_members rm '
                     + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id '
                     + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id '
