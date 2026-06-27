@@ -68,7 +68,8 @@ public sealed class JsonFuseStore : IFuseStore, IDisposable
                 SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
                 AppSettings: await ReadObjectAsync<AppSettings>("appsettings.json", ct) ?? new AppSettings(),
                 PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
-                AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct)
+                AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct),
+                License: await ReadObjectAsync<LicenseState>("license.json", ct)
 
             );
 
@@ -134,6 +135,8 @@ public sealed class JsonFuseStore : IFuseStore, IDisposable
                 writeTasks.Add(WriteAsync("appsettings.json", snapshot.AppSettings, ct));
             if (_cache is null || !ReferenceEquals(_cache.AzureIntegrationManager, snapshot.AzureIntegrationManager))
                 writeTasks.Add(WriteAsync("azureintegrationmanager.json", snapshot.AzureIntegrationManager, ct));
+            if (_cache is null || !ReferenceEquals(_cache.License, snapshot.License))
+                writeTasks.Add(WriteAsync("license.json", snapshot.License, ct));
 
             if (writeTasks.Count > 0)
                 await Task.WhenAll(writeTasks);

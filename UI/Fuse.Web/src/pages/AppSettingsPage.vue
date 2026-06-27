@@ -20,6 +20,20 @@
         </div>
       </q-card-section>
     </q-card>
+    <q-card class="content-card q-mb-md">
+      <q-card-section>
+        <div class="settings-section">
+          <h2>License Settings</h2>
+          <div class="settings-item">
+            <q-toggle v-model="localLicenseValidationOnly" label="Validate licenses locally only" :disable="!canEdit" />
+            <div class="text-caption text-grey-7">Disables checks for revoked or refunded licenses. Signature and expiry are still validated offline.</div>
+          </div>
+          <div class="settings-item q-mt-md">
+            <q-toggle v-model="hideValidLicenseChip" label="Hide the license chip while licensed" :disable="!canEdit || !fuseStore.licenseStatus?.isValid" />
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
   </div>
 </template>
 
@@ -39,6 +53,16 @@ const incompleteDataWarningEnabled = computed({
 
     await fuseStore.updateAppSettings({ incompleteDataWarningEnabled: value });
   }
+});
+
+const localLicenseValidationOnly = computed({
+  get: () => fuseStore.appSettings?.localLicenseValidationOnly ?? false,
+  set: (value: boolean) => fuseStore.updateAppSettings({ localLicenseValidationOnly: value })
+});
+
+const hideValidLicenseChip = computed({
+  get: () => fuseStore.appSettings?.hideValidLicenseChip ?? false,
+  set: (value: boolean) => fuseStore.updateAppSettings({ hideValidLicenseChip: value })
 });
 
 const canEdit = computed(() => {

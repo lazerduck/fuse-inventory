@@ -27,6 +27,8 @@ using Fuse.Core.Services;
 using Fuse.Core.Services.Startup;
 using Microsoft.Extensions.DependencyInjection;
 using Fuse.Core.Areas.AppSettings;
+using Fuse.Core.Areas.License;
+using Fuse.Core.Services.Worker;
 
 namespace Fuse.Core;
 
@@ -57,6 +59,13 @@ public static class FuseCodeModule
         services.AddScoped<IFuseSecurityService, FuseSecurityService>();
         services.AddScoped<IFuseAPIKeyService, FuseAPIKeyService>();
         services.AddScoped<IAppSettingsService, AppSettingsService>();
+        services.AddScoped<ILicenseService, LicenseService>();
+        services.AddHttpClient("license-validator", client =>
+        {
+            client.BaseAddress = new Uri("https://api.fuse-inventory.dev/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services.AddHostedService<LicenseValidationService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
@@ -82,6 +91,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, SecuritySettingsPermissions>();
         services.AddSingleton<AreaPermissions, UserAccountPermissions>();
         services.AddSingleton<AreaPermissions, AppSettingsPermissions>();
+        services.AddSingleton<AreaPermissions, LicensePermissions>();
         services.AddScoped<IKumaIntegrationService, KumaIntegrationService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<IResponsibilityTypeService, ResponsibilityTypeService>();

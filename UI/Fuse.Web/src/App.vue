@@ -21,6 +21,8 @@
 
         <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
 
+        <LicenseChip />
+
         <q-btn dense flat round icon="help_outline">
           <q-menu anchor="bottom right" self="top right" auto-close>
             <q-list style="min-width: 220px">
@@ -417,6 +419,7 @@ import { useApplications } from './composables/useApplications'
 import { useKumaIntegrations } from './composables/useKumaIntegrations'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
 import InventoryNavigator from './components/InventoryNavigator.vue'
+import LicenseChip from './components/license/LicenseChip.vue'
 
 const leftDrawerOpen = ref(true)
 const fuseStore = useFuseStore()

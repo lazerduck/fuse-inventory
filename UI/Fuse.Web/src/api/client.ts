@@ -9947,6 +9947,8 @@ export interface IAppConfigurationEntryResponse {
 
 export class AppSettings implements IAppSettings {
     incompleteDataWarningEnabled?: boolean;
+    localLicenseValidationOnly?: boolean;
+    hideValidLicenseChip?: boolean;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -9960,6 +9962,8 @@ export class AppSettings implements IAppSettings {
     init(_data?: any) {
         if (_data) {
             this.incompleteDataWarningEnabled = _data["incompleteDataWarningEnabled"];
+            this.localLicenseValidationOnly = _data["localLicenseValidationOnly"];
+            this.hideValidLicenseChip = _data["hideValidLicenseChip"];
         }
     }
 
@@ -9973,12 +9977,16 @@ export class AppSettings implements IAppSettings {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["incompleteDataWarningEnabled"] = this.incompleteDataWarningEnabled;
+        data["localLicenseValidationOnly"] = this.localLicenseValidationOnly;
+        data["hideValidLicenseChip"] = this.hideValidLicenseChip;
         return data;
     }
 }
 
 export interface IAppSettings {
     incompleteDataWarningEnabled?: boolean;
+    localLicenseValidationOnly?: boolean;
+    hideValidLicenseChip?: boolean;
 }
 
 export class Application implements IApplication {

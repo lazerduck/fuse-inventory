@@ -3,6 +3,7 @@ import { useFuseClient } from "../composables/useFuseClient";
 import { useAuthToken } from "../composables/useAuthToken";
 import { AppSettings, LogoutSecurityUser, SecurityPosture } from "api/client";
 import { type SecurityUserInfo, type LoginSecurityUser } from "api/client";
+import { getLicenseStatus, refreshLicense, setLicense, type LicenseStatus } from "../api/license";
 
 // Default Admin Role ID (matches PermissionService.DefaultAdminRoleId)
 const DEFAULT_ADMIN_ROLE_ID = "00000000-0000-0000-0000-000000000001";
@@ -38,7 +39,8 @@ export const useFuseStore = defineStore("fuse", {
     currentUser: null as SecurityUserInfo | null,
     sessionToken: null as string | null,
     userPermissions: null as Permission[] | null,
-    appSettings: null as AppSettings | null
+    appSettings: null as AppSettings | null,
+    licenseStatus: null as LicenseStatus | null
   }),
   getters: {
     isLoggedIn: (state) => !!state.currentUser && !!state.sessionToken,
@@ -139,6 +141,7 @@ export const useFuseStore = defineStore("fuse", {
       this.currentUser = status.currentUser || null;
 
       this.appSettings = await fuseClient().getAppSettings().catch(() => null);
+      this.licenseStatus = await getLicenseStatus().catch(() => null);
 
       if (!this.currentUser) {
         this.sessionToken = null;
@@ -159,6 +162,14 @@ export const useFuseStore = defineStore("fuse", {
 
       await fuseClient().updateAppSettings(updatedSettings);
       this.appSettings = updatedSettings;
+    },
+    async installLicense(licenseKey: string) {
+      this.licenseStatus = await setLicense(licenseKey);
+      return this.licenseStatus;
+    },
+    async refreshLicense() {
+      this.licenseStatus = await refreshLicense();
+      return this.licenseStatus;
     },
     async login(credentials: LoginSecurityUser) {
       const session = await fuseClient().login(credentials);

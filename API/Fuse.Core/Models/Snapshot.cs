@@ -23,7 +23,8 @@ public record Snapshot(
     SecurityContext SecurityContext,
     AppSettings AppSettings,
     PasswordGeneratorConfig? PasswordGeneratorConfig = null,
-    AzureIntegrationManager? AzureIntegrationManager = null
+    AzureIntegrationManager? AzureIntegrationManager = null,
+    LicenseState? License = null
 )
 {
     public Snapshot(
