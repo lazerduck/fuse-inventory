@@ -26,7 +26,7 @@
           <h2>License Settings</h2>
           <div class="settings-item">
             <q-toggle v-model="localLicenseValidationOnly" label="Validate licenses locally only" :disable="!canEdit" />
-            <div class="text-caption text-grey-7">Disables checks for revoked or refunded licenses. Signature and expiry are still validated offline.</div>
+            <div class="text-caption text-grey-7">For isolated or internet-restricted deployments. Fuse validates the license signature and expiry locally without contacting the licensing service.</div>
           </div>
           <div class="settings-item q-mt-md">
             <q-toggle v-model="hideValidLicenseChip" label="Hide the license chip while licensed" :disable="!canEdit || !fuseStore.licenseStatus?.isValid" />
