@@ -140,5 +140,11 @@ public static class FuseCodeModule
         // Register change history services
         services.AddScoped<IUndoService, UndoService>();
         services.AddScoped<IActivityFeedService, ActivityFeedService>();
+
+        // Health check
+        var healthDataDir = Environment.GetEnvironmentVariable("FUSE_DATA_DIR")
+            ?? Path.Combine(AppContext.BaseDirectory, "data");
+        services.AddSingleton<IHealthCheckService>(sp =>
+            new HealthCheckService(healthDataDir));
     }
 }
