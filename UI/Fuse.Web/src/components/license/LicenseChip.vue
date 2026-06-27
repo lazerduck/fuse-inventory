@@ -47,6 +47,19 @@
             <div class="text-body2 text-grey-7 q-mt-xs">
               Paste your license key below. It will be validated before it is saved.
             </div>
+            <q-btn
+              v-if="!status?.isValid"
+              flat
+              dense
+              no-caps
+              color="primary"
+              icon-right="open_in_new"
+              label="Get a Fuse Inventory license"
+              href="https://fuse-inventory.dev/licensing"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="q-mt-sm q-ml-n-sm"
+            />
           </q-card-section>
           <q-card-section class="q-pt-none">
             <q-input
