@@ -69,7 +69,7 @@ public sealed class LicenseService(IFuseStore store, IHttpClientFactory httpClie
             var remote = await response.Content.ReadFromJsonAsync<ValidateLicenseResponse>(cancellationToken: ct)
                 ?? throw new InvalidOperationException("The licensing service returned an empty response.");
             var status = remote.Status.ToLowerInvariant();
-            var valid = status == "active";
+            var valid = status is "active" or "valid";
             await SaveAsync(current with {
                 Status = valid ? "active" : status,
                 LicenseType = remote.LicenseType ?? offline.LicenseType,
