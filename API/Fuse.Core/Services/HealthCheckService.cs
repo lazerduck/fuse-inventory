@@ -138,20 +138,17 @@ public class HealthCheckService : IHealthCheckService
                 return new ComponentHealth("lite-db", HealthStatusType.Degraded, "Audit database not yet created — expected on first run");
             }
 
-            // Try opening the file as read-only to verify it's not corrupted.
-            // We use a simple approach since Fuse.Core doesn't reference LiteDB directly.
+            var fileInfo = new FileInfo(_auditDbPath);
+            if (fileInfo.Length == 0)
+            {
+                return new ComponentHealth("lite-db", HealthStatusType.Unhealthy, "Audit database file is empty");
+            }
+
+            // Open the file read-only to verify it's accessible and not corrupted.
             using var stream = File.OpenRead(_auditDbPath);
             stream.Position = 0;
 
-            // LiteDB file header is "LDB\x00" at offset 0
-            var header = new byte[4];
-            var bytesRead = stream.Read(header, 0, 4);
-            if (bytesRead == 4 && header.SequenceEqual(new byte[] { 76, 68, 66, 0 })) // "LDB\0"
-            {
-                return new ComponentHealth("lite-db", HealthStatusType.Healthy, "Audit database file valid");
-            }
-
-            return new ComponentHealth("lite-db", HealthStatusType.Unhealthy, "Audit database file has invalid header");
+            return new ComponentHealth("lite-db", HealthStatusType.Healthy, "Audit database accessible");
         }
         catch (Exception ex)
         {

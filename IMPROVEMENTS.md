@@ -83,4 +83,9 @@ Once API has `/health`, show a status dot in the navbar (Connected to Uptime-Kum
 
 ## Done
 
-### 1. ✅ Health check endpoints (in progress)
+### 1. ✅ Health check endpoints
+- PR #215 created on `health-check-endpoints` branch → `main`
+- `GET /api/health/live` — liveness (always 200)
+- `GET /api/health/ready` — readiness (200/503)
+- `GET /api/health/status` — full component report
+- Components checked: data-directory, json-files, lite-db
