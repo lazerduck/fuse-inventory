@@ -24,7 +24,12 @@ public sealed class LicenseService(IFuseStore store, IHttpClientFactory httpClie
         if (!snapshot.AppSettings.LocalLicenseValidationOnly && state.Status is "revoked" or "refunded")
             return ToResponse(state, false);
 
-        return offline with { LastCheckedUtc = state.LastCheckedUtc, Message = state.Message };
+        return offline with
+        {
+            LastCheckedUtc = state.LastCheckedUtc,
+            Message = state.Message,
+            CustomerName = state.CustomerName
+        };
     }
 
     public async Task<LicenseStatusResponse> SetLicenseAsync(string licenseKey, CancellationToken ct = default)
@@ -70,7 +75,8 @@ public sealed class LicenseService(IFuseStore store, IHttpClientFactory httpClie
                 LicenseType = remote.LicenseType ?? offline.LicenseType,
                 ExpiryUtc = remote.ExpiryUtc ?? offline.ExpiryUtc,
                 LastCheckedUtc = DateTime.UtcNow,
-                Message = valid ? "Thank you for supporting Fuse Inventory." : $"This license has been {status}."
+                Message = valid ? "Thank you for supporting Fuse Inventory." : $"This license has been {status}.",
+                CustomerName = valid ? remote.CustomerName : current.CustomerName
             }, ct);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
@@ -117,5 +123,6 @@ public sealed class LicenseService(IFuseStore store, IHttpClientFactory httpClie
     private static LicenseStatusResponse Invalid(string message) => new("invalid", false, Message: message);
     private static LicenseStatusResponse Unlicensed() => new("unlicensed", false, Message: "No license is installed.");
     private static LicenseStatusResponse ToResponse(LicenseState state, bool valid) =>
-        new(state.Status, valid, state.LicenseType, state.ExpiryUtc, state.LastCheckedUtc, state.Message);
+        new(state.Status, valid, state.LicenseType, state.ExpiryUtc, state.LastCheckedUtc, state.Message,
+            state.CustomerName);
 }

@@ -6,7 +6,8 @@ public record LicenseState(
     string? LicenseType = null,
     DateTime? ExpiryUtc = null,
     DateTime? LastCheckedUtc = null,
-    string? Message = null);
+    string? Message = null,
+    string? CustomerName = null);
 
 public sealed record LicenseStatusResponse(
     string Status,
@@ -14,8 +15,13 @@ public sealed record LicenseStatusResponse(
     string? LicenseType = null,
     DateTime? ExpiryUtc = null,
     DateTime? LastCheckedUtc = null,
-    string? Message = null);
+    string? Message = null,
+    string? CustomerName = null);
 
 public sealed record SetLicenseRequest(string LicenseKey);
 public sealed record ValidateLicenseRequest(string LicenseKey);
-public sealed record ValidateLicenseResponse(string Status, string? LicenseType = null, DateTime? ExpiryUtc = null);
+public sealed record ValidateLicenseResponse(
+    string Status,
+    string? LicenseType = null,
+    DateTime? ExpiryUtc = null,
+    string? CustomerName = null);

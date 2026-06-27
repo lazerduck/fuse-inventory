@@ -15,6 +15,7 @@
             <q-icon name="verified" color="positive" size="42px" />
             <div>
               <div class="text-h6">Thank you for licensing Fuse Inventory</div>
+              <div v-if="status.customerName" class="text-subtitle1 q-mt-xs">Licensed to {{ status.customerName }}</div>
               <div class="text-body2 text-grey-7 q-mt-xs">Your {{ licenseType.toLowerCase() }} is active.</div>
             </div>
           </q-card-section>

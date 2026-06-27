@@ -7,6 +7,7 @@ export interface LicenseStatus {
   expiryUtc?: string
   lastCheckedUtc?: string
   message?: string
+  customerName?: string
 }
 
 async function request(path: string, init?: RequestInit): Promise<LicenseStatus> {
