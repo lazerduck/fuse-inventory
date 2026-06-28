@@ -12,9 +12,11 @@ public sealed class LiteDbAuditService : IAuditService, IDisposable
     private readonly LiteDatabase _db;
     private readonly ILiteCollection<AuditLog> _auditLogs;
     private readonly SemaphoreSlim _mutex = new(1, 1);
+    private readonly IFuseStore _fuseStore;
 
-    public LiteDbAuditService(string dataDirectory)
+    public LiteDbAuditService(IFuseStore fuseStore, string dataDirectory)
     {
+        _fuseStore = fuseStore;
         var dbPath = Path.Combine(dataDirectory, "audit.db");
         _db = new LiteDatabase(dbPath);
         _auditLogs = _db.GetCollection<AuditLog>("auditlogs");
@@ -112,6 +114,30 @@ public sealed class LiteDbAuditService : IAuditService, IDisposable
         try
         {
             await Task.Run(() => _auditLogs.DeleteMany(x => x.Timestamp < date), ct);
+        }
+        finally
+        {
+            _mutex.Release();
+        }
+    }
+
+    /// <summary>
+    /// Deletes audit logs older than the configured retention period.
+    /// If AuditLogDaysToKeep is null or 0, no cleanup is performed (unlimited).
+    /// </summary>
+    public async Task CleanupOldAuditLogsAsync(CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            var daysToKeep = await _fuseStore.GetAsync(
+                s => s.AppSettings?.AuditLogDaysToKeep ?? 0, ct);
+
+            if (daysToKeep <= 0)
+                return; // unlimited — nothing to do
+
+            var cutoff = DateTime.UtcNow.AddDays(-daysToKeep);
+            await Task.Run(() => _auditLogs.DeleteMany(x => x.Timestamp < cutoff), ct);
         }
         finally
         {

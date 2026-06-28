@@ -12,10 +12,11 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
     private readonly LiteDatabase _db;
     private readonly ILiteCollection<EntityVersion> _versions;
     private readonly SemaphoreSlim _mutex = new(1, 1);
-    private const int DefaultKeepCount = 30;
+    private readonly IFuseStore _fuseStore;
 
-    public LiteDbVersionHistoryService(string dataDirectory)
+    public LiteDbVersionHistoryService(IFuseStore fuseStore, string dataDirectory)
     {
+        _fuseStore = fuseStore;
         var dbPath = Path.Combine(dataDirectory, "versions.db");
         _db = new LiteDatabase(dbPath);
         _versions = _db.GetCollection<EntityVersion>("versions");
@@ -30,6 +31,11 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
         // Single-field indexes above already cover the current query patterns.
     }
 
+    private async Task<int> GetVersionKeepCountAsync(CancellationToken ct = default)
+    {
+        return await _fuseStore.GetAsync(s => s.AppSettings?.VersionHistoryKeepCount ?? 0, ct);
+    }
+
     public async Task SaveVersionAsync(EntityVersion version, CancellationToken ct = default)
     {
         await _mutex.WaitAsync(ct);
@@ -39,8 +45,12 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
             {
                 _versions.Insert(version);
                 
-                // Auto-prune old versions to keep only the most recent ones
-                PruneOldVersionsInternal(version.EntityId, version.EntityType, DefaultKeepCount);
+                // Auto-prune old versions if a limit is configured
+                var keepCount = _fuseStore.Current?.AppSettings?.VersionHistoryKeepCount ?? 0;
+                if (keepCount > 0)
+                {
+                    PruneOldVersionsInternal(version.EntityId, version.EntityType, keepCount);
+                }
             }, ct);
         }
         finally

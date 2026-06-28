@@ -15,10 +15,10 @@ public static class FuseDataModule
         services.AddSingleton<IFuseStore>(_ =>
             new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = dataDirectory }));
         
-        services.AddSingleton<IAuditService>(_ =>
-            new LiteDbAuditService(dataDirectory));
+        services.AddSingleton<IAuditService>(provider =>
+            new LiteDbAuditService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
         
-        services.AddSingleton<IVersionHistoryService>(_ =>
-            new LiteDbVersionHistoryService(dataDirectory));
+        services.AddSingleton<IVersionHistoryService>(provider =>
+            new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
     }
 }

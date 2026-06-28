@@ -66,6 +66,12 @@ public class FakeAuditService : IAuditService
         _logs.RemoveAll(x => x.Timestamp < date);
         return Task.CompletedTask;
     }
+
+    public Task CleanupOldAuditLogsAsync(CancellationToken ct = default)
+    {
+        // No-op in fake implementation
+        return Task.CompletedTask;
+    }
 }
 
 public sealed class FakeCurrentUser : ICurrentUser

@@ -26,4 +26,10 @@ public interface IAuditService
     /// Delete audit logs older than the specified date
     /// </summary>
     Task DeleteOlderThanAsync(DateTime date, CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes audit logs older than the configured retention period.
+    /// If AuditLogDaysToKeep is null or 0, no cleanup is performed (unlimited).
+    /// </summary>
+    Task CleanupOldAuditLogsAsync(CancellationToken ct = default);
 }
