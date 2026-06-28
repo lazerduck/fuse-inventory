@@ -9949,6 +9949,8 @@ export class AppSettings implements IAppSettings {
     incompleteDataWarningEnabled?: boolean;
     localLicenseValidationOnly?: boolean;
     hideValidLicenseChip?: boolean;
+    versionHistoryKeepCount?: number;
+    auditLogDaysToKeep?: number | null;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -9964,6 +9966,8 @@ export class AppSettings implements IAppSettings {
             this.incompleteDataWarningEnabled = _data["incompleteDataWarningEnabled"];
             this.localLicenseValidationOnly = _data["localLicenseValidationOnly"];
             this.hideValidLicenseChip = _data["hideValidLicenseChip"];
+            this.versionHistoryKeepCount = _data["versionHistoryKeepCount"];
+            this.auditLogDaysToKeep = _data["auditLogDaysToKeep"];
         }
     }
 
@@ -9979,6 +9983,8 @@ export class AppSettings implements IAppSettings {
         data["incompleteDataWarningEnabled"] = this.incompleteDataWarningEnabled;
         data["localLicenseValidationOnly"] = this.localLicenseValidationOnly;
         data["hideValidLicenseChip"] = this.hideValidLicenseChip;
+        data["versionHistoryKeepCount"] = this.versionHistoryKeepCount;
+        data["auditLogDaysToKeep"] = this.auditLogDaysToKeep;
         return data;
     }
 }
@@ -9987,6 +9993,8 @@ export interface IAppSettings {
     incompleteDataWarningEnabled?: boolean;
     localLicenseValidationOnly?: boolean;
     hideValidLicenseChip?: boolean;
+    versionHistoryKeepCount?: number;
+    auditLogDaysToKeep?: number | null;
 }
 
 export class Application implements IApplication {

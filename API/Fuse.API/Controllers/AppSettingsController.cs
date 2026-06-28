@@ -28,6 +28,12 @@ public class AppSettingsController(IAppSettingsService appSettingsService) : Con
         if (updatedSettings is null)
             return BadRequest(new { error = "Invalid settings data." });
 
+        if (updatedSettings.VersionHistoryKeepCount is < 0 or > 10000)
+            return BadRequest(new { error = "Version history limit must be between 0 and 10,000." });
+
+        if (updatedSettings.AuditLogDaysToKeep is < 0 or > 36500)
+            return BadRequest(new { error = "Audit log retention must be between 0 and 36,500 days." });
+
         await appSettingsService.UpdateAppSettingsAsync(updatedSettings);
         return NoContent();
     }
