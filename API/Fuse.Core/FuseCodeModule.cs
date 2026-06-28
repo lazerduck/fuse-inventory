@@ -66,6 +66,7 @@ public static class FuseCodeModule
             client.Timeout = TimeSpan.FromSeconds(15);
         });
         services.AddHostedService<LicenseValidationService>();
+        services.AddHostedService<AuditLogRetentionService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();

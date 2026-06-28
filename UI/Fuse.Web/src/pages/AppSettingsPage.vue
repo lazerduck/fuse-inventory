@@ -2,121 +2,195 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>App Settings</h1>
-        <p class="subtitle">Here you can configure your application settings.</p>
+        <h1>Settings</h1>
+        <p class="subtitle">Configure application behaviour, licensing and data retention.</p>
       </div>
     </div>
-    <q-card class="content-card q-mb-md">
-      <q-card-section>
-        <div class="settings-section">
-          <h2>General Settings</h2>
-          <div class="settings-item">
-            <q-toggle
-              v-model="incompleteDataWarningEnabled"
-              label="Enable Incomplete Data Warning"
+
+    <q-card class="content-card settings-content">
+      <q-card-section class="settings-card-section">
+      <section class="settings-section">
+        <div class="section-heading">
+          <h2>General</h2>
+          <p>Application-wide display preferences.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Incomplete data warnings</div>
+            <div class="setting-help">Highlight records that are missing recommended information.</div>
+          </div>
+          <q-toggle v-model="incompleteDataWarningEnabled" :disable="!canEdit" aria-label="Enable incomplete data warnings" />
+        </div>
+      </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
+          <h2>License</h2>
+          <p>Control license validation and status visibility.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Local validation only</div>
+            <div class="setting-help">Validate the signature and expiry without contacting the licensing service.</div>
+          </div>
+          <q-toggle v-model="localLicenseValidationOnly" :disable="!canEdit" aria-label="Validate licenses locally only" />
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Hide valid license status</div>
+            <div class="setting-help">Remove the license chip while the current license is valid.</div>
+          </div>
+          <q-toggle v-model="hideValidLicenseChip" :disable="!canEdit || !fuseStore.licenseStatus?.isValid" aria-label="Hide valid license status" />
+        </div>
+      </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
+          <h2>Data retention</h2>
+          <p>Control how much historical data the application stores.</p>
+        </div>
+        <div class="setting-row retention-row">
+          <div>
+            <div class="setting-label">Version history per entity</div>
+            <div class="setting-help">Old versions are removed when that entity is next updated.</div>
+          </div>
+          <div class="retention-control">
+            <q-toggle v-model="versionHistoryIndefinite" label="Keep indefinitely" :disable="!canEdit" />
+            <q-input
+              v-if="!versionHistoryIndefinite"
+              v-model.number="versionHistoryKeepCount"
+              class="retention-input"
+              dense outlined type="number" min="1" max="10000"
+              suffix="versions"
               :disable="!canEdit"
+              :error="!versionHistoryValid"
+              error-message="Enter 1–10,000"
+              @blur="saveVersionHistory"
+              @keyup.enter="saveVersionHistory"
             />
           </div>
         </div>
-      </q-card-section>
-    </q-card>
-    <q-card class="content-card q-mb-md">
-      <q-card-section>
-        <div class="settings-section">
-          <h2>License Settings</h2>
-          <div class="settings-item">
-            <q-toggle v-model="localLicenseValidationOnly" label="Validate licenses locally only" :disable="!canEdit" />
-            <div class="text-caption text-grey-7">For isolated or internet-restricted deployments. Fuse validates the license signature and expiry locally without contacting the licensing service.</div>
+        <div class="setting-row retention-row">
+          <div>
+            <div class="setting-label">Audit logs</div>
+            <div class="setting-help">Logs older than this are deleted by the daily cleanup task.</div>
           </div>
-          <div class="settings-item q-mt-md">
-            <q-toggle v-model="hideValidLicenseChip" label="Hide the license chip while licensed" :disable="!canEdit || !fuseStore.licenseStatus?.isValid" />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-    <q-card class="content-card q-mb-md">
-      <q-card-section>
-        <div class="settings-section">
-          <h2>Data Retention</h2>
-          <div class="settings-item">
+          <div class="retention-control">
+            <q-toggle v-model="auditLogIndefinite" label="Keep indefinitely" :disable="!canEdit" />
             <q-input
-              v-model.number="versionHistoryKeepCount"
-              label="Version history limit per entity"
-              type="number"
-              min="0"
-              :disable="!canEdit"
-              :rules="[val => val === 0 || (val > 0 && val <= 10000) || 'Must be between 1 and 10,000 (0 = unlimited)']"
-            >
-              <template v-slot:append>
-                <q-badge>0 = unlimited</q-badge>
-              </template>
-            </q-input>
-            <div class="text-caption text-grey-7">Maximum number of version history entries to keep per entity. Set to 0 to keep all versions forever.</div>
-          </div>
-          <div class="settings-item q-mt-md">
-            <q-input
+              v-if="!auditLogIndefinite"
               v-model.number="auditLogDaysToKeep"
-              label="Audit log retention (days)"
-              type="number"
+              class="retention-input"
+              dense outlined type="number" min="1" max="36500"
+              suffix="days"
               :disable="!canEdit"
-              :rules="[val => val === null || val === 0 || (val > 0 && val <= 36500) || 'Must be between 1 and 100 years (0 or blank = unlimited)']"
-            >
-              <template v-slot:append>
-                <q-badge>0 or blank = unlimited</q-badge>
-              </template>
-            </q-input>
-            <div class="text-caption text-grey-7">Number of days to keep audit log entries. Set to 0 or leave blank to keep all logs forever. Older entries will be automatically purged.</div>
+              :error="!auditLogRetentionValid"
+              error-message="Enter 1–36,500"
+              @blur="saveAuditLogRetention"
+              @keyup.enter="saveAuditLogRetention"
+            />
           </div>
         </div>
+      </section>
       </q-card-section>
     </q-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useFuseStore } from "../stores/FuseStore";
+import { computed, ref, watch } from 'vue'
+import { useFuseStore } from '../stores/FuseStore'
 
-const fuseStore = useFuseStore();
-fuseStore.fetchStatus();
+const fuseStore = useFuseStore()
+void fuseStore.fetchStatus()
 
 const incompleteDataWarningEnabled = computed({
   get: () => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false,
-  async set(value: boolean) {
-    if (!fuseStore.appSettings) {
-      return;
-    }
-
-    await fuseStore.updateAppSettings({ incompleteDataWarningEnabled: value });
-  }
-});
-
+  set: (value: boolean) => void fuseStore.updateAppSettings({ incompleteDataWarningEnabled: value })
+})
 const localLicenseValidationOnly = computed({
   get: () => fuseStore.appSettings?.localLicenseValidationOnly ?? false,
-  set: (value: boolean) => fuseStore.updateAppSettings({ localLicenseValidationOnly: value })
-});
-
+  set: (value: boolean) => void fuseStore.updateAppSettings({ localLicenseValidationOnly: value })
+})
 const hideValidLicenseChip = computed({
   get: () => fuseStore.appSettings?.hideValidLicenseChip ?? false,
-  set: (value: boolean) => fuseStore.updateAppSettings({ hideValidLicenseChip: value })
-});
+  set: (value: boolean) => void fuseStore.updateAppSettings({ hideValidLicenseChip: value })
+})
 
-const versionHistoryKeepCount = computed({
-  get: () => fuseStore.appSettings?.versionHistoryKeepCount ?? 0,
-  set: (value: number) => fuseStore.updateAppSettings({ versionHistoryKeepCount: value })
-});
+const versionHistoryKeepCount = ref<number | null>(null)
+const auditLogDaysToKeep = ref<number | null>(null)
+const lastFiniteVersionCount = ref(100)
+const lastFiniteAuditDays = ref(365)
+watch(() => fuseStore.appSettings, settings => {
+  if (!settings) return
+  versionHistoryKeepCount.value = settings.versionHistoryKeepCount ?? 0
+  auditLogDaysToKeep.value = settings.auditLogDaysToKeep ?? 0
+  if ((settings.versionHistoryKeepCount ?? 0) > 0) lastFiniteVersionCount.value = settings.versionHistoryKeepCount!
+  if ((settings.auditLogDaysToKeep ?? 0) > 0) lastFiniteAuditDays.value = settings.auditLogDaysToKeep!
+}, { immediate: true })
 
-const auditLogDaysToKeep = computed({
-  get: () => fuseStore.appSettings?.auditLogDaysToKeep ?? null,
-  set: (value: number | null) => fuseStore.updateAppSettings({ auditLogDaysToKeep: value })
-});
+const versionHistoryValid = computed(() => Number.isInteger(versionHistoryKeepCount.value) && versionHistoryKeepCount.value! >= 1 && versionHistoryKeepCount.value! <= 10000)
+const auditLogRetentionValid = computed(() => Number.isInteger(auditLogDaysToKeep.value) && auditLogDaysToKeep.value! >= 1 && auditLogDaysToKeep.value! <= 36500)
 
-const canEdit = computed(() => {
-  return fuseStore.hasPermission("appsettings:update");
-});
+const versionHistoryIndefinite = computed({
+  get: () => versionHistoryKeepCount.value === 0,
+  set: (indefinite: boolean) => {
+    if (indefinite && versionHistoryValid.value) lastFiniteVersionCount.value = versionHistoryKeepCount.value!
+    versionHistoryKeepCount.value = indefinite ? 0 : lastFiniteVersionCount.value
+    void fuseStore.updateAppSettings({ versionHistoryKeepCount: versionHistoryKeepCount.value })
+  }
+})
+const auditLogIndefinite = computed({
+  get: () => auditLogDaysToKeep.value === 0,
+  set: (indefinite: boolean) => {
+    if (indefinite && auditLogRetentionValid.value) lastFiniteAuditDays.value = auditLogDaysToKeep.value!
+    auditLogDaysToKeep.value = indefinite ? 0 : lastFiniteAuditDays.value
+    void fuseStore.updateAppSettings({ auditLogDaysToKeep: indefinite ? null : auditLogDaysToKeep.value })
+  }
+})
 
+function saveVersionHistory() {
+  if (versionHistoryValid.value && versionHistoryKeepCount.value !== fuseStore.appSettings?.versionHistoryKeepCount) {
+    lastFiniteVersionCount.value = versionHistoryKeepCount.value!
+    void fuseStore.updateAppSettings({ versionHistoryKeepCount: versionHistoryKeepCount.value! })
+  }
+}
+function saveAuditLogRetention() {
+  if (auditLogRetentionValid.value && auditLogDaysToKeep.value !== (fuseStore.appSettings?.auditLogDaysToKeep ?? 0)) {
+    lastFiniteAuditDays.value = auditLogDaysToKeep.value!
+    void fuseStore.updateAppSettings({ auditLogDaysToKeep: auditLogDaysToKeep.value })
+  }
+}
+
+const canEdit = computed(() => fuseStore.hasPermission('appsettings:update'))
 </script>
 
 <style scoped>
 @import '../styles/pages.css';
+
+.settings-content { margin-top: .5rem; }
+.settings-card-section { padding: 0 2rem; }
+.settings-section { display: grid; grid-template-columns: minmax(180px, 240px) 1fr; column-gap: 3rem; padding: 1.75rem 0; }
+.section-heading h2 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.section-heading p { margin: .35rem 0 0; color: var(--fuse-text-muted); font-size: .82rem; line-height: 1.45; }
+.setting-row { grid-column: 2; display: flex; align-items: center; justify-content: space-between; gap: 2rem; min-height: 64px; padding: .4rem 0; }
+.setting-row + .setting-row { border-top: 1px solid rgba(127, 127, 127, .18); }
+.setting-label { font-size: .95rem; font-weight: 500; }
+.setting-help { margin-top: .25rem; color: var(--fuse-text-muted); font-size: .8rem; line-height: 1.4; }
+.retention-row { align-items: flex-start; padding: 1rem 0; }
+.retention-control { display: flex; flex: 0 0 190px; flex-direction: column; align-items: flex-start; gap: .5rem; }
+.retention-input { width: 190px; flex: none; }
+
+@media (max-width: 700px) {
+  .settings-section { grid-template-columns: 1fr; row-gap: 1rem; }
+  .setting-row { grid-column: 1; }
+  .retention-row { align-items: stretch; flex-direction: column; gap: .75rem; }
+  .retention-control { flex-basis: auto; }
+  .retention-input { width: 100%; }
+  .settings-card-section { padding: 0 1.25rem; }
+}
 </style>
