@@ -7,28 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+Fuse-Inventory is under active development. All changes below have been shipped.
 
 ### Added
 - Health check endpoints: `/api/health/live` (liveness), `/api/health/ready` (readiness), and `/api/health/status` (detailed report)
 - License management: validation, storage, and UI components with customer name support
 - Button to direct users to the licensing page when license is invalid
-
-### Changed
 - Updated license validation logic to include 'valid' status
-
-### Fixed
 - Simplified LiteDB health check from magic-byte inspection to file accessibility check
-
----
-
-## [v0.1.0] — 2026-06-28
-
-*First release of Fuse-Inventory.*
-
-The following is a reverse-chronological list of major features and changes as they were merged.
-
-### Added
 
 **SQL Permission Management & Drift Detection**
 - SQL permission overview page with drift detection between expected (grant) and actual database permissions
