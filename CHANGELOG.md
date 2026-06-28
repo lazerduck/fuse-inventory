@@ -22,9 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Pre-Release]
+## [v0.1.0] — 2026-06-28
 
-*Fuse-Inventory is under active development. No formal release tags have been created yet.*
+*First release of Fuse-Inventory.*
 
 The following is a reverse-chronological list of major features and changes as they were merged.
 
