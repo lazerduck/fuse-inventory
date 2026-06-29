@@ -28,7 +28,7 @@ public interface IVersionHistoryService
     
     /// <summary>
     /// Get a specific version by ID
-    /// </summary>
+    /// </>
     Task<EntityVersion?> GetVersionByIdAsync(Guid versionId, CancellationToken ct = default);
     
     /// <summary>
@@ -40,4 +40,10 @@ public interface IVersionHistoryService
     /// Prune old versions for a specific entity, keeping only the most recent versions up to the specified count
     /// </summary>
     Task PruneOldVersionsAsync(Guid entityId, EntityType entityType, int keepCount, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Prune old versions for all entities, keeping only the most recent versions up to the configured count per entity type.
+    /// If the configured count is 0 or less, no pruning is performed.
+    /// </summary>
+    Task PruneAllOldVersionsAsync(CancellationToken ct = default);
 }

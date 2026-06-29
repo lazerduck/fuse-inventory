@@ -204,6 +204,57 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
         }
     }
 
+    /// <summary>
+    /// Prune old versions for all entities, keeping only the most recent versions up to the configured count per entity type.
+    /// If the configured count is 0 or less, no pruning is performed.
+    /// </summary>
+    public async Task PruneAllOldVersionsAsync(CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            // Get the version history retention setting
+            var keepCount = await _fuseStore.GetAsync(s => s.AppSettings?.VersionHistoryKeepCount ?? 0, ct);
+            
+            // If retention is disabled (0 = unlimited), skip cleanup
+            if (keepCount <= 0)
+            {
+                return;
+            }
+
+            // Get all distinct entity ID/type combinations that have versions
+            var entityKeys = await GetDistinctEntityKeysAsync(ct);
+            
+            // Apply retention to each entity
+            foreach (var (entityId, entityType) in entityKeys)
+            {
+                PruneOldVersionsInternal(entityId, entityType, keepCount);
+            }
+        }
+        finally
+        {
+            _mutex.Release();
+        }
+    }
+
+    /// <summary>
+    /// Gets all distinct entity ID/type combinations that have versions stored.
+    /// </summary>
+    private async Task<(Guid EntityId, EntityType EntityType)[]> GetDistinctEntityKeysAsync(CancellationToken ct)
+    {
+        return await Task.Run(() =>
+        {
+            // Get distinct entity ID/type combinations
+            return _versions
+                .Query()
+                .Select(x => new { x.EntityId, x.EntityType })
+                .ToList()
+                .Select(x => (x.EntityId, x.EntityType))
+                .Distinct()
+                .ToArray();
+        }, ct);
+    }
+
     public void Dispose()
     {
         _db?.Dispose();

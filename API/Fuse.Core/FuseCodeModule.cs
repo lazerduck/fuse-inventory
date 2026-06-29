@@ -67,6 +67,7 @@ public static class FuseCodeModule
         });
         services.AddHostedService<LicenseValidationService>();
         services.AddHostedService<AuditLogRetentionService>();
+        services.AddHostedService<VersionHistoryRetentionService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
