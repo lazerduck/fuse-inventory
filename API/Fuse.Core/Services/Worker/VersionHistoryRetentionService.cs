@@ -1,12 +1,13 @@
 using Fuse.Core.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Fuse.Core.Services.Retention;
 
 namespace Fuse.Core.Services.Worker;
 
 /// <summary>Applies the configured version history retention once at startup and daily thereafter.</summary>
 public sealed class VersionHistoryRetentionService(
-    IVersionHistoryService versionHistoryService,
+    IVersionHistoryRetentionPolicyService retentionPolicyService,
     ILogger<VersionHistoryRetentionService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -17,7 +18,8 @@ public sealed class VersionHistoryRetentionService(
         {
             try
             {
-                await versionHistoryService.PruneAllOldVersionsAsync(stoppingToken);
+                // Apply the configured version history retention policy
+                await retentionPolicyService.ApplyRetentionPolicyAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

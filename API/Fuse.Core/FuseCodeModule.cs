@@ -29,6 +29,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Fuse.Core.Areas.AppSettings;
 using Fuse.Core.Areas.License;
 using Fuse.Core.Services.Worker;
+using Fuse.Core.Services.Retention;
 
 namespace Fuse.Core;
 
@@ -68,6 +69,9 @@ public static class FuseCodeModule
         services.AddHostedService<LicenseValidationService>();
         services.AddHostedService<AuditLogRetentionService>();
         services.AddHostedService<VersionHistoryRetentionService>();
+        
+        // Register version history retention policy service
+        services.AddScoped<IVersionHistoryRetentionPolicyService, VersionHistoryRetentionPolicyService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
