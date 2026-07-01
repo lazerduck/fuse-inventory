@@ -7,6 +7,7 @@ namespace Fuse.API.Controllers
     using Fuse.Core.Helpers;
     using Fuse.Core.Responses;
     using Fuse.Core.Areas.Application;
+    using Fuse.Core.Areas.KumaIntegration;
     using System.Formats.Asn1;
 
     [ApiController]

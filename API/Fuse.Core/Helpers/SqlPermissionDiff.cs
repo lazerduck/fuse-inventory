@@ -4,6 +4,7 @@ using System.Linq;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Account;
 
 namespace Fuse.Core.Helpers;
 

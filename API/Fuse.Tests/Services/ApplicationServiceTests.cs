@@ -1,4 +1,5 @@
 using Fuse.Core.Commands;
+using Fuse.Core.Areas.Application;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;

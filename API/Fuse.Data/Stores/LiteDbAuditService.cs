@@ -1,4 +1,5 @@
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Audit;
 using Fuse.Core.Models;
 using LiteDB;
 

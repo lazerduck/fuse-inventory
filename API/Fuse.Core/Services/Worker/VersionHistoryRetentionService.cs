@@ -1,4 +1,5 @@
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Activity;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

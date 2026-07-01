@@ -1,0 +1,16 @@
+global using Fuse.Core.Areas.Account;
+global using Fuse.Core.Areas.Activity;
+global using Fuse.Core.Areas.Audit;
+global using Fuse.Core.Areas.Config;
+global using Fuse.Core.Areas.DataStore;
+global using Fuse.Core.Areas.Environment;
+global using Fuse.Core.Areas.ExternalResource;
+global using Fuse.Core.Areas.Identity;
+global using Fuse.Core.Areas.KumaIntegration;
+global using Fuse.Core.Areas.MessageBroker;
+global using Fuse.Core.Areas.Platform;
+global using Fuse.Core.Areas.PasswordGenerator;
+global using Fuse.Core.Areas.SecretProvider;
+global using Fuse.Core.Areas.SqlIntegration;
+global using Fuse.Core.Areas.Tag;
+global using Fuse.Core.Areas.Undo;

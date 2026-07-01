@@ -1,4 +1,5 @@
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Activity;
 
 namespace Fuse.Core.Services.Startup;
 

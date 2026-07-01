@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.KumaIntegration;
 using Fuse.Core.Responses;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

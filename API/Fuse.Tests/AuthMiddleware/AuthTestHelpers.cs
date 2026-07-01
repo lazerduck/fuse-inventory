@@ -176,7 +176,7 @@ public static class AuthTestHelpers
             
             return new SecurityStateResponse
             {
-                Posture = Enum.Parse<ApiClient.SecurityPosture>(state.Posture!),
+                Posture = Enum.Parse<SecurityPosture>(state.Posture!),
                 RequiresSetup = state.RequiresSetup,
                 CurrentUser = null // We don't need this for test setup
             };
