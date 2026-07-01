@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Activity;
 using Fuse.Core.Models;
 
 namespace Fuse.Core.Services;

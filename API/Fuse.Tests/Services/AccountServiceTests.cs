@@ -812,7 +812,7 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { account }, apps: new[] { app });
         var service = CreateService(store);
 
-        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { inst2Id }));
+        var result = await service.CloneAccountAsync(new CloneAccount(account.Id, new[] { inst2Id }));
 
         Assert.True(result.IsSuccess);
         var cloned = Assert.Single(result.Value!);
@@ -830,7 +830,7 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { account }, res: new[] { res });
         var service = CreateService(store);
 
-        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { Guid.NewGuid() }));
+        var result = await service.CloneAccountAsync(new CloneAccount(account.Id, new[] { Guid.NewGuid() }));
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -842,7 +842,7 @@ public class AccountServiceTests
         var store = NewStore();
         var service = CreateService(store);
 
-        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(Guid.NewGuid(), new[] { Guid.NewGuid() }));
+        var result = await service.CloneAccountAsync(new CloneAccount(Guid.NewGuid(), new[] { Guid.NewGuid() }));
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -857,7 +857,7 @@ public class AccountServiceTests
         var store = NewStore(accounts: new[] { account }, messageBrokers: new[] { broker1, broker2 });
         var service = CreateService(store);
 
-        var result = await service.CloneAccountAsync(new Fuse.Core.Commands.CloneAccount(account.Id, new[] { broker2.Id }));
+        var result = await service.CloneAccountAsync(new CloneAccount(account.Id, new[] { broker2.Id }));
 
         Assert.True(result.IsSuccess);
         var cloned = Assert.Single(result.Value!);

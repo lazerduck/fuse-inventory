@@ -100,9 +100,9 @@ namespace Fuse.API.Controllers
         [HttpGet("{id}/clone-targets")]
         [SwaggerOperation(OperationId = "identityCloneTargets")]
         [RequirePermissionKey(IdentityPermissions.ReadKey)]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<CloneTarget>))]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetIdentityCloneTargets([FromRoute] Guid id)
+        public async Task<ActionResult<IEnumerable<CloneTarget>>> GetIdentityCloneTargets([FromRoute] Guid id)
         {
             var result = await _identityService.GetIdentityCloneTargetsAsync(id);
             if (!result.IsSuccess)

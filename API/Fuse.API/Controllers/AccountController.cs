@@ -154,9 +154,9 @@ namespace Fuse.API.Controllers
         [HttpGet("{id}/clone-targets")]
         [SwaggerOperation(OperationId = "accountCloneTargets")]
         [RequirePermissionKey(AccountPermissions.ReadKey)]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Fuse.Core.Responses.CloneTarget>))]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<CloneTarget>))]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<IEnumerable<Fuse.Core.Responses.CloneTarget>>> GetAccountCloneTargets([FromRoute] Guid id)
+        public async Task<ActionResult<IEnumerable<CloneTarget>>> GetAccountCloneTargets([FromRoute] Guid id)
         {
             var result = await _accountService.GetAccountCloneTargetsAsync(id);
             if (!result.IsSuccess)

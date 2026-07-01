@@ -3,8 +3,9 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
+using Fuse.Core.Areas.Tag;
 
-namespace Fuse.Core.Services;
+namespace Fuse.Core.Areas.Account;
 
 public class AccountService : IAccountService
 {
@@ -19,13 +20,13 @@ public class AccountService : IAccountService
         _sqlInspector = sqlInspector;
     }
 
-    public async Task<IReadOnlyList<Account>> GetAccountsAsync()
+    public async Task<IReadOnlyList<Models.Account>> GetAccountsAsync()
         => (await _fuseStore.GetAsync()).Accounts;
 
-    public async Task<Account?> GetAccountByIdAsync(Guid id)
+    public async Task<Models.Account?> GetAccountByIdAsync(Guid id)
         => (await _fuseStore.GetAsync()).Accounts.FirstOrDefault(a => a.Id == id);
 
-    public async Task<Result<Account>> CreateAccountAsync(CreateAccount command)
+    public async Task<Result<Models.Account>> CreateAccountAsync(CreateAccount command)
     {
         var tagIds = command.TagIds ?? [];
 
@@ -34,12 +35,12 @@ public class AccountService : IAccountService
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
         if (!grantValidation.IsSuccess)
-            return Result<Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
+            return Result<Models.Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
 
         var normalizedGrants = grantValidation.Value!;
 
         var now = DateTime.UtcNow;
-        var account = new Account(
+        var account = new Models.Account(
             Id: Guid.NewGuid(),
             TargetId: command.TargetId,
             TargetKind: command.TargetKind,
@@ -54,23 +55,23 @@ public class AccountService : IAccountService
         );
 
         await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Append(account).ToList() });
-        return Result<Account>.Success(account);
+        return Result<Models.Account>.Success(account);
     }
 
-    public async Task<Result<Account>> UpdateAccountAsync(UpdateAccount command)
+    public async Task<Result<Models.Account>> UpdateAccountAsync(UpdateAccount command)
     {
         var store = await _fuseStore.GetAsync();
         var tagIds = command.TagIds ?? new HashSet<Guid>();
         var existing = store.Accounts.FirstOrDefault(a => a.Id == command.Id);
         if (existing is null)
-            return Result<Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
+            return Result<Models.Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
         var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;
 
         var grantValidation = ValidateAndNormalizeGrants(command.Grants);
         if (!grantValidation.IsSuccess)
-            return Result<Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
+            return Result<Models.Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
 
         var normalizedGrants = grantValidation.Value!;
 
@@ -134,7 +135,7 @@ public class AccountService : IAccountService
             
             return s with { Accounts = updatedAccounts };
         });
-        return Result<Account>.Success(updated);
+        return Result<Models.Account>.Success(updated);
     }
 
     public async Task<Result> DeleteAccountAsync(DeleteAccount command)
@@ -190,10 +191,10 @@ public class AccountService : IAccountService
         return Result.Success();
     }
 
-    private async Task<Result<Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
+    private async Task<Result<Models.Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
     {
         if (targetId == Guid.Empty)
-            return Result<Account>.Failure("TargetId is required.", ErrorType.Validation);
+            return Result<Models.Account>.Failure("TargetId is required.", ErrorType.Validation);
 
         var store = await _fuseStore.GetAsync();
 
@@ -209,37 +210,37 @@ public class AccountService : IAccountService
             _ => false
         };
         if (!targetExists)
-            return Result<Account>.Failure($"Target '{targetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
+            return Result<Models.Account>.Failure($"Target '{targetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
 
         // Validate tags
         foreach (var tagId in tagIds)
         {
             if (await _tagService.GetTagByIdAsync(tagId) is null)
-                return Result<Account>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
+                return Result<Models.Account>.Failure($"Tag with ID '{tagId}' not found.", ErrorType.Validation);
         }
 
         // Validate secret binding if provided
         if (secretBinding.Kind != SecretBindingKind.None)
         {
             if (secretBinding.Kind == SecretBindingKind.PlainReference && string.IsNullOrWhiteSpace(secretBinding.PlainReference))
-                return Result<Account>.Failure("Plain reference value is required.", ErrorType.Validation);
+                return Result<Models.Account>.Failure("Plain reference value is required.", ErrorType.Validation);
             
             if (secretBinding.Kind == SecretBindingKind.AzureKeyVault)
             {
                 if (secretBinding.AzureKeyVault is null)
-                    return Result<Account>.Failure("Azure Key Vault binding is required.", ErrorType.Validation);
+                    return Result<Models.Account>.Failure("Azure Key Vault binding is required.", ErrorType.Validation);
                 
                 if (string.IsNullOrWhiteSpace(secretBinding.AzureKeyVault.SecretName))
-                    return Result<Account>.Failure("Secret name is required for Azure Key Vault binding.", ErrorType.Validation);
+                    return Result<Models.Account>.Failure("Secret name is required for Azure Key Vault binding.", ErrorType.Validation);
                 
                 // Validate provider exists
                 if (!store.SecretProviders.Any(p => p.Id == secretBinding.AzureKeyVault.ProviderId))
-                    return Result<Account>.Failure($"Secret provider with ID '{secretBinding.AzureKeyVault.ProviderId}' not found.", ErrorType.Validation);
+                    return Result<Models.Account>.Failure($"Secret provider with ID '{secretBinding.AzureKeyVault.ProviderId}' not found.", ErrorType.Validation);
             }
         }
         
         if (authKind == AuthKind.UserPassword && string.IsNullOrWhiteSpace(userName))
-            return Result<Account>.Failure("UserName is required for UserPassword.", ErrorType.Validation);
+            return Result<Models.Account>.Failure("UserName is required for UserPassword.", ErrorType.Validation);
 
         return null;
     }
@@ -686,20 +687,20 @@ public class AccountService : IAccountService
         return Result<IReadOnlyList<CloneTarget>>.Success(Array.Empty<CloneTarget>());
     }
 
-    public async Task<Result<IReadOnlyList<Account>>> CloneAccountAsync(CloneAccount command)
+    public async Task<Result<IReadOnlyList<Models.Account>>> CloneAccountAsync(CloneAccount command)
     {
         var store = await _fuseStore.GetAsync();
         var source = store.Accounts.FirstOrDefault(a => a.Id == command.SourceId);
         if (source is null)
-            return Result<IReadOnlyList<Account>>.Failure($"Account with ID '{command.SourceId}' not found.", ErrorType.NotFound);
+            return Result<IReadOnlyList<Models.Account>>.Failure($"Account with ID '{command.SourceId}' not found.", ErrorType.NotFound);
 
         if (source.TargetKind == TargetKind.External)
-            return Result<IReadOnlyList<Account>>.Failure("Cannot clone an account targeting an external resource.", ErrorType.Validation);
+            return Result<IReadOnlyList<Models.Account>>.Failure("Cannot clone an account targeting an external resource.", ErrorType.Validation);
 
         if (command.TargetIds is null || command.TargetIds.Count == 0)
-            return Result<IReadOnlyList<Account>>.Failure("At least one target must be specified.", ErrorType.Validation);
+            return Result<IReadOnlyList<Models.Account>>.Failure("At least one target must be specified.", ErrorType.Validation);
 
-        var created = new List<Account>();
+        var created = new List<Models.Account>();
         var now = DateTime.UtcNow;
 
         foreach (var targetId in command.TargetIds)
@@ -713,7 +714,7 @@ public class AccountService : IAccountService
                 _ => false
             };
             if (!targetExists)
-                return Result<IReadOnlyList<Account>>.Failure($"Target '{source.TargetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
+                return Result<IReadOnlyList<Models.Account>>.Failure($"Target '{source.TargetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
 
             var cloned = source with
             {
@@ -727,6 +728,6 @@ public class AccountService : IAccountService
         }
 
         await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Concat(created).ToList() });
-        return Result<IReadOnlyList<Account>>.Success(created);
+        return Result<IReadOnlyList<Models.Account>>.Success(created);
     }
 }

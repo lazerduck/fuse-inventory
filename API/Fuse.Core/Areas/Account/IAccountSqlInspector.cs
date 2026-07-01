@@ -1,0 +1,114 @@
+using Fuse.Core.Models;
+using Fuse.Core.Responses;
+
+namespace Fuse.Core.Areas.Account;
+
+/// <summary>
+/// Represents actual permissions found for a SQL principal.
+/// </summary>
+public record SqlPrincipalPermissions(
+    string? PrincipalName,
+    bool Exists,
+    IReadOnlyList<SqlActualGrant> Grants
+);
+
+/// <summary>
+/// Represents a single actual grant found in SQL.
+/// </summary>
+public record SqlActualGrant(
+    string? Database,
+    string? Schema,
+    HashSet<Privilege> Privileges
+);
+
+/// <summary>
+/// Abstraction for inspecting SQL principals and their permissions.
+/// </summary>
+public interface IAccountSqlInspector
+{
+    /// <summary>
+    /// Lists all SQL server login names (without fetching grants).
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of principal names available on the server.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<string> PrincipalNames, string? ErrorMessage)> GetAllPrincipalNamesAsync(
+        Models.SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Queries SQL for the actual permissions of a principal.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalName">The SQL principal name to inspect (typically the account username).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The actual permissions found for the principal, or error information.</returns>
+    Task<(bool IsSuccessful, SqlPrincipalPermissions? Permissions, string? ErrorMessage)> GetPrincipalPermissionsAsync(
+        Models.SqlIntegration sqlIntegration,
+        string principalName,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Applies GRANT and REVOKE statements to resolve permission drift for a principal.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalName">The SQL principal name to modify.</param>
+    /// <param name="permissionComparisons">The permission comparisons showing what needs to be granted/revoked.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of operations performed with their success/failure status.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<DriftResolutionOperation> Operations, string? ErrorMessage)> ApplyPermissionChangesAsync(
+        Models.SqlIntegration sqlIntegration,
+        string principalName,
+        IReadOnlyList<SqlPermissionComparison> permissionComparisons,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates a SQL login and user for a principal that does not exist.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalName">The SQL principal name to create.</param>
+    /// <param name="password">The password for the new login.</param>
+    /// <param name="databases">The list of databases where the user should be created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of operations performed with their success/failure status.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<SqlAccountCreationOperation> Operations, string? ErrorMessage)> CreatePrincipalAsync(
+        Models.SqlIntegration sqlIntegration,
+        string principalName,
+        string password,
+        IReadOnlyList<string> databases,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists databases available on the SQL server.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of database names available on the server.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<string> Databases, string? ErrorMessage)> GetDatabasesAsync(
+        Models.SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists all SQL server logins and their permissions.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of all principals and their permissions.</returns>
+    Task<(bool IsSuccessful, IReadOnlyList<SqlPrincipalPermissions> Principals, string? ErrorMessage)> GetAllPrincipalsAsync(
+        Models.SqlIntegration sqlIntegration,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Queries SQL for the actual permissions of multiple principals in a single round-trip.
+    /// Each principal gets its own connection in the original implementation; this batch method
+    /// scans all databases once and splits the result in C#. Use when requesting N principals.
+    /// </summary>
+    /// <param name="sqlIntegration">The SQL integration containing connection info.</param>
+    /// <param name="principalNames">The SQL principal names to inspect.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Map of principal name to their actual permissions, or error information.</returns>
+    Task<(bool IsSuccessful, IReadOnlyDictionary<string, SqlPrincipalPermissions> PermissionsMap, string? ErrorMessage)> GetPrincipalPermissionsBatchAsync(
+        Models.SqlIntegration sqlIntegration,
+        IReadOnlyList<string> principalNames,
+        CancellationToken ct = default);
+}

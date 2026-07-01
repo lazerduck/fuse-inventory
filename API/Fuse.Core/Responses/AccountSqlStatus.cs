@@ -1,6 +1,8 @@
 using Fuse.Core.Models;
 using Fuse.Core.Interfaces;
 
+using Fuse.Core.Areas.Account;
+
 namespace Fuse.Core.Responses;
 
 /// <summary>

@@ -3,14 +3,14 @@ using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 
-namespace Fuse.Core.Interfaces;
+namespace Fuse.Core.Areas.Account;
 
 public interface IAccountService
 {
-    Task<IReadOnlyList<Account>> GetAccountsAsync();
-    Task<Account?> GetAccountByIdAsync(Guid id);
-    Task<Result<Account>> CreateAccountAsync(CreateAccount command);
-    Task<Result<Account>> UpdateAccountAsync(UpdateAccount command);
+    Task<IReadOnlyList<Models.Account>> GetAccountsAsync();
+    Task<Models.Account?> GetAccountByIdAsync(Guid id);
+    Task<Result<Models.Account>> CreateAccountAsync(CreateAccount command);
+    Task<Result<Models.Account>> UpdateAccountAsync(UpdateAccount command);
     Task<Result> DeleteAccountAsync(DeleteAccount command);
 
     // Grants
@@ -23,5 +23,5 @@ public interface IAccountService
 
     // Clone
     Task<Result<IReadOnlyList<CloneTarget>>> GetAccountCloneTargetsAsync(Guid id);
-    Task<Result<IReadOnlyList<Account>>> CloneAccountAsync(CloneAccount command);
+    Task<Result<IReadOnlyList<Models.Account>>> CloneAccountAsync(CloneAccount command);
 }

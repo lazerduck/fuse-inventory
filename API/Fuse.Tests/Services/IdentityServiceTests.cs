@@ -546,7 +546,7 @@ public class IdentityServiceTests
         var store = new InMemoryFuseStore(snapshot);
         var service = CreateService(store);
 
-        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(identity.Id, new[] { inst2Id }));
+        var result = await service.CloneIdentityAsync(new CloneIdentity(identity.Id, new[] { inst2Id }));
 
         Assert.True(result.IsSuccess);
         var cloned = Assert.Single(result.Value!);
@@ -564,7 +564,7 @@ public class IdentityServiceTests
         var store = NewStore(identities: new[] { identity });
         var service = CreateService(store);
 
-        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(identity.Id, new[] { Guid.NewGuid() }));
+        var result = await service.CloneIdentityAsync(new CloneIdentity(identity.Id, new[] { Guid.NewGuid() }));
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -576,7 +576,7 @@ public class IdentityServiceTests
         var store = NewStore();
         var service = CreateService(store);
 
-        var result = await service.CloneIdentityAsync(new Fuse.Core.Commands.CloneIdentity(Guid.NewGuid(), new[] { Guid.NewGuid() }));
+        var result = await service.CloneIdentityAsync(new CloneIdentity(Guid.NewGuid(), new[] { Guid.NewGuid() }));
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
