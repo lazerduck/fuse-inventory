@@ -42,8 +42,8 @@ public interface IVersionHistoryService
     Task PruneOldVersionsAsync(Guid entityId, EntityType entityType, int keepCount, CancellationToken ct = default);
     
     /// <summary>
-    /// Prune old versions for all entities, keeping only the most recent versions up to the configured count per entity type.
+    /// Prune old versions for all entities, keeping only the most recent versions up to the specified count per entity type.
     /// If the configured count is 0 or less, no pruning is performed.
     /// </summary>
-    Task PruneAllOldVersionsAsync(CancellationToken ct = default);
+    Task PruneAllOldVersionsAsync(int keepCount, CancellationToken ct = default);
 }

@@ -206,23 +206,20 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
     }
 
     /// <summary>
-    /// Prune old versions for all entities, keeping only the most recent versions up to the configured count per entity type.
+    /// Prune old versions for all entities, keeping only the most recent versions up to the specified count per entity type.
     /// If the configured count is 0 or less, no pruning is performed.
     /// </summary>
-    public async Task PruneAllOldVersionsAsync(CancellationToken ct = default)
+    public async Task PruneAllOldVersionsAsync(int keepCount, CancellationToken ct = default)
     {
+        // If retention is disabled (0 = unlimited), skip cleanup
+        if (keepCount <= 0)
+        {
+            return;
+        }
+
         await _mutex.WaitAsync(ct);
         try
         {
-            // Get the version history retention setting
-            var keepCount = await _fuseStore.GetAsync(s => s.AppSettings?.VersionHistoryKeepCount ?? 0, ct);
-            
-            // If retention is disabled (0 = unlimited), skip cleanup
-            if (keepCount <= 0)
-            {
-                return;
-            }
-
             // Get all distinct entity ID/type combinations that have versions
             var entityKeys = await GetDistinctEntityKeysAsync(ct);
             

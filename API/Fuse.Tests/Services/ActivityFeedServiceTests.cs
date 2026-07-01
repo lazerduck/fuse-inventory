@@ -102,7 +102,7 @@ public class ActivityFeedServiceTests
         public Task PruneOldVersionsAsync(Guid entityId, EntityType entityType, int keepCount, CancellationToken ct = default)
             => Task.CompletedTask;
 
-        public Task PruneAllOldVersionsAsync(CancellationToken ct = default)
+        public Task PruneAllOldVersionsAsync(int keepCount, CancellationToken ct = default)
             => Task.CompletedTask;
     }
 }
