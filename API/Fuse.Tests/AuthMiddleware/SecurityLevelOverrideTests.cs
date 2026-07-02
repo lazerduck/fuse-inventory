@@ -11,6 +11,7 @@ namespace Fuse.Tests.AuthMiddleware;
 /// the site-wide rules allow access beyond individual user account settings.
 /// </summary>
 [Collection("ApiAuthCollection")]
+[Trait("Category", "Integration")]
 [Trait("Category", "AuthMiddleware")]
 public class SecurityLevelOverrideTests : IAsyncLifetime
 {

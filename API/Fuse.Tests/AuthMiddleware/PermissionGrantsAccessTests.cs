@@ -28,6 +28,7 @@ namespace Fuse.Tests.AuthMiddleware;
 /// relationship is unambiguous.
 /// </summary>
 [Collection("ApiAuthCollection")]
+[Trait("Category", "Integration")]
 [Trait("Category", "AuthMiddleware")]
 public class PermissionGrantsAccessTests : IAsyncLifetime
 {
