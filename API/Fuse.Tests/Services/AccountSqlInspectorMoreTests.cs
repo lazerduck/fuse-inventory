@@ -7,6 +7,7 @@ using Xunit;
 namespace Fuse.Tests.Services;
 
 [Collection("SqlServerCollection")]
+[Trait("Category", "Integration")]
 [Trait("Category", "SqlIntegration")]
 public class AccountSqlInspectorMoreTests : IAsyncLifetime
 {

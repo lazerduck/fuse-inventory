@@ -12,6 +12,7 @@ namespace Fuse.Tests.AuthMiddleware;
 /// across different user scenarios and API endpoints.
 /// </summary>
 [Collection("ApiAuthCollection")]
+[Trait("Category", "Integration")]
 [Trait("Category", "AuthMiddleware")]
 public class MiddlewareAuthorizationTests : IAsyncLifetime
 {

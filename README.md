@@ -148,6 +148,22 @@ Fuse-Inventory is built with:
 
 ---
 
+## 🧪 Test Commands
+
+Use test categories to split fast unit tests from Docker-backed integration tests.
+
+```bash
+# Fast unit tests (excludes integration tests that need Docker)
+dotnet test API/Fuse.Tests/Fuse.Tests.csproj --filter "Category!=Integration"
+
+# Integration tests only (requires Docker)
+dotnet test API/Fuse.Tests/Fuse.Tests.csproj --filter "Category=Integration"
+```
+
+Integration tests currently include API auth middleware end-to-end tests and SQL inspector tests that run against Testcontainers SQL Server.
+
+---
+
 ## 📌 Current Status
 
 Fuse-Inventory is under active development, but the core data model is stable and backward-compatible across minor versions.
