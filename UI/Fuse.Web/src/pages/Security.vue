@@ -549,12 +549,21 @@ const createAccountMutation = useMutation({
     queryClient.invalidateQueries({ queryKey: ['securityUsers']})
     await fuseStore.fetchStatus()
     if (isInitialSetupSubmission.value && payload.userName && payload.password) {
-      await fuseStore.login(new LoginSecurityUser({
-        userName: payload.userName,
-        password: payload.password
-      }))
+      try {
+        await fuseStore.login(new LoginSecurityUser({
+          userName: payload.userName,
+          password: payload.password
+        }))
+        await router.push({ name: 'home' })
+      } catch (err) {
+        const errorMsg = getErrorMessage(err, 'Unable to complete initial setup login')
+        securityError.value = errorMsg
+        Notify.create({ type: 'negative', message: errorMsg })
+      } finally {
+        isInitialSetupSubmission.value = false
+      }
+    } else {
       isInitialSetupSubmission.value = false
-      await router.push({ name: 'home' })
     }
   },
   onError: (err) => {
