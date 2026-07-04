@@ -1,10 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
-using Fuse.Core.Areas.Audit;
+using Fuse.Core.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -26,8 +24,6 @@ public enum ConfigFormat
 public class ConfigService : IConfigService
 {
     private readonly IFuseStore _store;
-    private readonly IAuditService _auditService;
-    private readonly ICurrentUser _currentUser;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -48,11 +44,9 @@ public class ConfigService : IConfigService
         .WithObjectFactory(new RecordFriendlyObjectFactory())
         .Build();
 
-    public ConfigService(IFuseStore store, IAuditService auditService, ICurrentUser currentUser)
+    public ConfigService(IFuseStore store)
     {
         _store = store;
-        _auditService = auditService;
-        _currentUser = currentUser;
     }
 
     public async Task<string> ExportAsync(ConfigFormat format, CancellationToken ct = default)
@@ -77,18 +71,7 @@ public class ConfigService : IConfigService
             ConfigFormat.Yaml => YamlSerializer.Serialize(config),
             _ => throw new ArgumentException($"Unsupported format: {format}")
         };
-        
-        // Audit log
-        var auditLog = AuditHelper.CreateLog(
-            AuditAction.ConfigExported,
-            AuditArea.Config,
-            _currentUser.UserName,
-            _currentUser.UserId,
-            null,
-            new { Format = format.ToString(), ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count }
-        );
-        await _auditService.LogAsync(auditLog, ct);
-        
+
         return result;
     }
 
@@ -287,89 +270,71 @@ public class ConfigService : IConfigService
                 AzureIntegrationManager: current.AzureIntegrationManager
             );
         }, ct);
-        
-        // Audit log
-        var auditLog = AuditHelper.CreateLog(
-            AuditAction.ConfigImported,
-            AuditArea.Config,
-            "System",
-            null,
-            null,
-            new 
-            { 
-                Format = format.ToString(), 
-                ApplicationCount = imported.Applications.Count,
-                DataStoreCount = imported.DataStores.Count,
-                PlatformCount = imported.Platforms.Count,
-                AccountCount = imported.Accounts.Count
-            }
-        );
-        await _auditService.LogAsync(auditLog, ct);
     }
-}
 
-public class ConfigSnapshot
-{
-    public List<Models.Application> Applications { get; set; } = new();
-    public List<Models.DataStore> DataStores { get; set; } = new();
-    public List<Models.Platform> Platforms { get; set; } = new();
-    public List<Models.ExternalResource> ExternalResources { get; set; } = new();
-    public List<Models.Account> Accounts { get; set; } = new();
-    public List<Models.Identity> Identities { get; set; } = new();
-    public List<Models.Tag> Tags { get; set; } = new();
-    public List<EnvironmentInfo> Environments { get; set; } = new();
-    public List<Models.KumaIntegration> KumaIntegrations { get; set; } = new();
-}
-
-internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory
-{
-    public override object Create(Type type)
+    public class ConfigSnapshot
     {
-        // For records, find a constructor and create with default values
-        if (type.IsClass || type.IsValueType)
+        public List<Models.Application> Applications { get; set; } = new();
+        public List<Models.DataStore> DataStores { get; set; } = new();
+        public List<Models.Platform> Platforms { get; set; } = new();
+        public List<Models.ExternalResource> ExternalResources { get; set; } = new();
+        public List<Models.Account> Accounts { get; set; } = new();
+        public List<Models.Identity> Identities { get; set; } = new();
+        public List<Models.Tag> Tags { get; set; } = new();
+        public List<EnvironmentInfo> Environments { get; set; } = new();
+        public List<Models.KumaIntegration> KumaIntegrations { get; set; } = new();
+    }
+
+    internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory
+    {
+        public override object Create(Type type)
         {
-            var constructors = type.GetConstructors();
-            if (constructors.Length > 0)
+            // For records, find a constructor and create with default values
+            if (type.IsClass || type.IsValueType)
             {
-                var ctor = constructors.OrderBy(c => c.GetParameters().Length).First();
-                var parameters = ctor.GetParameters();
-                var args = parameters.Select(p => GetDefaultValue(p.ParameterType)).ToArray();
-                
-                try
+                var constructors = type.GetConstructors();
+                if (constructors.Length > 0)
                 {
-                    return ctor.Invoke(args);
-                }
-                catch
-                {
-                    // Fall back to default behavior
+                    var ctor = constructors.OrderBy(c => c.GetParameters().Length).First();
+                    var parameters = ctor.GetParameters();
+                    var args = parameters.Select(p => GetDefaultValue(p.ParameterType)).ToArray();
+                    
+                    try
+                    {
+                        return ctor.Invoke(args);
+                    }
+                    catch
+                    {
+                        // Fall back to default behavior
+                    }
                 }
             }
+            
+            return base.Create(type);
         }
-        
-        return base.Create(type);
-    }
 
-    private static object? GetDefaultValue(Type type)
-    {
-        if (type == typeof(string))
-            return string.Empty;
-        if (type == typeof(Guid))
-            return Guid.Empty;
-        if (type == typeof(DateTime))
-            return DateTime.MinValue;
-        if (type == typeof(Uri))
+        private static object? GetDefaultValue(Type type)
+        {
+            if (type == typeof(string))
+                return string.Empty;
+            if (type == typeof(Guid))
+                return Guid.Empty;
+            if (type == typeof(DateTime))
+                return DateTime.MinValue;
+            if (type == typeof(Uri))
+                return null;
+            if (type.IsValueType)
+                return Activator.CreateInstance(type);
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                return Activator.CreateInstance(type);
+            }
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
+            {
+                var listType = typeof(List<>).MakeGenericType(type.GetGenericArguments());
+                return Activator.CreateInstance(listType);
+            }
             return null;
-        if (type.IsValueType)
-            return Activator.CreateInstance(type);
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
-        {
-            return Activator.CreateInstance(type);
         }
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
-        {
-            var listType = typeof(List<>).MakeGenericType(type.GetGenericArguments());
-            return Activator.CreateInstance(listType);
-        }
-        return null;
     }
 }
