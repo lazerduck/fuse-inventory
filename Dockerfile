@@ -43,6 +43,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 WORKDIR /app
 
+ARG APP_VERSION
+ARG APP_CHANNEL
+ARG GIT_COMMIT_ID
+ARG GIT_COMMIT_ID_SHORT
+ARG BUILD_DATE
+
 # Copy published API
 COPY --from=backend-build /app/publish ./
 
@@ -55,6 +61,11 @@ EXPOSE 8080
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV APP_VERSION=$APP_VERSION
+ENV APP_CHANNEL=$APP_CHANNEL
+ENV GIT_COMMIT_ID=$GIT_COMMIT_ID
+ENV GIT_COMMIT_ID_SHORT=$GIT_COMMIT_ID_SHORT
+ENV BUILD_DATE=$BUILD_DATE
 
 # Run the application
 ENTRYPOINT ["dotnet", "Fuse.API.dll"]

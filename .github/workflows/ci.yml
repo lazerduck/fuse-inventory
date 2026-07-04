@@ -6,9 +6,11 @@ permissions:
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 env:
   REGISTRY: ghcr.io
@@ -21,6 +23,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -64,8 +68,8 @@ jobs:
         recreate: true
         path: code-coverage-results.md
 
-  build-and-push-image:
-    name: Build and Push Docker Image
+  build-and-push-pre-release-image:
+    name: Build and Push Pre-release Image
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -76,6 +80,28 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Compute pre-release build metadata
+      id: buildmeta
+      shell: bash
+      run: |
+        BASE_TAG=$(git describe --tags --abbrev=0 --match "v*.*.*" 2>/dev/null || true)
+        BASE_VERSION="${BASE_TAG#v}"
+        if [[ -z "${BASE_VERSION}" ]]; then
+          BASE_VERSION="0.0.0"
+        fi
+
+        SHORT_SHA="${GITHUB_SHA::7}"
+        APP_VERSION="${BASE_VERSION}-pre.${SHORT_SHA}"
+        BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+        echo "app_channel=pre-release" >> "$GITHUB_OUTPUT"
+        echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+        echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+        echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -92,15 +118,65 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
+    - name: Build and push Docker image (multi-arch)
+      uses: docker/build-push-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        context: .
+        push: true
+        platforms: linux/amd64,linux/arm64
         tags: |
-          type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pre-release
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.buildmeta.outputs.git_commit_id_short }}
+        build-args: |
+          APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
+          APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
+          GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
+          GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
+          BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
+
+  build-and-push-release-image:
+    name: Build and Push Release Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Compute release build metadata
+      id: buildmeta
+      shell: bash
+      run: |
+        VERSION_FROM_TAG="${GITHUB_REF_NAME#v}"
+        SHORT_SHA="${GITHUB_SHA::7}"
+        BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        echo "app_version=${VERSION_FROM_TAG}" >> "$GITHUB_OUTPUT"
+        echo "app_channel=release" >> "$GITHUB_OUTPUT"
+        echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+        echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+        echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push Docker image (multi-arch)
       uses: docker/build-push-action@v5
@@ -108,5 +184,12 @@ jobs:
         context: .
         push: true
         platforms: linux/amd64,linux/arm64
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.buildmeta.outputs.app_version }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        build-args: |
+          APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
+          APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
+          GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
+          GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
+          BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
