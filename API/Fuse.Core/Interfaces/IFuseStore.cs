@@ -12,3 +12,11 @@ public interface IFuseStore
     Snapshot? Current { get; }               // null until first load
     event Action<Snapshot>? Changed;         // fire after successful save
 }
+
+/// <summary>
+/// Implemented by persistent stores that can create a recovery point before a bulk update.
+/// </summary>
+public interface IBackupCapableFuseStore
+{
+    Task CreateBackupAsync(CancellationToken ct = default);
+}

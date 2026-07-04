@@ -1,15 +1,19 @@
-using Fuse.Core.Models;
-using Fuse.Core.Services;
-using Fuse.Tests.TestInfrastructure;
-using System.Linq;
-using Xunit;
 using System.Text.Json;
+using Fuse.Core.Areas.Config;
+using Fuse.Core.Areas.Audit;
+using Fuse.Core.Interfaces;
+using Fuse.Core.Models;
 using Fuse.Tests.Helpers;
+using Fuse.Tests.TestInfrastructure;
+using Xunit;
 
 namespace Fuse.Tests.Services;
 
 public class ConfigServiceTests
 {
+    private static ConfigService CreateService(IFuseStore store, FakeAuditService? audit = null) =>
+        new(store, audit ?? new FakeAuditService(), new FakeCurrentUser());
+
     private static InMemoryFuseStore NewStoreWith(
         Application[]? applications = null,
         DataStore[]? dataStores = null,
@@ -29,10 +33,16 @@ public class ConfigServiceTests
             Tags: tags ?? Array.Empty<Tag>(),
             Environments: environments ?? Array.Empty<EnvironmentInfo>(),
             KumaIntegrations: Array.Empty<KumaIntegration>(),
-                SecretProviders: Array.Empty<SecretProvider>(),
-                SqlIntegrations: Array.Empty<SqlIntegration>(), Positions: Array.Empty<Position>(), ResponsibilityTypes: Array.Empty<ResponsibilityType>(), ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
-                Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
-                SecurityContextHelper.Get
+            SecretProviders: Array.Empty<SecretProvider>(),
+            SqlIntegrations: Array.Empty<SqlIntegration>(),
+            Positions: Array.Empty<Position>(),
+            ResponsibilityTypes: Array.Empty<ResponsibilityType>(),
+            ResponsibilityAssignments: Array.Empty<ResponsibilityAssignment>(),
+            Risks: Array.Empty<Risk>(),
+            MessageBrokers: Array.Empty<MessageBroker>(),
+            Security: new SecurityState(new SecuritySettings(SecurityLevel.None, DateTime.UtcNow), Array.Empty<SecurityUser>()),
+            SecurityContextHelper.Get,
+            new AppSettings()
         );
         return new InMemoryFuseStore(snapshot);
     }
@@ -56,20 +66,29 @@ public class ConfigServiceTests
             DateTime.UtcNow,
             DateTime.UtcNow
         );
-
+        
         var store = NewStoreWith(applications: new[] { app });
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var result = await service.ExportAsync(ConfigFormat.Json);
 
-    Assert.False(string.IsNullOrEmpty(result));
-        
-        // Verify it's valid JSON
-    var parsed = JsonDocument.Parse(result);
-    Assert.NotNull(parsed);
-        
-        // Verify it contains our application
-    Assert.Contains("TestApp", result);
+        Assert.False(string.IsNullOrEmpty(result));
+        var parsed = JsonDocument.Parse(result);
+        Assert.True(parsed.RootElement.TryGetProperty("applications", out var applications));
+        Assert.Contains("TestApp", result);
+        Assert.Equal(1, applications.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task ExportAsync_RecordsAuditEvent()
+    {
+        var audit = new FakeAuditService();
+        var service = CreateService(NewStoreWith(), audit);
+
+        await service.ExportAsync(ConfigFormat.Json);
+
+        var log = Assert.Single(audit.Logs);
+        Assert.Equal(AuditAction.ConfigExported, log.Action);
     }
 
     [Fact]
@@ -78,73 +97,85 @@ public class ConfigServiceTests
         var tag = new Tag(Guid.NewGuid(), "Production", "Production environment", TagColor.Red);
         
         var store = NewStoreWith(tags: new[] { tag });
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+
+        var service = CreateService(store);
 
         var result = await service.ExportAsync(ConfigFormat.Yaml);
 
-    Assert.False(string.IsNullOrEmpty(result));
-    Assert.Contains("Production", result);
-    Assert.Contains("tags:", result);
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Contains("Production", result);
+        Assert.Contains("tags:", result);
     }
 
     [Fact]
     public async Task GetTemplateAsync_Json_ReturnsTemplate()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var result = await service.GetTemplateAsync(ConfigFormat.Json);
 
-    Assert.False(string.IsNullOrEmpty(result));
-    Assert.Contains("Example", result);
-        
-        // Verify it's valid JSON
-    var parsed2 = JsonDocument.Parse(result);
-    Assert.NotNull(parsed2);
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Contains("Example", result);
+
+        var parsed = JsonDocument.Parse(result);
+        Assert.True(parsed.RootElement.TryGetProperty("applications", out _));
     }
 
     [Fact]
     public async Task GetTemplateAsync_Yaml_ReturnsTemplate()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var result = await service.GetTemplateAsync(ConfigFormat.Yaml);
 
-    Assert.False(string.IsNullOrEmpty(result));
-    Assert.Contains("Example", result);
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Contains("Example", result);
     }
 
     [Fact]
     public async Task ImportAsync_Json_AddsNewItems()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var newAppId = Guid.NewGuid();
         var importJson = $$"""
-        {
-            "applications": [
-                {
-                    "id": "{{newAppId}}",
-                    "name": "ImportedApp",
-                    "version": "1.0",
-                    "tagIds": [],
-                    "instances": [],
-                    "pipelines": [],
-                    "createdAt": "2024-01-01T00:00:00Z",
-                    "updatedAt": "2024-01-01T00:00:00Z"
-                }
-            ]
-        }
-        """;
+            {
+                "applications": [
+                    {
+                        "id": "{{newAppId}}",
+                        "name": "ImportedApp",
+                        "version": "1.0",
+                        "tagIds": [],
+                        "instances": [],
+                        "pipelines": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ]
+            }
+            """;
 
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-    Assert.Single(snapshot.Applications);
-    Assert.Equal("ImportedApp", snapshot.Applications[0].Name);
-    Assert.Equal(newAppId, snapshot.Applications[0].Id);
+        var app = Assert.Single(snapshot.Applications);
+        Assert.Equal(newAppId, app.Id);
+        Assert.Equal("ImportedApp", app.Name);
+    }
+
+    [Fact]
+    public async Task ImportAsync_RecordsAuditEvent()
+    {
+        var audit = new FakeAuditService();
+        var service = CreateService(NewStoreWith(), audit);
+
+        await service.ImportAsync("{}", ConfigFormat.Json);
+
+        var log = Assert.Single(audit.Logs);
+        Assert.Equal(AuditAction.ConfigImported, log.Action);
     }
 
     [Fact]
@@ -152,49 +183,49 @@ public class ConfigServiceTests
     {
         var appId = Guid.NewGuid();
         var existingApp = new Application(
-            appId,
-            "OldName",
-            "1.0",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            new HashSet<Guid>(),
-            Array.Empty<ApplicationInstance>(),
-            Array.Empty<ApplicationPipeline>(),
-            DateTime.UtcNow,
-            DateTime.UtcNow
-        );
+                appId,
+                "OldName",
+                "1.0",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new HashSet<Guid>(),
+                Array.Empty<ApplicationInstance>(),
+                Array.Empty<ApplicationPipeline>(),
+                DateTime.UtcNow,
+                DateTime.UtcNow
+            );
 
         var store = NewStoreWith(applications: new[] { existingApp });
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var importJson = $$"""
-        {
-            "applications": [
-                {
-                    "id": "{{appId}}",
-                    "name": "UpdatedName",
-                    "version": "2.0",
-                    "tagIds": [],
-                    "instances": [],
-                    "pipelines": [],
-                    "createdAt": "2024-01-01T00:00:00Z",
-                    "updatedAt": "2024-01-01T00:00:00Z"
-                }
-            ]
-        }
-        """;
+            {
+                "applications": [
+                    {
+                        "id": "{{appId}}",
+                        "name": "UpdatedName",
+                        "version": "2.0",
+                        "tagIds": [],
+                        "instances": [],
+                        "pipelines": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ]
+            }
+            """;
 
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-    Assert.Single(snapshot.Applications);
-    Assert.Equal("UpdatedName", snapshot.Applications[0].Name);
-    Assert.Equal("2.0", snapshot.Applications[0].Version);
-    Assert.Equal(appId, snapshot.Applications[0].Id);
+        var app = Assert.Single(snapshot.Applications);
+        Assert.Equal(appId, app.Id);
+        Assert.Equal("UpdatedName", app.Name);
+        Assert.Equal("2.0", app.Version);
     }
 
     [Fact]
@@ -203,72 +234,71 @@ public class ConfigServiceTests
         var app1Id = Guid.NewGuid();
         var app2Id = Guid.NewGuid();
         var app1 = new Application(
-            app1Id,
-            "App1",
-            "1.0",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            new HashSet<Guid>(),
-            Array.Empty<ApplicationInstance>(),
-            Array.Empty<ApplicationPipeline>(),
-            DateTime.UtcNow,
-            DateTime.UtcNow
-        );
+                app1Id,
+                "App1",
+                "1.0",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new HashSet<Guid>(),
+                Array.Empty<ApplicationInstance>(),
+                Array.Empty<ApplicationPipeline>(),
+                DateTime.UtcNow,
+                DateTime.UtcNow
+            );
         var app2 = new Application(
-            app2Id,
-            "App2",
-            "1.0",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            new HashSet<Guid>(),
-            Array.Empty<ApplicationInstance>(),
-            Array.Empty<ApplicationPipeline>(),
-            DateTime.UtcNow,
-            DateTime.UtcNow
-        );
+                app2Id,
+                "App2",
+                "1.0",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new HashSet<Guid>(),
+                Array.Empty<ApplicationInstance>(),
+                Array.Empty<ApplicationPipeline>(),
+                DateTime.UtcNow,
+                DateTime.UtcNow
+            );
 
         var store = NewStoreWith(applications: new[] { app1, app2 });
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
-        // Import only updates app1, should preserve app2
         var importJson = $$"""
-        {
-            "applications": [
-                {
-                    "id": "{{app1Id}}",
-                    "name": "UpdatedApp1",
-                    "version": "2.0",
-                    "tagIds": [],
-                    "instances": [],
-                    "pipelines": [],
-                    "createdAt": "2024-01-01T00:00:00Z",
-                    "updatedAt": "2024-01-01T00:00:00Z"
-                }
-            ]
-        }
-        """;
+            {
+                "applications": [
+                    {
+                        "id": "{{app1Id}}",
+                        "name": "UpdatedApp1",
+                        "version": "2.0",
+                        "tagIds": [],
+                        "instances": [],
+                        "pipelines": [],
+                        "createdAt": "2024-01-01T00:00:00Z",
+                        "updatedAt": "2024-01-01T00:00:00Z"
+                    }
+                ]
+            }
+            """;
 
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-    Assert.Equal(2, snapshot.Applications.Count);
-    Assert.Contains(snapshot.Applications, a => a.Id == app1Id && a.Name == "UpdatedApp1");
-    Assert.Contains(snapshot.Applications, a => a.Id == app2Id && a.Name == "App2");
+        Assert.Equal(2, snapshot.Applications.Count);
+        Assert.Contains(snapshot.Applications, app => app.Id == app1Id && app.Name == "UpdatedApp1");
+        Assert.Contains(snapshot.Applications, app => app.Id == app2Id && app.Name == "App2");
     }
 
     [Fact]
     public async Task ImportAsync_Yaml_Works()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var tagId = Guid.NewGuid();
         var importYaml = $@"
@@ -282,16 +312,17 @@ tags:
         await service.ImportAsync(importYaml, ConfigFormat.Yaml);
 
         var snapshot = await store.GetAsync();
-    Assert.Single(snapshot.Tags);
-    Assert.Equal("ImportedTag", snapshot.Tags[0].Name);
-    Assert.Equal(TagColor.Blue, snapshot.Tags[0].Color);
+        var tag = Assert.Single(snapshot.Tags);
+        Assert.Equal(tagId, tag.Id);
+        Assert.Equal("ImportedTag", tag.Name);
+        Assert.Equal(TagColor.Blue, tag.Color);
     }
 
     [Fact]
     public async Task ImportAsync_InvalidJson_ThrowsException()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
         var invalidJson = "{ invalid json }";
 
@@ -303,18 +334,51 @@ tags:
     public async Task ImportAsync_PartialImport_Works()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store, new FakeAuditService(), new FakeCurrentUser());
+        var service = CreateService(store);
 
-        // Import only environments, no applications
         var envId = Guid.NewGuid();
         var importJson = $$"""
+            {
+                "environments": [
+                    {
+                        "id": "{{envId}}",
+                        "name": "Production",
+                        "description": "Production environment",
+                        "tagIds": []
+                    }
+                ]
+            }
+            """;
+
+        await service.ImportAsync(importJson, ConfigFormat.Json);
+
+        var snapshot = await store.GetAsync();
+        var environment = Assert.Single(snapshot.Environments);
+        Assert.Equal(envId, environment.Id);
+        Assert.Equal("Production", environment.Name);
+        Assert.Empty(snapshot.Applications);
+    }
+
+    [Fact]
+    public async Task ImportAsync_Json_AddsKumaIntegrations()
+    {
+        var store = NewStoreWith();
+        var service = CreateService(store);
+
+        var kumaId = Guid.NewGuid();
+        var importJson = $$"""
         {
-            "environments": [
+            "kumaIntegrations": [
                 {
-                    "id": "{{envId}}",
-                    "name": "Production",
-                    "description": "Production environment",
-                    "tagIds": []
+                    "id": "{{kumaId}}",
+                    "name": "Kuma Prod",
+                    "environmentIds": [],
+                    "platformId": null,
+                    "accountId": null,
+                    "uri": "https://kuma.example.com",
+                    "apiKey": "token",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "updatedAt": "2024-01-01T00:00:00Z"
                 }
             ]
         }
@@ -323,8 +387,8 @@ tags:
         await service.ImportAsync(importJson, ConfigFormat.Json);
 
         var snapshot = await store.GetAsync();
-    Assert.Single(snapshot.Environments);
-    Assert.Equal("Production", snapshot.Environments[0].Name);
-    Assert.Empty(snapshot.Applications);
+        var kuma = Assert.Single(snapshot.KumaIntegrations);
+        Assert.Equal(kumaId, kuma.Id);
+        Assert.Equal("Kuma Prod", kuma.Name);
     }
 }

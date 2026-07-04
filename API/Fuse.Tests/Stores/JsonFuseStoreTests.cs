@@ -1,4 +1,5 @@
 using Fuse.Core.Configs;
+using System.IO.Compression;
 using Fuse.Core.Models;
 using Fuse.Data.Stores;
 using Fuse.Tests.Helpers;
@@ -22,6 +23,28 @@ public class JsonFuseStoreTests : IDisposable
         {
             Directory.Delete(_testDataDirectory, true);
         }
+    }
+
+    [Fact]
+    public async Task CreateBackupAsync_CreatesArchiveContainingCurrentDataFiles()
+    {
+        const string applicationsJson = "[{\"name\":\"before-import\"}]";
+        await File.WriteAllTextAsync(
+            Path.Combine(_testDataDirectory, "applications.json"),
+            applicationsJson);
+
+        using var store = new JsonFuseStore(
+            new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+
+        await store.CreateBackupAsync();
+
+        var backupPath = Path.Combine(_testDataDirectory, "fuse-data.bak");
+        Assert.True(File.Exists(backupPath));
+        using var archive = ZipFile.OpenRead(backupPath);
+        var entry = Assert.Single(archive.Entries, entry => entry.FullName == "applications.json");
+        using var reader = new StreamReader(entry.Open());
+        Assert.Equal(applicationsJson, await reader.ReadToEndAsync());
+        Assert.False(File.Exists(backupPath + ".tmp"));
     }
 
     [Fact]

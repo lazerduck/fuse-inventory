@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.IO.Compression;
 using Fuse.Core.Configs;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
@@ -7,7 +8,7 @@ using Fuse.Core.Models;
 
 namespace Fuse.Data.Stores;
 
-public sealed class JsonFuseStore : IFuseStore, IDisposable
+public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDisposable
 {
     private readonly JsonFuseStoreOptions _options;
     private readonly SemaphoreSlim _mutex = new(1, 1);
@@ -152,6 +153,55 @@ public sealed class JsonFuseStore : IFuseStore, IDisposable
         var current = _cache ?? await LoadAsync(ct);
         var next = mutate(current);
         await SaveAsync(next, ct);
+    }
+
+    public async Task CreateBackupAsync(CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            var backupPath = Path.Combine(_options.DataDirectory, "fuse-data.bak");
+            var temporaryPath = backupPath + ".tmp";
+
+            try
+            {
+                await using (var stream = new FileStream(
+                    temporaryPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize: 81920,
+                    useAsync: true))
+                using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+                {
+                    foreach (var path in Directory.EnumerateFiles(_options.DataDirectory, "*.json"))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var entry = archive.CreateEntry(Path.GetFileName(path), CompressionLevel.Optimal);
+                        await using var source = new FileStream(
+                            path,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read,
+                            bufferSize: 81920,
+                            useAsync: true);
+                        await using var destination = entry.Open();
+                        await source.CopyToAsync(destination, ct);
+                    }
+                }
+
+                File.Move(temporaryPath, backupPath, overwrite: true);
+            }
+            catch
+            {
+                File.Delete(temporaryPath);
+                throw;
+            }
+        }
+        finally
+        {
+            _mutex.Release();
+        }
     }
 
     private async Task<IReadOnlyList<T>> ReadAsync<T>(string file, CancellationToken ct)

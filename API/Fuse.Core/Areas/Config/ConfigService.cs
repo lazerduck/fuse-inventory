@@ -1,10 +1,11 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Fuse.Core.Areas.Audit;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
-using Fuse.Core.Areas.Audit;
+using Fuse.Core.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -77,18 +78,19 @@ public class ConfigService : IConfigService
             ConfigFormat.Yaml => YamlSerializer.Serialize(config),
             _ => throw new ArgumentException($"Unsupported format: {format}")
         };
-        
-        // Audit log
-        var auditLog = AuditHelper.CreateLog(
+
+        await _auditService.LogAsync(AuditHelper.CreateLog(
             AuditAction.ConfigExported,
             AuditArea.Config,
             _currentUser.UserName,
             _currentUser.UserId,
             null,
-            new { Format = format.ToString(), ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count }
-        );
-        await _auditService.LogAsync(auditLog, ct);
-        
+            new
+            {
+                Format = format.ToString(),
+                ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count
+            }), ct);
+
         return result;
     }
 
@@ -209,6 +211,11 @@ public class ConfigService : IConfigService
             throw new InvalidOperationException($"Failed to parse {format} content: {ex.Message}", ex);
         }
 
+        if (_store is IBackupCapableFuseStore backupCapableStore)
+        {
+            await backupCapableStore.CreateBackupAsync(ct);
+        }
+
         await _store.UpdateAsync(current =>
         {
             // Create lookup dictionaries for existing data
@@ -263,6 +270,11 @@ public class ConfigService : IConfigService
                 existingEnvironments[env.Id] = env;
             }
 
+            foreach (var kumaIntegration in imported.KumaIntegrations)
+            {
+                existingKumaIntegrations[kumaIntegration.Id] = kumaIntegration;
+            }
+
             return new Snapshot(
                 Applications: existingApps.Values.ToList(),
                 DataStores: existingDataStores.Values.ToList(),
@@ -284,92 +296,91 @@ public class ConfigService : IConfigService
                 SecurityContext: current.SecurityContext,
                 AppSettings: current.AppSettings,
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig,
-                AzureIntegrationManager: current.AzureIntegrationManager
+                AzureIntegrationManager: current.AzureIntegrationManager,
+                License: current.License
             );
         }, ct);
-        
-        // Audit log
-        var auditLog = AuditHelper.CreateLog(
+
+        await _auditService.LogAsync(AuditHelper.CreateLog(
             AuditAction.ConfigImported,
             AuditArea.Config,
-            "System",
+            _currentUser.UserName,
+            _currentUser.UserId,
             null,
-            null,
-            new 
-            { 
-                Format = format.ToString(), 
+            new
+            {
+                Format = format.ToString(),
                 ApplicationCount = imported.Applications.Count,
                 DataStoreCount = imported.DataStores.Count,
                 PlatformCount = imported.Platforms.Count,
-                AccountCount = imported.Accounts.Count
-            }
-        );
-        await _auditService.LogAsync(auditLog, ct);
+                AccountCount = imported.Accounts.Count,
+                KumaIntegrationCount = imported.KumaIntegrations.Count
+            }), ct);
     }
-}
 
-public class ConfigSnapshot
-{
-    public List<Models.Application> Applications { get; set; } = new();
-    public List<Models.DataStore> DataStores { get; set; } = new();
-    public List<Models.Platform> Platforms { get; set; } = new();
-    public List<Models.ExternalResource> ExternalResources { get; set; } = new();
-    public List<Models.Account> Accounts { get; set; } = new();
-    public List<Models.Identity> Identities { get; set; } = new();
-    public List<Models.Tag> Tags { get; set; } = new();
-    public List<EnvironmentInfo> Environments { get; set; } = new();
-    public List<Models.KumaIntegration> KumaIntegrations { get; set; } = new();
-}
-
-internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory
-{
-    public override object Create(Type type)
+    public class ConfigSnapshot
     {
-        // For records, find a constructor and create with default values
-        if (type.IsClass || type.IsValueType)
+        public List<Models.Application> Applications { get; set; } = new();
+        public List<Models.DataStore> DataStores { get; set; } = new();
+        public List<Models.Platform> Platforms { get; set; } = new();
+        public List<Models.ExternalResource> ExternalResources { get; set; } = new();
+        public List<Models.Account> Accounts { get; set; } = new();
+        public List<Models.Identity> Identities { get; set; } = new();
+        public List<Models.Tag> Tags { get; set; } = new();
+        public List<EnvironmentInfo> Environments { get; set; } = new();
+        public List<Models.KumaIntegration> KumaIntegrations { get; set; } = new();
+    }
+
+    internal class RecordFriendlyObjectFactory : YamlDotNet.Serialization.ObjectFactories.DefaultObjectFactory
+    {
+        public override object Create(Type type)
         {
-            var constructors = type.GetConstructors();
-            if (constructors.Length > 0)
+            // For records, find a constructor and create with default values
+            if (type.IsClass || type.IsValueType)
             {
-                var ctor = constructors.OrderBy(c => c.GetParameters().Length).First();
-                var parameters = ctor.GetParameters();
-                var args = parameters.Select(p => GetDefaultValue(p.ParameterType)).ToArray();
-                
-                try
+                var constructors = type.GetConstructors();
+                if (constructors.Length > 0)
                 {
-                    return ctor.Invoke(args);
-                }
-                catch
-                {
-                    // Fall back to default behavior
+                    var ctor = constructors.OrderBy(c => c.GetParameters().Length).First();
+                    var parameters = ctor.GetParameters();
+                    var args = parameters.Select(p => GetDefaultValue(p.ParameterType)).ToArray();
+                    
+                    try
+                    {
+                        return ctor.Invoke(args);
+                    }
+                    catch
+                    {
+                        // Fall back to default behavior
+                    }
                 }
             }
+            
+            return base.Create(type);
         }
-        
-        return base.Create(type);
-    }
 
-    private static object? GetDefaultValue(Type type)
-    {
-        if (type == typeof(string))
-            return string.Empty;
-        if (type == typeof(Guid))
-            return Guid.Empty;
-        if (type == typeof(DateTime))
-            return DateTime.MinValue;
-        if (type == typeof(Uri))
+        private static object? GetDefaultValue(Type type)
+        {
+            if (type == typeof(string))
+                return string.Empty;
+            if (type == typeof(Guid))
+                return Guid.Empty;
+            if (type == typeof(DateTime))
+                return DateTime.MinValue;
+            if (type == typeof(Uri))
+                return null;
+            if (type.IsValueType)
+                return Activator.CreateInstance(type);
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                return Activator.CreateInstance(type);
+            }
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
+            {
+                var listType = typeof(List<>).MakeGenericType(type.GetGenericArguments());
+                return Activator.CreateInstance(listType);
+            }
             return null;
-        if (type.IsValueType)
-            return Activator.CreateInstance(type);
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
-        {
-            return Activator.CreateInstance(type);
         }
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
-        {
-            var listType = typeof(List<>).MakeGenericType(type.GetGenericArguments());
-            return Activator.CreateInstance(listType);
-        }
-        return null;
     }
 }
