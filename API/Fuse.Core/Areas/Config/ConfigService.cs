@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Fuse.Core.Areas.Audit;
+using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
@@ -25,6 +27,8 @@ public enum ConfigFormat
 public class ConfigService : IConfigService
 {
     private readonly IFuseStore _store;
+    private readonly IAuditService _auditService;
+    private readonly ICurrentUser _currentUser;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -45,9 +49,11 @@ public class ConfigService : IConfigService
         .WithObjectFactory(new RecordFriendlyObjectFactory())
         .Build();
 
-    public ConfigService(IFuseStore store)
+    public ConfigService(IFuseStore store, IAuditService auditService, ICurrentUser currentUser)
     {
         _store = store;
+        _auditService = auditService;
+        _currentUser = currentUser;
     }
 
     public async Task<string> ExportAsync(ConfigFormat format, CancellationToken ct = default)
@@ -72,6 +78,18 @@ public class ConfigService : IConfigService
             ConfigFormat.Yaml => YamlSerializer.Serialize(config),
             _ => throw new ArgumentException($"Unsupported format: {format}")
         };
+
+        await _auditService.LogAsync(AuditHelper.CreateLog(
+            AuditAction.ConfigExported,
+            AuditArea.Config,
+            _currentUser.UserName,
+            _currentUser.UserId,
+            null,
+            new
+            {
+                Format = format.ToString(),
+                ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count
+            }), ct);
 
         return result;
     }
@@ -193,6 +211,11 @@ public class ConfigService : IConfigService
             throw new InvalidOperationException($"Failed to parse {format} content: {ex.Message}", ex);
         }
 
+        if (_store is IBackupCapableFuseStore backupCapableStore)
+        {
+            await backupCapableStore.CreateBackupAsync(ct);
+        }
+
         await _store.UpdateAsync(current =>
         {
             // Create lookup dictionaries for existing data
@@ -273,9 +296,26 @@ public class ConfigService : IConfigService
                 SecurityContext: current.SecurityContext,
                 AppSettings: current.AppSettings,
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig,
-                AzureIntegrationManager: current.AzureIntegrationManager
+                AzureIntegrationManager: current.AzureIntegrationManager,
+                License: current.License
             );
         }, ct);
+
+        await _auditService.LogAsync(AuditHelper.CreateLog(
+            AuditAction.ConfigImported,
+            AuditArea.Config,
+            _currentUser.UserName,
+            _currentUser.UserId,
+            null,
+            new
+            {
+                Format = format.ToString(),
+                ApplicationCount = imported.Applications.Count,
+                DataStoreCount = imported.DataStores.Count,
+                PlatformCount = imported.Platforms.Count,
+                AccountCount = imported.Accounts.Count,
+                KumaIntegrationCount = imported.KumaIntegrations.Count
+            }), ct);
     }
 
     public class ConfigSnapshot

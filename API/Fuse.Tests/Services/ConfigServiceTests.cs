@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Fuse.Core.Areas.Config;
+using Fuse.Core.Areas.Audit;
+using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
@@ -9,6 +11,9 @@ namespace Fuse.Tests.Services;
 
 public class ConfigServiceTests
 {
+    private static ConfigService CreateService(IFuseStore store, FakeAuditService? audit = null) =>
+        new(store, audit ?? new FakeAuditService(), new FakeCurrentUser());
+
     private static InMemoryFuseStore NewStoreWith(
         Application[]? applications = null,
         DataStore[]? dataStores = null,
@@ -63,7 +68,7 @@ public class ConfigServiceTests
         );
         
         var store = NewStoreWith(applications: new[] { app });
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var result = await service.ExportAsync(ConfigFormat.Json);
 
@@ -75,13 +80,25 @@ public class ConfigServiceTests
     }
 
     [Fact]
+    public async Task ExportAsync_RecordsAuditEvent()
+    {
+        var audit = new FakeAuditService();
+        var service = CreateService(NewStoreWith(), audit);
+
+        await service.ExportAsync(ConfigFormat.Json);
+
+        var log = Assert.Single(audit.Logs);
+        Assert.Equal(AuditAction.ConfigExported, log.Action);
+    }
+
+    [Fact]
     public async Task ExportAsync_Yaml_ReturnsValidYaml()
     {
         var tag = new Tag(Guid.NewGuid(), "Production", "Production environment", TagColor.Red);
         
         var store = NewStoreWith(tags: new[] { tag });
 
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var result = await service.ExportAsync(ConfigFormat.Yaml);
 
@@ -94,7 +111,7 @@ public class ConfigServiceTests
     public async Task GetTemplateAsync_Json_ReturnsTemplate()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var result = await service.GetTemplateAsync(ConfigFormat.Json);
 
@@ -109,7 +126,7 @@ public class ConfigServiceTests
     public async Task GetTemplateAsync_Yaml_ReturnsTemplate()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var result = await service.GetTemplateAsync(ConfigFormat.Yaml);
 
@@ -121,7 +138,7 @@ public class ConfigServiceTests
     public async Task ImportAsync_Json_AddsNewItems()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var newAppId = Guid.NewGuid();
         var importJson = $$"""
@@ -150,6 +167,18 @@ public class ConfigServiceTests
     }
 
     [Fact]
+    public async Task ImportAsync_RecordsAuditEvent()
+    {
+        var audit = new FakeAuditService();
+        var service = CreateService(NewStoreWith(), audit);
+
+        await service.ImportAsync("{}", ConfigFormat.Json);
+
+        var log = Assert.Single(audit.Logs);
+        Assert.Equal(AuditAction.ConfigImported, log.Action);
+    }
+
+    [Fact]
     public async Task ImportAsync_Json_UpdatesExistingItems()
     {
         var appId = Guid.NewGuid();
@@ -171,7 +200,7 @@ public class ConfigServiceTests
             );
 
         var store = NewStoreWith(applications: new[] { existingApp });
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var importJson = $$"""
             {
@@ -238,7 +267,7 @@ public class ConfigServiceTests
             );
 
         var store = NewStoreWith(applications: new[] { app1, app2 });
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var importJson = $$"""
             {
@@ -269,7 +298,7 @@ public class ConfigServiceTests
     public async Task ImportAsync_Yaml_Works()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var tagId = Guid.NewGuid();
         var importYaml = $@"
@@ -293,7 +322,7 @@ tags:
     public async Task ImportAsync_InvalidJson_ThrowsException()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var invalidJson = "{ invalid json }";
 
@@ -305,7 +334,7 @@ tags:
     public async Task ImportAsync_PartialImport_Works()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var envId = Guid.NewGuid();
         var importJson = $$"""
@@ -334,7 +363,7 @@ tags:
     public async Task ImportAsync_Json_AddsKumaIntegrations()
     {
         var store = NewStoreWith();
-        var service = new ConfigService(store);
+        var service = CreateService(store);
 
         var kumaId = Guid.NewGuid();
         var importJson = $$"""
