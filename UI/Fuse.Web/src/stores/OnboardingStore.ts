@@ -6,6 +6,8 @@ interface OnboardingState {
   showCheatSheet: boolean
   lastCompletedAt: string | null
   isTourActive: boolean
+  activeGuideId: string | null
+  completedGuideSteps: string[]
 }
 
 const STORAGE_KEY = 'fuse_onboarding_state'
@@ -15,7 +17,9 @@ const defaultState: OnboardingState = {
   dismissedBanner: false,
   showCheatSheet: false,
   lastCompletedAt: null,
-  isTourActive: false
+  isTourActive: false,
+  activeGuideId: 'first-application',
+  completedGuideSteps: []
 }
 
 function loadPersistedState(): OnboardingState {
@@ -48,12 +52,14 @@ function persistState(state: OnboardingState): void {
   }
 
   try {
-    const { hasCompletedTour, dismissedBanner, showCheatSheet, lastCompletedAt } = state
+    const { hasCompletedTour, dismissedBanner, showCheatSheet, lastCompletedAt, activeGuideId, completedGuideSteps } = state
     const persistable = {
       hasCompletedTour,
       dismissedBanner,
       showCheatSheet,
-      lastCompletedAt
+      lastCompletedAt,
+      activeGuideId,
+      completedGuideSteps
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable))
   } catch (error) {
@@ -72,6 +78,8 @@ export const useOnboardingStore = defineStore('onboarding', {
     markCompleted() {
       this.hasCompletedTour = true
       this.isTourActive = false
+      this.activeGuideId = 'first-application'
+      this.completedGuideSteps = []
       this.dismissedBanner = true
       this.lastCompletedAt = new Date().toISOString()
       persistState(this.$state)
@@ -98,6 +106,18 @@ export const useOnboardingStore = defineStore('onboarding', {
     },
     setTourActive(active: boolean) {
       this.isTourActive = active
+      persistState(this.$state)
+    },
+    selectGuide(guideId: string | null) {
+      this.activeGuideId = guideId
+      this.showCheatSheet = true
+      persistState(this.$state)
+    },
+    setGuideStepCompleted(stepId: string, completed: boolean) {
+      const steps = new Set(this.completedGuideSteps)
+      if (completed) steps.add(stepId)
+      else steps.delete(stepId)
+      this.completedGuideSteps = [...steps]
       persistState(this.$state)
     }
   }
