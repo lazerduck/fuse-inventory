@@ -6,7 +6,18 @@ public record SecurityContext(
     IReadOnlyList<FuseUser> Users,
     IReadOnlyList<FuseApiKey> ApiKeys,
     IReadOnlyList<Session> Sessions
-);
+)
+{
+    public IReadOnlyDictionary<Guid, UserGuideProgress> GuideProgress { get; init; }
+        = new Dictionary<Guid, UserGuideProgress>();
+}
+
+public record UserGuideProgress(
+    IReadOnlyList<string> CompletedStepIds,
+    string? ActiveGuideId,
+    bool HasCompletedGettingStarted,
+    DateTime? LastCompletedAt,
+    DateTime UpdatedAt);
 
 public record FuseRole(
     Guid Id,

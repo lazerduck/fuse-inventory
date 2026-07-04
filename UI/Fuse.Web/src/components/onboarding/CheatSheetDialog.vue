@@ -82,7 +82,6 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>{{ index + 1 }}. {{ step.title }}</q-item-label>
-                <q-item-label v-if="step.automatic" caption>Completed automatically from your inventory</q-item-label>
               </q-item-section>
             </template>
 
@@ -117,17 +116,15 @@
 import { computed, watch } from 'vue'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
 import { useApplications } from '../../composables/useApplications'
-import { useEnvironments } from '../../composables/useEnvironments'
-import { useExternalResources } from '../../composables/useExternalResources'
+import { useAccounts } from '../../composables/useAccounts'
 import { useOnboardingStore } from '../../stores/OnboardingStore'
 
 defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ (event: 'update:modelValue', value: boolean): void }>()
 const router = useRouter()
 const onboardingStore = useOnboardingStore()
-const environmentsQuery = useEnvironments()
 const applicationsQuery = useApplications()
-const externalResourcesQuery = useExternalResources()
+const accountsQuery = useAccounts()
 
 interface GuideStep {
   id: string
@@ -136,8 +133,6 @@ interface GuideStep {
   tip?: string
   to?: RouteLocationRaw
   actionLabel?: string
-  automatic?: boolean
-  complete?: boolean
 }
 
 interface Guide {
@@ -150,47 +145,45 @@ interface Guide {
 }
 
 const applications = computed(() => applicationsQuery.data.value ?? [])
-const firstApplication = computed(() => applications.value.find(application => application.id))
+const firstApplication = computed(() =>
+  applications.value.find(application => application.id && (application.instances?.length ?? 0) === 0)
+  ?? applications.value.find(application => application.id)
+)
 const firstInstance = computed(() => {
   for (const application of applications.value) {
-    const instance = application.instances?.find(item => item.id)
-    if (application.id && instance?.id) return { applicationId: application.id, instanceId: instance.id }
+    if (!application.id) continue
+    for (const instance of application.instances ?? []) {
+      if (!instance.id) continue
+      return { applicationId: application.id, instanceId: instance.id }
+    }
   }
   return null
 })
-const hasEnvironment = computed(() => (environmentsQuery.data.value?.length ?? 0) > 0)
-const hasApplication = computed(() => applications.value.length > 0)
-const hasInstance = computed(() => firstInstance.value !== null)
-const hasExternalResource = computed(() => (externalResourcesQuery.data.value?.length ?? 0) > 0)
-const hasDependency = computed(() => applications.value.some(application =>
-  (application.instances ?? []).some(instance => (instance.dependencies?.length ?? 0) > 0)
-))
+const accounts = computed(() => accountsQuery.data.value ?? [])
+const firstAccount = computed(() => accounts.value.find(account => account.id))
 
 const guides = computed<Guide[]>(() => [
   {
     id: 'first-application',
     title: 'Document my first application',
-    summary: 'Create an application, map a deployment, and inspect the result.',
-    introduction: 'Applications describe a service once. Instances describe where copies of that service are deployed. Keeping those concepts separate lets Fuse map the same application across production, test, and other environments.',
+    summary: 'Create an application, record a deployed instance, and inspect the result.',
+    introduction: 'Applications describe the abstract service or codebase. Instances document copies of that application that have been deployed into environments. Fuse records these deployments; it does not create or change them.',
     icon: 'rocket_launch',
     steps: [
       {
-        id: 'first-app-environment', title: 'Create the deployment environment', automatic: true,
-        complete: hasEnvironment.value,
+        id: 'first-app-environment', title: 'Create the deployment environment',
         content: ['An environment is the top-level deployment stage that groups instances and infrastructure. Your setup wizard normally creates the first one. Add more only when your estate actually uses separate stages.'],
         to: { name: 'environments' }, actionLabel: 'View environments'
       },
       {
-        id: 'first-app-create', title: 'Create the application record', automatic: true,
-        complete: hasApplication.value,
+        id: 'first-app-create', title: 'Create the application record',
         content: ['Create one application for the logical service—not one per environment. Start with its name, owner, repository, and framework. You can improve the metadata later.'],
-        tip: 'After creation, Fuse opens the application detail page. The application is not deployed anywhere until you add an instance.',
+        tip: 'After creation, Fuse opens the application detail page. This record represents the abstract application, not a deployment. Add an instance to document code that has already been deployed.',
         to: { name: 'applications' }, actionLabel: 'Create application'
       },
       {
-        id: 'first-app-instance', title: 'Add a deployed instance', automatic: true,
-        complete: hasInstance.value,
-        content: ['Open the Instances tab and add the copy deployed into your environment. Record its URL and health endpoint when known; these make the inventory useful for operators.'],
+        id: 'first-app-instance', title: 'Record a deployed instance',
+        content: ['Open the Instances tab and record a copy of the application that is already deployed into your environment. Record its URL and health endpoint when known.'],
         tip: 'If the application exists, the button below takes you directly to its Instances tab.',
         to: firstApplication.value?.id
           ? { name: 'applicationEdit', params: { id: firstApplication.value.id }, query: { tab: 'instances' } }
@@ -198,15 +191,13 @@ const guides = computed<Guide[]>(() => [
         actionLabel: 'Open Instances tab'
       },
       {
-        id: 'first-app-external', title: 'Create an external service', automatic: true,
-        complete: hasExternalResource.value,
+        id: 'first-app-external', title: 'Create an external service',
         content: ['Create an External Resource for a service your application calls but that is not managed as another Fuse application—for example a payment gateway, identity provider, or third-party API. Give it a recognisable name and record its URL when known.'],
         tip: 'External Resources are dependency targets. Creating one first makes it available when you edit the application instance.',
         to: { name: 'externalResources' }, actionLabel: 'Create external service'
       },
       {
-        id: 'first-app-dependency', title: 'Connect what the instance depends on', automatic: true,
-        complete: hasDependency.value,
+        id: 'first-app-dependency', title: 'Connect what the instance depends on',
         content: ['Dependencies belong to the deployed instance because production and test can call different resources. Open the instance, add a dependency, choose External as the target type, and select the external service you just created.'],
         tip: 'The dependency direction is from your application instance to the external service it calls.',
         to: firstInstance.value
@@ -222,30 +213,22 @@ const guides = computed<Guide[]>(() => [
     ]
   },
   {
-    id: 'dependencies', title: 'Map application dependencies', summary: 'Connect services, databases, queues, and external systems.',
-    introduction: 'Fuse records dependencies on application instances. This captures the real deployed relationship and avoids assuming every environment uses the same backing services.', icon: 'account_tree',
-    steps: [
-      { id: 'deps-target', title: 'Create or find the target resource', content: ['First record the thing being called: another application instance, a datastore, a message broker, or an external resource. For a third-party service, create an External Resource before adding the dependency.'], to: { name: 'externalResources' }, actionLabel: 'External resources' },
-      { id: 'deps-source', title: 'Open the calling instance', content: ['Navigate to the application that makes the call, open its deployed instance, and find the Dependencies section. Dependencies are directional: record them from caller to target.'], to: firstInstance.value ? { name: 'instanceEdit', params: firstInstance.value } : { name: 'applications' }, actionLabel: 'Open an instance' },
-      { id: 'deps-review', title: 'Review impact and topology', content: ['Use the graph for topology and Blast Radius when you need to understand downstream impact. Missing links generally mean an instance dependency has not yet been recorded.'], to: { name: 'graph' }, actionLabel: 'Open graph' }
-    ]
-  },
-  {
     id: 'accounts', title: 'Track service accounts', summary: 'Document credentials, grants, and the resource they access.',
-    introduction: 'Accounts represent machine credentials used by applications. They can be linked to targets and secret providers without placing secret values directly in the inventory.', icon: 'vpn_key',
+    introduction: 'Accounts represent machine credentials used by applications. They target a specific deployed resource and can reference a secret provider without placing the secret value directly in the inventory.', icon: 'vpn_key',
     steps: [
-      { id: 'accounts-provider', title: 'Decide where secrets live', content: ['Use a secret provider integration when possible. Fuse should describe and resolve the credential while the secret manager remains the source of the password or key.'], to: { name: 'secretProviders' }, actionLabel: 'Secret providers' },
-      { id: 'accounts-create', title: 'Create the account record', content: ['Choose the target resource, enter the account identity, and attach the secret-provider reference when available. The target explains what the credential can access.'], to: { name: 'accounts' }, actionLabel: 'Open accounts' },
-      { id: 'accounts-grants', title: 'Record expected permissions', content: ['Add grants to describe intended access. With a supported SQL integration, Fuse can compare that intent with actual database permissions and expose drift.'], to: { name: 'sqlIntegrations' }, actionLabel: 'SQL integrations' }
+      { id: 'accounts-provider', title: 'Decide where the secret lives', content: ['Prefer an Azure Key Vault or App Configuration integration when available. Configure only the capabilities Fuse needs. If no provider is configured, the account can still hold a plain secret reference rather than a secret value.'], to: { name: 'secretProviders' }, actionLabel: 'Secret providers' },
+      { id: 'accounts-create', title: 'Create and save the account', content: ['Choose the target kind and deployed resource, authentication kind, username, and secret reference. Save the account before adding grants. The target should be the resource that accepts this credential.'], to: { name: 'accounts' }, actionLabel: 'Create account' },
+      { id: 'accounts-grants', title: 'Record expected SQL grants', content: ['On the saved account page, add the expected database, schema, and privileges under Grants & Permissions. This step is optional for a non-SQL account.'], to: firstAccount.value?.id ? { name: 'accountEdit', params: { id: firstAccount.value.id } } : { name: 'accounts' }, actionLabel: 'Open saved account' },
+      { id: 'accounts-sql', title: 'Optionally compare SQL permissions', content: ['For SQL Server, create a SQL integration connected to the datastore and account. Its Permissions Overview compares the grants documented in Fuse with the permissions found in SQL Server.'], to: { name: 'sqlIntegrations' }, actionLabel: 'SQL integrations' }
     ]
   },
   {
     id: 'monitoring', title: 'Connect monitoring', summary: 'Use Uptime Kuma data with application instances.',
-    introduction: 'A Kuma integration imports operational status and associates monitors with the environments and instances already documented in Fuse.', icon: 'monitor_heart',
+    introduction: 'A Kuma integration lets Fuse request monitor status for application instances. Instances must have health URIs before they appear on the Kuma dashboard.', icon: 'monitor_heart',
     steps: [
-      { id: 'monitor-env', title: 'Prepare environments and instances', content: ['Create the relevant application instances first. Their environment and URLs give imported monitor data useful inventory context.'], to: { name: 'applications' }, actionLabel: 'Applications' },
-      { id: 'monitor-connect', title: 'Add the Kuma integration', content: ['Provide the Kuma endpoint and credentials, then select which environments the integration covers. Test access before relying on dashboard status.'], to: { name: 'kumaIntegrations' }, actionLabel: 'Kuma integrations' },
-      { id: 'monitor-review', title: 'Review operational status', content: ['Use the Kuma dashboard to filter by environment and platform. Investigate unmatched monitors by correcting URLs or inventory mappings.'], to: { name: 'kumaDashboard' }, actionLabel: 'Kuma dashboard' }
+      { id: 'monitor-env', title: 'Add health URIs to instances', content: ['Create the relevant application instances and set each Health URI to the endpoint monitored by Kuma. Instances without a health URI are omitted from the dashboard. Environment and platform assignments enable dashboard filtering.'], to: { name: 'applications' }, actionLabel: 'Open applications' },
+      { id: 'monitor-connect', title: 'Add the Kuma integration', content: ['Provide the Kuma URI and API key, then select the environments it covers. Platform and account associations are optional metadata. Saving the integration is the current connectivity check; there is no separate Test button.'], to: { name: 'kumaIntegrations' }, actionLabel: 'Kuma integrations' },
+      { id: 'monitor-review', title: 'Review operational status', content: ['Open the dashboard and filter by environment or platform. Unknown status means Fuse could not retrieve health data for that instance; verify the integration, API key, and exact health URI.'], to: { name: 'kumaDashboard' }, actionLabel: 'Kuma dashboard' }
     ]
   },
   {
@@ -280,7 +263,7 @@ watch(
 )
 
 function isStepComplete(step: GuideStep): boolean {
-  return !!step.complete || onboardingStore.completedGuideSteps.includes(step.id)
+  return onboardingStore.completedGuideSteps.includes(step.id)
 }
 
 function guideCompletedSteps(guide: Guide): number {
@@ -296,7 +279,6 @@ function guideCompletionPercent(guide: Guide): number {
 }
 
 function setStepCompleted(step: GuideStep, completed: boolean) {
-  if (step.automatic && step.complete) return
   onboardingStore.setGuideStepCompleted(step.id, completed)
   if (activeGuide.value?.id === 'first-application' && activeGuide.value.steps.every(isStepComplete)) {
     onboardingStore.markCompleted()

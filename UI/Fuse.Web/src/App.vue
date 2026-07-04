@@ -508,6 +508,7 @@ watch(
 onMounted(async () => {
   window.addEventListener('fuse-auth-invalid', handleAuthInvalid)
   await fuseStore.initializeAuth()
+  await onboardingStore.connectProgressUser(fuseStore.currentUser?.id ?? null)
 
   if (fuseStore.requireSetup) {
     await router.push({ name: 'security' })
@@ -536,13 +537,10 @@ watch(
 )
 
 watch(
-  () => route.name,
-  (routeName) => {
-    if (routeName === 'graph') {
-      onboardingStore.setGuideStepCompleted('first-app-output', true)
-    }
-  },
-  { immediate: true }
+  () => fuseStore.currentUser?.id ?? null,
+  (userId) => {
+    void onboardingStore.connectProgressUser(userId)
+  }
 )
 
 onBeforeUnmount(() => {

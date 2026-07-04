@@ -178,7 +178,10 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         {
             SecurityContext = s.SecurityContext with
             {
-                Users = s.SecurityContext.Users.Where(u => u.Id != id).ToList()
+                Users = s.SecurityContext.Users.Where(u => u.Id != id).ToList(),
+                GuideProgress = s.SecurityContext.GuideProgress
+                    .Where(entry => entry.Key != id)
+                    .ToDictionary(entry => entry.Key, entry => entry.Value)
             }
         });
 
