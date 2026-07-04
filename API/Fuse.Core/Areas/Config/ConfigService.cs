@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
@@ -244,6 +245,11 @@ public class ConfigService : IConfigService
             foreach (var env in imported.Environments)
             {
                 existingEnvironments[env.Id] = env;
+            }
+
+            foreach (var kumaIntegration in imported.KumaIntegrations)
+            {
+                existingKumaIntegrations[kumaIntegration.Id] = kumaIntegration;
             }
 
             return new Snapshot(
