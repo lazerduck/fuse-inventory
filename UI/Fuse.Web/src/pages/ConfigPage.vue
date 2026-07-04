@@ -217,6 +217,22 @@ function clearMessages() {
   successMessage.value = undefined
 }
 
+function getDownloadFilename(contentDisposition: string | null, fallback: string): string {
+  if (!contentDisposition) return fallback
+
+  const encodedMatch = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition)
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1].trim())
+    } catch {
+      // Fall back to the plain filename parameter when encoding is malformed.
+    }
+  }
+
+  const plainMatch = /filename=(?:"([^"]+)"|([^;]+))/i.exec(contentDisposition)
+  return (plainMatch?.[1] ?? plainMatch?.[2])?.trim() || fallback
+}
+
 async function handleExport() {
   clearMessages()
   isExporting.value = true
@@ -233,9 +249,10 @@ async function handleExport() {
 
     const blob = await response.blob()
     const contentDisposition = response.headers.get('content-disposition')
-    const filename = contentDisposition
-      ? (contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `fuse-config.${exportFormat.value}`)
-      : `fuse-config.${exportFormat.value}`
+    const filename = getDownloadFilename(
+      contentDisposition,
+      `fuse-config.${exportFormat.value}`
+    )
 
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -276,9 +293,10 @@ async function handleDownloadTemplate() {
 
     const blob = await response.blob()
     const contentDisposition = response.headers.get('content-disposition')
-    const filename = contentDisposition
-      ? (contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `fuse-config-template.${templateFormat.value}`)
-      : `fuse-config-template.${templateFormat.value}`
+    const filename = getDownloadFilename(
+      contentDisposition,
+      `fuse-config-template.${templateFormat.value}`
+    )
 
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
