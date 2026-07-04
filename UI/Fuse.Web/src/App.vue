@@ -31,8 +31,8 @@
                   <q-icon name="school" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Start guided tour</q-item-label>
-                  <q-item-label caption>Walk through key setup steps</q-item-label>
+                  <q-item-label>Getting started</q-item-label>
+                  <q-item-label caption>Build your first application inventory</q-item-label>
                 </q-item-section>
               </q-item>
               <q-item clickable @click="handleOpenCheatSheet">
@@ -40,8 +40,8 @@
                   <q-icon name="menu_book" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Open cheat sheet</q-item-label>
-                  <q-item-label caption>Review onboarding checklist</q-item-label>
+                  <q-item-label>Guides</q-item-label>
+                  <q-item-label caption>Choose a task to work through</q-item-label>
                 </q-item-section>
               </q-item>
               <q-separator />
@@ -372,11 +372,24 @@
       </q-scroll-area>
     </q-drawer>
 
+    <q-drawer
+      v-model="cheatSheetDialog"
+      side="right"
+      :width="400"
+      :breakpoint="900"
+      :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white text-dark'"
+      bordered
+    >
+      <CheatSheetDialog v-model="cheatSheetDialog" />
+    </q-drawer>
+
     <q-page-container>
       <router-view />
     </q-page-container>
 
     <LoginDialog v-model="showLoginDialog" :loading="loginLoading" :error="loginError" @submit="handleLogin" />
+
+    <InitialSetupWizard :model-value="showSetupWizard" @created="handleEnvironmentCreated" />
 
     <q-dialog v-model="showOnboardingPrompt">
       <q-card style="min-width: 320px; max-width: 480px">
@@ -388,17 +401,16 @@
           </div>
         </q-card-section>
         <q-card-section>
-          We noticed you haven't run the onboarding tour yet. Would you like to explore the guided
-          walkthrough now?
+          Your foundation is ready. Follow the interactive guide to create an application, add its
+          first deployed instance, and inspect the resulting inventory.
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Maybe later" color="primary" @click="showOnboardingPrompt = false" />
-          <q-btn flat label="Start tour" color="primary" @click="handlePromptStart" />
+          <q-btn flat label="Open guide" color="primary" @click="handlePromptStart" />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <CheatSheetDialog v-model="cheatSheetDialog" />
   </q-layout>
 </template>
 
@@ -418,6 +430,7 @@ import { useDataStores } from './composables/useDataStores'
 import { useApplications } from './composables/useApplications'
 import { useKumaIntegrations } from './composables/useKumaIntegrations'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
+import InitialSetupWizard from './components/onboarding/InitialSetupWizard.vue'
 import InventoryNavigator from './components/InventoryNavigator.vue'
 import LicenseChip from './components/license/LicenseChip.vue'
 
@@ -432,8 +445,6 @@ const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const applicationsQuery = useApplications()
 const kumaIntegrationsQuery = useKumaIntegrations()
-
-fuseStore.fetchStatus()
 
 const isIncompleteDataWarningEnabled = computed(() => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false)
 
@@ -453,6 +464,7 @@ const showLoginDialog = ref(false)
 const loginLoading = ref(false)
 const loginError = ref<string | null>(null)
 const showOnboardingPrompt = ref(false)
+const showSetupWizard = ref(false)
 
 function handleAuthInvalid() {
   fuseStore.invalidateAuth()
@@ -496,19 +508,52 @@ watch(
 onMounted(async () => {
   window.addEventListener('fuse-auth-invalid', handleAuthInvalid)
   await fuseStore.initializeAuth()
+  await onboardingStore.connectProgressUser(fuseStore.currentUser?.id ?? null)
 
   if (fuseStore.requireSetup) {
-    router.push({ name: 'security' })
+    await router.push({ name: 'security' })
+    return
   }
 
   await evaluateOnboardingPrompt()
 })
+
+watch(
+  () => fuseStore.requireSetup,
+  (requiresSetup, previouslyRequired) => {
+    if (previouslyRequired && !requiresSetup) {
+      void evaluateOnboardingPrompt()
+    }
+  }
+)
+
+watch(
+  () => fuseStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn && !fuseStore.requireSetup) {
+      void evaluateOnboardingPrompt()
+    }
+  }
+)
+
+watch(
+  () => fuseStore.currentUser?.id ?? null,
+  (userId) => {
+    void onboardingStore.connectProgressUser(userId)
+  }
+)
 
 onBeforeUnmount(() => {
   window.removeEventListener('fuse-auth-invalid', handleAuthInvalid)
 })
 
 async function evaluateOnboardingPrompt() {
+  if (fuseStore.requireSetup) {
+    showSetupWizard.value = false
+    showOnboardingPrompt.value = false
+    return
+  }
+
   await Promise.allSettled([
     environmentsQuery.refetch(),
     dataStoresQuery.refetch(),
@@ -522,9 +567,30 @@ async function evaluateOnboardingPrompt() {
 
   const hasTourRecord = onboardingStore.hasCompletedTour || !!onboardingStore.lastCompletedAt
 
-  if (!hasTourRecord && !onboardingStore.dismissedBanner && totalResources === 0) {
+  if (
+    environmentCount === 0 &&
+    totalResources === 0 &&
+    fuseStore.hasPermission(Permission.EnvironmentsCreate)
+  ) {
+    showSetupWizard.value = true
+    showOnboardingPrompt.value = false
+    return
+  }
+
+  showSetupWizard.value = false
+  if (
+    !hasTourRecord &&
+    !onboardingStore.dismissedBanner &&
+    applicationCount === 0 &&
+    fuseStore.hasPermission(Permission.ApplicationsCreate)
+  ) {
     showOnboardingPrompt.value = true
   }
+}
+
+function handleEnvironmentCreated() {
+  showSetupWizard.value = false
+  onboardingStore.setCheatSheetVisible(true)
 }
 
 function handleAuthClick() {
@@ -562,6 +628,7 @@ async function handleLogin(credentials: { userName: string; password: string }) 
     await fuseStore.login(payload)
     showLoginDialog.value = false
     Notify.create({ type: 'positive', message: `Welcome back, ${fuseStore.userName}!` })
+    await evaluateOnboardingPrompt()
   } catch (err) {
     loginError.value = getErrorMessage(err, 'Login failed')
   } finally {
@@ -588,7 +655,7 @@ function handlePromptStart() {
 }
 
 function handleOpenCheatSheet() {
-  onboardingStore.setCheatSheetVisible(true)
+  onboardingStore.selectGuide(null)
 }
 
 function handleResetOnboarding() {

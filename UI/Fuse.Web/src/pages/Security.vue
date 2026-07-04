@@ -424,11 +424,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateApiKey, CreateSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
+import { CreateApiKey, CreateSecurityUser, LoginSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
 import { Permission } from 'permissions'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
@@ -440,6 +441,8 @@ import { useRoles } from '../composables/useRoles'
 const fuseStore = useFuseStore()
 const queryClient = useQueryClient()
 const client = useFuseClient()
+const router = useRouter()
+const isInitialSetupSubmission = ref(false)
 
 const pagination = { rowsPerPage: 10 }
 
@@ -539,14 +542,32 @@ const levelDescription = computed(() => {
 
 const createAccountMutation = useMutation({
   mutationFn: (payload: CreateSecurityUser) => client.accountsPOST(payload),
-  onSuccess: async () => {
+  onSuccess: async (_createdUser, payload) => {
     Notify.create({ type: 'positive', message: 'Security account created successfully' })
     isCreateDialogOpen.value = false
     // Refresh the security state
     queryClient.invalidateQueries({ queryKey: ['securityUsers']})
     await fuseStore.fetchStatus()
+    if (isInitialSetupSubmission.value && payload.userName && payload.password) {
+      try {
+        await fuseStore.login(new LoginSecurityUser({
+          userName: payload.userName,
+          password: payload.password
+        }))
+        await router.push({ name: 'home' })
+      } catch (err) {
+        const errorMsg = getErrorMessage(err, 'Unable to complete initial setup login')
+        securityError.value = errorMsg
+        Notify.create({ type: 'negative', message: errorMsg })
+      } finally {
+        isInitialSetupSubmission.value = false
+      }
+    } else {
+      isInitialSetupSubmission.value = false
+    }
   },
   onError: (err) => {
+    isInitialSetupSubmission.value = false
     const errorMsg = getErrorMessage(err, 'Unable to create security account')
     securityError.value = errorMsg
     Notify.create({ type: 'negative', message: errorMsg })
@@ -570,6 +591,7 @@ const updateSecurityLevelMutation = useMutation({
 
 function handleCreateAccount(form: { userName: string; password: string; isAdmin: boolean; requestedBy: string; roleIds: string[] }) {
   securityError.value = null
+  isInitialSetupSubmission.value = fuseStore.requireSetup
   const payload = Object.assign(new CreateSecurityUser(), {
     userName: form.userName || undefined,
     password: form.password || undefined,

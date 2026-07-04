@@ -244,7 +244,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
@@ -292,7 +292,14 @@ const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 
-const activeTab = ref('details')
+const activeTab = ref(typeof route.query.tab === 'string' ? route.query.tab : 'details')
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    activeTab.value = typeof tab === 'string' ? tab : 'details'
+  }
+)
 
 const applicationId = computed(() => route.params.id as string)
 

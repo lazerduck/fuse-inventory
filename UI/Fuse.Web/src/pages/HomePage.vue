@@ -9,9 +9,9 @@
       <template #avatar>
         <q-icon name="school" color="white" />
       </template>
-      Ready for a guided tour to set up Fuse Inventory?
+      Continue setting up your first application inventory.
       <template #action>
-        <q-btn flat color="white" label="Start tutorial" @click="startOnboardingTour" />
+        <q-btn flat color="white" label="Open guide" @click="startOnboardingTour" />
         <q-btn flat color="white" label="Skip for now" @click="skipOnboarding" />
       </template>
     </q-banner>
@@ -186,6 +186,8 @@ import InventoryExternalResourceCard from '../components/home/InventoryExternalR
 import { useOnboardingStore } from '../stores/OnboardingStore'
 import { useOnboardingTour } from '../composables/useOnboardingTour'
 import { getErrorMessage } from '../utils/error'
+import { useFuseStore } from '../stores/FuseStore'
+import { Permission } from 'permissions'
 
 const selectedEnvironments = ref<string[]>([])
 const ALL_ITEM_TYPES: string[] = ['instance', 'datastore', 'external']
@@ -199,10 +201,14 @@ const includeInstances = computed(() => {
 })
 
 const onboardingStore = useOnboardingStore()
+const fuseStore = useFuseStore()
 const { startTour } = useOnboardingTour()
 
 const showOnboardingBanner = computed(
-  () => !onboardingStore.hasCompletedTour && !onboardingStore.dismissedBanner
+  () =>
+    fuseStore.hasPermission(Permission.ApplicationsCreate) &&
+    !onboardingStore.hasCompletedTour &&
+    !onboardingStore.dismissedBanner
 )
 
 const applicationsQuery = useApplications()
