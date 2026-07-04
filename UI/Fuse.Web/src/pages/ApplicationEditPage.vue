@@ -297,7 +297,7 @@ const activeTab = ref(typeof route.query.tab === 'string' ? route.query.tab : 'd
 watch(
   () => route.query.tab,
   (tab) => {
-    if (typeof tab === 'string') activeTab.value = tab
+    activeTab.value = typeof tab === 'string' ? tab : 'details'
   }
 )
 
