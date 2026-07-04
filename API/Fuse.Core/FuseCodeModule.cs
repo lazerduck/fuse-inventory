@@ -22,7 +22,6 @@ using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
-using Fuse.Core.Configs;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Services;
 using Fuse.Core.Services.Startup;
