@@ -19,7 +19,7 @@
           class="q-mr-md"
         />
 
-        <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
+        <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleTheme" />
 
         <LicenseChip />
 
@@ -64,11 +64,11 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="500" bordered>
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="500" bordered class="app-nav">
       <q-scroll-area class="fit">
-        <q-list padding>
+        <q-list padding class="nav-list">
           <q-item clickable v-ripple :to="{ name: 'home' }" exact-active-class="bg-primary text-white"
-            data-tour-id="nav-home">
+            data-tour-id="nav-home" class="nav-home">
             <q-item-section avatar>
               <q-icon name="home" />
             </q-item-section>
@@ -79,7 +79,7 @@
 
           <q-separator class="q-my-md" />
 
-          <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator>
+          <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator class="nav-group nav-group--inventory">
             <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
               data-tour-id="nav-applications">
@@ -169,7 +169,7 @@
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Classification" icon="category" dense expand-separator>
+          <q-expansion-item label="Classification" icon="category" dense expand-separator class="nav-group nav-group--classification">
             <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
               data-tour-id="nav-tags">
               <q-item-section avatar>
@@ -197,7 +197,12 @@
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Insights" icon="insights" dense expand-separator>
+          <q-expansion-item label="Insights" icon="insights" dense expand-separator class="nav-group nav-group--insights">
+            <q-item clickable v-ripple :to="{ name: 'healthOverview' }" active-class="bg-primary text-white"
+              v-if="healthMonitoringEnabled && fuseStore.hasPermission(Permission.ApplicationsRead)">
+              <q-item-section avatar><q-icon name="monitor_heart" /></q-item-section>
+              <q-item-section>Service Health</q-item-section>
+            </q-item>
             <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white"
               v-if="fuseStore.hasPermission(Permission.RisksRead)">
               <q-item-section avatar>
@@ -260,18 +265,7 @@
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator>
-            <q-item clickable v-ripple :to="{ name: 'kumaDashboard' }" active-class="bg-primary text-white"
-              v-if="fuseStore.hasPermission(Permission.ApplicationsRead) && hasKumaIntegration"
-              data-tour-id="nav-kuma-dashboard">
-              <q-item-section avatar>
-                <q-icon name="monitor_heart" />
-              </q-item-section>
-              <q-item-section>
-                Service Health Dashboard
-              </q-item-section>
-            </q-item>
-
+          <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator class="nav-group nav-group--integrations">
             <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
               v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
@@ -306,7 +300,7 @@
             </q-item>
           </q-expansion-item>
 
-          <q-expansion-item label="Administration" icon="settings" dense expand-separator>
+          <q-expansion-item label="Administration" icon="settings" dense expand-separator class="nav-group nav-group--administration">
             <q-item clickable v-ripple :to="{ name: 'appSettings' }" active-class="bg-primary text-white"
               data-tour-id="nav-app-settings">
               <q-item-section avatar>
@@ -417,10 +411,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Notify, Dialog } from 'quasar'
+import { Notify, Dialog, useQuasar } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
-import { LoginSecurityUser } from 'api/client'
+import { HealthCheckProvider, LoginSecurityUser } from 'api/client'
 import { Permission } from 'permissions'
 import { getErrorMessage } from './utils/error'
 import { useOnboardingStore } from './stores/OnboardingStore'
@@ -428,13 +422,14 @@ import { useOnboardingTour } from './composables/useOnboardingTour'
 import { useEnvironments } from './composables/useEnvironments'
 import { useDataStores } from './composables/useDataStores'
 import { useApplications } from './composables/useApplications'
-import { useKumaIntegrations } from './composables/useKumaIntegrations'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
 import InitialSetupWizard from './components/onboarding/InitialSetupWizard.vue'
 import InventoryNavigator from './components/InventoryNavigator.vue'
 import LicenseChip from './components/license/LicenseChip.vue'
+import { saveThemePreference } from './utils/themePreference'
 
 const leftDrawerOpen = ref(true)
+const quasar = useQuasar()
 const fuseStore = useFuseStore()
 const router = useRouter()
 const route = useRoute()
@@ -444,11 +439,21 @@ const { startTour } = useOnboardingTour()
 const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const applicationsQuery = useApplications()
-const kumaIntegrationsQuery = useKumaIntegrations()
 
 const isIncompleteDataWarningEnabled = computed(() => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false)
 
-const hasKumaIntegration = computed(() => (kumaIntegrationsQuery.data.value ?? []).length > 0)
+const healthMonitoringEnabled = computed(() =>
+  !!fuseStore.appSettings && fuseStore.appSettings.healthCheckProvider !== HealthCheckProvider.None
+)
+
+function toggleTheme() {
+  const useDarkTheme = !quasar.dark.isActive
+  quasar.dark.set(useDarkTheme)
+  saveThemePreference(useDarkTheme ? 'dark' : 'light')
+}
+watch(healthMonitoringEnabled, enabled => {
+  if (!enabled && route.name === 'healthOverview') void router.replace({ name: 'home' })
+})
 
 const showInventoryNavigator = computed(() => 
   route.name === 'instanceEdit' || route.name === 'accountEdit'
@@ -686,4 +691,79 @@ h1 {
   margin-top: 0.15rem;
   margin-bottom: 0.15rem;
 }
+
+.app-nav {
+  background: var(--fuse-card-bg);
+}
+
+.nav-list {
+  --nav-accent: var(--q-primary);
+  --nav-accent-soft: rgba(25, 118, 210, 0.11);
+}
+
+.nav-list > .q-item,
+.nav-group > .q-expansion-item__container > .q-item,
+.nav-group .q-expansion-item__content .q-item {
+  border-radius: 9px;
+}
+
+.nav-home .q-item__section--avatar .q-icon,
+.nav-group > .q-expansion-item__container > .q-item .q-item__section--avatar .q-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--nav-accent-soft);
+  color: var(--nav-accent);
+}
+
+.nav-home {
+  --nav-accent: #1976d2;
+  --nav-accent-soft: rgba(25, 118, 210, 0.11);
+}
+
+.nav-group--inventory {
+  --nav-accent: #1976d2;
+  --nav-accent-soft: rgba(25, 118, 210, 0.11);
+}
+
+.nav-group--classification {
+  --nav-accent: #7e57c2;
+  --nav-accent-soft: rgba(126, 87, 194, 0.12);
+}
+
+.nav-group--insights {
+  --nav-accent: #00897b;
+  --nav-accent-soft: rgba(0, 137, 123, 0.11);
+}
+
+.nav-group--integrations {
+  --nav-accent: #ef6c00;
+  --nav-accent-soft: rgba(239, 108, 0, 0.12);
+}
+
+.nav-group--administration {
+  --nav-accent: #546e7a;
+  --nav-accent-soft: rgba(84, 110, 122, 0.12);
+}
+
+.nav-group .q-expansion-item__content .q-item__section--avatar .q-icon {
+  color: var(--nav-accent);
+}
+
+.nav-list .q-item.q-router-link--active .q-icon {
+  color: inherit;
+  background: transparent;
+}
+
+.body--dark .nav-home,
+.body--dark .nav-group {
+  --nav-accent-soft: rgba(255, 255, 255, 0.1);
+}
+
+.body--dark .nav-group--inventory,
+.body--dark .nav-home { --nav-accent: #64b5f6; }
+.body--dark .nav-group--classification { --nav-accent: #b39ddb; }
+.body--dark .nav-group--insights { --nav-accent: #4db6ac; }
+.body--dark .nav-group--integrations { --nav-accent: #ffb74d; }
+.body--dark .nav-group--administration { --nav-accent: #b0bec5; }
 </style>

@@ -178,7 +178,7 @@ import { useEnvironments } from '../composables/useEnvironments'
 import { useExternalResources } from '../composables/useExternalResources'
 import { useDataStores } from '../composables/useDataStores'
 import { useTags } from '../composables/useTags'
-import { useApplicationHealth } from '../composables/useApplicationHealth'
+import { useHealthMonitoring } from '../composables/useHealthMonitoring'
 import StatCard from '../components/home/StatCard.vue'
 import InventoryInstanceCard from '../components/home/InventoryInstanceCard.vue'
 import InventoryDataStoreCard from '../components/home/InventoryDataStoreCard.vue'
@@ -193,12 +193,6 @@ const selectedEnvironments = ref<string[]>([])
 const ALL_ITEM_TYPES: string[] = ['instance', 'datastore', 'external']
 const selectedItemTypes = ref<string[]>([...ALL_ITEM_TYPES])
 const searchText = ref<string>('')
-
-// Computed ref for whether instances are included in the item type filter
-const includeInstances = computed(() => {
-  const types = selectedItemTypes.value
-  return types.length === 0 || types.includes('instance')
-})
 
 const onboardingStore = useOnboardingStore()
 const fuseStore = useFuseStore()
@@ -217,11 +211,7 @@ const environmentsQuery = useEnvironments()
 const externalResourcesQuery = useExternalResources()
 const dataStoresQuery = useDataStores()
 const tagsQuery = useTags()
-const applicationHealthQuery = useApplicationHealth({ 
-  environmentIds: selectedEnvironments, 
-  searchText: searchText,
-  includeInstances: includeInstances
-})
+const applicationHealthQuery = useHealthMonitoring()
 
 const isLoading = computed(() => 
   applicationsQuery.isLoading.value || 
@@ -238,20 +228,27 @@ const externalResourceCount = computed(() => externalResourcesQuery.data.value?.
 // Compute health breakdown for applications
 const applicationHealthBreakdown = computed(() => {
   const healthStats = applicationHealthQuery.data.value
-  
-  // Only show breakdown if Kuma integration is available and we have health data
-  if (!healthStats?.hasKumaIntegration) {
+  if (!healthStats) {
     return undefined
   }
-  
-  // Only show if we have at least one application with health status
-  if (healthStats.healthy === 0 && healthStats.unhealthy === 0) {
-    return undefined
+  const environmentIds = selectedEnvironments.value
+  const term = searchText.value.toLowerCase().trim()
+  const results = (healthStats.results ?? []).filter(result =>
+    (environmentIds.length === 0 || environmentIds.includes(result.environmentId ?? '')) &&
+    (!term || (result.applicationName ?? '').toLowerCase().includes(term))
+  )
+  const byApplication = new Map<string, string[]>()
+  for (const result of results) {
+    const states = byApplication.get(result.applicationId ?? '') ?? []
+    states.push(result.state ?? '')
+    byApplication.set(result.applicationId ?? '', states)
   }
-  
+  const healthy = [...byApplication.values()].filter(states => states.length > 0 && states.every(state => state === 'Healthy')).length
+  const unhealthy = [...byApplication.values()].filter(states => states.some(state => state === 'Unhealthy')).length
+  if (healthy === 0 && unhealthy === 0) return undefined
   return {
-    healthy: healthStats.healthy,
-    unhealthy: healthStats.unhealthy
+    healthy,
+    unhealthy
   }
 })
 

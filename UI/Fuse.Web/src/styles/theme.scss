@@ -10,8 +10,11 @@
   --fuse-text-subtle: rgba(0, 0, 0, 0.5);
 
   /* Surfaces */
-  --fuse-panel-bg: rgba(0, 0, 0, 0.02);
-  --fuse-panel-border: rgba(0, 0, 0, 0.08);
+  --fuse-page-bg: #f6f8fa;
+  --fuse-card-bg: #ffffff;
+  --fuse-panel-bg: #f8fafc;
+  --fuse-panel-border: #d9e1e8;
+  --fuse-hover-bg: #eef3f7;
 
   /* Elevation */
   --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -32,8 +35,11 @@ body.body--dark {
   --fuse-text-muted: rgba(255, 255, 255, 0.72);
   --fuse-text-subtle: rgba(255, 255, 255, 0.64);
 
+  --fuse-page-bg: var(--q-dark-page, #121212);
+  --fuse-card-bg: var(--q-dark, #1d1d1d);
   --fuse-panel-bg: rgba(255, 255, 255, 0.06);
   --fuse-panel-border: rgba(255, 255, 255, 0.12);
+  --fuse-hover-bg: rgba(255, 255, 255, 0.1);
 
   /* Slightly stronger shadows on dark for elevation perception */
   --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -48,6 +54,17 @@ body.body--dark {
   --fuse-status-drift-bg: rgba(255, 152, 0, 0.28);
   --fuse-status-error-bg: rgba(244, 67, 54, 0.30);
   --fuse-status-na-bg: rgba(158, 158, 158, 0.24);
+}
+
+/* Keep the app canvas distinct from elevated content in the light theme. */
+.q-layout,
+.q-page-container {
+  background-color: var(--fuse-page-bg);
+  transition: background-color 0.25s ease;
+}
+
+.q-card {
+  background-color: var(--fuse-card-bg);
 }
 
 /* Global selection styling */

@@ -115,7 +115,7 @@ import { computed } from 'vue'
 import type { ApplicationInstance } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
 import { useHealthCheck } from '../../composables/useHealthCheck'
-import { MonitorStatus } from '../../types/health'
+import { InstanceHealthState } from 'api/client'
 import TagChip from '../tags/TagChip.vue'
 
 const props = defineProps<{
@@ -139,36 +139,32 @@ const { data: healthStatus } = useHealthCheck(
 const healthStatusColor = computed(() => {
   if (!healthStatus.value) return 'grey'
   
-  switch (healthStatus.value.Status) {
-    case MonitorStatus.Up:
+  switch (healthStatus.value.state) {
+    case InstanceHealthState.Healthy:
       return 'positive'
-    case MonitorStatus.Down:
+    case InstanceHealthState.Unhealthy:
       return 'negative'
-    case MonitorStatus.Pending:
+    case InstanceHealthState.Unknown:
       return 'warning'
-    case MonitorStatus.Maintenance:
-      return 'info'
     default:
       return 'grey'
   }
 })
 
 const healthStatusTextColor = computed(() => {
-  return healthStatus.value?.Status === MonitorStatus.Up ? 'white' : 'white'
+  return 'white'
 })
 
 const healthStatusIcon = computed(() => {
   if (!healthStatus.value) return 'help'
   
-  switch (healthStatus.value.Status) {
-    case MonitorStatus.Up:
+  switch (healthStatus.value.state) {
+    case InstanceHealthState.Healthy:
       return 'check_circle'
-    case MonitorStatus.Down:
+    case InstanceHealthState.Unhealthy:
       return 'cancel'
-    case MonitorStatus.Pending:
+    case InstanceHealthState.Unknown:
       return 'schedule'
-    case MonitorStatus.Maintenance:
-      return 'construction'
     default:
       return 'help'
   }
@@ -177,15 +173,13 @@ const healthStatusIcon = computed(() => {
 const healthStatusLabel = computed(() => {
   if (!healthStatus.value) return 'Unknown'
   
-  switch (healthStatus.value.Status) {
-    case MonitorStatus.Up:
+  switch (healthStatus.value.state) {
+    case InstanceHealthState.Healthy:
       return 'Healthy'
-    case MonitorStatus.Down:
+    case InstanceHealthState.Unhealthy:
       return 'Down'
-    case MonitorStatus.Pending:
-      return 'Pending'
-    case MonitorStatus.Maintenance:
-      return 'Maintenance'
+    case InstanceHealthState.Unknown:
+      return 'Unknown'
     default:
       return 'Unknown'
   }

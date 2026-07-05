@@ -34,6 +34,9 @@ public class AppSettingsController(IAppSettingsService appSettingsService) : Con
         if (updatedSettings.AuditLogDaysToKeep is < 0 or > 36500)
             return BadRequest(new { error = "Audit log retention must be between 0 and 36,500 days." });
 
+        if (!Enum.IsDefined(updatedSettings.HealthCheckProvider))
+            return BadRequest(new { error = "Invalid health check provider." });
+
         await appSettingsService.UpdateAppSettingsAsync(updatedSettings);
         return NoContent();
     }

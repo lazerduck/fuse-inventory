@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Areas.KumaIntegration;
 using Fuse.Core.Responses;
+using Fuse.Core.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
@@ -68,6 +69,11 @@ public class KumaMetricsService : BackgroundService, IKumaHealthService
     private async Task UpdateMetricsAsync(CancellationToken ct)
     {
         var snapshot = await _store.GetAsync(ct);
+        if (snapshot.AppSettings.HealthCheckProvider != HealthCheckProvider.Kuma)
+        {
+            _logger.LogDebug("Kuma health provider is not selected");
+            return;
+        }
         var integrations = snapshot.KumaIntegrations;
 
         if (!integrations.Any())
