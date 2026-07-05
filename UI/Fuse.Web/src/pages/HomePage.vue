@@ -127,7 +127,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
-import { InstanceHealthState, RiskImpact, RiskStatus, TargetKind, type ActivityFeedItem } from 'api/client'
+import { HealthCheckProvider, InstanceHealthState, RiskImpact, RiskStatus, TargetKind, type ActivityFeedItem } from 'api/client'
 import { Permission } from 'permissions'
 import { useApplications } from '../composables/useApplications'
 import { usePlatforms } from '../composables/usePlatforms'
@@ -180,6 +180,8 @@ const canReadActivity = computed(() => fuseStore.hasPermission(Permission.Activi
 const showOnboardingBanner = computed(() => fuseStore.hasPermission(Permission.ApplicationsCreate) && !onboardingStore.hasCompletedTour && !onboardingStore.dismissedBanner)
 const applicationCount = computed(() => applicationsQuery.data.value?.length ?? 0)
 const instanceCount = computed(() => (applicationsQuery.data.value ?? []).reduce((total, app) => total + (app.instances?.length ?? 0), 0))
+const healthEndpointCount = computed(() => (applicationsQuery.data.value ?? []).reduce((total, app) => total + (app.instances ?? []).filter(instance => !!instance.healthUri).length, 0))
+const healthMonitoringEnabled = computed(() => !!fuseStore.appSettings && fuseStore.appSettings.healthCheckProvider !== HealthCheckProvider.None)
 const unhealthyCount = computed(() => healthQuery.data.value?.unhealthy ?? 0)
 const unknownCount = computed(() => healthQuery.data.value?.unknown ?? 0)
 const requiredGapCount = computed(() => documentationGaps.value.length)
@@ -187,7 +189,9 @@ const openHighRiskCount = computed(() => (risksQuery.data.value ?? []).filter(r 
 
 const summaries = computed(() => [
   { label: 'Applications', value: applicationCount.value, detail: `${instanceCount.value} deployed instances`, icon: 'apps', color: 'primary', to: '/applications' },
-  { label: 'Service health', value: unhealthyCount.value, detail: `${unknownCount.value} unknown · ${healthQuery.data.value?.healthy ?? 0} healthy`, icon: 'monitor_heart', color: unhealthyCount.value ? 'negative' : 'positive', to: '/health' },
+  healthMonitoringEnabled.value
+    ? { label: 'Service health', value: unhealthyCount.value, detail: `${unknownCount.value} unknown · ${healthQuery.data.value?.healthy ?? 0} healthy`, icon: 'monitor_heart', color: unhealthyCount.value ? 'negative' : 'positive', to: '/health' }
+    : { label: 'Health monitoring', value: 'Off', detail: `${healthEndpointCount.value} of ${instanceCount.value} endpoints ready · Configure`, icon: 'monitor_heart', color: 'grey-7', to: '/appsettings' },
   { label: 'Required gaps', value: requiredGapCount.value, detail: 'Missing required documentation', icon: 'fact_check', color: requiredGapCount.value ? 'warning' : 'positive', to: '/insights/documentation-completeness' },
   { label: 'High risks', value: openHighRiskCount.value, detail: 'Open high or critical risks', icon: 'warning', color: openHighRiskCount.value ? 'negative' : 'positive', to: '/risks' }
 ])
