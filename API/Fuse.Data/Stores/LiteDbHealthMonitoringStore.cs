@@ -13,6 +13,7 @@ public sealed class LiteDbHealthMonitoringStore : IHealthMonitoringStore, IDispo
 
     public LiteDbHealthMonitoringStore(string dataDirectory)
     {
+        Directory.CreateDirectory(dataDirectory);
         _db = new LiteDatabase(Path.Combine(dataDirectory, "healthchecks.db"));
         _current = _db.GetCollection<InstanceHealthResult>("current");
         _history = _db.GetCollection<InstanceHealthTransition>("transitions");
