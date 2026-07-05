@@ -164,6 +164,7 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
                 services.RemoveAll<IFuseStore>();
                 services.RemoveAll<IAuditService>();
                 services.RemoveAll<IVersionHistoryService>();
+                services.RemoveAll<IHealthMonitoringStore>();
 
                 services.AddSingleton<IFuseStore>(_ =>
                     new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = dataDirectory }));
@@ -173,6 +174,9 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
 
                 services.AddSingleton<IVersionHistoryService>(provider =>
                     new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
+
+                services.AddSingleton<IHealthMonitoringStore>(_ =>
+                    new LiteDbHealthMonitoringStore(dataDirectory));
             });
 
             builder.UseEnvironment("Test");

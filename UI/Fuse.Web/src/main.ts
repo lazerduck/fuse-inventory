@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { Quasar, Notify, Dialog } from 'quasar'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import router from './router'
+import { getInitialTheme } from './utils/themePreference'
 
 // Import icon libraries
 import '@quasar/extras/material-icons/material-icons.css'
@@ -25,7 +26,7 @@ app.use(Quasar, {
     Dialog
   },
   config: {
-    dark: 'auto'
+    dark: getInitialTheme()
   }
 })
 

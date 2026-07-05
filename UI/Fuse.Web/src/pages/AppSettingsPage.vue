@@ -27,6 +27,32 @@
 
       <section class="settings-section">
         <div class="section-heading">
+          <h2>Health monitoring</h2>
+          <p>Select the single source used to monitor application instance health URLs.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Health-check provider</div>
+            <div class="setting-help">Internal performs unauthenticated checks every minute. Kuma uses your configured integration.</div>
+            <div v-if="healthCheckProvider === HealthCheckProvider.Kuma && !hasKumaIntegration" class="text-negative text-caption q-mt-xs">
+              Uptime Kuma is selected but no integration is configured.
+            </div>
+          </div>
+          <q-select
+            v-model="healthCheckProvider"
+            :options="healthProviderOptions"
+            emit-value map-options dense outlined
+            :disable="!canEdit"
+            style="min-width: 190px"
+            aria-label="Health-check provider"
+          />
+        </div>
+      </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
           <h2>License</h2>
           <p>Control license validation and status visibility.</p>
         </div>
@@ -103,10 +129,24 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { HealthCheckProvider } from 'api/client'
 import { useFuseStore } from '../stores/FuseStore'
+import { useKumaIntegrations } from '../composables/useKumaIntegrations'
 
 const fuseStore = useFuseStore()
+const kumaIntegrations = useKumaIntegrations()
 void fuseStore.fetchStatus()
+
+const hasKumaIntegration = computed(() => (kumaIntegrations.data.value?.length ?? 0) > 0)
+const healthProviderOptions = computed(() => [
+  { label: 'None', value: HealthCheckProvider.None },
+  { label: 'Internal', value: HealthCheckProvider.Internal },
+  { label: 'Uptime Kuma', value: HealthCheckProvider.Kuma, disable: !hasKumaIntegration.value }
+])
+const healthCheckProvider = computed({
+  get: () => fuseStore.appSettings?.healthCheckProvider ?? HealthCheckProvider.None,
+  set: (value: HealthCheckProvider) => void fuseStore.updateAppSettings({ healthCheckProvider: value })
+})
 
 const incompleteDataWarningEnabled = computed({
   get: () => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false,
@@ -149,7 +189,7 @@ const auditLogIndefinite = computed({
   set: (indefinite: boolean) => {
     if (indefinite && auditLogRetentionValid.value) lastFiniteAuditDays.value = auditLogDaysToKeep.value!
     auditLogDaysToKeep.value = indefinite ? 0 : lastFiniteAuditDays.value
-    void fuseStore.updateAppSettings({ auditLogDaysToKeep: indefinite ? null : auditLogDaysToKeep.value })
+    void fuseStore.updateAppSettings({ auditLogDaysToKeep: indefinite ? undefined : auditLogDaysToKeep.value ?? undefined })
   }
 })
 
@@ -162,7 +202,7 @@ function saveVersionHistory() {
 function saveAuditLogRetention() {
   if (auditLogRetentionValid.value && auditLogDaysToKeep.value !== (fuseStore.appSettings?.auditLogDaysToKeep ?? 0)) {
     lastFiniteAuditDays.value = auditLogDaysToKeep.value!
-    void fuseStore.updateAppSettings({ auditLogDaysToKeep: auditLogDaysToKeep.value })
+    void fuseStore.updateAppSettings({ auditLogDaysToKeep: auditLogDaysToKeep.value ?? undefined })
   }
 }
 

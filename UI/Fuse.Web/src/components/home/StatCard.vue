@@ -65,6 +65,8 @@ function navigate() {
   width: 40px;
   height: 40px;
   border-radius: 10px;
+  overflow: hidden;
+  clip-path: inset(0 round 10px);
   display: grid;
   place-items: center;
   flex-shrink: 0;

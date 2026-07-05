@@ -45,7 +45,7 @@
       <q-tab name="history" label="History" />
     </q-tabs>
 
-    <q-tab-panels v-model="activeTab" animated>
+    <q-tab-panels v-model="activeTab" animated class="application-tab-panels">
       <q-tab-panel name="details" class="q-pa-none">
         <ApplicationDetailsForm
           :initial-value="application"
@@ -658,5 +658,9 @@ async function handleDeleteRisk(riskId: string) {
   display: flex;
   gap: 4px;
   align-items: center;
+}
+
+.application-tab-panels {
+  background: transparent;
 }
 </style>

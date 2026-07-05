@@ -165,6 +165,11 @@ const router = createRouter({
       component: () => import('./pages/ActivitiesPage.vue')
     },
     {
+      path: '/health',
+      name: 'healthOverview',
+      component: () => import('./pages/HealthOverviewPage.vue')
+    },
+    {
       path: '/insights/documentation-completeness',
       name: 'documentationCompleteness',
       component: () => import('./pages/DocumentationCompletenessPage.vue')
@@ -267,7 +272,9 @@ router.beforeEach(async (to, from, next) => {
   const fuseStore = useFuseStore()
 
   // Check if setup is required
-  if (fuseStore.requireSetup && to.name !== 'security') {
+  if (to.name === 'healthOverview' && fuseStore.appSettings?.healthCheckProvider === 'None') {
+    next({ name: 'home' })
+  } else if (fuseStore.requireSetup && to.name !== 'security') {
     // Redirect to security page if setup is required
     next({ name: 'security' })
   } else if (!fuseStore.requireSetup && to.name === 'security' && from.name !== null) {

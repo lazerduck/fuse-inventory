@@ -12,10 +12,15 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    aboutGet(signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     accountAll(signal?: AbortSignal): Promise<Account[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account>;
@@ -26,7 +31,7 @@ export interface IFuseApiClient {
     accountGET(id: string, signal?: AbortSignal): Promise<Account>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account>;
@@ -52,19 +57,19 @@ export interface IFuseApiClient {
     accountCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant>;
@@ -75,21 +80,21 @@ export interface IFuseApiClient {
     grantDELETE(accountId: string, grantId: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param startTime (optional) 
-     * @param endTime (optional) 
-     * @param entityType (optional) 
-     * @param entityId (optional) 
-     * @param userId (optional) 
-     * @param userName (optional) 
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param entityType (optional)
+     * @param entityId (optional)
+     * @param userId (optional)
+     * @param userName (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
 
     /**
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult>;
@@ -100,7 +105,7 @@ export interface IFuseApiClient {
     apiKeyAll(signal?: AbortSignal): Promise<ApiKeyInfo[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult>;
@@ -121,7 +126,7 @@ export interface IFuseApiClient {
     applicationAll(signal?: AbortSignal): Promise<Application[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application>;
@@ -142,7 +147,7 @@ export interface IFuseApiClient {
     applicationGET(id: string, signal?: AbortSignal): Promise<Application>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application>;
@@ -153,13 +158,13 @@ export interface IFuseApiClient {
     applicationDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance>;
@@ -180,13 +185,13 @@ export interface IFuseApiClient {
     instanceApiKey(appId: string, instanceId: string, signal?: AbortSignal): Promise<string>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline>;
@@ -197,13 +202,13 @@ export interface IFuseApiClient {
     pipelinesDELETE(appId: string, pipelineId: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency>;
@@ -219,21 +224,21 @@ export interface IFuseApiClient {
     getAppSettings(signal?: AbortSignal): Promise<AppSettings>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param startTime (optional) 
-     * @param endTime (optional) 
-     * @param action (optional) 
-     * @param area (optional) 
-     * @param userName (optional) 
-     * @param entityId (optional) 
-     * @param searchText (optional) 
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param action (optional)
+     * @param area (optional)
+     * @param userName (optional)
+     * @param entityId (optional)
+     * @param searchText (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult>;
@@ -254,20 +259,20 @@ export interface IFuseApiClient {
     areas(signal?: AbortSignal): Promise<string[]>;
 
     /**
-     * @param format (optional) 
+     * @param format (optional)
      * @return OK
      */
     export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
 
     /**
-     * @param format (optional) 
+     * @param format (optional)
      * @return OK
      */
     template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse>;
 
     /**
-     * @param format (optional) 
-     * @param file (optional) 
+     * @param format (optional)
+     * @param file (optional)
      * @return OK
      */
     importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void>;
@@ -278,7 +283,7 @@ export interface IFuseApiClient {
     dataStoreAll(signal?: AbortSignal): Promise<DataStore[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
@@ -289,7 +294,7 @@ export interface IFuseApiClient {
     dataStoreGET(id: string, signal?: AbortSignal): Promise<DataStore>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore>;
@@ -305,13 +310,13 @@ export interface IFuseApiClient {
     environmentAll(signal?: AbortSignal): Promise<EnvironmentInfo[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo>;
@@ -322,7 +327,7 @@ export interface IFuseApiClient {
     environmentDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number>;
@@ -333,7 +338,7 @@ export interface IFuseApiClient {
     externalResourceAll(signal?: AbortSignal): Promise<ExternalResource[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
@@ -344,7 +349,7 @@ export interface IFuseApiClient {
     externalResourceGET(id: string, signal?: AbortSignal): Promise<ExternalResource>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource>;
@@ -357,10 +362,35 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    healthLive(signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    healthReady(signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    healthStatus(signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
+    healthMonitoringOverview(signal?: AbortSignal): Promise<HealthOverview>;
+
+    /**
+     * @return OK
+     */
+    healthMonitoringHistory(instanceId: string, signal?: AbortSignal): Promise<InstanceHealthTransition[]>;
+
+    /**
+     * @return OK
+     */
     identityAll(signal?: AbortSignal): Promise<Identity[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
@@ -371,7 +401,7 @@ export interface IFuseApiClient {
     identityGET(id: string, signal?: AbortSignal): Promise<Identity>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity>;
@@ -387,19 +417,19 @@ export interface IFuseApiClient {
     identityCloneTargets(id: string, signal?: AbortSignal): Promise<CloneTarget[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment>;
@@ -415,7 +445,7 @@ export interface IFuseApiClient {
     kumaIntegrationAll(signal?: AbortSignal): Promise<KumaIntegrationResponse[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
@@ -426,7 +456,7 @@ export interface IFuseApiClient {
     kumaIntegrationGET(id: string, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse>;
@@ -439,10 +469,26 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    getLicenseStatus(signal?: AbortSignal): Promise<LicenseStatusResponse>;
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    setLicense(body: SetLicenseRequest | undefined, signal?: AbortSignal): Promise<LicenseStatusResponse>;
+
+    /**
+     * @return OK
+     */
+    refreshLicense(signal?: AbortSignal): Promise<LicenseStatusResponse>;
+
+    /**
+     * @return OK
+     */
     messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
@@ -453,7 +499,7 @@ export interface IFuseApiClient {
     messageBrokerGET(id: string, signal?: AbortSignal): Promise<MessageBroker>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker>;
@@ -466,10 +512,21 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
+    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    progressPUTPUT(body: UpdateGuideProgress | undefined, signal?: AbortSignal): Promise<UserGuideProgress>;
+
+    /**
+     * @return OK
+     */
     passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig>;
@@ -485,7 +542,7 @@ export interface IFuseApiClient {
     platformAll(signal?: AbortSignal): Promise<Platform[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
@@ -496,7 +553,7 @@ export interface IFuseApiClient {
     platformGET(id: string, signal?: AbortSignal): Promise<Platform>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform>;
@@ -512,7 +569,7 @@ export interface IFuseApiClient {
     positionAll(signal?: AbortSignal): Promise<Position[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position>;
@@ -523,7 +580,7 @@ export interface IFuseApiClient {
     positionGET(id: string, signal?: AbortSignal): Promise<Position>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position>;
@@ -539,7 +596,7 @@ export interface IFuseApiClient {
     responsibilityAssignmentAll(applicationId: string, signal?: AbortSignal): Promise<ResponsibilityAssignment[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
@@ -550,7 +607,7 @@ export interface IFuseApiClient {
     responsibilityAssignmentGET(applicationId: string, id: string, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment>;
@@ -566,7 +623,7 @@ export interface IFuseApiClient {
     responsibilityTypeAll(signal?: AbortSignal): Promise<ResponsibilityType[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
@@ -577,7 +634,7 @@ export interface IFuseApiClient {
     responsibilityTypeGET(id: string, signal?: AbortSignal): Promise<ResponsibilityType>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType>;
@@ -593,7 +650,7 @@ export interface IFuseApiClient {
     riskAll(signal?: AbortSignal): Promise<Risk[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
@@ -604,7 +661,7 @@ export interface IFuseApiClient {
     riskGET(id: string, signal?: AbortSignal): Promise<Risk>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk>;
@@ -625,7 +682,7 @@ export interface IFuseApiClient {
     roleAll(signal?: AbortSignal): Promise<RoleInfo[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
@@ -636,7 +693,7 @@ export interface IFuseApiClient {
     roleGET(id: string, signal?: AbortSignal): Promise<RoleInfo>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo>;
@@ -647,7 +704,7 @@ export interface IFuseApiClient {
     roleDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
@@ -658,7 +715,7 @@ export interface IFuseApiClient {
     azureIntegrationManagerGET(signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse>;
@@ -669,7 +726,7 @@ export interface IFuseApiClient {
     secretProviderAll(signal?: AbortSignal): Promise<SecretProviderResponse[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
@@ -680,7 +737,7 @@ export interface IFuseApiClient {
     secretProviderGET(id: string, signal?: AbortSignal): Promise<SecretProviderResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse>;
@@ -691,7 +748,7 @@ export interface IFuseApiClient {
     secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void>;
@@ -702,33 +759,33 @@ export interface IFuseApiClient {
     secretsAll(providerId: string, signal?: AbortSignal): Promise<SecretMetadataResponse[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param keySearch (optional) 
-     * @param keyPrefix (optional) 
-     * @param label (optional) 
+     * @param keySearch (optional)
+     * @param keyPrefix (optional)
+     * @param label (optional)
      * @return OK
      */
     appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param version (optional) 
+     * @param version (optional)
      * @return OK
      */
     reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse>;
@@ -739,13 +796,13 @@ export interface IFuseApiClient {
     state(signal?: AbortSignal): Promise<SecurityStateResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo>;
@@ -756,13 +813,13 @@ export interface IFuseApiClient {
     accountsAll(signal?: AbortSignal): Promise<SecurityUserInfo[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void>;
@@ -778,13 +835,13 @@ export interface IFuseApiClient {
     accountsDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     resetPassword(id: string, body: ResetPasswordRequest | undefined, signal?: AbortSignal): Promise<void>;
@@ -795,7 +852,7 @@ export interface IFuseApiClient {
     sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
@@ -806,7 +863,7 @@ export interface IFuseApiClient {
     sqlIntegrationGET(id: string, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse>;
@@ -837,25 +894,25 @@ export interface IFuseApiClient {
     import2(id: string, accountId: string, signal?: AbortSignal): Promise<ImportPermissionsResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult>;
@@ -871,7 +928,7 @@ export interface IFuseApiClient {
     tagAll(signal?: AbortSignal): Promise<Tag[]>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag>;
@@ -882,7 +939,7 @@ export interface IFuseApiClient {
     tagGET(id: string, signal?: AbortSignal): Promise<Tag>;
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag>;
@@ -906,6 +963,40 @@ export class FuseApiClient implements IFuseApiClient {
     constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
         this.http = http ? http : window as any;
         this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    aboutGet(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/About";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAboutGet(_response);
+        });
+    }
+
+    protected processAboutGet(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -954,7 +1045,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     accountPOST(body: CreateAccount | undefined, signal?: AbortSignal): Promise<Account> {
@@ -1052,7 +1143,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     accountPUT(id: string, body: UpdateAccount | undefined, signal?: AbortSignal): Promise<Account> {
@@ -1314,7 +1405,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     accountClone(id: string, body: CloneAccount | undefined, signal?: AbortSignal): Promise<Account[]> {
@@ -1381,7 +1472,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     grantPOST(accountId: string, body: CreateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
@@ -1441,7 +1532,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     grantPUT(accountId: string, grantId: string, body: UpdateAccountGrant | undefined, signal?: AbortSignal): Promise<Grant> {
@@ -1551,14 +1642,14 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param startTime (optional) 
-     * @param endTime (optional) 
-     * @param entityType (optional) 
-     * @param entityId (optional) 
-     * @param userId (optional) 
-     * @param userName (optional) 
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param entityType (optional)
+     * @param entityId (optional)
+     * @param userId (optional)
+     * @param userName (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     activity(startTime: Date | undefined, endTime: Date | undefined, entityType: EntityType | undefined, entityId: string | undefined, userId: string | undefined, userName: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
@@ -1629,8 +1720,8 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     activityByEntity(entityType: EntityType, entityId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<ActivityFeedResult> {
@@ -1735,7 +1826,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     apiKeyPOST(body: CreateApiKey | undefined, signal?: AbortSignal): Promise<ApiKeyCreatedResult> {
@@ -1950,7 +2041,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     applicationPOST(body: CreateApplication | undefined, signal?: AbortSignal): Promise<Application> {
@@ -2148,7 +2239,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     applicationPUT(id: string, body: UpdateApplication | undefined, signal?: AbortSignal): Promise<Application> {
@@ -2259,7 +2350,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     instancesPOST(appId: string, body: CreateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
@@ -2319,7 +2410,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     instancesPUT(appId: string, instanceId: string, body: UpdateApplicationInstance | undefined, signal?: AbortSignal): Promise<ApplicationInstance> {
@@ -2513,7 +2604,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
+
             return result200;
             });
         } else if (status === 403) {
@@ -2539,7 +2630,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     pipelinesPOST(appId: string, body: CreateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
@@ -2606,7 +2697,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     pipelinesPUT(appId: string, pipelineId: string, body: UpdateApplicationPipeline | undefined, signal?: AbortSignal): Promise<ApplicationPipeline> {
@@ -2723,7 +2814,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     dependenciesPOST(appId: string, instanceId: string, body: CreateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
@@ -2786,7 +2877,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     dependenciesPUT(appId: string, instanceId: string, dependencyId: string, body: UpdateApplicationDependency | undefined, signal?: AbortSignal): Promise<ApplicationInstanceDependency> {
@@ -2940,7 +3031,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     updateAppSettings(body: AppSettings | undefined, signal?: AbortSignal): Promise<void> {
@@ -2986,15 +3077,15 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param startTime (optional) 
-     * @param endTime (optional) 
-     * @param action (optional) 
-     * @param area (optional) 
-     * @param userName (optional) 
-     * @param entityId (optional) 
-     * @param searchText (optional) 
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param action (optional)
+     * @param area (optional)
+     * @param userName (optional)
+     * @param entityId (optional)
+     * @param searchText (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
      * @return OK
      */
     audit(startTime: Date | undefined, endTime: Date | undefined, action: AuditAction | undefined, area: AuditArea | undefined, userName: string | undefined, entityId: string | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AuditLogResult> {
@@ -3207,7 +3298,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional) 
+     * @param format (optional)
      * @return OK
      */
     export(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
@@ -3261,7 +3352,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional) 
+     * @param format (optional)
      * @return OK
      */
     template(format: string | undefined, signal?: AbortSignal): Promise<FileResponse> {
@@ -3315,8 +3406,8 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param format (optional) 
-     * @param file (optional) 
+     * @param format (optional)
+     * @param file (optional)
      * @return OK
      */
     importPOST(format: string | undefined, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
@@ -3414,7 +3505,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     dataStorePOST(body: CreateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
@@ -3519,7 +3610,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     dataStorePUT(id: string, body: UpdateDataStore | undefined, signal?: AbortSignal): Promise<DataStore> {
@@ -3675,7 +3766,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     environmentPOST(body: CreateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
@@ -3732,7 +3823,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     environmentPUT(id: string, body: UpdateEnvironment | undefined, signal?: AbortSignal): Promise<EnvironmentInfo> {
@@ -3829,7 +3920,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     applyAutomation(body: ApplyEnvironmentAutomation | undefined, signal?: AbortSignal): Promise<number> {
@@ -3861,7 +3952,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
+
             return result200;
             });
         } else if (status === 400) {
@@ -3925,7 +4016,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     externalResourcePOST(body: CreateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
@@ -4030,7 +4121,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     externalResourcePUT(id: string, body: UpdateExternalResource | undefined, signal?: AbortSignal): Promise<ExternalResource> {
@@ -4143,6 +4234,212 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    healthLive(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Health/live";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealthLive(_response);
+        });
+    }
+
+    protected processHealthLive(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    healthReady(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Health/ready";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealthReady(_response);
+        });
+    }
+
+    protected processHealthReady(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 503) {
+            return response.text().then((_responseText) => {
+            return throwException("Service Unavailable", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    healthStatus(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Health/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealthStatus(_response);
+        });
+    }
+
+    protected processHealthStatus(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    healthMonitoringOverview(signal?: AbortSignal): Promise<HealthOverview> {
+        let url_ = this.baseUrl + "/api/health-monitoring";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealthMonitoringOverview(_response);
+        });
+    }
+
+    protected processHealthMonitoringOverview(response: Response): Promise<HealthOverview> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = HealthOverview.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<HealthOverview>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    healthMonitoringHistory(instanceId: string, signal?: AbortSignal): Promise<InstanceHealthTransition[]> {
+        let url_ = this.baseUrl + "/api/health-monitoring/instances/{instanceId}/history";
+        if (instanceId === undefined || instanceId === null)
+            throw new globalThis.Error("The parameter 'instanceId' must be defined.");
+        url_ = url_.replace("{instanceId}", encodeURIComponent("" + instanceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHealthMonitoringHistory(_response);
+        });
+    }
+
+    protected processHealthMonitoringHistory(response: Response): Promise<InstanceHealthTransition[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(InstanceHealthTransition.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<InstanceHealthTransition[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     identityAll(signal?: AbortSignal): Promise<Identity[]> {
         let url_ = this.baseUrl + "/api/Identity";
         url_ = url_.replace(/[?&]$/, "");
@@ -4186,7 +4483,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     identityPOST(body: CreateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
@@ -4284,7 +4581,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     identityPUT(id: string, body: UpdateIdentity | undefined, signal?: AbortSignal): Promise<Identity> {
@@ -4443,7 +4740,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     identityClone(id: string, body: CloneIdentity | undefined, signal?: AbortSignal): Promise<Identity[]> {
@@ -4510,7 +4807,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     assignmentPOST(identityId: string, body: CreateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
@@ -4570,7 +4867,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     assignmentPUT(identityId: string, assignmentId: string, body: UpdateIdentityAssignment | undefined, signal?: AbortSignal): Promise<IdentityAssignment> {
@@ -4725,7 +5022,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     kumaIntegrationPOST(body: CreateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
@@ -4823,7 +5120,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     kumaIntegrationPUT(id: string, body: UpdateKumaIntegration | undefined, signal?: AbortSignal): Promise<KumaIntegrationResponse> {
@@ -4929,6 +5226,125 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    getLicenseStatus(signal?: AbortSignal): Promise<LicenseStatusResponse> {
+        let url_ = this.baseUrl + "/api/License";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetLicenseStatus(_response);
+        });
+    }
+
+    protected processGetLicenseStatus(response: Response): Promise<LicenseStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = LicenseStatusResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<LicenseStatusResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    setLicense(body: SetLicenseRequest | undefined, signal?: AbortSignal): Promise<LicenseStatusResponse> {
+        let url_ = this.baseUrl + "/api/License";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetLicense(_response);
+        });
+    }
+
+    protected processSetLicense(response: Response): Promise<LicenseStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = LicenseStatusResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<LicenseStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    refreshLicense(signal?: AbortSignal): Promise<LicenseStatusResponse> {
+        let url_ = this.baseUrl + "/api/License/refresh";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRefreshLicense(_response);
+        });
+    }
+
+    protected processRefreshLicense(response: Response): Promise<LicenseStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = LicenseStatusResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<LicenseStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]> {
         let url_ = this.baseUrl + "/api/MessageBroker";
         url_ = url_.replace(/[?&]$/, "");
@@ -4972,7 +5388,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     messageBrokerPOST(body: CreateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
@@ -5077,7 +5493,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     messageBrokerPUT(id: string, body: UpdateMessageBroker | undefined, signal?: AbortSignal): Promise<MessageBroker> {
@@ -5190,6 +5606,108 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
+    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+        let url_ = this.baseUrl + "/api/Onboarding/progress";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProgressGETGET(_response);
+        });
+    }
+
+    protected processProgressGETGET(response: Response): Promise<UserGuideProgress> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = UserGuideProgress.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<UserGuideProgress>(null as any);
+    }
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    progressPUTPUT(body: UpdateGuideProgress | undefined, signal?: AbortSignal): Promise<UserGuideProgress> {
+        let url_ = this.baseUrl + "/api/Onboarding/progress";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProgressPUTPUT(_response);
+        });
+    }
+
+    protected processProgressPUTPUT(response: Response): Promise<UserGuideProgress> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = UserGuideProgress.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<UserGuideProgress>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     passwordGeneratorGetConfig(signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
         let url_ = this.baseUrl + "/api/PasswordGenerator/config";
         url_ = url_.replace(/[?&]$/, "");
@@ -5226,7 +5744,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     passwordGeneratorUpdateConfig(body: UpdatePasswordGeneratorConfig | undefined, signal?: AbortSignal): Promise<PasswordGeneratorConfig> {
@@ -5373,7 +5891,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     platformPOST(body: CreatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
@@ -5478,7 +5996,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     platformPUT(id: string, body: UpdatePlatform | undefined, signal?: AbortSignal): Promise<Platform> {
@@ -5634,7 +6152,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     positionPOST(body: CreatePosition | undefined, signal?: AbortSignal): Promise<Position> {
@@ -5739,7 +6257,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     positionPUT(id: string, body: UpdatePosition | undefined, signal?: AbortSignal): Promise<Position> {
@@ -5905,7 +6423,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     responsibilityAssignmentPOST(applicationId: string, body: CreateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
@@ -6016,7 +6534,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     responsibilityAssignmentPUT(applicationId: string, id: string, body: UpdateResponsibilityAssignment | undefined, signal?: AbortSignal): Promise<ResponsibilityAssignment> {
@@ -6178,7 +6696,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     responsibilityTypePOST(body: CreateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
@@ -6283,7 +6801,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     responsibilityTypePUT(id: string, body: UpdateResponsibilityType | undefined, signal?: AbortSignal): Promise<ResponsibilityType> {
@@ -6446,7 +6964,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     riskPOST(body: CreateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
@@ -6544,7 +7062,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     riskPUT(id: string, body: UpdateRisk | undefined, signal?: AbortSignal): Promise<Risk> {
@@ -6744,7 +7262,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     rolePOST(body: CreateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
@@ -6856,7 +7374,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     rolePUT(id: string, body: UpdateRole | undefined, signal?: AbortSignal): Promise<RoleInfo> {
@@ -6995,7 +7513,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     assignPOST(body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -7093,7 +7611,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     azureIntegrationManagerPUT(body: UpdateAzureIntegrationManager | undefined, signal?: AbortSignal): Promise<AzureIntegrationManagerResponse> {
@@ -7188,7 +7706,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     secretProviderPOST(body: CreateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
@@ -7286,7 +7804,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     secretProviderPUT(id: string, body: UpdateSecretProvider | undefined, signal?: AbortSignal): Promise<SecretProviderResponse> {
@@ -7397,7 +7915,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     testConnection(body: TestSecretProviderConnection | undefined, signal?: AbortSignal): Promise<void> {
@@ -7505,7 +8023,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     secrets(providerId: string, body: CreateSecret | undefined, signal?: AbortSignal): Promise<void> {
@@ -7561,9 +8079,9 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param keySearch (optional) 
-     * @param keyPrefix (optional) 
-     * @param label (optional) 
+     * @param keySearch (optional)
+     * @param keyPrefix (optional)
+     * @param label (optional)
      * @return OK
      */
     appConfigurationAll(providerId: string, keySearch: string | undefined, keyPrefix: string | undefined, label: string | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse[]> {
@@ -7638,7 +8156,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     appConfigurationSet(providerId: string, body: SetAppConfigurationValue | undefined, signal?: AbortSignal): Promise<AppConfigurationEntryResponse> {
@@ -7698,7 +8216,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     rotate(providerId: string, secretName: string, body: RotateSecret | undefined, signal?: AbortSignal): Promise<void> {
@@ -7757,7 +8275,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param version (optional) 
+     * @param version (optional)
      * @return OK
      */
     reveal(providerId: string, secretName: string, version: string | undefined, signal?: AbortSignal): Promise<SecretValueResponse> {
@@ -7865,7 +8383,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     settings(body: UpdateSecuritySettings | undefined, signal?: AbortSignal): Promise<SecurityPosture> {
@@ -7897,7 +8415,7 @@ export class FuseApiClient implements IFuseApiClient {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
+
             return result200;
             });
         } else if (status === 400) {
@@ -7930,7 +8448,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     accountsPOST(body: CreateSecurityUser | undefined, signal?: AbortSignal): Promise<SecurityUserInfo> {
@@ -8046,7 +8564,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     login(body: LoginSecurityUser | undefined, signal?: AbortSignal): Promise<LoginSession> {
@@ -8103,7 +8621,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     logout(body: LogoutSecurityUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -8245,7 +8763,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     roles(userId: string, body: AssignRolesToUser | undefined, signal?: AbortSignal): Promise<void> {
@@ -8301,7 +8819,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return No Content
      */
     resetPassword(id: string, body: ResetPasswordRequest | undefined, signal?: AbortSignal): Promise<void> {
@@ -8416,7 +8934,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     sqlIntegrationPOST(body: CreateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
@@ -8528,7 +9046,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     sqlIntegrationPUT(id: string, body: UpdateSqlIntegration | undefined, signal?: AbortSignal): Promise<SqlIntegrationResponse> {
@@ -8851,7 +9369,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     import3(id: string, body: ImportOrphanPrincipalRequest | undefined, signal?: AbortSignal): Promise<ImportOrphanPrincipalResponse> {
@@ -8918,7 +9436,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     create(id: string, accountId: string, body: CreateSqlAccountRequest | undefined, signal?: AbortSignal): Promise<CreateSqlAccountResponse> {
@@ -8988,7 +9506,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     bulkResolve(id: string, body: BulkResolveRequest | undefined, signal?: AbortSignal): Promise<BulkResolveResponse> {
@@ -9048,7 +9566,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     testConnection2(body: TestSqlConnection | undefined, signal?: AbortSignal): Promise<SqlConnectionTestResult> {
@@ -9198,7 +9716,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return Created
      */
     tagPOST(body: CreateTag | undefined, signal?: AbortSignal): Promise<Tag> {
@@ -9303,7 +9821,7 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
-     * @param body (optional) 
+     * @param body (optional)
      * @return OK
      */
     tagPUT(id: string, body: UpdateTag | undefined, signal?: AbortSignal): Promise<Tag> {
@@ -9950,7 +10468,8 @@ export class AppSettings implements IAppSettings {
     localLicenseValidationOnly?: boolean;
     hideValidLicenseChip?: boolean;
     versionHistoryKeepCount?: number;
-    auditLogDaysToKeep?: number | null;
+    auditLogDaysToKeep?: number | undefined;
+    healthCheckProvider?: HealthCheckProvider;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -9968,6 +10487,7 @@ export class AppSettings implements IAppSettings {
             this.hideValidLicenseChip = _data["hideValidLicenseChip"];
             this.versionHistoryKeepCount = _data["versionHistoryKeepCount"];
             this.auditLogDaysToKeep = _data["auditLogDaysToKeep"];
+            this.healthCheckProvider = _data["healthCheckProvider"];
         }
     }
 
@@ -9985,6 +10505,7 @@ export class AppSettings implements IAppSettings {
         data["hideValidLicenseChip"] = this.hideValidLicenseChip;
         data["versionHistoryKeepCount"] = this.versionHistoryKeepCount;
         data["auditLogDaysToKeep"] = this.auditLogDaysToKeep;
+        data["healthCheckProvider"] = this.healthCheckProvider;
         return data;
     }
 }
@@ -9994,7 +10515,8 @@ export interface IAppSettings {
     localLicenseValidationOnly?: boolean;
     hideValidLicenseChip?: boolean;
     versionHistoryKeepCount?: number;
-    auditLogDaysToKeep?: number | null;
+    auditLogDaysToKeep?: number | undefined;
+    healthCheckProvider?: HealthCheckProvider;
 }
 
 export class Application implements IApplication {
@@ -13576,6 +14098,80 @@ export interface IGrant {
     privileges?: Privilege[] | undefined;
 }
 
+export enum HealthCheckProvider {
+    None = "None",
+    Internal = "Internal",
+    Kuma = "Kuma",
+}
+
+export class HealthOverview implements IHealthOverview {
+    provider?: HealthCheckProvider;
+    providerAvailable?: boolean;
+    unavailableReason?: string | undefined;
+    healthy?: number;
+    unhealthy?: number;
+    unknown?: number;
+    results?: InstanceHealthResult[] | undefined;
+
+    constructor(data?: IHealthOverview) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.provider = _data["provider"];
+            this.providerAvailable = _data["providerAvailable"];
+            this.unavailableReason = _data["unavailableReason"];
+            this.healthy = _data["healthy"];
+            this.unhealthy = _data["unhealthy"];
+            this.unknown = _data["unknown"];
+            if (Array.isArray(_data["results"])) {
+                this.results = [] as any;
+                for (let item of _data["results"])
+                    this.results!.push(InstanceHealthResult.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): HealthOverview {
+        data = typeof data === 'object' ? data : {};
+        let result = new HealthOverview();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["provider"] = this.provider;
+        data["providerAvailable"] = this.providerAvailable;
+        data["unavailableReason"] = this.unavailableReason;
+        data["healthy"] = this.healthy;
+        data["unhealthy"] = this.unhealthy;
+        data["unknown"] = this.unknown;
+        if (Array.isArray(this.results)) {
+            data["results"] = [];
+            for (let item of this.results)
+                data["results"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IHealthOverview {
+    provider?: HealthCheckProvider;
+    providerAvailable?: boolean;
+    unavailableReason?: string | undefined;
+    healthy?: number;
+    unhealthy?: number;
+    unknown?: number;
+    results?: InstanceHealthResult[] | undefined;
+}
+
 export class HealthStatusResponse implements IHealthStatusResponse {
     monitorUrl?: string | undefined;
     status?: MonitorStatus;
@@ -13935,6 +14531,196 @@ export interface IImportPermissionsResponse {
     errorMessage?: string | undefined;
 }
 
+export class InstanceHealthResult implements IInstanceHealthResult {
+    instanceId?: string;
+    applicationId?: string;
+    applicationName?: string | undefined;
+    environmentId?: string;
+    environmentName?: string | undefined;
+    healthUrl?: string | undefined;
+    provider?: HealthCheckProvider;
+    state?: InstanceHealthState;
+    checkedAt?: Date;
+    durationMs?: number | undefined;
+    httpStatusCode?: number | undefined;
+    failureCategory?: string | undefined;
+    responseSummary?: string | undefined;
+    monitorName?: string | undefined;
+    responseTruncated?: boolean;
+    responseRedacted?: boolean;
+
+    constructor(data?: IInstanceHealthResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.instanceId = _data["instanceId"];
+            this.applicationId = _data["applicationId"];
+            this.applicationName = _data["applicationName"];
+            this.environmentId = _data["environmentId"];
+            this.environmentName = _data["environmentName"];
+            this.healthUrl = _data["healthUrl"];
+            this.provider = _data["provider"];
+            this.state = _data["state"];
+            this.checkedAt = _data["checkedAt"] ? new Date(_data["checkedAt"].toString()) : undefined as any;
+            this.durationMs = _data["durationMs"];
+            this.httpStatusCode = _data["httpStatusCode"];
+            this.failureCategory = _data["failureCategory"];
+            this.responseSummary = _data["responseSummary"];
+            this.monitorName = _data["monitorName"];
+            this.responseTruncated = _data["responseTruncated"];
+            this.responseRedacted = _data["responseRedacted"];
+        }
+    }
+
+    static fromJS(data: any): InstanceHealthResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new InstanceHealthResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["instanceId"] = this.instanceId;
+        data["applicationId"] = this.applicationId;
+        data["applicationName"] = this.applicationName;
+        data["environmentId"] = this.environmentId;
+        data["environmentName"] = this.environmentName;
+        data["healthUrl"] = this.healthUrl;
+        data["provider"] = this.provider;
+        data["state"] = this.state;
+        data["checkedAt"] = this.checkedAt ? this.checkedAt.toISOString() : undefined as any;
+        data["durationMs"] = this.durationMs;
+        data["httpStatusCode"] = this.httpStatusCode;
+        data["failureCategory"] = this.failureCategory;
+        data["responseSummary"] = this.responseSummary;
+        data["monitorName"] = this.monitorName;
+        data["responseTruncated"] = this.responseTruncated;
+        data["responseRedacted"] = this.responseRedacted;
+        return data;
+    }
+}
+
+export interface IInstanceHealthResult {
+    instanceId?: string;
+    applicationId?: string;
+    applicationName?: string | undefined;
+    environmentId?: string;
+    environmentName?: string | undefined;
+    healthUrl?: string | undefined;
+    provider?: HealthCheckProvider;
+    state?: InstanceHealthState;
+    checkedAt?: Date;
+    durationMs?: number | undefined;
+    httpStatusCode?: number | undefined;
+    failureCategory?: string | undefined;
+    responseSummary?: string | undefined;
+    monitorName?: string | undefined;
+    responseTruncated?: boolean;
+    responseRedacted?: boolean;
+}
+
+export enum InstanceHealthState {
+    Unknown = "Unknown",
+    Healthy = "Healthy",
+    Unhealthy = "Unhealthy",
+}
+
+export class InstanceHealthTransition implements IInstanceHealthTransition {
+    id?: string;
+    instanceId?: string;
+    applicationId?: string;
+    provider?: HealthCheckProvider;
+    previousState?: InstanceHealthState;
+    state?: InstanceHealthState;
+    checkedAt?: Date;
+    durationMs?: number | undefined;
+    httpStatusCode?: number | undefined;
+    failureCategory?: string | undefined;
+    responseSummary?: string | undefined;
+    monitorName?: string | undefined;
+    responseTruncated?: boolean;
+    responseRedacted?: boolean;
+
+    constructor(data?: IInstanceHealthTransition) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.instanceId = _data["instanceId"];
+            this.applicationId = _data["applicationId"];
+            this.provider = _data["provider"];
+            this.previousState = _data["previousState"];
+            this.state = _data["state"];
+            this.checkedAt = _data["checkedAt"] ? new Date(_data["checkedAt"].toString()) : undefined as any;
+            this.durationMs = _data["durationMs"];
+            this.httpStatusCode = _data["httpStatusCode"];
+            this.failureCategory = _data["failureCategory"];
+            this.responseSummary = _data["responseSummary"];
+            this.monitorName = _data["monitorName"];
+            this.responseTruncated = _data["responseTruncated"];
+            this.responseRedacted = _data["responseRedacted"];
+        }
+    }
+
+    static fromJS(data: any): InstanceHealthTransition {
+        data = typeof data === 'object' ? data : {};
+        let result = new InstanceHealthTransition();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["instanceId"] = this.instanceId;
+        data["applicationId"] = this.applicationId;
+        data["provider"] = this.provider;
+        data["previousState"] = this.previousState;
+        data["state"] = this.state;
+        data["checkedAt"] = this.checkedAt ? this.checkedAt.toISOString() : undefined as any;
+        data["durationMs"] = this.durationMs;
+        data["httpStatusCode"] = this.httpStatusCode;
+        data["failureCategory"] = this.failureCategory;
+        data["responseSummary"] = this.responseSummary;
+        data["monitorName"] = this.monitorName;
+        data["responseTruncated"] = this.responseTruncated;
+        data["responseRedacted"] = this.responseRedacted;
+        return data;
+    }
+}
+
+export interface IInstanceHealthTransition {
+    id?: string;
+    instanceId?: string;
+    applicationId?: string;
+    provider?: HealthCheckProvider;
+    previousState?: InstanceHealthState;
+    state?: InstanceHealthState;
+    checkedAt?: Date;
+    durationMs?: number | undefined;
+    httpStatusCode?: number | undefined;
+    failureCategory?: string | undefined;
+    responseSummary?: string | undefined;
+    monitorName?: string | undefined;
+    responseTruncated?: boolean;
+    responseRedacted?: boolean;
+}
+
 export class KumaIntegrationResponse implements IKumaIntegrationResponse {
     id?: string;
     name?: string | undefined;
@@ -14005,6 +14791,66 @@ export interface IKumaIntegrationResponse {
     uri?: string | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export class LicenseStatusResponse implements ILicenseStatusResponse {
+    status?: string | undefined;
+    isValid?: boolean;
+    licenseType?: string | undefined;
+    expiryUtc?: Date | undefined;
+    lastCheckedUtc?: Date | undefined;
+    message?: string | undefined;
+    customerName?: string | undefined;
+
+    constructor(data?: ILicenseStatusResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.status = _data["status"];
+            this.isValid = _data["isValid"];
+            this.licenseType = _data["licenseType"];
+            this.expiryUtc = _data["expiryUtc"] ? new Date(_data["expiryUtc"].toString()) : undefined as any;
+            this.lastCheckedUtc = _data["lastCheckedUtc"] ? new Date(_data["lastCheckedUtc"].toString()) : undefined as any;
+            this.message = _data["message"];
+            this.customerName = _data["customerName"];
+        }
+    }
+
+    static fromJS(data: any): LicenseStatusResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new LicenseStatusResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["status"] = this.status;
+        data["isValid"] = this.isValid;
+        data["licenseType"] = this.licenseType;
+        data["expiryUtc"] = this.expiryUtc ? this.expiryUtc.toISOString() : undefined as any;
+        data["lastCheckedUtc"] = this.lastCheckedUtc ? this.lastCheckedUtc.toISOString() : undefined as any;
+        data["message"] = this.message;
+        data["customerName"] = this.customerName;
+        return data;
+    }
+}
+
+export interface ILicenseStatusResponse {
+    status?: string | undefined;
+    isValid?: boolean;
+    licenseType?: string | undefined;
+    expiryUtc?: Date | undefined;
+    lastCheckedUtc?: Date | undefined;
+    message?: string | undefined;
+    customerName?: string | undefined;
 }
 
 export class LoginSecurityUser implements ILoginSecurityUser {
@@ -15440,6 +16286,42 @@ export interface ISetAppConfigurationValue {
     label?: string | undefined;
     value?: string | undefined;
     contentType?: string | undefined;
+}
+
+export class SetLicenseRequest implements ISetLicenseRequest {
+    licenseKey?: string | undefined;
+
+    constructor(data?: ISetLicenseRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.licenseKey = _data["licenseKey"];
+        }
+    }
+
+    static fromJS(data: any): SetLicenseRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetLicenseRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["licenseKey"] = this.licenseKey;
+        return data;
+    }
+}
+
+export interface ISetLicenseRequest {
+    licenseKey?: string | undefined;
 }
 
 export class SqlAccountCreationOperation implements ISqlAccountCreationOperation {
@@ -16911,6 +17793,62 @@ export interface IUpdateExternalResource {
     tagIds?: string[] | undefined;
 }
 
+export class UpdateGuideProgress implements IUpdateGuideProgress {
+    completedStepIds?: string[] | undefined;
+    activeGuideId?: string | undefined;
+    hasCompletedGettingStarted?: boolean;
+    lastCompletedAt?: Date | undefined;
+
+    constructor(data?: IUpdateGuideProgress) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["completedStepIds"])) {
+                this.completedStepIds = [] as any;
+                for (let item of _data["completedStepIds"])
+                    this.completedStepIds!.push(item);
+            }
+            this.activeGuideId = _data["activeGuideId"];
+            this.hasCompletedGettingStarted = _data["hasCompletedGettingStarted"];
+            this.lastCompletedAt = _data["lastCompletedAt"] ? new Date(_data["lastCompletedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UpdateGuideProgress {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateGuideProgress();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.completedStepIds)) {
+            data["completedStepIds"] = [];
+            for (let item of this.completedStepIds)
+                data["completedStepIds"].push(item);
+        }
+        data["activeGuideId"] = this.activeGuideId;
+        data["hasCompletedGettingStarted"] = this.hasCompletedGettingStarted;
+        data["lastCompletedAt"] = this.lastCompletedAt ? this.lastCompletedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUpdateGuideProgress {
+    completedStepIds?: string[] | undefined;
+    activeGuideId?: string | undefined;
+    hasCompletedGettingStarted?: boolean;
+    lastCompletedAt?: Date | undefined;
+}
+
 export class UpdateIdentity implements IUpdateIdentity {
     id?: string;
     name?: string | undefined;
@@ -17837,6 +18775,66 @@ export interface IUpdateTag {
     name?: string | undefined;
     description?: string | undefined;
     color?: TagColor;
+}
+
+export class UserGuideProgress implements IUserGuideProgress {
+    completedStepIds?: string[] | undefined;
+    activeGuideId?: string | undefined;
+    hasCompletedGettingStarted?: boolean;
+    lastCompletedAt?: Date | undefined;
+    updatedAt?: Date;
+
+    constructor(data?: IUserGuideProgress) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["completedStepIds"])) {
+                this.completedStepIds = [] as any;
+                for (let item of _data["completedStepIds"])
+                    this.completedStepIds!.push(item);
+            }
+            this.activeGuideId = _data["activeGuideId"];
+            this.hasCompletedGettingStarted = _data["hasCompletedGettingStarted"];
+            this.lastCompletedAt = _data["lastCompletedAt"] ? new Date(_data["lastCompletedAt"].toString()) : undefined as any;
+            this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UserGuideProgress {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserGuideProgress();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.completedStepIds)) {
+            data["completedStepIds"] = [];
+            for (let item of this.completedStepIds)
+                data["completedStepIds"].push(item);
+        }
+        data["activeGuideId"] = this.activeGuideId;
+        data["hasCompletedGettingStarted"] = this.hasCompletedGettingStarted;
+        data["lastCompletedAt"] = this.lastCompletedAt ? this.lastCompletedAt.toISOString() : undefined as any;
+        data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUserGuideProgress {
+    completedStepIds?: string[] | undefined;
+    activeGuideId?: string | undefined;
+    hasCompletedGettingStarted?: boolean;
+    lastCompletedAt?: Date | undefined;
+    updatedAt?: Date;
 }
 
 export interface FileParameter {

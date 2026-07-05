@@ -22,5 +22,7 @@ public static class FuseDataModule
         
         services.AddSingleton<IVersionHistoryService>(provider =>
             new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
+
+        services.AddSingleton<IHealthMonitoringStore>(_ => new LiteDbHealthMonitoringStore(dataDirectory));
     }
 }

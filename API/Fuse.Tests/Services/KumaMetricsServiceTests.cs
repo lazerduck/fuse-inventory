@@ -32,7 +32,10 @@ public class KumaMetricsServiceTests
                 Security: new SecurityState(new SecuritySettings(SecurityLevel.FullyRestricted, DateTime.UtcNow), Array.Empty<SecurityUser>()),
                 SecurityContextHelper.Get
         );
-        return new InMemoryFuseStore(snapshot);
+        return new InMemoryFuseStore(snapshot with
+        {
+            AppSettings = new AppSettings(HealthCheckProvider: HealthCheckProvider.Kuma)
+        });
     }
 
     [Fact]

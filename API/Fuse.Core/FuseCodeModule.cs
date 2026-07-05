@@ -30,6 +30,7 @@ using Fuse.Core.Areas.AppSettings;
 using Fuse.Core.Areas.License;
 using Fuse.Core.Services.Worker;
 using Fuse.Core.Services.Retention;
+using Fuse.Core.Areas.HealthMonitoring;
 
 namespace Fuse.Core;
 
@@ -71,7 +72,7 @@ public static class FuseCodeModule
         services.AddHostedService<VersionHistoryRetentionService>();
         
         // Register version history retention policy service
-        services.AddScoped<IVersionHistoryRetentionPolicyService, VersionHistoryRetentionPolicyService>();
+        services.AddSingleton<IVersionHistoryRetentionPolicyService, VersionHistoryRetentionPolicyService>();
         services.AddSingleton<AreaPermissions, AccountPermissions>();
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
@@ -110,6 +111,9 @@ public static class FuseCodeModule
         services.AddSingleton<KumaMetricsService>();
         services.AddHostedService(provider => provider.GetRequiredService<KumaMetricsService>());
         services.AddSingleton<IKumaHealthService>(provider => provider.GetRequiredService<KumaMetricsService>());
+        services.AddSingleton<HealthMonitoringService>();
+        services.AddHostedService(provider => provider.GetRequiredService<HealthMonitoringService>());
+        services.AddSingleton<IHealthMonitoringService>(provider => provider.GetRequiredService<HealthMonitoringService>());
         
         // Register Password Generator service
         services.AddScoped<IPasswordGeneratorService, PasswordGeneratorService>();
