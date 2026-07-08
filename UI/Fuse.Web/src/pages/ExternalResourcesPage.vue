@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -127,8 +127,49 @@ const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'ExternalResourcesPage_filter'
+const STORAGE_KEY_PAGE = 'ExternalResourcesPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+// Restore persisted state from sessionStorage on mount / navigation back
+function restoreFilterPaginationState() {
+  const savedFilter = sessionStorage.getItem(STORAGE_KEY_FILTER)
+  if (savedFilter !== null) filter.value = savedFilter
+
+  const savedPage = sessionStorage.getItem(STORAGE_KEY_PAGE)
+  if (savedPage !== null) {
+    const pageNum = parseInt(savedPage, 10)
+    if (!isNaN(pageNum)) pagination.page = pageNum
+  }
+}
+
+// Persist filter text whenever it changes
+watch(filter, (newVal) => {
+  if (newVal) {
+    sessionStorage.setItem(STORAGE_KEY_FILTER, newVal)
+  } else {
+    sessionStorage.removeItem(STORAGE_KEY_FILTER)
+  }
+})
+
+// Persist current page whenever pagination changes
+watch(pagination, (newVal) => {
+  if (newVal.page) {
+    sessionStorage.setItem(STORAGE_KEY_PAGE, String(newVal.page))
+  }
+}, { deep: true })
+
+onMounted(() => {
+  restoreFilterPaginationState()
+})
+
+onActivated(() => {
+  restoreFilterPaginationState()
+})
+
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['externalResources'],
