@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import type { QTableColumn } from 'quasar'
@@ -106,6 +106,7 @@ import { Permission } from 'permissions'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useEnvironments } from '../composables/useEnvironments'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 
 interface CompletenessAlertRow {
@@ -123,8 +124,20 @@ const router = useRouter()
 const client = useFuseClient()
 const fuseStore = useFuseStore()
 
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'DocumentationCompletenessPage_filter'
+const STORAGE_KEY_PAGE = 'DocumentationCompletenessPage_page'
+
+const pagination = reactive({ rowsPerPage: 20, page: 1 })
 const filter = ref('')
-const pagination = { rowsPerPage: 20 }
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const applicationsQuery = useQuery({
   queryKey: ['applications'],

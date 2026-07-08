@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -122,6 +122,7 @@ import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useEnvironments } from '../composables/useEnvironments'
 import { useTags } from '../composables/useTags'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import PlatformForm, { type PlatformFormModel } from '../components/platforms/PlatformForm.vue'
 import TagChip from '../components/tags/TagChip.vue'
@@ -132,8 +133,20 @@ const fuseStore = useFuseStore()
 const environmentsStore = useEnvironments()
 const tagsStore = useTags()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'PlatformsPage_filter'
+const STORAGE_KEY_PAGE = 'PlatformsPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['platforms'],

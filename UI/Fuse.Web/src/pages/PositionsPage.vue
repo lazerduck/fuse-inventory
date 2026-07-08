@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -102,6 +102,7 @@ import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import TagChip from '../components/tags/TagChip.vue'
 import PositionDialog from '../components/position/PositionDialog.vue'
@@ -117,8 +118,20 @@ const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'PositionsPage_filter'
+const STORAGE_KEY_PAGE = 'PositionsPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['positions'],

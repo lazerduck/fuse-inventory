@@ -80,13 +80,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import { ResponsibilityType, CreateResponsibilityType, UpdateResponsibilityType } from 'api/client'
 import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { useFuseStore } from '../stores/FuseStore'
 import { getErrorMessage } from '../utils/error'
 import ResponsibilityTypeDialog from '../components/responsibilitytype/ResponsibilityTypeDialog.vue'
@@ -100,8 +101,20 @@ const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'ResponsibilityTypesPage_filter'
+const STORAGE_KEY_PAGE = 'ResponsibilityTypesPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['responsibilityTypes'],

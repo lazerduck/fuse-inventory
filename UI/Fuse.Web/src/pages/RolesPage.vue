@@ -215,12 +215,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Dialog, Notify, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useRoles } from '../composables/useRoles'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { CreateRole, UpdateRole, RoleInfo } from 'api/client'
 import { Permission } from 'permissions'
 import { getErrorMessage } from '../utils/error'
@@ -230,8 +231,20 @@ const fuseStore = useFuseStore()
 const queryClient = useQueryClient()
 const client = useFuseClient()
 
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'RolesPage_filter'
+const STORAGE_KEY_PAGE = 'RolesPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
-const pagination = { rowsPerPage: 10 }
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const isViewDialogOpen = ref(false)

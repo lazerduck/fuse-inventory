@@ -203,6 +203,7 @@ import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
 import TagChip from '../components/tags/TagChip.vue'
@@ -225,8 +226,18 @@ const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 
-const pagination = { rowsPerPage: 10 }
+const STORAGE_KEY_FILTER = 'fuse_applications_filter'
+const STORAGE_KEY_PAGE = 'fuse_applications_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
 
 const iconOptions = APPLICATION_ICON_OPTIONS
 

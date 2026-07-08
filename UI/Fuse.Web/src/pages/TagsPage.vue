@@ -176,6 +176,7 @@ import type { QTableColumn } from 'quasar'
 import { Tag, TagColor, CreateTag, UpdateTag } from 'api/client'
 import { useTags } from '../composables/useTags'
 import { useFuseClient } from '../composables/useFuseClient'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { useFuseStore } from '../stores/FuseStore'
 import { getErrorMessage } from '../utils/error'
 
@@ -190,8 +191,20 @@ const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 const tagsStore = useTags()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'TagsPage_filter'
+const STORAGE_KEY_PAGE = 'TagsPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const tags = computed(() => tagsStore.data.value ?? [])
 const isLoading = computed(() => tagsStore.isLoading.value)

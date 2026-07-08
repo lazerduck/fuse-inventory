@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -158,6 +158,7 @@ import { useTags } from '../composables/useTags'
 import { getErrorMessage } from '../utils/error'
 import DataStoreForm from '../components/dataStore/DataStoreForm.vue'
 import { useDataStores } from '../composables/useDataStores'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
 import TagChip from '../components/tags/TagChip.vue'
 
@@ -177,8 +178,20 @@ const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
 const tagsStore = useTags()
 
-const pagination = { rowsPerPage: 10 }
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'DataStoresPage_filter'
+const STORAGE_KEY_PAGE = 'DataStoresPage_page'
+
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
+})
+
 
 const { data, isLoading, error } = useDataStores()
 
