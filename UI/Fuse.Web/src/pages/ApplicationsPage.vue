@@ -239,7 +239,7 @@ function restoreState() {
   const savedPage = sessionStorage.getItem(STORAGE_KEY_PAGE)
   if (savedPage !== null) {
     const pageNum = parseInt(savedPage, 10)
-    if (!isNaN(pageNum)) pagination.page = pageNum
+    if (Number.isFinite(pageNum) && pageNum >= 1) pagination.page = pageNum
   }
 }
 

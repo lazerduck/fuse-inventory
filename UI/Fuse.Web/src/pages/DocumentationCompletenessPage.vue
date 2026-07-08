@@ -127,7 +127,7 @@ const fuseStore = useFuseStore()
 const STORAGE_KEY_FILTER = 'DocumentationCompletenessPage_filter'
 const STORAGE_KEY_PAGE = 'DocumentationCompletenessPage_page'
 
-const pagination = reactive({ rowsPerPage: 10, page: 1 })
+const pagination = reactive({ rowsPerPage: 20, page: 1 })
 const filter = ref('')
 
 // Restore persisted state from sessionStorage on mount / navigation back
