@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import type { QTableColumn } from 'quasar'
@@ -106,6 +106,7 @@ import { Permission } from 'permissions'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useEnvironments } from '../composables/useEnvironments'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 
 interface CompletenessAlertRow {
@@ -130,40 +131,11 @@ const STORAGE_KEY_PAGE = 'DocumentationCompletenessPage_page'
 const pagination = reactive({ rowsPerPage: 20, page: 1 })
 const filter = ref('')
 
-// Restore persisted state from sessionStorage on mount / navigation back
-function restoreFilterPaginationState() {
-  const savedFilter = sessionStorage.getItem(STORAGE_KEY_FILTER)
-  if (savedFilter !== null) filter.value = savedFilter
-
-  const savedPage = sessionStorage.getItem(STORAGE_KEY_PAGE)
-  if (savedPage !== null) {
-    const pageNum = parseInt(savedPage, 10)
-    if (!isNaN(pageNum)) pagination.page = pageNum
-  }
-}
-
-// Persist filter text whenever it changes
-watch(filter, (newVal) => {
-  if (newVal) {
-    sessionStorage.setItem(STORAGE_KEY_FILTER, newVal)
-  } else {
-    sessionStorage.removeItem(STORAGE_KEY_FILTER)
-  }
-})
-
-// Persist current page whenever pagination changes
-watch(pagination, (newVal) => {
-  if (newVal.page) {
-    sessionStorage.setItem(STORAGE_KEY_PAGE, String(newVal.page))
-  }
-}, { deep: true })
-
-onMounted(() => {
-  restoreFilterPaginationState()
-})
-
-onActivated(() => {
-  restoreFilterPaginationState()
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
 })
 
 

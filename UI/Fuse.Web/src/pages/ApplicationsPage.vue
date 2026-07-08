@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
@@ -203,6 +203,7 @@ import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { useTags } from '../composables/useTags'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../constants/applicationIcons'
 import TagChip from '../components/tags/TagChip.vue'
@@ -231,40 +232,11 @@ const STORAGE_KEY_PAGE = 'fuse_applications_page'
 const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
 
-// Restore persisted state from sessionStorage on mount / navigation back
-function restoreState() {
-  const savedFilter = sessionStorage.getItem(STORAGE_KEY_FILTER)
-  if (savedFilter !== null) filter.value = savedFilter
-
-  const savedPage = sessionStorage.getItem(STORAGE_KEY_PAGE)
-  if (savedPage !== null) {
-    const pageNum = parseInt(savedPage, 10)
-    if (Number.isFinite(pageNum) && pageNum >= 1) pagination.page = pageNum
-  }
-}
-
-// Persist filter text whenever it changes
-watch(filter, (newVal) => {
-  if (newVal) {
-    sessionStorage.setItem(STORAGE_KEY_FILTER, newVal)
-  } else {
-    sessionStorage.removeItem(STORAGE_KEY_FILTER)
-  }
-})
-
-// Persist current page whenever pagination changes
-watch(pagination, (newVal) => {
-  if (newVal.page) {
-    sessionStorage.setItem(STORAGE_KEY_PAGE, String(newVal.page))
-  }
-}, { deep: true })
-
-onMounted(() => {
-  restoreState()
-})
-
-onActivated(() => {
-  restoreState()
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
 })
 
 const iconOptions = APPLICATION_ICON_OPTIONS
