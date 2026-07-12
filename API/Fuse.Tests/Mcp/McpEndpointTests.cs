@@ -78,7 +78,52 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
             var tools = await SendMcpAsync(client, 2, "tools/list", new { });
             Assert.Contains("inventory_review_completeness", tools, StringComparison.Ordinal);
             Assert.Contains("inventory_update_application_documentation", tools, StringComparison.Ordinal);
+            Assert.Contains("clearFields", tools, StringComparison.Ordinal);
             Assert.DoesNotContain("\"name\":\"inventory_secret", tools, StringComparison.OrdinalIgnoreCase);
+
+            var create = await client.PostAsJsonAsync("/api/application", new
+            {
+                name = $"MCP write test {Guid.NewGuid():N}",
+                version = (string?)null,
+                description = (string?)null,
+                owner = (string?)null,
+                notes = (string?)null,
+                framework = (string?)null,
+                repositoryUri = (string?)null,
+                icon = (string?)null,
+                tagIds = Array.Empty<Guid>()
+            });
+            create.EnsureSuccessStatusCode();
+            var created = await create.Content.ReadFromJsonAsync<JsonElement>();
+            var applicationId = created.GetProperty("id").GetGuid();
+            var updatedAt = created.GetProperty("updatedAt").GetDateTime();
+
+            var update = await SendMcpAsync(client, 3, "tools/call", new
+            {
+                name = "inventory_update_application_documentation",
+                arguments = new
+                {
+                    applicationId,
+                    expectedUpdatedAt = updatedAt,
+                    changes = new { description = "Updated through MCP" }
+                }
+            });
+            Assert.DoesNotContain("\"isError\":true", update, StringComparison.Ordinal);
+
+            var read = await client.GetFromJsonAsync<JsonElement>($"/api/application/{applicationId}");
+            Assert.Equal("Updated through MCP", read.GetProperty("description").GetString());
+
+            var stale = await SendMcpAsync(client, 4, "tools/call", new
+            {
+                name = "inventory_update_application_documentation",
+                arguments = new
+                {
+                    applicationId,
+                    expectedUpdatedAt = updatedAt,
+                    changes = new { owner = "Should not be applied" }
+                }
+            });
+            Assert.Contains("record changed after it was read", stale, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {

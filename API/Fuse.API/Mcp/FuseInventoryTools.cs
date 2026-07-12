@@ -1,11 +1,11 @@
 using System.ComponentModel;
-using System.Text.Json;
 using Fuse.Core.Areas.Application;
 using Fuse.Core.Areas.Environment;
 using Fuse.Core.Areas.Platform;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Commands;
 using Fuse.Core.Models;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using ApplicationModel = Fuse.Core.Models.Application;
 
@@ -82,70 +82,66 @@ public sealed class FuseInventoryTools(
         };
     }
 
-    [McpServerTool(Name = "inventory_update_application_documentation", Destructive = false)]
+    [McpServerTool(Name = "inventory_update_application_documentation", Destructive = true)]
     [Description("Patch documented application fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateApplicationDocumentation(
         Guid applicationId, DateTime expectedUpdatedAt,
-        [Description("JSON object containing only version, description, owner, notes, framework, repositoryUri, icon, or tagIds. JSON null clears nullable fields.")]
-        JsonElement changes,
+        ApplicationDocumentationPatch changes,
         CancellationToken cancellationToken = default)
     {
         await authorization.RequireAsync(ApplicationPermissions.UpdateKey, cancellationToken);
         var app = await GetRequiredApplication(applicationId);
         EnsureCurrent(app.UpdatedAt, expectedUpdatedAt);
-        EnsureObject(changes);
-        EnsureOnly(changes, "version", "description", "owner", "notes", "framework", "repositoryUri", "icon", "tagIds");
+        ValidateClearFields(changes.ClearFields, ApplicationDocumentationPatch.ClearableFields);
 
         var command = new UpdateApplication(
             app.Id, app.Name,
-            PatchString(changes, "version", app.Version),
-            PatchString(changes, "description", app.Description),
-            PatchString(changes, "owner", app.Owner),
-            PatchString(changes, "notes", app.Notes),
-            PatchString(changes, "framework", app.Framework),
-            PatchUri(changes, "repositoryUri", app.RepositoryUri),
-            PatchString(changes, "icon", app.Icon),
-            PatchGuids(changes, "tagIds", app.TagIds));
+            PatchValue(changes.Version, app.Version, changes.Clears("version"), "version"),
+            PatchValue(changes.Description, app.Description, changes.Clears("description"), "description"),
+            PatchValue(changes.Owner, app.Owner, changes.Clears("owner"), "owner"),
+            PatchValue(changes.Notes, app.Notes, changes.Clears("notes"), "notes"),
+            PatchValue(changes.Framework, app.Framework, changes.Clears("framework"), "framework"),
+            PatchUri(changes.RepositoryUri, app.RepositoryUri, changes.Clears("repositoryUri"), "repositoryUri"),
+            PatchValue(changes.Icon, app.Icon, changes.Clears("icon"), "icon"),
+            changes.TagIds?.ToHashSet() ?? app.TagIds);
         var result = await applications.UpdateApplicationAsync(command);
         if (!result.IsSuccess)
-            throw new InvalidOperationException(result.Error);
+            throw new McpException(result.Error ?? "The application update failed.");
         return new { Before = SafeApplication(app), After = SafeApplication(result.Value!), Completeness = ToCompletenessReview(await health.GetApplicationHealth(app.Id)) };
     }
 
-    [McpServerTool(Name = "inventory_update_instance_documentation", Destructive = false)]
+    [McpServerTool(Name = "inventory_update_instance_documentation", Destructive = true)]
     [Description("Patch documented instance fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateInstanceDocumentation(
         Guid applicationId, Guid instanceId, DateTime expectedUpdatedAt,
-        [Description("JSON object containing only platformId, baseUri, healthUri, openApiUri, version, or tagIds. JSON null clears nullable fields.")]
-        JsonElement changes,
+        InstanceDocumentationPatch changes,
         CancellationToken cancellationToken = default)
     {
         await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, cancellationToken);
         var app = await GetRequiredApplication(applicationId);
         var instance = app.Instances.FirstOrDefault(i => i.Id == instanceId)
-            ?? throw new KeyNotFoundException($"Application instance '{instanceId}' was not found.");
+            ?? throw new McpException($"Application instance '{instanceId}' was not found.");
         EnsureCurrent(instance.UpdatedAt, expectedUpdatedAt);
-        EnsureObject(changes);
-        EnsureOnly(changes, "platformId", "baseUri", "healthUri", "openApiUri", "version", "tagIds");
+        ValidateClearFields(changes.ClearFields, InstanceDocumentationPatch.ClearableFields);
 
         var command = new UpdateApplicationInstance(
             app.Id, instance.Id, instance.EnvironmentId,
-            PatchGuid(changes, "platformId", instance.PlatformId),
-            PatchUri(changes, "baseUri", instance.BaseUri),
-            PatchUri(changes, "healthUri", instance.HealthUri),
-            PatchUri(changes, "openApiUri", instance.OpenApiUri),
-            PatchString(changes, "version", instance.Version),
-            PatchGuids(changes, "tagIds", instance.TagIds),
+            PatchValue(changes.PlatformId, instance.PlatformId, changes.Clears("platformId"), "platformId"),
+            PatchUri(changes.BaseUri, instance.BaseUri, changes.Clears("baseUri"), "baseUri"),
+            PatchUri(changes.HealthUri, instance.HealthUri, changes.Clears("healthUri"), "healthUri"),
+            PatchUri(changes.OpenApiUri, instance.OpenApiUri, changes.Clears("openApiUri"), "openApiUri"),
+            PatchValue(changes.Version, instance.Version, changes.Clears("version"), "version"),
+            changes.TagIds?.ToHashSet() ?? instance.TagIds,
             instance.ApiKey, instance.AppConfigurationProviderId, instance.AppConfigurationKeySuffix);
         var result = await applications.UpdateInstanceAsync(command);
         if (!result.IsSuccess)
-            throw new InvalidOperationException(result.Error);
+            throw new McpException(result.Error ?? "The application instance update failed.");
         return new { Before = SafeInstance(instance), After = SafeInstance(result.Value!), Completeness = ToCompletenessReview(await health.GetApplicationHealth(app.Id)) };
     }
 
     private async Task<ApplicationModel> GetRequiredApplication(Guid id) =>
         await applications.GetApplicationByIdAsync(id)
-        ?? throw new KeyNotFoundException($"Application '{id}' was not found.");
+        ?? throw new McpException($"Application '{id}' was not found.");
 
     private static object SafeApplication(ApplicationModel a) => new
     {
@@ -187,53 +183,39 @@ public sealed class FuseInventoryTools(
     private static void EnsureCurrent(DateTime actual, DateTime expected)
     {
         if (actual.ToUniversalTime() != expected.ToUniversalTime())
-            throw new InvalidOperationException($"The record changed after it was read. Current updatedAt is {actual:O}.");
+            throw new McpException($"The record changed after it was read. Read it again and retry with updatedAt '{actual:O}'.");
     }
 
-    private static void EnsureObject(JsonElement changes)
+    private static void ValidateClearFields(IReadOnlyList<string>? fields, IReadOnlySet<string> allowed)
     {
-        if (changes.ValueKind != JsonValueKind.Object)
-            throw new ArgumentException("changes must be a JSON object.");
+        if (fields is null) return;
+        var invalid = fields.FirstOrDefault(field => !allowed.Contains(field));
+        if (invalid is not null)
+            throw new McpException($"Field '{invalid}' cannot be cleared by this tool.");
     }
 
-    private static void EnsureOnly(JsonElement changes, params string[] allowed)
+    private static T? PatchValue<T>(T? supplied, T? current, bool clear, string fieldName) where T : struct
     {
-        var set = allowed.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var invalid = changes.EnumerateObject().FirstOrDefault(p => !set.Contains(p.Name));
-        if (invalid.Name is not null)
-            throw new ArgumentException($"Field '{invalid.Name}' cannot be changed by this tool.");
+        if (clear && supplied is not null)
+            throw new McpException($"'{fieldName}' cannot be supplied and cleared in the same update.");
+        return clear ? null : supplied ?? current;
     }
 
-    private static string? PatchString(JsonElement o, string name, string? current) =>
-        !o.TryGetProperty(name, out var value) ? current
-        : value.ValueKind == JsonValueKind.Null ? null
-        : value.ValueKind == JsonValueKind.String ? value.GetString()
-        : throw new ArgumentException($"{name} must be a string or null.");
-
-    private static Uri? PatchUri(JsonElement o, string name, Uri? current)
+    private static string? PatchValue(string? supplied, string? current, bool clear, string fieldName)
     {
-        var value = PatchString(o, name, current?.ToString());
-        if (value is null) return null;
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            throw new ArgumentException($"{name} must be an absolute URI or null.");
+        if (clear && supplied is not null)
+            throw new McpException($"'{fieldName}' cannot be supplied and cleared in the same update.");
+        return clear ? null : supplied ?? current;
+    }
+
+    private static Uri? PatchUri(string? supplied, Uri? current, bool clear, string fieldName)
+    {
+        if (clear && supplied is not null)
+            throw new McpException($"'{fieldName}' cannot be supplied and cleared in the same update.");
+        if (clear) return null;
+        if (supplied is null) return current;
+        if (!Uri.TryCreate(supplied, UriKind.Absolute, out var uri))
+            throw new McpException($"'{fieldName}' must be an absolute URI.");
         return uri;
-    }
-
-    private static Guid? PatchGuid(JsonElement o, string name, Guid? current)
-    {
-        if (!o.TryGetProperty(name, out var value)) return current;
-        if (value.ValueKind == JsonValueKind.Null) return null;
-        if (value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var id)) return id;
-        throw new ArgumentException($"{name} must be a UUID string or null.");
-    }
-
-    private static HashSet<Guid> PatchGuids(JsonElement o, string name, HashSet<Guid> current)
-    {
-        if (!o.TryGetProperty(name, out var value)) return current;
-        if (value.ValueKind != JsonValueKind.Array)
-            throw new ArgumentException($"{name} must be an array of UUID strings.");
-        try { return value.EnumerateArray().Select(x => x.GetGuid()).ToHashSet(); }
-        catch (Exception e) when (e is FormatException or InvalidOperationException)
-        { throw new ArgumentException($"{name} must contain only UUID strings."); }
     }
 }

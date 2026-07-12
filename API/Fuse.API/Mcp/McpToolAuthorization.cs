@@ -2,14 +2,13 @@ using System.Security.Claims;
 using Fuse.API.Middleware;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
-using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using ModelContextProtocol;
 
 namespace Fuse.API.Mcp;
 
 public sealed class McpToolAuthorization(
     IHttpContextAccessor contextAccessor,
-    IFuseStore store,
     IFuseRoleService roleService,
     IEnumerable<AreaPermissions> permissionCatalogs)
 {
@@ -17,7 +16,7 @@ public sealed class McpToolAuthorization(
     {
         var user = contextAccessor.HttpContext?.User;
         if (user?.Identity?.IsAuthenticated != true)
-            throw new UnauthorizedAccessException("Authentication is required.");
+            throw new McpException("Authentication is required.");
 
         if (string.Equals(user.FindFirst(AuthenticationMiddleware.IsAdminClaimType)?.Value,
                 bool.TrueString, StringComparison.OrdinalIgnoreCase))
@@ -27,10 +26,7 @@ public sealed class McpToolAuthorization(
             .Select(c => c.TryGetPermissionDescriptor(permissionKey))
             .FirstOrDefault(d => d is not null);
         if (descriptor is null)
-            throw new InvalidOperationException($"Unknown permission key '{permissionKey}'.");
-
-        // MCP tools should always require explicit role permissions; do not relax checks based on global security posture.
-        _ = await store.GetAsync(s => s.SecurityContext.Posture, ct);
+            throw new McpException($"The MCP tool is configured with unknown permission '{permissionKey}'.");
 
         var roleIds = user.FindAll(AuthenticationMiddleware.RoleIdClaimType)
             .Select(c => Guid.TryParse(c.Value, out var id) ? id : (Guid?)null)
@@ -38,11 +34,11 @@ public sealed class McpToolAuthorization(
             .Select(id => id!.Value)
             .ToList();
         if (roleIds.Count == 0)
-            throw new UnauthorizedAccessException($"Permission '{permissionKey}' is required.");
+            throw new McpException($"The API key requires the '{permissionKey}' permission.");
 
         var roles = await roleService.GetRolesByIds(roleIds);
         if (!roles.IsSuccess || !roles.Value!.SelectMany(r => r.Permissions)
                 .Contains(permissionKey, StringComparer.OrdinalIgnoreCase))
-            throw new UnauthorizedAccessException($"Permission '{permissionKey}' is required.");
+            throw new McpException($"The API key requires the '{permissionKey}' permission.");
     }
 }
