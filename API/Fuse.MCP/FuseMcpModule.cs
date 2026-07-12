@@ -27,7 +27,8 @@ public static class FuseMcpModule
             .WithTools<InventoryReadTools>()
             .WithTools<AccountTools>()
             .WithTools<InfrastructureTools>()
-            .WithTools<GovernanceTools>();
+            .WithTools<GovernanceTools>()
+            .WithTools<PatchTools>();
         return services;
     }
 
