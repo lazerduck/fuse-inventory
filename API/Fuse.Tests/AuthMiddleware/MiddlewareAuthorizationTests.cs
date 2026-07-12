@@ -280,6 +280,24 @@ public class MiddlewareAuthorizationTests : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task SystemLogs_RequireSpecificPermission()
+    {
+        if (_userTokens.TryGetValue("admin", out var adminToken) && !string.IsNullOrEmpty(adminToken))
+        {
+            var adminClient = GetOrCreateClient("admin", adminToken);
+            var response = await adminClient.GetAsync("/api/logging");
+            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        }
+
+        if (_userTokens.TryGetValue("no-permissions-user", out var noPermToken) && !string.IsNullOrEmpty(noPermToken))
+        {
+            var noPermClient = GetOrCreateClient("no-permissions-user", noPermToken);
+            var response = await noPermClient.GetAsync("/api/logging");
+            Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+        }
+    }
+
     /// <summary>
     /// Test that config export is restricted to authorized users.
     /// </summary>

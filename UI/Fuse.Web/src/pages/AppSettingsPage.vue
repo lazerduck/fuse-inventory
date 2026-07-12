@@ -138,6 +138,74 @@
           </div>
         </div>
       </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
+          <h2>Technical logging</h2>
+          <p>Control LiteDB-backed internal technical logs shown in the Logs page.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Enable technical logging</div>
+            <div class="setting-help">When disabled, Fuse stops recording new internal system log entries.</div>
+          </div>
+          <q-toggle v-model="loggingEnabled" :disable="!canEdit" aria-label="Enable technical logging" @update:model-value="saveLoggingState" />
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Minimum level</div>
+            <div class="setting-help">Only entries at or above this level are written to the internal log store.</div>
+          </div>
+          <q-select
+            v-model="loggingMinLevel"
+            :options="logLevelOptions"
+            emit-value map-options dense outlined
+            :disable="!canEdit"
+            style="min-width: 190px"
+            aria-label="Technical logging minimum level"
+            @update:model-value="saveLoggingState"
+          />
+        </div>
+        <div class="setting-row retention-row">
+          <div>
+            <div class="setting-label">Retention period</div>
+            <div class="setting-help">Older system logs are removed by the daily cleanup worker.</div>
+          </div>
+          <div class="retention-control">
+            <q-toggle v-model="loggingIndefinite" label="Keep indefinitely" :disable="!canEdit" />
+            <q-input
+              v-if="!loggingIndefinite"
+              v-model.number="loggingDaysToKeep"
+              class="retention-input"
+              dense outlined type="number" min="1" max="36500"
+              suffix="days"
+              :disable="!canEdit"
+              :error="!loggingRetentionValid"
+              error-message="Enter 1–36,500"
+              @blur="saveLoggingRetention"
+              @keyup.enter="saveLoggingRetention"
+            />
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Excluded areas</div>
+            <div class="setting-help">Optional comma-separated areas to suppress from technical logging.</div>
+          </div>
+          <q-input
+            v-model="loggingExcludeAreasText"
+            dense outlined
+            :disable="!canEdit"
+            placeholder="Security, HealthCheck"
+            style="min-width: 260px"
+            aria-label="Technical logging excluded areas"
+            @blur="saveLoggingExcludeAreas"
+            @keyup.enter="saveLoggingExcludeAreas"
+          />
+        </div>
+      </section>
       </q-card-section>
     </q-card>
   </div>
@@ -145,7 +213,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { HealthCheckProvider } from 'api/client'
+import { HealthCheckProvider, LogLevel, LoggingSettings } from 'api/client'
 import { useFuseStore } from '../stores/FuseStore'
 import { useKumaIntegrations } from '../composables/useKumaIntegrations'
 
@@ -184,18 +252,36 @@ const mcpEndpoint = computed(() => `${window.location.origin}/api/mcp`)
 
 const versionHistoryKeepCount = ref<number | null>(null)
 const auditLogDaysToKeep = ref<number | null>(null)
+const loggingEnabled = ref(true)
+const loggingMinLevel = ref(LogLevel.Info)
+const loggingDaysToKeep = ref<number | null>(null)
+const loggingExcludeAreasText = ref('')
 const lastFiniteVersionCount = ref(100)
 const lastFiniteAuditDays = ref(365)
+const lastFiniteLoggingDays = ref(30)
 watch(() => fuseStore.appSettings, settings => {
   if (!settings) return
   versionHistoryKeepCount.value = settings.versionHistoryKeepCount ?? 0
   auditLogDaysToKeep.value = settings.auditLogDaysToKeep ?? 0
+  const logging = settings.logging ?? new LoggingSettings()
+  loggingEnabled.value = logging.enabled ?? true
+  loggingMinLevel.value = logging.minLevel ?? LogLevel.Info
+  loggingDaysToKeep.value = logging.daysToKeep ?? 0
+  loggingExcludeAreasText.value = (logging.excludeAreas ?? []).join(', ')
   if ((settings.versionHistoryKeepCount ?? 0) > 0) lastFiniteVersionCount.value = settings.versionHistoryKeepCount!
   if ((settings.auditLogDaysToKeep ?? 0) > 0) lastFiniteAuditDays.value = settings.auditLogDaysToKeep!
+  if ((logging.daysToKeep ?? 0) > 0) lastFiniteLoggingDays.value = logging.daysToKeep!
 }, { immediate: true })
 
 const versionHistoryValid = computed(() => Number.isInteger(versionHistoryKeepCount.value) && versionHistoryKeepCount.value! >= 1 && versionHistoryKeepCount.value! <= 10000)
 const auditLogRetentionValid = computed(() => Number.isInteger(auditLogDaysToKeep.value) && auditLogDaysToKeep.value! >= 1 && auditLogDaysToKeep.value! <= 36500)
+const loggingRetentionValid = computed(() => Number.isInteger(loggingDaysToKeep.value) && loggingDaysToKeep.value! >= 1 && loggingDaysToKeep.value! <= 36500)
+const logLevelOptions = [
+  { label: 'Debug', value: LogLevel.Debug },
+  { label: 'Info', value: LogLevel.Info },
+  { label: 'Warning', value: LogLevel.Warning },
+  { label: 'Error', value: LogLevel.Error }
+]
 
 const versionHistoryIndefinite = computed({
   get: () => versionHistoryKeepCount.value === 0,
@@ -213,6 +299,14 @@ const auditLogIndefinite = computed({
     void fuseStore.updateAppSettings({ auditLogDaysToKeep: indefinite ? undefined : auditLogDaysToKeep.value ?? undefined })
   }
 })
+const loggingIndefinite = computed({
+  get: () => loggingDaysToKeep.value === 0,
+  set: (indefinite: boolean) => {
+    if (indefinite && loggingRetentionValid.value) lastFiniteLoggingDays.value = loggingDaysToKeep.value!
+    loggingDaysToKeep.value = indefinite ? 0 : lastFiniteLoggingDays.value
+    saveLoggingState()
+  }
+})
 
 function saveVersionHistory() {
   if (versionHistoryValid.value && versionHistoryKeepCount.value !== fuseStore.appSettings?.versionHistoryKeepCount) {
@@ -225,6 +319,47 @@ function saveAuditLogRetention() {
     lastFiniteAuditDays.value = auditLogDaysToKeep.value!
     void fuseStore.updateAppSettings({ auditLogDaysToKeep: auditLogDaysToKeep.value ?? undefined })
   }
+}
+
+function saveLoggingState() {
+  void fuseStore.updateAppSettings({
+    logging: new LoggingSettings({
+      enabled: loggingEnabled.value,
+      minLevel: loggingMinLevel.value,
+      daysToKeep: loggingDaysToKeep.value === 0 ? undefined : loggingDaysToKeep.value ?? undefined,
+      excludeAreas: parseExcludeAreas(loggingExcludeAreasText.value)
+    })
+  })
+}
+
+function saveLoggingRetention() {
+  if (loggingRetentionValid.value && loggingDaysToKeep.value !== (fuseStore.appSettings?.logging?.daysToKeep ?? 0)) {
+    lastFiniteLoggingDays.value = loggingDaysToKeep.value!
+    saveLoggingState()
+  }
+}
+
+function saveLoggingExcludeAreas() {
+  const normalized = parseExcludeAreas(loggingExcludeAreasText.value)
+  loggingExcludeAreasText.value = (normalized ?? []).join(', ')
+  const current = (fuseStore.appSettings?.logging?.excludeAreas ?? []).join('|')
+  const next = (normalized ?? []).join('|')
+  if (current !== next) {
+    saveLoggingState()
+  }
+}
+
+function parseExcludeAreas(value: string): string[] | undefined {
+  const parsed = value
+    .split(',')
+    .map(area => area.trim())
+    .filter(area => area.length > 0)
+
+  if (parsed.length === 0) {
+    return undefined
+  }
+
+  return [...new Set(parsed)]
 }
 
 const canEdit = computed(() => fuseStore.hasPermission('appsettings:update'))

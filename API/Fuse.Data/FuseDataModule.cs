@@ -1,4 +1,5 @@
 using Fuse.Core.Configs;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Areas.Activity;
 using Fuse.Core.Areas.Audit;
@@ -19,6 +20,9 @@ public static class FuseDataModule
         
         services.AddSingleton<IAuditService>(provider =>
             new LiteDbAuditService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
+
+        services.AddSingleton<ILogService>(provider =>
+            new LiteDbLogService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
         
         services.AddSingleton<IVersionHistoryService>(provider =>
             new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));

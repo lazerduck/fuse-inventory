@@ -10517,6 +10517,69 @@ export interface IAppConfigurationEntryResponse {
     keyVaultReferenceUri?: string | undefined;
 }
 
+export enum LogLevel {
+    Debug = "Debug",
+    Info = "Info",
+    Warning = "Warning",
+    Error = "Error",
+}
+
+export class LoggingSettings implements ILoggingSettings {
+    enabled?: boolean;
+    minLevel?: LogLevel;
+    daysToKeep?: number | undefined;
+    excludeAreas?: string[] | undefined;
+
+    constructor(data?: ILoggingSettings) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.enabled = _data["enabled"];
+            this.minLevel = _data["minLevel"];
+            this.daysToKeep = _data["daysToKeep"];
+            if (Array.isArray(_data["excludeAreas"])) {
+                this.excludeAreas = [] as any;
+                for (let item of _data["excludeAreas"])
+                    this.excludeAreas!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): LoggingSettings {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoggingSettings();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["enabled"] = this.enabled;
+        data["minLevel"] = this.minLevel;
+        data["daysToKeep"] = this.daysToKeep;
+        if (Array.isArray(this.excludeAreas)) {
+            data["excludeAreas"] = [];
+            for (let item of this.excludeAreas)
+                data["excludeAreas"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ILoggingSettings {
+    enabled?: boolean;
+    minLevel?: LogLevel;
+    daysToKeep?: number | undefined;
+    excludeAreas?: string[] | undefined;
+}
+
 export class AppSettings implements IAppSettings {
     incompleteDataWarningEnabled?: boolean;
     localLicenseValidationOnly?: boolean;
@@ -10524,6 +10587,7 @@ export class AppSettings implements IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
+    logging?: LoggingSettings | undefined;
     mcpServerEnabled?: boolean;
 
     constructor(data?: IAppSettings) {
@@ -10543,6 +10607,7 @@ export class AppSettings implements IAppSettings {
             this.versionHistoryKeepCount = _data["versionHistoryKeepCount"];
             this.auditLogDaysToKeep = _data["auditLogDaysToKeep"];
             this.healthCheckProvider = _data["healthCheckProvider"];
+            this.logging = _data["logging"] ? LoggingSettings.fromJS(_data["logging"]) : undefined as any;
             this.mcpServerEnabled = _data["mcpServerEnabled"];
         }
     }
@@ -10562,6 +10627,7 @@ export class AppSettings implements IAppSettings {
         data["versionHistoryKeepCount"] = this.versionHistoryKeepCount;
         data["auditLogDaysToKeep"] = this.auditLogDaysToKeep;
         data["healthCheckProvider"] = this.healthCheckProvider;
+        data["logging"] = this.logging ? this.logging.toJSON() : undefined as any;
         data["mcpServerEnabled"] = this.mcpServerEnabled;
         return data;
     }
@@ -10574,6 +10640,7 @@ export interface IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
+    logging?: LoggingSettings | undefined;
     mcpServerEnabled?: boolean;
 }
 

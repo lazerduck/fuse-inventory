@@ -365,6 +365,16 @@
                 Audit Logs
               </q-item-section>
             </q-item>
+
+            <q-item clickable v-ripple :to="{ name: 'systemLogs' }" active-class="bg-primary text-white"
+              v-if="fuseStore.hasPermission(Permission.LoggingRead)">
+              <q-item-section avatar>
+                <q-icon name="receipt_long" />
+              </q-item-section>
+              <q-item-section>
+                Logs
+              </q-item-section>
+            </q-item>
           </q-expansion-item>
         </q-list>
       </q-scroll-area>

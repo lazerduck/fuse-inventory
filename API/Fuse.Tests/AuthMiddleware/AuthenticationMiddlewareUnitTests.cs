@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Fuse.API.Middleware;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Helpers;
 using Fuse.Core.Models;
@@ -11,6 +12,8 @@ namespace Fuse.Tests.AuthMiddleware;
 
 public class AuthenticationMiddlewareUnitTests
 {
+    private static readonly ILogService LogService = Mock.Of<ILogService>();
+
     [Fact]
     public async Task InvokeAsync_WithValidApiKey_SetsApiKeyPrincipal()
     {
@@ -36,7 +39,7 @@ public class AuthenticationMiddlewareUnitTests
         var sessionService = new Mock<IFuseUserSessionService>();
         var userService = new Mock<IFuseUserService>();
 
-        await middleware.InvokeAsync(context, apiKeyService.Object, sessionService.Object, userService.Object);
+        await middleware.InvokeAsync(context, apiKeyService.Object, sessionService.Object, userService.Object, LogService);
 
         Assert.Equal(AuthenticationMiddleware.ApiKeyAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("integration-key", context.User.FindFirstValue(ClaimTypes.Name));
@@ -60,7 +63,8 @@ public class AuthenticationMiddlewareUnitTests
             context,
             apiKeyService.Object,
             Mock.Of<IFuseUserSessionService>(),
-            Mock.Of<IFuseUserService>());
+            Mock.Of<IFuseUserService>(),
+            LogService);
 
         Assert.False(context.User.Identity?.IsAuthenticated ?? false);
     }
@@ -92,7 +96,7 @@ public class AuthenticationMiddlewareUnitTests
                 DateTime.UtcNow,
                 DateTime.UtcNow)));
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object);
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService);
 
         Assert.Equal(AuthenticationMiddleware.UserAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("admin-user", context.User.FindFirstValue(ClaimTypes.Name));
@@ -109,7 +113,7 @@ public class AuthenticationMiddlewareUnitTests
 
         var sessionService = new Mock<IFuseUserSessionService>();
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, Mock.Of<IFuseUserService>());
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, Mock.Of<IFuseUserService>(), LogService);
 
         sessionService.Verify(s => s.ValidateSession(It.IsAny<string>()), Times.Never);
         Assert.False(context.User.Identity?.IsAuthenticated ?? false);
@@ -142,7 +146,7 @@ public class AuthenticationMiddlewareUnitTests
                 DateTime.UtcNow,
                 DateTime.UtcNow)));
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object);
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService);
 
         Assert.Equal(AuthenticationMiddleware.UserAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("normal-user", context.User.FindFirstValue(ClaimTypes.Name));

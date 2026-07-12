@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Fuse.Core.Areas.Audit;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
@@ -28,6 +29,7 @@ public class ConfigService : IConfigService
 {
     private readonly IFuseStore _store;
     private readonly IAuditService _auditService;
+    private readonly ILogService _logService;
     private readonly ICurrentUser _currentUser;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -49,10 +51,11 @@ public class ConfigService : IConfigService
         .WithObjectFactory(new RecordFriendlyObjectFactory())
         .Build();
 
-    public ConfigService(IFuseStore store, IAuditService auditService, ICurrentUser currentUser)
+    public ConfigService(IFuseStore store, IAuditService auditService, ILogService logService, ICurrentUser currentUser)
     {
         _store = store;
         _auditService = auditService;
+        _logService = logService;
         _currentUser = currentUser;
     }
 
@@ -90,6 +93,21 @@ public class ConfigService : IConfigService
                 Format = format.ToString(),
                 ItemCount = config.Applications.Count + config.DataStores.Count + config.Platforms.Count
             }), ct);
+
+        await _logService.LogAsync(new SystemLogEntry
+        {
+            Timestamp = DateTime.UtcNow,
+            Level = LogLevel.Info,
+            Area = "Config",
+            Message = $"Configuration export completed ({format}).",
+            Details = JsonSerializer.Serialize(new
+            {
+                Format = format.ToString(),
+                ApplicationCount = config.Applications.Count,
+                DataStoreCount = config.DataStores.Count,
+                PlatformCount = config.Platforms.Count
+            })
+        }, ct);
 
         return result;
     }
@@ -208,6 +226,20 @@ public class ConfigService : IConfigService
         }
         catch (Exception ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "Config",
+                Message = $"Configuration import parsing failed ({format}).",
+                Details = JsonSerializer.Serialize(new
+                {
+                    Format = format.ToString(),
+                    ContentLength = content.Length
+                }),
+                Exception = ex.ToString()
+            }, ct);
+
             throw new InvalidOperationException($"Failed to parse {format} content: {ex.Message}", ex);
         }
 
@@ -316,6 +348,23 @@ public class ConfigService : IConfigService
                 AccountCount = imported.Accounts.Count,
                 KumaIntegrationCount = imported.KumaIntegrations.Count
             }), ct);
+
+        await _logService.LogAsync(new SystemLogEntry
+        {
+            Timestamp = DateTime.UtcNow,
+            Level = LogLevel.Info,
+            Area = "Config",
+            Message = $"Configuration import completed ({format}).",
+            Details = JsonSerializer.Serialize(new
+            {
+                Format = format.ToString(),
+                ApplicationCount = imported.Applications.Count,
+                DataStoreCount = imported.DataStores.Count,
+                PlatformCount = imported.Platforms.Count,
+                AccountCount = imported.Accounts.Count,
+                KumaIntegrationCount = imported.KumaIntegrations.Count
+            })
+        }, ct);
     }
 
     public class ConfigSnapshot

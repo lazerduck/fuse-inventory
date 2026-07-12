@@ -73,7 +73,7 @@ public class VersionHistoryRetentionServiceTests
         // Verify exception was logged
         loggerMock.Verify(
             x => x.Log(
-                LogLevel.Warning,
+                Microsoft.Extensions.Logging.LogLevel.Warning,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
