@@ -10524,6 +10524,7 @@ export class AppSettings implements IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
+    mcpServerEnabled?: boolean;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -10542,6 +10543,7 @@ export class AppSettings implements IAppSettings {
             this.versionHistoryKeepCount = _data["versionHistoryKeepCount"];
             this.auditLogDaysToKeep = _data["auditLogDaysToKeep"];
             this.healthCheckProvider = _data["healthCheckProvider"];
+            this.mcpServerEnabled = _data["mcpServerEnabled"];
         }
     }
 
@@ -10560,6 +10562,7 @@ export class AppSettings implements IAppSettings {
         data["versionHistoryKeepCount"] = this.versionHistoryKeepCount;
         data["auditLogDaysToKeep"] = this.auditLogDaysToKeep;
         data["healthCheckProvider"] = this.healthCheckProvider;
+        data["mcpServerEnabled"] = this.mcpServerEnabled;
         return data;
     }
 }
@@ -10571,6 +10574,7 @@ export interface IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
+    mcpServerEnabled?: boolean;
 }
 
 export class Application implements IApplication {

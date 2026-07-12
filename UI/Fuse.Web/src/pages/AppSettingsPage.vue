@@ -27,6 +27,22 @@
 
       <section class="settings-section">
         <div class="section-heading">
+          <h2>AI / MCP integration</h2>
+          <p>Allow approved AI clients to review and update inventory through the Model Context Protocol.</p>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Enable MCP server</div>
+            <div class="setting-help">Disabled by default. When enabled, connect to <code>{{ mcpEndpoint }}</code> using a dedicated, least-privilege Fuse API key.</div>
+          </div>
+          <q-toggle v-model="mcpServerEnabled" :disable="!canEdit" aria-label="Enable MCP server" />
+        </div>
+      </section>
+
+      <q-separator />
+
+      <section class="settings-section">
+        <div class="section-heading">
           <h2>Health monitoring</h2>
           <p>Select the single source used to monitor application instance health URLs.</p>
         </div>
@@ -160,6 +176,11 @@ const hideValidLicenseChip = computed({
   get: () => fuseStore.appSettings?.hideValidLicenseChip ?? false,
   set: (value: boolean) => void fuseStore.updateAppSettings({ hideValidLicenseChip: value })
 })
+const mcpServerEnabled = computed({
+  get: () => fuseStore.appSettings?.mcpServerEnabled ?? false,
+  set: (value: boolean) => void fuseStore.updateAppSettings({ mcpServerEnabled: value })
+})
+const mcpEndpoint = computed(() => `${window.location.origin}/api/mcp`)
 
 const versionHistoryKeepCount = ref<number | null>(null)
 const auditLogDaysToKeep = ref<number | null>(null)
