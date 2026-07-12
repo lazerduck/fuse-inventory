@@ -18285,6 +18285,9 @@ namespace Fuse.Tests.ApiClient
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public HealthCheckProvider HealthCheckProvider { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("mcpServerEnabled", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool McpServerEnabled { get; set; }
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]

@@ -5,6 +5,7 @@ using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
 using Fuse.Data;
+using Fuse.API.Mcp;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,6 +61,10 @@ FuseCodeModule.Register(builder.Services);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddScoped<McpToolAuthorization>();
+builder.Services.AddMcpServer()
+    .WithHttpTransport(options => options.Stateless = true)
+    .WithTools<FuseInventoryTools>();
 
 var app = builder.Build();
 
@@ -88,14 +93,24 @@ app.UseHttpsRedirection();
 // Explicit routing so that SecurityMiddleware can read endpoint metadata (e.g. [RequirePermission])
 app.UseRouting();
 
+app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/mcp"), branch =>
+{
+    branch.UseMiddleware<McpAvailabilityMiddleware>();
+});
+
 // Apply security only to API routes so SPA static files and fallback aren't blocked
 app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), branch =>
 {
     branch.UseMiddleware<AuthenticationMiddleware>();
+    branch.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/mcp"), mcp =>
+    {
+        mcp.UseMiddleware<McpAuthenticationMiddleware>();
+    });
     branch.UseMiddleware<AuthorizationMiddleware>();
 });
 
 app.MapControllers();
+app.MapMcp("/api/mcp");
 
 // Fallback to index.html for SPA routing (only in production)
 if (!app.Environment.IsDevelopment())

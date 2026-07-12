@@ -10588,6 +10588,7 @@ export class AppSettings implements IAppSettings {
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
     logging?: LoggingSettings | undefined;
+    mcpServerEnabled?: boolean;
 
     constructor(data?: IAppSettings) {
         if (data) {
@@ -10607,6 +10608,7 @@ export class AppSettings implements IAppSettings {
             this.auditLogDaysToKeep = _data["auditLogDaysToKeep"];
             this.healthCheckProvider = _data["healthCheckProvider"];
             this.logging = _data["logging"] ? LoggingSettings.fromJS(_data["logging"]) : undefined as any;
+            this.mcpServerEnabled = _data["mcpServerEnabled"];
         }
     }
 
@@ -10626,6 +10628,7 @@ export class AppSettings implements IAppSettings {
         data["auditLogDaysToKeep"] = this.auditLogDaysToKeep;
         data["healthCheckProvider"] = this.healthCheckProvider;
         data["logging"] = this.logging ? this.logging.toJSON() : undefined as any;
+        data["mcpServerEnabled"] = this.mcpServerEnabled;
         return data;
     }
 }
@@ -10638,6 +10641,7 @@ export interface IAppSettings {
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
     logging?: LoggingSettings | undefined;
+    mcpServerEnabled?: boolean;
 }
 
 export class Application implements IApplication {

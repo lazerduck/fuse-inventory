@@ -8,7 +8,8 @@ public record AppSettings
     int VersionHistoryKeepCount = 0, // 0 = unlimited
     int? AuditLogDaysToKeep = null, // null = unlimited
     HealthCheckProvider HealthCheckProvider = HealthCheckProvider.None,
-    LoggingSettings? Logging = null
+    LoggingSettings? Logging = null,
+    bool McpServerEnabled = false
 );
 
 public enum HealthCheckProvider
