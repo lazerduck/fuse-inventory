@@ -13,7 +13,7 @@ using Fuse.Core.Areas.Tag;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 [McpServerToolType]
 public sealed class InventoryReadTools(

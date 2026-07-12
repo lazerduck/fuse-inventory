@@ -7,7 +7,7 @@ using Fuse.Core.Areas.Tag;
 using Fuse.Core.Commands;
 using ModelContextProtocol.Server;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 [McpServerToolType]
 public sealed class InfrastructureTools(

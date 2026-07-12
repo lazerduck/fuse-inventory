@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Areas.Tag;
+using Fuse.Core.Areas.Account;
+using Fuse.Core.Areas.Identity;
 using Fuse.Tests.TestInfrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -86,6 +88,10 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
             Assert.Contains("clearFields", tools, StringComparison.Ordinal);
             Assert.DoesNotContain("\"name\":\"inventory_secret", tools, StringComparison.OrdinalIgnoreCase);
 
+            var coreTools = await SendMcpAsync(client, 20, "tools/list", new { }, "core");
+            Assert.Contains("inventory_review_completeness", coreTools, StringComparison.Ordinal);
+            Assert.DoesNotContain("inventory_delete_application", coreTools, StringComparison.Ordinal);
+
             var create = await client.PostAsJsonAsync("/api/application", new
             {
                 name = $"MCP write test {Guid.NewGuid():N}",
@@ -155,6 +161,68 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
             });
             Assert.DoesNotContain("\"isError\":true", deleteTag, StringComparison.Ordinal);
             Assert.Null(await tagService.GetTagByIdAsync(tag.Id));
+
+            var environmentResponse = await client.PostAsJsonAsync("/api/environment", new
+            {
+                name = $"MCP environment {Guid.NewGuid():N}", description = (string?)null, tagIds = Array.Empty<Guid>()
+            });
+            environmentResponse.EnsureSuccessStatusCode();
+            var environmentId = (await environmentResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+            var targetResponse = await client.PostAsJsonAsync("/api/application", new
+            {
+                name = $"MCP target {Guid.NewGuid():N}", version = (string?)null, description = (string?)null,
+                owner = (string?)null, notes = (string?)null, framework = (string?)null,
+                repositoryUri = (string?)null, icon = (string?)null, tagIds = Array.Empty<Guid>()
+            });
+            targetResponse.EnsureSuccessStatusCode();
+            var targetId = (await targetResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+            var targetInstanceResponse = await client.PostAsJsonAsync($"/api/application/{targetId}/instances", new
+            {
+                applicationId = targetId, environmentId, platformId = (Guid?)null, baseUri = (string?)null,
+                healthUri = (string?)null, openApiUri = (string?)null, version = (string?)null,
+                tagIds = Array.Empty<Guid>()
+            });
+            targetInstanceResponse.EnsureSuccessStatusCode();
+            var targetInstanceId = (await targetInstanceResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+            var instanceResponse = await client.PostAsJsonAsync($"/api/application/{applicationId}/instances", new
+            {
+                applicationId, environmentId, platformId = (Guid?)null, baseUri = (string?)null,
+                healthUri = (string?)null, openApiUri = (string?)null, version = (string?)null,
+                tagIds = Array.Empty<Guid>()
+            });
+            instanceResponse.EnsureSuccessStatusCode();
+            var instanceId = (await instanceResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+            var dependency = await SendMcpAsync(client, 21, "tools/call", new
+            {
+                name = "inventory_create_application_dependency",
+                arguments = new { command = new { applicationId, instanceId, targetId = targetInstanceId, targetKind = "Application", authKind = "None" } }
+            });
+            Assert.True(!dependency.Contains("\"isError\":true", StringComparison.Ordinal), dependency);
+            var application = await client.GetFromJsonAsync<JsonElement>($"/api/application/{applicationId}");
+            Assert.Single(application.GetProperty("instances")[0].GetProperty("dependencies").EnumerateArray());
+
+            var accountCall = await SendMcpAsync(client, 22, "tools/call", new
+            {
+                name = "inventory_create_account",
+                arguments = new { command = new { targetId = targetInstanceId, targetKind = "Application", authKind = "None" } }
+            });
+            Assert.True(!accountCall.Contains("\"isError\":true", StringComparison.Ordinal), accountCall);
+            Assert.Contains((await fixture.Services.GetRequiredService<IAccountService>().GetAccountsAsync()),
+                account => account.TargetId == targetInstanceId && account.AuthKind == Fuse.Core.Models.AuthKind.None);
+
+            var identityName = $"MCP identity {Guid.NewGuid():N}";
+            var identityCall = await SendMcpAsync(client, 23, "tools/call", new
+            {
+                name = "inventory_create_identity",
+                arguments = new { command = new { name = identityName, kind = "Custom" } }
+            });
+            Assert.True(!identityCall.Contains("\"isError\":true", StringComparison.Ordinal), identityCall);
+            Assert.Contains((await fixture.Services.GetRequiredService<IIdentityService>().GetIdentitiesAsync()),
+                identity => identity.Name == identityName && identity.OwnerInstanceId is null);
         }
         finally
         {
@@ -162,9 +230,9 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
         }
     }
 
-    private static async Task<string> SendMcpAsync(HttpClient client, int id, string method, object parameters)
+    private static async Task<string> SendMcpAsync(HttpClient client, int id, string method, object parameters, string profile = "all")
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/mcp")
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/mcp?profile={profile}")
         {
             Content = JsonContent.Create(new { jsonrpc = "2.0", id, method, @params = parameters })
         };

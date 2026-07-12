@@ -1,11 +1,10 @@
 using System.Security.Claims;
-using Fuse.API.Middleware;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Models;
 using ModelContextProtocol;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 public sealed class McpToolAuthorization(
     IHttpContextAccessor contextAccessor,
@@ -18,7 +17,7 @@ public sealed class McpToolAuthorization(
         if (user?.Identity?.IsAuthenticated != true)
             throw new McpException("Authentication is required.");
 
-        if (string.Equals(user.FindFirst(AuthenticationMiddleware.IsAdminClaimType)?.Value,
+        if (string.Equals(user.FindFirst(FuseAuthenticationClaims.IsAdmin)?.Value,
                 bool.TrueString, StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -28,7 +27,7 @@ public sealed class McpToolAuthorization(
         if (descriptor is null)
             throw new McpException($"The MCP tool is configured with unknown permission '{permissionKey}'.");
 
-        var roleIds = user.FindAll(AuthenticationMiddleware.RoleIdClaimType)
+        var roleIds = user.FindAll(FuseAuthenticationClaims.RoleId)
             .Select(c => Guid.TryParse(c.Value, out var id) ? id : (Guid?)null)
             .Where(id => id.HasValue)
             .Select(id => id!.Value)

@@ -5,7 +5,7 @@ using Fuse.API.Middleware;
 using Fuse.Core;
 using Fuse.Core.Interfaces;
 using Fuse.Data;
-using Fuse.API.Mcp;
+using Fuse.MCP;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,14 +61,7 @@ FuseCodeModule.Register(builder.Services);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
-builder.Services.AddScoped<McpToolAuthorization>();
-builder.Services.AddMcpServer()
-    .WithHttpTransport(options => options.Stateless = true)
-    .WithTools<ApplicationTools>()
-    .WithTools<InventoryReadTools>()
-    .WithTools<AccountTools>()
-    .WithTools<InfrastructureTools>()
-    .WithTools<GovernanceTools>();
+builder.Services.AddFuseMcp();
 
 var app = builder.Build();
 
@@ -114,7 +107,7 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), branch =>
 });
 
 app.MapControllers();
-app.MapMcp("/api/mcp");
+app.MapFuseMcp();
 
 // Fallback to index.html for SPA routing (only in production)
 if (!app.Environment.IsDevelopment())

@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.0.0" />
@@ -18,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
+    <ProjectReference Include="../Fuse.MCP/Fuse.MCP.csproj" />
   </ItemGroup>
 
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish" Condition="'$(BuildSpa)' == 'true'">

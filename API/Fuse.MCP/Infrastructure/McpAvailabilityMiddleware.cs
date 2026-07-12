@@ -1,6 +1,6 @@
 using Fuse.Core.Interfaces;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 public sealed class McpAvailabilityMiddleware(RequestDelegate next)
 {

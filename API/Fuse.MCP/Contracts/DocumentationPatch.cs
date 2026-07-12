@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 [Description("Application documentation fields to change. Omitted properties remain unchanged; use clearFields to remove a value.")]
 public sealed record ApplicationDocumentationPatch
