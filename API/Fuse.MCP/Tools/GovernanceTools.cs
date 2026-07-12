@@ -5,7 +5,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Interfaces;
 using ModelContextProtocol.Server;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 [McpServerToolType]
 public sealed class GovernanceTools(

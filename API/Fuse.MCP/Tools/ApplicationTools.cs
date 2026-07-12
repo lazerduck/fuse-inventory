@@ -9,7 +9,7 @@ using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using ApplicationModel = Fuse.Core.Models.Application;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 [McpServerToolType]
 public sealed class ApplicationTools(
@@ -177,12 +177,12 @@ public sealed class ApplicationTools(
     { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeletePipelineAsync(new(applicationId, pipelineId))); }
 
     [McpServerTool(Name = "inventory_create_application_dependency", Destructive = false)]
-    public async Task<object> CreateDependency(CreateApplicationDependency command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(command)); }
+    public async Task<object> CreateDependency(ApplicationDependencyInput command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(command.ToCreate())); }
 
     [McpServerTool(Name = "inventory_replace_application_dependency", Destructive = true)]
-    public async Task<object> ReplaceDependency(UpdateApplicationDependency command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(command)); }
+    public async Task<object> ReplaceDependency(ReplaceApplicationDependencyInput command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(command.ToUpdate())); }
 
     [McpServerTool(Name = "inventory_delete_application_dependency", Destructive = true)]
     public async Task<object> DeleteDependency(Guid applicationId, Guid instanceId, Guid dependencyId, CancellationToken ct = default)

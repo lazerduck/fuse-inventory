@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security;
 using Fuse.Core.Models;
 using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
@@ -9,10 +10,10 @@ namespace Fuse.API.Middleware;
 
 public sealed class AuthenticationMiddleware
 {
-    public const string RoleIdClaimType = "role_id";
-    public const string IsAdminClaimType = "is_admin";
-    public const string ApiKeyAuthType = "ApiKey";
-    public const string UserAuthType = "User";
+    public const string RoleIdClaimType = FuseAuthenticationClaims.RoleId;
+    public const string IsAdminClaimType = FuseAuthenticationClaims.IsAdmin;
+    public const string ApiKeyAuthType = FuseAuthenticationClaims.ApiKeyAuthenticationType;
+    public const string UserAuthType = FuseAuthenticationClaims.UserAuthenticationType;
 
     private readonly RequestDelegate _next;
 

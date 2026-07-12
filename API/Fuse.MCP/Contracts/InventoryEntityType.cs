@@ -1,4 +1,4 @@
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 public enum InventoryEntityType
 {

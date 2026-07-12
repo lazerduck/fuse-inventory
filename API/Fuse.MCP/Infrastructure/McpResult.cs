@@ -1,7 +1,7 @@
 using Fuse.Core.Helpers;
 using ModelContextProtocol;
 
-namespace Fuse.API.Mcp;
+namespace Fuse.MCP;
 
 internal static class McpResult
 {
