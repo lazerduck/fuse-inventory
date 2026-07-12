@@ -12,6 +12,7 @@ using Fuse.Core.Areas.Risk;
 using Fuse.Core.Areas.Tag;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
+using System.Text.Json;
 
 namespace Fuse.MCP;
 
@@ -33,25 +34,39 @@ public sealed class InventoryReadTools(
 {
     [McpServerTool(Name = "inventory_list_items", ReadOnly = true)]
     [Description("List one kind of inventory item with its full editable definition. Use inventory_list_applications for applications.")]
-    public async Task<object> ListItems(InventoryEntityType entityType, CancellationToken ct = default)
+    public async Task<object> ListItems(InventoryEntityType entityType, string? query = null,
+        IReadOnlyList<Guid>? ids = null, IReadOnlyList<Guid>? tagIds = null,
+        Guid? environmentId = null, Guid? platformId = null, int limit = 50,
+        CancellationToken ct = default)
     {
         await authorization.RequireAsync(ReadPermission(entityType), ct);
-        return entityType switch
+        if (limit is < 1 or > 200) throw new McpException("limit must be between 1 and 200.");
+        IEnumerable<object> items = entityType switch
         {
-            InventoryEntityType.Account => await accounts.GetAccountsAsync(),
-            InventoryEntityType.DataStore => await dataStores.GetDataStoresAsync(),
-            InventoryEntityType.Environment => await environments.GetEnvironments(),
-            InventoryEntityType.ExternalResource => await externalResources.GetExternalResourcesAsync(),
-            InventoryEntityType.Identity => await identities.GetIdentitiesAsync(),
-            InventoryEntityType.MessageBroker => await messageBrokers.GetMessageBrokersAsync(),
-            InventoryEntityType.Platform => await platforms.GetPlatformsAsync(),
-            InventoryEntityType.Position => await positions.GetPositionsAsync(),
-            InventoryEntityType.ResponsibilityType => await responsibilityTypes.GetResponsibilityTypesAsync(),
-            InventoryEntityType.Responsibility => await responsibilities.GetResponsibilityAssignmentsAsync(),
-            InventoryEntityType.Risk => await risks.GetRisksAsync(),
-            InventoryEntityType.Tag => await tags.GetTagsAsync(),
+            InventoryEntityType.Account => (await accounts.GetAccountsAsync()).Cast<object>(),
+            InventoryEntityType.DataStore => (await dataStores.GetDataStoresAsync()).Cast<object>(),
+            InventoryEntityType.Environment => (await environments.GetEnvironments()).Cast<object>(),
+            InventoryEntityType.ExternalResource => (await externalResources.GetExternalResourcesAsync()).Cast<object>(),
+            InventoryEntityType.Identity => (await identities.GetIdentitiesAsync()).Cast<object>(),
+            InventoryEntityType.MessageBroker => (await messageBrokers.GetMessageBrokersAsync()).Cast<object>(),
+            InventoryEntityType.Platform => (await platforms.GetPlatformsAsync()).Cast<object>(),
+            InventoryEntityType.Position => (await positions.GetPositionsAsync()).Cast<object>(),
+            InventoryEntityType.ResponsibilityType => (await responsibilityTypes.GetResponsibilityTypesAsync()).Cast<object>(),
+            InventoryEntityType.Responsibility => (await responsibilities.GetResponsibilityAssignmentsAsync()).Cast<object>(),
+            InventoryEntityType.Risk => (await risks.GetRisksAsync()).Cast<object>(),
+            InventoryEntityType.Tag => (await tags.GetTagsAsync()).Cast<object>(),
             _ => throw new McpException($"Unsupported inventory entity type '{entityType}'.")
         };
+        var idSet = ids?.ToHashSet();
+        var tagSet = tagIds?.ToHashSet();
+        return items
+            .Where(item => idSet is null || idSet.Contains(GetGuid(item, "Id") ?? Guid.Empty))
+            .Where(item => tagSet is null || GetGuids(item, "TagIds").Any(tagSet.Contains))
+            .Where(item => environmentId is null || GetGuid(item, "EnvironmentId") == environmentId)
+            .Where(item => platformId is null || GetGuid(item, "PlatformId") == platformId || GetGuid(item, "Id") == platformId)
+            .Where(item => string.IsNullOrWhiteSpace(query) || JsonSerializer.Serialize(item).Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(limit)
+            .ToList();
     }
 
     [McpServerTool(Name = "inventory_get_item", ReadOnly = true)]
@@ -93,4 +108,10 @@ public sealed class InventoryReadTools(
         InventoryEntityType.Tag => TagPermissions.ReadKey,
         _ => throw new McpException($"Unsupported inventory entity type '{type}'.")
     };
+
+    private static Guid? GetGuid(object item, string property) =>
+        item.GetType().GetProperty(property)?.GetValue(item) as Guid?;
+
+    private static IEnumerable<Guid> GetGuids(object item, string property) =>
+        item.GetType().GetProperty(property)?.GetValue(item) as IEnumerable<Guid> ?? [];
 }

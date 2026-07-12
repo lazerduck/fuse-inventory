@@ -23,7 +23,8 @@ public sealed class ApplicationTools(
     [McpServerTool(Name = "inventory_list_applications", ReadOnly = true)]
     [Description("List safe application and instance summaries in the Fuse inventory.")]
     public async Task<object> ListApplications(
-        string? name = null, Guid? environmentId = null, Guid? tagId = null,
+        Guid? applicationId = null, string? query = null, string? name = null,
+        Guid? environmentId = null, Guid? platformId = null, Guid? tagId = null,
         bool incompleteOnly = false, CancellationToken cancellationToken = default)
     {
         await authorization.RequireAsync(ApplicationPermissions.ReadKey, cancellationToken);
@@ -33,9 +34,14 @@ public sealed class ApplicationTools(
             : [];
 
         return all
+            .Where(a => applicationId is null || a.Id == applicationId)
             .Where(a => string.IsNullOrWhiteSpace(name)
                 || a.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+            .Where(a => string.IsNullOrWhiteSpace(query) || new[]
+                { a.Name, a.Version, a.Description, a.Owner, a.Notes, a.Framework, a.RepositoryUri?.ToString() }
+                .Any(value => value?.Contains(query, StringComparison.OrdinalIgnoreCase) == true))
             .Where(a => environmentId is null || a.Instances.Any(i => i.EnvironmentId == environmentId))
+            .Where(a => platformId is null || a.Instances.Any(i => i.PlatformId == platformId))
             .Where(a => tagId is null || a.TagIds.Contains(tagId.Value) || a.Instances.Any(i => i.TagIds.Contains(tagId.Value)))
             .Where(a => !incompleteOnly || healthById.TryGetValue(a.Id, out var h) && HasGaps(h))
             .Select(a => new
@@ -86,24 +92,26 @@ public sealed class ApplicationTools(
     [Description("Patch documented application fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateApplicationDocumentation(
         Guid applicationId, DateTime expectedUpdatedAt,
-        ApplicationDocumentationPatch changes,
+        string? name = null, string? version = null, string? description = null, string? owner = null,
+        string? notes = null, string? framework = null, string? repositoryUri = null, string? icon = null,
+        IReadOnlyList<Guid>? tagIds = null, IReadOnlyList<string>? clearFields = null,
         CancellationToken cancellationToken = default)
     {
         await authorization.RequireAsync(ApplicationPermissions.UpdateKey, cancellationToken);
         var app = await GetRequiredApplication(applicationId);
         EnsureCurrent(app.UpdatedAt, expectedUpdatedAt);
-        ValidateClearFields(changes.ClearFields, ApplicationDocumentationPatch.ClearableFields);
+        ValidateClearFields(clearFields, new HashSet<string>(["version", "description", "owner", "notes", "framework", "repositoryUri", "icon", "tagIds"], StringComparer.OrdinalIgnoreCase));
 
         var command = new UpdateApplication(
-            app.Id, app.Name,
-            PatchValue(changes.Version, app.Version, changes.Clears("version"), "version"),
-            PatchValue(changes.Description, app.Description, changes.Clears("description"), "description"),
-            PatchValue(changes.Owner, app.Owner, changes.Clears("owner"), "owner"),
-            PatchValue(changes.Notes, app.Notes, changes.Clears("notes"), "notes"),
-            PatchValue(changes.Framework, app.Framework, changes.Clears("framework"), "framework"),
-            PatchUri(changes.RepositoryUri, app.RepositoryUri, changes.Clears("repositoryUri"), "repositoryUri"),
-            PatchValue(changes.Icon, app.Icon, changes.Clears("icon"), "icon"),
-            changes.TagIds?.ToHashSet() ?? app.TagIds);
+            app.Id, name ?? app.Name,
+            PatchValue(version, app.Version, Clears(clearFields, "version"), "version"),
+            PatchValue(description, app.Description, Clears(clearFields, "description"), "description"),
+            PatchValue(owner, app.Owner, Clears(clearFields, "owner"), "owner"),
+            PatchValue(notes, app.Notes, Clears(clearFields, "notes"), "notes"),
+            PatchValue(framework, app.Framework, Clears(clearFields, "framework"), "framework"),
+            PatchUri(repositoryUri, app.RepositoryUri, Clears(clearFields, "repositoryUri"), "repositoryUri"),
+            PatchValue(icon, app.Icon, Clears(clearFields, "icon"), "icon"),
+            Clears(clearFields, "tagIds") ? [] : tagIds?.ToHashSet() ?? app.TagIds);
         var result = await applications.UpdateApplicationAsync(command);
         if (!result.IsSuccess)
             throw new McpException(result.Error ?? "The application update failed.");
@@ -114,7 +122,8 @@ public sealed class ApplicationTools(
     [Description("Patch documented instance fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateInstanceDocumentation(
         Guid applicationId, Guid instanceId, DateTime expectedUpdatedAt,
-        InstanceDocumentationPatch changes,
+        Guid? platformId = null, string? baseUri = null, string? healthUri = null, string? openApiUri = null,
+        string? version = null, IReadOnlyList<Guid>? tagIds = null, IReadOnlyList<string>? clearFields = null,
         CancellationToken cancellationToken = default)
     {
         await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, cancellationToken);
@@ -122,16 +131,16 @@ public sealed class ApplicationTools(
         var instance = app.Instances.FirstOrDefault(i => i.Id == instanceId)
             ?? throw new McpException($"Application instance '{instanceId}' was not found.");
         EnsureCurrent(instance.UpdatedAt, expectedUpdatedAt);
-        ValidateClearFields(changes.ClearFields, InstanceDocumentationPatch.ClearableFields);
+        ValidateClearFields(clearFields, new HashSet<string>(["platformId", "baseUri", "healthUri", "openApiUri", "version", "tagIds"], StringComparer.OrdinalIgnoreCase));
 
         var command = new UpdateApplicationInstance(
             app.Id, instance.Id, instance.EnvironmentId,
-            PatchValue(changes.PlatformId, instance.PlatformId, changes.Clears("platformId"), "platformId"),
-            PatchUri(changes.BaseUri, instance.BaseUri, changes.Clears("baseUri"), "baseUri"),
-            PatchUri(changes.HealthUri, instance.HealthUri, changes.Clears("healthUri"), "healthUri"),
-            PatchUri(changes.OpenApiUri, instance.OpenApiUri, changes.Clears("openApiUri"), "openApiUri"),
-            PatchValue(changes.Version, instance.Version, changes.Clears("version"), "version"),
-            changes.TagIds?.ToHashSet() ?? instance.TagIds,
+            PatchValue(platformId, instance.PlatformId, Clears(clearFields, "platformId"), "platformId"),
+            PatchUri(baseUri, instance.BaseUri, Clears(clearFields, "baseUri"), "baseUri"),
+            PatchUri(healthUri, instance.HealthUri, Clears(clearFields, "healthUri"), "healthUri"),
+            PatchUri(openApiUri, instance.OpenApiUri, Clears(clearFields, "openApiUri"), "openApiUri"),
+            PatchValue(version, instance.Version, Clears(clearFields, "version"), "version"),
+            Clears(clearFields, "tagIds") ? [] : tagIds?.ToHashSet() ?? instance.TagIds,
             instance.ApiKey, instance.AppConfigurationProviderId, instance.AppConfigurationKeySuffix);
         var result = await applications.UpdateInstanceAsync(command);
         if (!result.IsSuccess)
@@ -140,49 +149,81 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_create_application", Destructive = false)]
-    public async Task<object> CreateApplication(CreateApplication command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.CreateKey, ct); return McpResult.Value(await applications.CreateApplicationAsync(command)); }
+    public async Task<object> CreateApplication(string name, string? version = null, string? description = null,
+        string? owner = null, string? notes = null, string? framework = null, string? repositoryUri = null,
+        string? icon = null, IReadOnlyList<Guid>? tagIds = null, CancellationToken ct = default)
+    {
+        await authorization.RequireAsync(ApplicationPermissions.CreateKey, ct);
+        return McpResult.Value(await applications.CreateApplicationAsync(new(name, version, description, owner, notes, framework,
+            ParseUri(repositoryUri, "repositoryUri"), icon, tagIds?.ToHashSet())));
+    }
 
     [McpServerTool(Name = "inventory_replace_application", Destructive = true)]
     [Description("Replace an application's complete definition, including its name. Read it first to preserve unchanged fields.")]
-    public async Task<object> ReplaceApplication(UpdateApplication command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateKey, ct); return McpResult.Value(await applications.UpdateApplicationAsync(command)); }
+    public async Task<object> ReplaceApplication(Guid applicationId, string name, string? version = null,
+        string? description = null, string? owner = null, string? notes = null, string? framework = null,
+        string? repositoryUri = null, string? icon = null, IReadOnlyList<Guid>? tagIds = null, CancellationToken ct = default)
+    {
+        await authorization.RequireAsync(ApplicationPermissions.UpdateKey, ct);
+        return McpResult.Value(await applications.UpdateApplicationAsync(new(applicationId, name, version, description, owner, notes,
+            framework, ParseUri(repositoryUri, "repositoryUri"), icon, tagIds?.ToHashSet())));
+    }
 
     [McpServerTool(Name = "inventory_delete_application", Destructive = true)]
     public async Task<object> DeleteApplication(Guid applicationId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteKey, ct); return McpResult.Done(await applications.DeleteApplicationAsync(new(applicationId))); }
 
     [McpServerTool(Name = "inventory_create_application_instance", Destructive = false)]
-    public async Task<object> CreateInstance(CreateApplicationInstance command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreateInstanceAsync(command)); }
+    public async Task<object> CreateInstance(Guid applicationId, Guid environmentId, Guid? platformId = null,
+        string? baseUri = null, string? healthUri = null, string? openApiUri = null, string? version = null,
+        IReadOnlyList<Guid>? tagIds = null, SecretBindingInput? apiKey = null,
+        Guid? appConfigurationProviderId = null, string? appConfigurationKeySuffix = null, CancellationToken ct = default)
+    {
+        await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct);
+        return McpResult.Value(await applications.CreateInstanceAsync(new(applicationId, environmentId, platformId,
+            ParseUri(baseUri, "baseUri"), ParseUri(healthUri, "healthUri"), ParseUri(openApiUri, "openApiUri"), version,
+            tagIds?.ToHashSet(), apiKey?.ToModel(), appConfigurationProviderId, appConfigurationKeySuffix)));
+    }
 
     [McpServerTool(Name = "inventory_replace_application_instance", Destructive = true)]
-    public async Task<object> ReplaceInstance(UpdateApplicationInstance command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateInstanceAsync(command)); }
+    public async Task<object> ReplaceInstance(Guid applicationId, Guid instanceId, Guid environmentId,
+        Guid? platformId = null, string? baseUri = null, string? healthUri = null, string? openApiUri = null,
+        string? version = null, IReadOnlyList<Guid>? tagIds = null, SecretBindingInput? apiKey = null,
+        Guid? appConfigurationProviderId = null, string? appConfigurationKeySuffix = null, CancellationToken ct = default)
+    {
+        await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct);
+        return McpResult.Value(await applications.UpdateInstanceAsync(new(applicationId, instanceId, environmentId, platformId,
+            ParseUri(baseUri, "baseUri"), ParseUri(healthUri, "healthUri"), ParseUri(openApiUri, "openApiUri"), version,
+            tagIds?.ToHashSet(), apiKey?.ToModel(), appConfigurationProviderId, appConfigurationKeySuffix)));
+    }
 
     [McpServerTool(Name = "inventory_delete_application_instance", Destructive = true)]
     public async Task<object> DeleteInstance(Guid applicationId, Guid instanceId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeleteInstanceAsync(new(applicationId, instanceId))); }
 
     [McpServerTool(Name = "inventory_create_application_pipeline", Destructive = false)]
-    public async Task<object> CreatePipeline(CreateApplicationPipeline command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreatePipelineAsync(command)); }
+    public async Task<object> CreatePipeline(Guid applicationId, string name, string? pipelineUri = null, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreatePipelineAsync(new(applicationId, name, ParseUri(pipelineUri, "pipelineUri")))); }
 
     [McpServerTool(Name = "inventory_replace_application_pipeline", Destructive = true)]
-    public async Task<object> ReplacePipeline(UpdateApplicationPipeline command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdatePipelineAsync(command)); }
+    public async Task<object> ReplacePipeline(Guid applicationId, Guid pipelineId, string name, string? pipelineUri = null, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdatePipelineAsync(new(applicationId, pipelineId, name, ParseUri(pipelineUri, "pipelineUri")))); }
 
     [McpServerTool(Name = "inventory_delete_application_pipeline", Destructive = true)]
     public async Task<object> DeletePipeline(Guid applicationId, Guid pipelineId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeletePipelineAsync(new(applicationId, pipelineId))); }
 
     [McpServerTool(Name = "inventory_create_application_dependency", Destructive = false)]
-    public async Task<object> CreateDependency(ApplicationDependencyInput command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(command.ToCreate())); }
+    public async Task<object> CreateDependency(Guid applicationId, Guid instanceId, Guid targetId, TargetKind targetKind,
+        DependencyAuthKind authKind, int? port = null, Guid? accountId = null, Guid? identityId = null,
+        DependencySeverity severity = DependencySeverity.Full, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(new(applicationId, instanceId, targetId, targetKind, port, authKind, accountId, identityId, severity))); }
 
     [McpServerTool(Name = "inventory_replace_application_dependency", Destructive = true)]
-    public async Task<object> ReplaceDependency(ReplaceApplicationDependencyInput command, CancellationToken ct = default)
-    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(command.ToUpdate())); }
+    public async Task<object> ReplaceDependency(Guid applicationId, Guid instanceId, Guid dependencyId, Guid targetId,
+        TargetKind targetKind, DependencyAuthKind authKind, int? port = null, Guid? accountId = null,
+        Guid? identityId = null, DependencySeverity severity = DependencySeverity.Full, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(new(applicationId, instanceId, dependencyId, targetId, targetKind, port, authKind, accountId, identityId, severity))); }
 
     [McpServerTool(Name = "inventory_delete_application_dependency", Destructive = true)]
     public async Task<object> DeleteDependency(Guid applicationId, Guid instanceId, Guid dependencyId, CancellationToken ct = default)
@@ -243,6 +284,8 @@ public sealed class ApplicationTools(
             throw new McpException($"Field '{invalid}' cannot be cleared by this tool.");
     }
 
+    private static bool Clears(IReadOnlyList<string>? fields, string field) => fields?.Contains(field, StringComparer.OrdinalIgnoreCase) == true;
+
     private static T? PatchValue<T>(T? supplied, T? current, bool clear, string fieldName) where T : struct
     {
         if (clear && supplied is not null)
@@ -266,5 +309,11 @@ public sealed class ApplicationTools(
         if (!Uri.TryCreate(supplied, UriKind.Absolute, out var uri))
             throw new McpException($"'{fieldName}' must be an absolute URI.");
         return uri;
+    }
+
+    private static Uri? ParseUri(string? value, string fieldName)
+    {
+        if (value is null) return null;
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : throw new McpException($"'{fieldName}' must be an absolute URI.");
     }
 }
