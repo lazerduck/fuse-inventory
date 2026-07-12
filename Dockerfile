@@ -22,6 +22,7 @@ WORKDIR /app
 COPY fuse-inventory.sln ./
 COPY API/Fuse.API/*.csproj ./API/Fuse.API/
 COPY API/Fuse.Core/*.csproj ./API/Fuse.Core/
+COPY API/Fuse.MCP/*.csproj ./API/Fuse.MCP/
 COPY API/Fuse.Data/*.csproj ./API/Fuse.Data/
 COPY API/Fuse.Tests/*.csproj ./API/Fuse.Tests/
 
