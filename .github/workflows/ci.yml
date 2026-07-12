@@ -133,6 +133,8 @@ jobs:
           GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
           GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
           BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   build-and-push-release-image:
     name: Build and Push Release Image
@@ -193,3 +195,5 @@ jobs:
           GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
           GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}
           BUILD_DATE=${{ steps.buildmeta.outputs.build_date }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
