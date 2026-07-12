@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Fuse.API;
 using Fuse.API.Middleware;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Helpers;
@@ -14,6 +15,8 @@ namespace Fuse.Tests.AuthMiddleware;
 
 public class AuthorizationMiddlewareUnitTests
 {
+    private static readonly ILogService LogService = Mock.Of<ILogService>();
+
     [Fact]
     public async Task InvokeAsync_AdminUser_BypassesAuthorizationChecks()
     {
@@ -27,7 +30,7 @@ public class AuthorizationMiddlewareUnitTests
         var context = NewContext(authenticated: true, isAdmin: true);
         var store = new Mock<IFuseStore>(MockBehavior.Strict);
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
     }
@@ -47,7 +50,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.FullyRestricted,
             users: Array.Empty<FuseUser>()));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
     }
@@ -61,7 +64,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.FullyRestricted,
             users: Array.Empty<FuseUser>()));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
@@ -75,7 +78,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.FullyRestricted,
             users: Array.Empty<FuseUser>()));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
     }
@@ -102,7 +105,7 @@ public class AuthorizationMiddlewareUnitTests
             new TestPermissions(requiredKey, isAllowedInRestrictedEditing: false, ignorePosture: false)
         };
 
-        await middleware.InvokeAsync(context, store.Object, roleService.Object, catalogs);
+        await middleware.InvokeAsync(context, store.Object, roleService.Object, LogService, catalogs);
 
         Assert.True(wasNextCalled);
     }
@@ -122,7 +125,7 @@ public class AuthorizationMiddlewareUnitTests
             new TestPermissions(requiredKey, isAllowedInRestrictedEditing: false, ignorePosture: true)
         };
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), catalogs);
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, catalogs);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
@@ -148,7 +151,7 @@ public class AuthorizationMiddlewareUnitTests
             new TestPermissions(requiredKey, isAllowedInRestrictedEditing: true, ignorePosture: false)
         };
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), catalogs);
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, catalogs);
 
         Assert.True(wasNextCalled);
     }
@@ -168,7 +171,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.RestrictedEditing,
             users: new[] { NewAdminUser() }));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
     }
@@ -203,7 +206,7 @@ public class AuthorizationMiddlewareUnitTests
             new TestPermissions(requiredKey, isAllowedInRestrictedEditing: false, ignorePosture: false)
         };
 
-        await middleware.InvokeAsync(context, store.Object, roleService.Object, catalogs);
+        await middleware.InvokeAsync(context, store.Object, roleService.Object, LogService, catalogs);
 
         Assert.True(wasNextCalled);
     }
@@ -218,7 +221,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.FullyRestricted,
             users: new[] { NewAdminUser() }));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
     }
@@ -248,7 +251,7 @@ public class AuthorizationMiddlewareUnitTests
                 new FuseRole(roleId, "Reader", "", new[] { requiredKey }, DateTime.UtcNow, DateTime.UtcNow)
             }));
 
-        await middleware.InvokeAsync(context, store.Object, roleService.Object, Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, roleService.Object, LogService, Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
     }
@@ -268,7 +271,7 @@ public class AuthorizationMiddlewareUnitTests
             posture: SecurityPosture.FullyRestricted,
             users: new[] { NewAdminUser() }));
 
-        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, Mock.Of<IFuseRoleService>(), LogService, Array.Empty<AreaPermissions>());
 
         Assert.True(wasNextCalled);
     }
@@ -289,7 +292,7 @@ public class AuthorizationMiddlewareUnitTests
             .Setup(s => s.GetRolesByIds(It.IsAny<IReadOnlyList<Guid>>()))
             .ReturnsAsync(Result<IReadOnlyList<FuseRole>>.Failure("db down", ErrorType.ServerError));
 
-        await middleware.InvokeAsync(context, store.Object, roleService.Object, Array.Empty<AreaPermissions>());
+        await middleware.InvokeAsync(context, store.Object, roleService.Object, LogService, Array.Empty<AreaPermissions>());
 
         Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
     }

@@ -160,6 +160,11 @@ const router = createRouter({
       component: () => import('./pages/AuditLogsPage.vue')
     },
     {
+      path: '/logs',
+      name: 'systemLogs',
+      component: () => import('./pages/SystemLogsPage.vue')
+    },
+    {
       path: '/activities',
       name: 'activities',
       component: () => import('./pages/ActivitiesPage.vue')

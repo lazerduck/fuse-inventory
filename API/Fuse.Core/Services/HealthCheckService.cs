@@ -1,4 +1,6 @@
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Models;
 
 namespace Fuse.Core.Services;
 
@@ -6,11 +8,13 @@ public class HealthCheckService : IHealthCheckService
 {
     private readonly string _dataDirectory;
     private readonly string _auditDbPath;
+    private readonly ILogService _logService;
 
-    public HealthCheckService(string dataDirectory)
+    public HealthCheckService(string dataDirectory, ILogService logService)
     {
         _dataDirectory = dataDirectory;
         _auditDbPath = Path.Combine(dataDirectory, "audit.db");
+        _logService = logService;
     }
 
     public async Task<bool> IsReadyAsync(CancellationToken ct = default)
@@ -24,7 +28,7 @@ public class HealthCheckService : IHealthCheckService
         var components = new Dictionary<string, ComponentHealth>();
 
         // Check data directory
-        var dataDirStatus = CheckDataDirectory();
+        var dataDirStatus = await CheckDataDirectoryAsync(ct);
         components.Add("data-directory", dataDirStatus);
 
         // Check JSON file loading
@@ -32,7 +36,7 @@ public class HealthCheckService : IHealthCheckService
         components.Add("json-files", jsonStatus);
 
         // Check LiteDB audit database (read-only check, catch-all to avoid LiteDB dependency)
-        var liteDbStatus = CheckLiteDb();
+        var liteDbStatus = await CheckLiteDbAsync(ct);
         components.Add("lite-db", liteDbStatus);
 
         var allHealthy = components.Values.All(c => c.Type == HealthStatusType.Healthy);
@@ -44,7 +48,7 @@ public class HealthCheckService : IHealthCheckService
         );
     }
 
-    private ComponentHealth CheckDataDirectory()
+    private async Task<ComponentHealth> CheckDataDirectoryAsync(CancellationToken ct)
     {
         try
         {
@@ -63,6 +67,15 @@ public class HealthCheckService : IHealthCheckService
         }
         catch (Exception ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "HealthCheck",
+                Message = "Health check failed while verifying the data directory.",
+                Exception = ex.ToString()
+            }, ct);
+
             return new ComponentHealth("data-directory", HealthStatusType.Unhealthy, ex.Message);
         }
     }
@@ -110,6 +123,15 @@ public class HealthCheckService : IHealthCheckService
 
             if (corruptedFiles.Count > 0)
             {
+                await _logService.LogAsync(new SystemLogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = LogLevel.Warning,
+                    Area = "HealthCheck",
+                    Message = "Health check detected corrupted or inaccessible JSON files.",
+                    Details = string.Join(", ", corruptedFiles)
+                }, ct);
+
                 return new ComponentHealth(
                     "json-files",
                     HealthStatusType.Unhealthy,
@@ -125,11 +147,20 @@ public class HealthCheckService : IHealthCheckService
         }
         catch (Exception ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "HealthCheck",
+                Message = "Health check failed while validating JSON files.",
+                Exception = ex.ToString()
+            }, ct);
+
             return new ComponentHealth("json-files", HealthStatusType.Unhealthy, ex.Message);
         }
     }
 
-    private ComponentHealth CheckLiteDb()
+    private async Task<ComponentHealth> CheckLiteDbAsync(CancellationToken ct)
     {
         try
         {
@@ -152,6 +183,15 @@ public class HealthCheckService : IHealthCheckService
         }
         catch (Exception ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "HealthCheck",
+                Message = "Health check failed while validating LiteDB accessibility.",
+                Exception = ex.ToString()
+            }, ct);
+
             return new ComponentHealth("lite-db", HealthStatusType.Unhealthy, ex.Message);
         }
     }

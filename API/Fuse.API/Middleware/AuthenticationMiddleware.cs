@@ -1,5 +1,9 @@
 using System.Security.Claims;
+using System.Text.Json;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Models;
+using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
 namespace Fuse.API.Middleware;
 
@@ -17,7 +21,7 @@ public sealed class AuthenticationMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IFuseAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService)
+    public async Task InvokeAsync(HttpContext context, IFuseAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService, ILogService logService)
     {
         var cancellationToken = context.RequestAborted;
 
@@ -28,6 +32,8 @@ public sealed class AuthenticationMiddleware
             var principal = await TryAuthenticateApiKeyAsync(rawApiKey, apiKeyService, cancellationToken);
             if (principal is not null)
                 context.User = principal;
+            else
+                await LogAuthFailureAsync(context, logService, "API key authentication failed.", "api-key", cancellationToken);
         }
         else
         {
@@ -37,6 +43,8 @@ public sealed class AuthenticationMiddleware
                 var principal = await TryAuthenticateTokenAsync(token, sessionService, userService, cancellationToken);
                 if (principal is not null)
                     context.User = principal;
+                else
+                    await LogAuthFailureAsync(context, logService, "Session token validation failed.", "bearer-token", cancellationToken);
             }
         }
 
@@ -111,4 +119,19 @@ public sealed class AuthenticationMiddleware
         var value = request.Headers["x-api-key"].FirstOrDefault();
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
+
+    private static Task LogAuthFailureAsync(HttpContext context, ILogService logService, string message, string authType, CancellationToken ct) =>
+        logService.LogAsync(new SystemLogEntry
+        {
+            Timestamp = DateTime.UtcNow,
+            Level = SystemLogLevel.Warning,
+            Area = "Security",
+            Message = message,
+            Details = JsonSerializer.Serialize(new
+            {
+                AuthType = authType,
+                Method = context.Request.Method,
+                Path = context.Request.Path.Value
+            })
+        }, ct);
 }

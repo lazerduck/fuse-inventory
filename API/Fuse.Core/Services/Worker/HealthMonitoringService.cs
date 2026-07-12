@@ -7,11 +7,13 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Fuse.Core.Areas.HealthMonitoring;
 using Fuse.Core.Areas.KumaIntegration;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
 namespace Fuse.Core.Services.Worker;
 
@@ -23,16 +25,18 @@ public sealed class HealthMonitoringService : BackgroundService, IHealthMonitori
     private readonly IFuseStore _store;
     private readonly IHealthMonitoringStore _healthStore;
     private readonly IKumaHealthService _kuma;
+    private readonly ILogService _logService;
     private readonly ILogger<HealthMonitoringService> _logger;
     private readonly SemaphoreSlim _wake = new(0, 1);
     private readonly object _cycleLock = new();
     private CancellationTokenSource? _cycleCts;
 
-    public HealthMonitoringService(IFuseStore store, IHealthMonitoringStore healthStore, IKumaHealthService kuma, ILogger<HealthMonitoringService> logger)
+    public HealthMonitoringService(IFuseStore store, IHealthMonitoringStore healthStore, IKumaHealthService kuma, ILogService logService, ILogger<HealthMonitoringService> logger)
     {
         _store = store;
         _healthStore = healthStore;
         _kuma = kuma;
+        _logService = logService;
         _logger = logger;
         _store.Changed += OnStoreChanged;
     }
@@ -55,7 +59,18 @@ public sealed class HealthMonitoringService : BackgroundService, IHealthMonitori
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (OperationCanceledException) { }
-            catch (Exception ex) { _logger.LogError(ex, "Health monitoring cycle failed"); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Health monitoring cycle failed");
+                await _logService.LogAsync(new SystemLogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = SystemLogLevel.Error,
+                    Area = "HealthMonitoring",
+                    Message = "Health monitoring cycle failed.",
+                    Exception = ex.ToString()
+                }, stoppingToken);
+            }
             finally { lock (_cycleLock) _cycleCts = null; }
 
             using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
@@ -126,16 +141,80 @@ public sealed class HealthMonitoringService : BackgroundService, IHealthMonitori
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("FuseInventory-HealthCheck", "1.0"));
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             var (summary, truncated, redacted) = await ReadSummaryAsync(response, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                await _logService.LogAsync(new SystemLogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = SystemLogLevel.Warning,
+                    Area = "HealthMonitoring",
+                    Message = $"Health endpoint returned {(int)response.StatusCode} for instance {instance.Id}.",
+                    Details = JsonSerializer.Serialize(new
+                    {
+                        ApplicationId = app.Id,
+                        InstanceId = instance.Id,
+                        StatusCode = (int)response.StatusCode,
+                        Summary = summary,
+                        Truncated = truncated,
+                        Redacted = redacted
+                    })
+                }, ct);
+            }
             return BaseResult(app, instance, environment, HealthCheckProvider.Internal,
                 response.IsSuccessStatusCode ? InstanceHealthState.Healthy : InstanceHealthState.Unhealthy,
                 DateTime.UtcNow, started.ElapsedMilliseconds, (int)response.StatusCode,
                 response.IsSuccessStatusCode ? null : "http-status", summary, truncated, redacted);
         }
-        catch (HealthUrlPolicyException ex) { return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: ex.Category); }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: "timeout"); }
-        catch (HttpRequestException ex) { return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: Categorize(ex)); }
-        catch (Exception ex) { _logger.LogWarning(ex, "Health check failed for instance {InstanceId}", instance.Id); return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: "request-failed"); }
+        catch (HealthUrlPolicyException ex)
+        {
+            await LogHealthFailureAsync(app, instance, "Health URL policy rejected a monitored endpoint.", ex, ct, ex.Category);
+            return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: ex.Category);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = SystemLogLevel.Warning,
+                Area = "HealthMonitoring",
+                Message = $"Health check timed out for instance {instance.Id}.",
+                Details = JsonSerializer.Serialize(new
+                {
+                    ApplicationId = app.Id,
+                    InstanceId = instance.Id
+                })
+            }, ct);
+
+            return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: "timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            await LogHealthFailureAsync(app, instance, "Health check request failed.", ex, ct, Categorize(ex));
+            return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: Categorize(ex));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Health check failed for instance {InstanceId}", instance.Id);
+            await LogHealthFailureAsync(app, instance, "Health check failed unexpectedly.", ex, ct, "request-failed");
+            return BaseResult(app, instance, environment, HealthCheckProvider.Internal, InstanceHealthState.Unhealthy, DateTime.UtcNow, started.ElapsedMilliseconds, failure: "request-failed");
+        }
     }
+
+    private Task LogHealthFailureAsync(Models.Application app, ApplicationInstance instance, string message, Exception ex, CancellationToken ct, string category) =>
+        _logService.LogAsync(new SystemLogEntry
+        {
+            Timestamp = DateTime.UtcNow,
+            Level = SystemLogLevel.Warning,
+            Area = "HealthMonitoring",
+            Message = message,
+            Details = JsonSerializer.Serialize(new
+            {
+                ApplicationId = app.Id,
+                InstanceId = instance.Id,
+                FailureCategory = category
+            }),
+            Exception = ex.ToString()
+        }, ct);
 
     private static InstanceHealthResult BaseResult(Models.Application app, ApplicationInstance instance, string? env, HealthCheckProvider provider, InstanceHealthState state,
         DateTime checkedAt, long? duration = null, int? code = null, string? failure = null, string? summary = null, bool truncated = false, bool redacted = false, string? monitor = null) =>

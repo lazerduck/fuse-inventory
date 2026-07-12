@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Fuse.API;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Configs;
 using Fuse.Core.Interfaces;
 using Fuse.Data.Stores;
@@ -163,6 +164,7 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
             {
                 services.RemoveAll<IFuseStore>();
                 services.RemoveAll<IAuditService>();
+                services.RemoveAll<ILogService>();
                 services.RemoveAll<IVersionHistoryService>();
                 services.RemoveAll<IHealthMonitoringStore>();
 
@@ -171,6 +173,9 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
 
                 services.AddSingleton<IAuditService>(provider =>
                     new LiteDbAuditService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
+
+                services.AddSingleton<ILogService>(provider =>
+                    new LiteDbLogService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
 
                 services.AddSingleton<IVersionHistoryService>(provider =>
                     new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));

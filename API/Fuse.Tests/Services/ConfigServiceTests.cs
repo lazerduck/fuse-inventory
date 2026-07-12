@@ -1,10 +1,12 @@
 using System.Text.Json;
 using Fuse.Core.Areas.Config;
 using Fuse.Core.Areas.Audit;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Tests.Helpers;
 using Fuse.Tests.TestInfrastructure;
+using Moq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -12,7 +14,7 @@ namespace Fuse.Tests.Services;
 public class ConfigServiceTests
 {
     private static ConfigService CreateService(IFuseStore store, FakeAuditService? audit = null) =>
-        new(store, audit ?? new FakeAuditService(), new FakeCurrentUser());
+        new(store, audit ?? new FakeAuditService(), Mock.Of<ILogService>(), new FakeCurrentUser());
 
     private static InMemoryFuseStore NewStoreWith(
         Application[]? applications = null,

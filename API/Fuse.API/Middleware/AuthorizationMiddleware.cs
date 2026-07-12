@@ -1,8 +1,11 @@
 using System.Security.Claims;
+using System.Text.Json;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
 namespace Fuse.API.Middleware;
 
@@ -19,6 +22,7 @@ public sealed class AuthorizationMiddleware
         HttpContext context,
         IFuseStore fuseStore,
         IFuseRoleService roleService,
+        ILogService logService,
         IEnumerable<AreaPermissions> permissionCatalogs)
     {
         var cancellationToken = context.RequestAborted;
@@ -53,6 +57,7 @@ public sealed class AuthorizationMiddleware
         {
             if (!allowDuringSetup)
             {
+                await LogDeniedAsync(context, logService, requiredKeys, posture: null, "setup-required", cancellationToken);
                 context.Response.StatusCode = user.Identity?.IsAuthenticated == true
                     ? StatusCodes.Status403Forbidden
                     : StatusCodes.Status401Unauthorized;
@@ -84,6 +89,7 @@ public sealed class AuthorizationMiddleware
                     return;
                 }
 
+                await LogDeniedAsync(context, logService, requiredKeys, posture, "permission-denied", cancellationToken);
                 context.Response.StatusCode = user.Identity?.IsAuthenticated == true
                     ? StatusCodes.Status403Forbidden
                     : StatusCodes.Status401Unauthorized;
@@ -110,6 +116,7 @@ public sealed class AuthorizationMiddleware
                     return;
                 }
 
+                await LogDeniedAsync(context, logService, requiredKeys, posture, "permission-denied", cancellationToken);
                 context.Response.StatusCode = user.Identity?.IsAuthenticated == true
                     ? StatusCodes.Status403Forbidden
                     : StatusCodes.Status401Unauthorized;
@@ -128,6 +135,7 @@ public sealed class AuthorizationMiddleware
                     return;
                 }
 
+                await LogDeniedAsync(context, logService, requiredKeys, posture, "permission-denied", cancellationToken);
                 context.Response.StatusCode = user.Identity?.IsAuthenticated == true
                     ? StatusCodes.Status403Forbidden
                     : StatusCodes.Status401Unauthorized;
@@ -178,4 +186,29 @@ public sealed class AuthorizationMiddleware
         var allPermissions = rolesResult.Value!.SelectMany(r => r.Permissions).ToHashSet(StringComparer.OrdinalIgnoreCase);
         return requiredKeys.Any(key => allPermissions.Contains(key));
     }
+
+    private static Task LogDeniedAsync(
+        HttpContext context,
+        ILogService logService,
+        IReadOnlyList<string>? requiredKeys,
+        SecurityPosture? posture,
+        string reason,
+        CancellationToken cancellationToken) =>
+        logService.LogAsync(new SystemLogEntry
+        {
+            Timestamp = DateTime.UtcNow,
+            Level = SystemLogLevel.Warning,
+            Area = "Security",
+            Message = "Authorization request denied.",
+            Details = JsonSerializer.Serialize(new
+            {
+                Reason = reason,
+                Posture = posture?.ToString(),
+                Method = context.Request.Method,
+                Path = context.Request.Path.Value,
+                RequiredPermissions = requiredKeys,
+                IsAuthenticated = context.User.Identity?.IsAuthenticated == true,
+                UserName = context.User.Identity?.Name
+            })
+        }, cancellationToken);
 }

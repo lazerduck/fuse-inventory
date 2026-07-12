@@ -8,6 +8,7 @@ using Fuse.Core.Areas.DataStore;
 using Fuse.Core.Areas.Environment;
 using Fuse.Core.Areas.ExternalResource;
 using Fuse.Core.Areas.Identity;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Platform;
 using Fuse.Core.Areas.Position;
 using Fuse.Core.Areas.Risk;
@@ -35,6 +36,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     private enum Permission
     {
         AuditLogsView,
+        LoggingRead,
         ConfigurationExport,
         UsersRead,
         RolesRead,
@@ -59,6 +61,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     private static readonly Dictionary<string, string> PermissionKeyMap = new(StringComparer.OrdinalIgnoreCase)
     {
         [nameof(Permission.AuditLogsView)]        = AuditPermissions.ViewKey,
+        [nameof(Permission.LoggingRead)]          = LoggingPermissions.ReadKey,
         [nameof(Permission.ConfigurationExport)]  = ConfigPermissions.ExportKey,
         [nameof(Permission.UsersRead)]            = UserAccountPermissions.ReadKey,
         [nameof(Permission.UsersCreate)]          = UserAccountPermissions.CreateKey,
@@ -103,6 +106,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     {
         // Permission-specifically gated (handled outside the CRUD matrix)
         new object[] { nameof(Permission.AuditLogsView),        "GET", "/api/audit" },
+        new object[] { nameof(Permission.LoggingRead),          "GET", "/api/logging" },
         new object[] { nameof(Permission.ConfigurationExport),  "GET", "/api/config/export" },
         new object[] { nameof(Permission.UsersRead),            "GET", "/api/security/accounts" },
         new object[] { nameof(Permission.RolesRead),            "GET", "/api/role" },

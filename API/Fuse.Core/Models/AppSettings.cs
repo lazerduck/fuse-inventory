@@ -7,7 +7,8 @@ public record AppSettings
     bool HideValidLicenseChip = false,
     int VersionHistoryKeepCount = 0, // 0 = unlimited
     int? AuditLogDaysToKeep = null, // null = unlimited
-    HealthCheckProvider HealthCheckProvider = HealthCheckProvider.None
+    HealthCheckProvider HealthCheckProvider = HealthCheckProvider.None,
+    LoggingSettings? Logging = null
 );
 
 public enum HealthCheckProvider

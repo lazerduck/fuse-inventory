@@ -1,8 +1,10 @@
 using Fuse.Core.Areas.Application;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Services;
 using Fuse.Tests.TestInfrastructure;
+using Moq;
 using Xunit;
 
 namespace Fuse.Tests.Services;
@@ -10,6 +12,7 @@ namespace Fuse.Tests.Services;
 public class HealthServicesTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"fuse-health-{Guid.NewGuid():N}");
+    private readonly ILogService _logService = Mock.Of<ILogService>();
 
     public void Dispose()
     {
@@ -19,14 +22,14 @@ public class HealthServicesTests : IDisposable
     [Fact]
     public async Task HealthCheck_CreatesMissingDirectoryAndReportsDegradedOptionalFiles()
     {
-        var status = await new HealthCheckService(_directory).GetStatusAsync();
+        var status = await new HealthCheckService(_directory, _logService).GetStatusAsync();
 
         Assert.False(status.IsHealthy);
         Assert.Equal("Unhealthy", status.Status);
         Assert.Equal(HealthStatusType.Healthy, status.Components["data-directory"].Type);
         Assert.Equal(HealthStatusType.Degraded, status.Components["json-files"].Type);
         Assert.Equal(HealthStatusType.Degraded, status.Components["lite-db"].Type);
-        Assert.False(await new HealthCheckService(_directory).IsReadyAsync());
+        Assert.False(await new HealthCheckService(_directory, _logService).IsReadyAsync());
     }
 
     [Fact]
@@ -36,7 +39,7 @@ public class HealthServicesTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(_directory, "data.json"), "{\"ok\":true}");
         await File.WriteAllTextAsync(Path.Combine(_directory, "empty.json"), " ");
         await File.WriteAllTextAsync(Path.Combine(_directory, "audit.db"), "content");
-        var service = new HealthCheckService(_directory);
+        var service = new HealthCheckService(_directory, _logService);
 
         var status = await service.GetStatusAsync();
 
@@ -52,7 +55,7 @@ public class HealthServicesTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(_directory, "bad.json"), "not json");
         File.Create(Path.Combine(_directory, "audit.db")).Dispose();
 
-        var status = await new HealthCheckService(_directory).GetStatusAsync();
+        var status = await new HealthCheckService(_directory, _logService).GetStatusAsync();
 
         Assert.Equal(HealthStatusType.Unhealthy, status.Components["json-files"].Type);
         Assert.Contains("bad.json", status.Components["json-files"].Description);

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Microsoft.Data.SqlClient;
@@ -6,6 +8,13 @@ namespace Fuse.Core.Areas.SqlIntegration;
 
 public class SqlConnectionValidator : ISqlConnectionValidator
 {
+    private readonly ILogService _logService;
+
+    public SqlConnectionValidator(ILogService logService)
+    {
+        _logService = logService;
+    }
+
     public async Task<(bool IsSuccessful, SqlPermissions Permissions, string? ErrorMessage)> ValidateConnectionAsync(
         string connectionString, 
         CancellationToken ct = default)
@@ -25,6 +34,15 @@ public class SqlConnectionValidator : ISqlConnectionValidator
             }
             catch (ArgumentException ex)
             {
+                await _logService.LogAsync(new SystemLogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = LogLevel.Warning,
+                    Area = "SqlIntegration",
+                    Message = "SQL connection validation rejected an invalid connection string.",
+                    Exception = ex.ToString()
+                }, ct);
+
                 return (false, SqlPermissions.None, $"Invalid connection string: {ex.Message}");
             }
 
@@ -55,10 +73,29 @@ public class SqlConnectionValidator : ISqlConnectionValidator
         }
         catch (SqlException ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "SqlIntegration",
+                Message = "SQL connection validation failed.",
+                Details = JsonSerializer.Serialize(new { ErrorNumber = ex.Number }),
+                Exception = ex.ToString()
+            }, ct);
+
             return (false, SqlPermissions.None, $"SQL connection failed: {ex.Message}");
         }
         catch (Exception ex)
         {
+            await _logService.LogAsync(new SystemLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Level = LogLevel.Error,
+                Area = "SqlIntegration",
+                Message = "SQL connection validation encountered an unexpected error.",
+                Exception = ex.ToString()
+            }, ct);
+
             return (false, SqlPermissions.None, $"Connection failed: {ex.Message}");
         }
     }

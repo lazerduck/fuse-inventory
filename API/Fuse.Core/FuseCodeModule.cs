@@ -8,6 +8,7 @@ using Fuse.Core.Areas.Environment;
 using Fuse.Core.Areas.ExternalResource;
 using Fuse.Core.Areas.Identity;
 using Fuse.Core.Areas.KumaIntegration;
+using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.MessageBroker;
 using Fuse.Core.Areas.PasswordGenerator;
 using Fuse.Core.Areas.Platform;
@@ -69,6 +70,7 @@ public static class FuseCodeModule
         });
         services.AddHostedService<LicenseValidationService>();
         services.AddHostedService<AuditLogRetentionService>();
+        services.AddHostedService<LogRetentionService>();
         services.AddHostedService<VersionHistoryRetentionService>();
         
         // Register version history retention policy service
@@ -77,6 +79,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, ActivityPermissions>();
         services.AddSingleton<AreaPermissions, ApplicationPermissions>();
         services.AddSingleton<AreaPermissions, AuditPermissions>();
+        services.AddSingleton<AreaPermissions, LoggingPermissions>();
         services.AddSingleton<AreaPermissions, ConfigPermissions>();
         services.AddSingleton<AreaPermissions, DataStorePermissions>();
         services.AddSingleton<AreaPermissions, EnvironmentPermissions>();
@@ -155,6 +158,6 @@ public static class FuseCodeModule
         var healthDataDir = Environment.GetEnvironmentVariable("FUSE_DATA_DIR")
             ?? Path.Combine(AppContext.BaseDirectory, "data");
         services.AddSingleton<IHealthCheckService>(sp =>
-            new HealthCheckService(healthDataDir));
+            new HealthCheckService(healthDataDir, sp.GetRequiredService<ILogService>()));
     }
 }
