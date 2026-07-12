@@ -90,10 +90,6 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
             Assert.DoesNotContain("\"command\":", tools, StringComparison.Ordinal);
             Assert.DoesNotContain("\"name\":\"inventory_secret", tools, StringComparison.OrdinalIgnoreCase);
 
-            var coreTools = await SendMcpAsync(client, 20, "tools/list", new { }, "core");
-            Assert.Contains("inventory_review_completeness", coreTools, StringComparison.Ordinal);
-            Assert.DoesNotContain("inventory_delete_application", coreTools, StringComparison.Ordinal);
-
             var create = await client.PostAsJsonAsync("/api/application", new
             {
                 name = $"MCP write test {Guid.NewGuid():N}",
@@ -255,9 +251,9 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
         }
     }
 
-    private static async Task<string> SendMcpAsync(HttpClient client, int id, string method, object parameters, string profile = "all")
+    private static async Task<string> SendMcpAsync(HttpClient client, int id, string method, object parameters)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/mcp?profile={profile}")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/mcp")
         {
             Content = JsonContent.Create(new { jsonrpc = "2.0", id, method, @params = parameters })
         };
