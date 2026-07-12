@@ -26,13 +26,11 @@ public sealed class McpToolAuthorization(
         var descriptor = permissionCatalogs
             .Select(c => c.TryGetPermissionDescriptor(permissionKey))
             .FirstOrDefault(d => d is not null);
-        var posture = await store.GetAsync(s => s.SecurityContext.Posture, ct);
+        if (descriptor is null)
+            throw new InvalidOperationException($"Unknown permission key '{permissionKey}'.");
 
-        if (posture == SecurityPosture.Unrestricted && descriptor?.IgnorePosture != true)
-            return;
-        if (posture == SecurityPosture.RestrictedEditing
-            && descriptor is { IgnorePosture: not true, IsAllowedInRestrictedEditing: true })
-            return;
+        // MCP tools should always require explicit role permissions; do not relax checks based on global security posture.
+        _ = await store.GetAsync(s => s.SecurityContext.Posture, ct);
 
         var roleIds = user.FindAll(AuthenticationMiddleware.RoleIdClaimType)
             .Select(c => Guid.TryParse(c.Value, out var id) ? id : (Guid?)null)
