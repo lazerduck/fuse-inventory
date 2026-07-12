@@ -12,7 +12,7 @@ using ApplicationModel = Fuse.Core.Models.Application;
 namespace Fuse.API.Mcp;
 
 [McpServerToolType]
-public sealed class FuseInventoryTools(
+public sealed class ApplicationTools(
     IApplicationService applications,
     IApplicationHealthService health,
     IEnvironmentService environments,
@@ -82,7 +82,7 @@ public sealed class FuseInventoryTools(
         };
     }
 
-    [McpServerTool(Name = "inventory_update_application_documentation", Destructive = true)]
+    [McpServerTool(Name = "inventory_patch_application", Destructive = true)]
     [Description("Patch documented application fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateApplicationDocumentation(
         Guid applicationId, DateTime expectedUpdatedAt,
@@ -110,7 +110,7 @@ public sealed class FuseInventoryTools(
         return new { Before = SafeApplication(app), After = SafeApplication(result.Value!), Completeness = ToCompletenessReview(await health.GetApplicationHealth(app.Id)) };
     }
 
-    [McpServerTool(Name = "inventory_update_instance_documentation", Destructive = true)]
+    [McpServerTool(Name = "inventory_patch_application_instance", Destructive = true)]
     [Description("Patch documented instance fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateInstanceDocumentation(
         Guid applicationId, Guid instanceId, DateTime expectedUpdatedAt,
@@ -138,6 +138,55 @@ public sealed class FuseInventoryTools(
             throw new McpException(result.Error ?? "The application instance update failed.");
         return new { Before = SafeInstance(instance), After = SafeInstance(result.Value!), Completeness = ToCompletenessReview(await health.GetApplicationHealth(app.Id)) };
     }
+
+    [McpServerTool(Name = "inventory_create_application", Destructive = false)]
+    public async Task<object> CreateApplication(CreateApplication command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.CreateKey, ct); return McpResult.Value(await applications.CreateApplicationAsync(command)); }
+
+    [McpServerTool(Name = "inventory_replace_application", Destructive = true)]
+    [Description("Replace an application's complete definition, including its name. Read it first to preserve unchanged fields.")]
+    public async Task<object> ReplaceApplication(UpdateApplication command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateKey, ct); return McpResult.Value(await applications.UpdateApplicationAsync(command)); }
+
+    [McpServerTool(Name = "inventory_delete_application", Destructive = true)]
+    public async Task<object> DeleteApplication(Guid applicationId, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.DeleteKey, ct); return McpResult.Done(await applications.DeleteApplicationAsync(new(applicationId))); }
+
+    [McpServerTool(Name = "inventory_create_application_instance", Destructive = false)]
+    public async Task<object> CreateInstance(CreateApplicationInstance command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreateInstanceAsync(command)); }
+
+    [McpServerTool(Name = "inventory_replace_application_instance", Destructive = true)]
+    public async Task<object> ReplaceInstance(UpdateApplicationInstance command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateInstanceAsync(command)); }
+
+    [McpServerTool(Name = "inventory_delete_application_instance", Destructive = true)]
+    public async Task<object> DeleteInstance(Guid applicationId, Guid instanceId, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeleteInstanceAsync(new(applicationId, instanceId))); }
+
+    [McpServerTool(Name = "inventory_create_application_pipeline", Destructive = false)]
+    public async Task<object> CreatePipeline(CreateApplicationPipeline command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreatePipelineAsync(command)); }
+
+    [McpServerTool(Name = "inventory_replace_application_pipeline", Destructive = true)]
+    public async Task<object> ReplacePipeline(UpdateApplicationPipeline command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdatePipelineAsync(command)); }
+
+    [McpServerTool(Name = "inventory_delete_application_pipeline", Destructive = true)]
+    public async Task<object> DeletePipeline(Guid applicationId, Guid pipelineId, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeletePipelineAsync(new(applicationId, pipelineId))); }
+
+    [McpServerTool(Name = "inventory_create_application_dependency", Destructive = false)]
+    public async Task<object> CreateDependency(CreateApplicationDependency command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(command)); }
+
+    [McpServerTool(Name = "inventory_replace_application_dependency", Destructive = true)]
+    public async Task<object> ReplaceDependency(UpdateApplicationDependency command, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(command)); }
+
+    [McpServerTool(Name = "inventory_delete_application_dependency", Destructive = true)]
+    public async Task<object> DeleteDependency(Guid applicationId, Guid instanceId, Guid dependencyId, CancellationToken ct = default)
+    { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Done(await applications.DeleteDependencyAsync(new(applicationId, instanceId, dependencyId))); }
 
     private async Task<ApplicationModel> GetRequiredApplication(Guid id) =>
         await applications.GetApplicationByIdAsync(id)

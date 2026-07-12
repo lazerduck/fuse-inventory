@@ -64,7 +64,11 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<McpToolAuthorization>();
 builder.Services.AddMcpServer()
     .WithHttpTransport(options => options.Stateless = true)
-    .WithTools<FuseInventoryTools>();
+    .WithTools<ApplicationTools>()
+    .WithTools<InventoryReadTools>()
+    .WithTools<AccountTools>()
+    .WithTools<InfrastructureTools>()
+    .WithTools<GovernanceTools>();
 
 var app = builder.Build();
 
