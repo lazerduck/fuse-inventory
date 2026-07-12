@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar, type QTableColumn } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
@@ -144,6 +144,7 @@ import { useAccounts } from '../composables/useAccounts'
 import { useIdentities } from '../composables/useIdentities'
 import { useDataStores } from '../composables/useDataStores'
 import { useExternalResources } from '../composables/useExternalResources'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
 import type { Risk } from 'api/client'
 import { Permission } from 'permissions'
 
@@ -168,12 +169,22 @@ const { data: identities } = useIdentities()
 const { data: dataStores } = useDataStores()
 const { data: externalResources } = useExternalResources()
 
-const filter = ref('')
+// sessionStorage persistence for filter and pagination state
+const STORAGE_KEY_FILTER = 'RisksPage_filter'
+const STORAGE_KEY_PAGE = 'RisksPage_page'
+
 const targetTypeFilter = ref<string | null>(null)
 
-const pagination = ref({
-  rowsPerPage: 20
+const pagination = reactive({ rowsPerPage: 20, page: 1 })
+const filter = ref('')
+
+usePersistedTableState({
+  filterStorageKey: STORAGE_KEY_FILTER,
+  pageStorageKey: STORAGE_KEY_PAGE,
+  filter,
+  pagination
 })
+
 
 const targetTypeOptions = [
   { label: 'All Types', value: null },
