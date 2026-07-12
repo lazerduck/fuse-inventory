@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Tag;
 using Fuse.Tests.TestInfrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -77,7 +78,11 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
 
             var tools = await SendMcpAsync(client, 2, "tools/list", new { });
             Assert.Contains("inventory_review_completeness", tools, StringComparison.Ordinal);
-            Assert.Contains("inventory_update_application_documentation", tools, StringComparison.Ordinal);
+            Assert.Contains("inventory_patch_application", tools, StringComparison.Ordinal);
+            Assert.Contains("inventory_create_tag", tools, StringComparison.Ordinal);
+            Assert.Contains("inventory_replace_platform", tools, StringComparison.Ordinal);
+            Assert.Contains("inventory_delete_application", tools, StringComparison.Ordinal);
+            Assert.Contains("inventory_list_items", tools, StringComparison.Ordinal);
             Assert.Contains("clearFields", tools, StringComparison.Ordinal);
             Assert.DoesNotContain("\"name\":\"inventory_secret", tools, StringComparison.OrdinalIgnoreCase);
 
@@ -100,7 +105,7 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
 
             var update = await SendMcpAsync(client, 3, "tools/call", new
             {
-                name = "inventory_update_application_documentation",
+                name = "inventory_patch_application",
                 arguments = new
                 {
                     applicationId,
@@ -115,7 +120,7 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
 
             var stale = await SendMcpAsync(client, 4, "tools/call", new
             {
-                name = "inventory_update_application_documentation",
+                name = "inventory_patch_application",
                 arguments = new
                 {
                     applicationId,
@@ -124,6 +129,32 @@ public sealed class McpEndpointTests(ApiIntegrationFixture fixture)
                 }
             });
             Assert.Contains("record changed after it was read", stale, StringComparison.OrdinalIgnoreCase);
+
+            var tagName = $"MCP tag {Guid.NewGuid():N}";
+            var createTag = await SendMcpAsync(client, 5, "tools/call", new
+            {
+                name = "inventory_create_tag",
+                arguments = new { command = new { name = tagName, description = "Created through MCP", color = "Blue" } }
+            });
+            Assert.DoesNotContain("\"isError\":true", createTag, StringComparison.Ordinal);
+
+            var tagService = fixture.Services.GetRequiredService<ITagService>();
+            var tag = (await tagService.GetTagsAsync()).Single(x => x.Name == tagName);
+            var updateTag = await SendMcpAsync(client, 6, "tools/call", new
+            {
+                name = "inventory_replace_tag",
+                arguments = new { command = new { id = tag.Id, name = $"{tagName} renamed", description = "Updated through MCP", color = "Green" } }
+            });
+            Assert.DoesNotContain("\"isError\":true", updateTag, StringComparison.Ordinal);
+            Assert.Equal($"{tagName} renamed", (await tagService.GetTagByIdAsync(tag.Id))!.Name);
+
+            var deleteTag = await SendMcpAsync(client, 7, "tools/call", new
+            {
+                name = "inventory_delete_tag",
+                arguments = new { tagId = tag.Id }
+            });
+            Assert.DoesNotContain("\"isError\":true", deleteTag, StringComparison.Ordinal);
+            Assert.Null(await tagService.GetTagByIdAsync(tag.Id));
         }
         finally
         {
