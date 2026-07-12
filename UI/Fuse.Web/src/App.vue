@@ -23,6 +23,10 @@
 
         <LicenseChip />
 
+        <q-btn dense flat round icon="info_outline" aria-label="About Fuse Inventory" @click="openAboutDialog">
+          <q-tooltip>About Fuse Inventory</q-tooltip>
+        </q-btn>
+
         <q-btn dense flat round icon="help_outline">
           <q-menu anchor="bottom right" self="top right" auto-close>
             <q-list style="min-width: 220px">
@@ -385,6 +389,34 @@
 
     <InitialSetupWizard :model-value="showSetupWizard" @created="handleEnvironmentCreated" />
 
+    <q-dialog v-model="aboutDialogOpen">
+      <q-card class="about-dialog">
+        <q-card-section class="about-header">
+          <div>
+            <div class="text-h6">Fuse Inventory</div>
+            <div class="text-caption text-grey-6">Build information</div>
+          </div>
+          <q-btn v-close-popup flat round dense icon="close" aria-label="Close" />
+        </q-card-section>
+
+        <q-card-section v-if="aboutQuery.isFetching.value" class="about-state">
+          <q-spinner color="primary" size="28px" />
+          <span>Loading build details…</span>
+        </q-card-section>
+        <q-card-section v-else-if="aboutQuery.error.value" class="about-state text-negative">
+          <q-icon name="error_outline" size="28px" />
+          <span>{{ getErrorMessage(aboutQuery.error.value, 'Unable to load build details.') }}</span>
+          <q-btn flat dense color="primary" label="Retry" @click="aboutQuery.refetch()" />
+        </q-card-section>
+        <q-card-section v-else-if="aboutQuery.data.value" class="about-details">
+          <div v-for="detail in aboutDetails" :key="detail.label" class="about-detail">
+            <span class="about-label">{{ detail.label }}</span>
+            <span :class="{ 'about-monospace': detail.monospace }">{{ detail.value }}</span>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="showOnboardingPrompt">
       <q-card style="min-width: 320px; max-width: 480px">
         <q-card-section class="row items-center">
@@ -410,6 +442,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify, Dialog, useQuasar } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
@@ -427,6 +460,7 @@ import InitialSetupWizard from './components/onboarding/InitialSetupWizard.vue'
 import InventoryNavigator from './components/InventoryNavigator.vue'
 import LicenseChip from './components/license/LicenseChip.vue'
 import { saveThemePreference } from './utils/themePreference'
+import { useFuseClient } from './composables/useFuseClient'
 
 const leftDrawerOpen = ref(true)
 const quasar = useQuasar()
@@ -435,10 +469,23 @@ const router = useRouter()
 const route = useRoute()
 const onboardingStore = useOnboardingStore()
 const { startTour } = useOnboardingTour()
+const client = useFuseClient()
 
 const environmentsQuery = useEnvironments()
 const dataStoresQuery = useDataStores()
 const applicationsQuery = useApplications()
+const aboutQuery = useQuery({ queryKey: ['about'], queryFn: () => client.aboutGet(), enabled: false, staleTime: Infinity })
+const aboutDialogOpen = ref(false)
+const aboutDetails = computed(() => {
+  const about = aboutQuery.data.value
+  if (!about) return []
+  return [
+    { label: 'Version', value: about.version || 'Unknown' },
+    { label: 'Channel', value: about.channel || 'Unknown' },
+    { label: 'Built', value: about.buildDate || 'Unknown' },
+    { label: 'Commit', value: about.gitCommitIdShort || about.gitCommitId || 'Unknown', monospace: true }
+  ]
+})
 
 const isIncompleteDataWarningEnabled = computed(() => fuseStore.appSettings?.incompleteDataWarningEnabled ?? false)
 
@@ -450,6 +497,11 @@ function toggleTheme() {
   const useDarkTheme = !quasar.dark.isActive
   quasar.dark.set(useDarkTheme)
   saveThemePreference(useDarkTheme ? 'dark' : 'light')
+}
+
+function openAboutDialog() {
+  aboutDialogOpen.value = true
+  if (!aboutQuery.data.value && !aboutQuery.isFetching.value) void aboutQuery.refetch()
 }
 watch(healthMonitoringEnabled, enabled => {
   if (!enabled && route.name === 'healthOverview') void router.replace({ name: 'home' })
@@ -694,6 +746,51 @@ h1 {
 
 .app-nav {
   background: var(--fuse-card-bg);
+}
+
+.about-dialog {
+  width: min(360px, calc(100vw - 32px));
+}
+
+.about-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 8px 20px;
+}
+
+.about-details {
+  display: grid;
+  gap: 8px;
+  padding: 8px 20px 20px;
+}
+
+.about-detail {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.about-label {
+  color: var(--fuse-text-muted);
+  font-size: 0.8rem;
+}
+
+.about-state {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.about-monospace {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow-wrap: anywhere;
 }
 
 .nav-list {

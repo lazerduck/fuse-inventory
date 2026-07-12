@@ -120,6 +120,7 @@
         </div>
       </q-slide-transition>
     </section>
+
   </div>
 </template>
 

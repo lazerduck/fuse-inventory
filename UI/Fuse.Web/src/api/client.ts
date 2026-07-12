@@ -12,7 +12,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    aboutGet(signal?: AbortSignal): Promise<void>;
+    aboutGet(signal?: AbortSignal): Promise<AboutResponse>;
 
     /**
      * @return OK
@@ -968,7 +968,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    aboutGet(signal?: AbortSignal): Promise<void> {
+    aboutGet(signal?: AbortSignal): Promise<AboutResponse> {
         let url_ = this.baseUrl + "/api/About";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -984,19 +984,22 @@ export class FuseApiClient implements IFuseApiClient {
         });
     }
 
-    protected processAboutGet(response: Response): Promise<void> {
+    protected processAboutGet(response: Response): Promise<AboutResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AboutResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<AboutResponse>(null as any);
     }
 
     /**
@@ -9985,6 +9988,57 @@ export class FuseApiClient implements IFuseApiClient {
         }
         return Promise.resolve<UndoChangeResult>(null as any);
     }
+}
+
+export class AboutResponse implements IAboutResponse {
+    application?: string;
+    version?: string;
+    channel?: string;
+    gitCommitId?: string;
+    gitCommitIdShort?: string;
+    buildDate?: string;
+
+    constructor(data?: IAboutResponse) {
+        if (data) Object.assign(this, data);
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.application = _data["application"];
+            this.version = _data["version"];
+            this.channel = _data["channel"];
+            this.gitCommitId = _data["gitCommitId"];
+            this.gitCommitIdShort = _data["gitCommitIdShort"];
+            this.buildDate = _data["buildDate"];
+        }
+    }
+
+    static fromJS(data: any): AboutResponse {
+        data = typeof data === 'object' ? data : {};
+        const result = new AboutResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["application"] = this.application;
+        data["version"] = this.version;
+        data["channel"] = this.channel;
+        data["gitCommitId"] = this.gitCommitId;
+        data["gitCommitIdShort"] = this.gitCommitIdShort;
+        data["buildDate"] = this.buildDate;
+        return data;
+    }
+}
+
+export interface IAboutResponse {
+    application?: string;
+    version?: string;
+    channel?: string;
+    gitCommitId?: string;
+    gitCommitIdShort?: string;
+    buildDate?: string;
 }
 
 export class Account implements IAccount {

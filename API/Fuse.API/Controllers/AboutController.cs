@@ -11,8 +11,8 @@ public class AboutController : ControllerBase
     [HttpGet]
     [AllowDuringSetup]
     [SwaggerOperation(OperationId = "aboutGet")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult Get()
+    [ProducesResponseType<AboutResponse>(StatusCodes.Status200OK)]
+    public ActionResult<AboutResponse> Get()
     {
         var version = GetEnv("APP_VERSION", "dev");
         var channel = GetEnv("APP_CHANNEL", "dev");
@@ -20,15 +20,7 @@ public class AboutController : ControllerBase
         var gitCommitIdShort = GetEnv("GIT_COMMIT_ID_SHORT", ShortenCommitId(gitCommitId));
         var buildDate = GetEnv("BUILD_DATE", "unknown");
 
-        return Ok(new
-        {
-            application = ApplicationName,
-            version,
-            channel,
-            gitCommitId,
-            gitCommitIdShort,
-            buildDate
-        });
+        return Ok(new AboutResponse(ApplicationName, version, channel, gitCommitId, gitCommitIdShort, buildDate));
     }
 
     private static string GetEnv(string name, string fallback)
@@ -44,3 +36,11 @@ public class AboutController : ControllerBase
             : commitId[..Math.Min(7, commitId.Length)];
     }
 }
+
+public sealed record AboutResponse(
+    string Application,
+    string Version,
+    string Channel,
+    string GitCommitId,
+    string GitCommitIdShort,
+    string BuildDate);
