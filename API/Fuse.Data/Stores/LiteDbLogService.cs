@@ -93,12 +93,16 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
+            var levels = await Task.Run(() => ApplyQuery(_logs.Query(), query)
+                .Select(x => new LevelProjection { Level = x.Level })
+                .ToList(), ct);
+
             return new SystemLogCounts
             {
-                Debug = await Task.Run(() => ApplyQuery(_logs.Query(), query).Where(x => x.Level == LogLevel.Debug).Count(), ct),
-                Info = await Task.Run(() => ApplyQuery(_logs.Query(), query).Where(x => x.Level == LogLevel.Info).Count(), ct),
-                Warning = await Task.Run(() => ApplyQuery(_logs.Query(), query).Where(x => x.Level == LogLevel.Warning).Count(), ct),
-                Error = await Task.Run(() => ApplyQuery(_logs.Query(), query).Where(x => x.Level == LogLevel.Error).Count(), ct)
+                Debug = levels.Count(x => x.Level == LogLevel.Debug),
+                Info = levels.Count(x => x.Level == LogLevel.Info),
+                Warning = levels.Count(x => x.Level == LogLevel.Warning),
+                Error = levels.Count(x => x.Level == LogLevel.Error)
             };
         }
         finally
@@ -113,9 +117,9 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         try
         {
             var areas = await Task.Run(() => _logs.Query()
+                .Where(x => !string.IsNullOrWhiteSpace(x.Area))
                 .Select(x => x.Area)
                 .ToList()
-                .Where(area => !string.IsNullOrWhiteSpace(area))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(area => area, StringComparer.OrdinalIgnoreCase)
                 .ToList(), ct);
@@ -186,10 +190,7 @@ public sealed class LiteDbLogService : ILogService, IDisposable
             filtered = filtered.Where(x => x.Level >= query.MinLevel.Value);
 
         if (!string.IsNullOrWhiteSpace(query.Area))
-        {
-            var area = query.Area.Trim().ToLowerInvariant();
-            filtered = filtered.Where(x => x.Area != null && x.Area.ToLower() == area);
-        }
+            filtered = filtered.Where(x => x.Area == query.Area);
 
         if (query.StartTime.HasValue)
             filtered = filtered.Where(x => x.Timestamp >= query.StartTime.Value);
@@ -199,15 +200,20 @@ public sealed class LiteDbLogService : ILogService, IDisposable
 
         if (!string.IsNullOrWhiteSpace(query.SearchText))
         {
-            var searchText = query.SearchText.Trim().ToLowerInvariant();
+            var searchText = query.SearchText.Trim();
             filtered = filtered.Where(x =>
-                x.Message != null && x.Message.ToLower().Contains(searchText)
-                || x.Details != null && x.Details.ToLower().Contains(searchText)
-                || x.Exception != null && x.Exception.ToLower().Contains(searchText)
-                || x.Area != null && x.Area.ToLower().Contains(searchText));
+                x.Message != null && x.Message.Contains(searchText)
+                || x.Details != null && x.Details.Contains(searchText)
+                || x.Exception != null && x.Exception.Contains(searchText)
+                || x.Area != null && x.Area.Contains(searchText));
         }
 
         return filtered;
+    }
+
+    private sealed class LevelProjection
+    {
+        public LogLevel Level { get; set; }
     }
 
     public void Dispose()
