@@ -71,7 +71,7 @@ public sealed class LoggingController(ILogService logService) : ControllerBase
 
     [HttpPost("cleanup")]
     [SwaggerOperation(OperationId = "cleanupSystemLogs")]
-    [RequirePermissionKey(LoggingPermissions.ReadKey)]
+    [RequirePermissionKey(LoggingPermissions.PurgeKey)]
     [ProducesResponseType(204)]
     public async Task<IActionResult> Cleanup()
     {
