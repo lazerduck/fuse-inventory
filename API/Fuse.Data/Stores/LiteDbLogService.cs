@@ -72,14 +72,13 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
-            var logs = await Task.Run(() => _logs.FindAll().ToList(), ct);
-            var filtered = ApplyQuery(logs, query);
-            var totalCount = filtered.Count;
-            var pageLogs = filtered
+            var skip = (page - 1) * pageSize;
+            var totalCount = await Task.Run(() => ApplyQuery(_logs.Query(), query).Count(), ct);
+            var pageLogs = await Task.Run(() => ApplyQuery(_logs.Query(), query)
                 .OrderByDescending(x => x.Timestamp)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+                .Skip(skip)
+                .Limit(pageSize)
+                .ToList(), ct);
 
             return new SystemLogResult(pageLogs, totalCount, page, pageSize);
         }
@@ -94,15 +93,16 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
-            var logs = await Task.Run(() => _logs.FindAll().ToList(), ct);
-            var filtered = ApplyQuery(logs, query);
+            var levels = await Task.Run(() => ApplyQuery(_logs.Query(), query)
+                .Select(x => new LevelProjection { Level = x.Level })
+                .ToList(), ct);
 
             return new SystemLogCounts
             {
-                Debug = filtered.Count(x => x.Level == LogLevel.Debug),
-                Info = filtered.Count(x => x.Level == LogLevel.Info),
-                Warning = filtered.Count(x => x.Level == LogLevel.Warning),
-                Error = filtered.Count(x => x.Level == LogLevel.Error)
+                Debug = levels.Count(x => x.Level == LogLevel.Debug),
+                Info = levels.Count(x => x.Level == LogLevel.Info),
+                Warning = levels.Count(x => x.Level == LogLevel.Warning),
+                Error = levels.Count(x => x.Level == LogLevel.Error)
             };
         }
         finally
@@ -116,9 +116,10 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
-            var areas = await Task.Run(() => _logs.FindAll()
+            var areas = await Task.Run(() => _logs.Query()
+                .Where(x => !string.IsNullOrWhiteSpace(x.Area))
                 .Select(x => x.Area)
-                .Where(area => !string.IsNullOrWhiteSpace(area))
+                .ToList()
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(area => area, StringComparer.OrdinalIgnoreCase)
                 .ToList(), ct);
@@ -181,15 +182,15 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         };
     }
 
-    private static List<SystemLogEntry> ApplyQuery(IEnumerable<SystemLogEntry> logs, SystemLogQuery query)
+    private static ILiteQueryable<SystemLogEntry> ApplyQuery(ILiteQueryable<SystemLogEntry> queryable, SystemLogQuery query)
     {
-        var filtered = logs;
+        var filtered = queryable;
 
         if (query.MinLevel.HasValue)
             filtered = filtered.Where(x => x.Level >= query.MinLevel.Value);
 
         if (!string.IsNullOrWhiteSpace(query.Area))
-            filtered = filtered.Where(x => string.Equals(x.Area, query.Area, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(x => x.Area == query.Area);
 
         if (query.StartTime.HasValue)
             filtered = filtered.Where(x => x.Timestamp >= query.StartTime.Value);
@@ -201,18 +202,19 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         {
             var searchText = query.SearchText.Trim();
             filtered = filtered.Where(x =>
-                ContainsIgnoreCase(x.Message, searchText)
-                || ContainsIgnoreCase(x.Details, searchText)
-                || ContainsIgnoreCase(x.Exception, searchText)
-                || ContainsIgnoreCase(x.Area, searchText));
+                x.Message != null && x.Message.Contains(searchText)
+                || x.Details != null && x.Details.Contains(searchText)
+                || x.Exception != null && x.Exception.Contains(searchText)
+                || x.Area != null && x.Area.Contains(searchText));
         }
 
-        return filtered.ToList();
+        return filtered;
     }
 
-    private static bool ContainsIgnoreCase(string? value, string searchText) =>
-        !string.IsNullOrWhiteSpace(value)
-        && value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    private sealed class LevelProjection
+    {
+        public LogLevel Level { get; set; }
+    }
 
     public void Dispose()
     {
