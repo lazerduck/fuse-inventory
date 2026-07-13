@@ -186,7 +186,10 @@ public sealed class LiteDbLogService : ILogService, IDisposable
             filtered = filtered.Where(x => x.Level >= query.MinLevel.Value);
 
         if (!string.IsNullOrWhiteSpace(query.Area))
-            filtered = filtered.Where(x => x.Area == query.Area);
+        {
+            var area = query.Area.Trim().ToLowerInvariant();
+            filtered = filtered.Where(x => x.Area != null && x.Area.ToLower() == area);
+        }
 
         if (query.StartTime.HasValue)
             filtered = filtered.Where(x => x.Timestamp >= query.StartTime.Value);
@@ -196,12 +199,12 @@ public sealed class LiteDbLogService : ILogService, IDisposable
 
         if (!string.IsNullOrWhiteSpace(query.SearchText))
         {
-            var searchText = query.SearchText.Trim();
+            var searchText = query.SearchText.Trim().ToLowerInvariant();
             filtered = filtered.Where(x =>
-                x.Message != null && x.Message.Contains(searchText)
-                || x.Details != null && x.Details.Contains(searchText)
-                || x.Exception != null && x.Exception.Contains(searchText)
-                || x.Area != null && x.Area.Contains(searchText));
+                x.Message != null && x.Message.ToLower().Contains(searchText)
+                || x.Details != null && x.Details.ToLower().Contains(searchText)
+                || x.Exception != null && x.Exception.ToLower().Contains(searchText)
+                || x.Area != null && x.Area.ToLower().Contains(searchText));
         }
 
         return filtered;
