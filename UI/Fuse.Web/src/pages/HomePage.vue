@@ -289,7 +289,8 @@ function formatDependencyLabel(dependency: { targetKind?: TargetKind | null; tar
   }
   if (dependency.targetKind === TargetKind.DataStore) return dataStoreLookup.value[dependency.targetId] ?? 'Data store'
   if (dependency.targetKind === TargetKind.External) return externalResourceLookup.value[dependency.targetId] ?? 'External resource'
-  return String(dependency.targetKind).replace(/([a-z])([A-Z])/g, '$1 $2')
+  if (dependency.targetKind === TargetKind.MessageBroker) return `Message broker (${dependency.targetId})`
+  return `Unknown (${dependency.targetKind})`
 }
 function activityDescription(item: ActivityFeedItem) { return item.changeDescription || `${String(item.entityType ?? 'Inventory')} ${String(item.action ?? 'changed').toLowerCase()}` }
 function formatRelativeDate(value?: Date) {
