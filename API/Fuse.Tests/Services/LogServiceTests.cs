@@ -102,6 +102,63 @@ public sealed class LogServiceTests
         Assert.Equal("New entry", result.Logs[0].Message);
     }
 
+    [Fact]
+    public async Task QueryAsync_PaginatesByNewestFirstAndReturnsTotalCount()
+    {
+        var settings = new AppSettings(
+            Logging: new LoggingSettings
+            {
+                Enabled = true,
+                MinLevel = LogLevel.Debug
+            });
+        var dir = await CreateTempDir();
+        var store = new FakeFuseStore(settings);
+        var service = new LiteDbLogService(store, dir);
+
+        var now = DateTime.UtcNow;
+        await service.LogAsync(CreateLog(LogLevel.Info, "A", "first", timestamp: now.AddMinutes(-3)));
+        await service.LogAsync(CreateLog(LogLevel.Info, "A", "second", timestamp: now.AddMinutes(-2)));
+        await service.LogAsync(CreateLog(LogLevel.Info, "A", "third", timestamp: now.AddMinutes(-1)));
+
+        var firstPage = await service.QueryAsync(new SystemLogQuery { Page = 1, PageSize = 2 });
+        var secondPage = await service.QueryAsync(new SystemLogQuery { Page = 2, PageSize = 2 });
+
+        Assert.Equal(3, firstPage.TotalCount);
+        Assert.Equal(2, firstPage.Logs.Count);
+        Assert.Equal("third", firstPage.Logs[0].Message);
+        Assert.Equal("second", firstPage.Logs[1].Message);
+
+        Assert.Equal(3, secondPage.TotalCount);
+        Assert.Single(secondPage.Logs);
+        Assert.Equal("first", secondPage.Logs[0].Message);
+    }
+
+    [Fact]
+    public async Task QueryAsync_FiltersAreaAndSearchTextCaseInsensitively()
+    {
+        var settings = new AppSettings(
+            Logging: new LoggingSettings
+            {
+                Enabled = true,
+                MinLevel = LogLevel.Debug
+            });
+        var dir = await CreateTempDir();
+        var store = new FakeFuseStore(settings);
+        var service = new LiteDbLogService(store, dir);
+
+        await service.LogAsync(CreateLog(LogLevel.Warning, "Security", "Authorization denied", "permission denied"));
+        await service.LogAsync(CreateLog(LogLevel.Warning, "Config", "No match", "none"));
+
+        var result = await service.QueryAsync(new SystemLogQuery
+        {
+            Area = "security",
+            SearchText = "DENIED"
+        });
+
+        Assert.Single(result.Logs);
+        Assert.Equal("Authorization denied", result.Logs[0].Message);
+    }
+
     private static SystemLogEntry CreateLog(LogLevel level = LogLevel.Info, string area = "Config", string message = "Entry", string? details = null, DateTime? timestamp = null) =>
         new()
         {
