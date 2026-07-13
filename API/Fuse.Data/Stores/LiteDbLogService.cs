@@ -64,24 +64,73 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Build a server-side LiteDB query with all filters that can be translated to BsonExpression.
+    /// SearchText is applied in-memory because case-insensitive substring matching
+    /// cannot be translated by LiteDB's query engine.
+    /// </summary>
+    private static ILiteQueryable<SystemLogEntry> BuildServerQuery(ILiteCollection<SystemLogEntry> logs, SystemLogQuery query)
+    {
+        var q = logs.Query();
+
+        if (query.MinLevel.HasValue)
+            q = q.Where(x => x.Level >= query.MinLevel.Value);
+
+        if (!string.IsNullOrWhiteSpace(query.Area))
+            q = q.Where(x => x.Area == query.Area);
+
+        if (query.StartTime.HasValue)
+            q = q.Where(x => x.Timestamp >= query.StartTime.Value);
+
+        if (query.EndTime.HasValue)
+            q = q.Where(x => x.Timestamp <= query.EndTime.Value);
+
+        return q;
+    }
+
+    private static bool MatchesSearchText(SystemLogEntry entry, string searchText) =>
+        !string.IsNullOrWhiteSpace(searchText) &&
+        (
+            !string.IsNullOrWhiteSpace(entry.Message) && entry.Message.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            !string.IsNullOrWhiteSpace(entry.Details) && entry.Details.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            !string.IsNullOrWhiteSpace(entry.Exception) && entry.Exception.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            !string.IsNullOrWhiteSpace(entry.Area) && entry.Area.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        );
+
     public async Task<SystemLogResult> QueryAsync(SystemLogQuery query, CancellationToken ct = default)
     {
         var page = query.Page < 1 ? 1 : query.Page;
         var pageSize = query.PageSize < 1 ? 50 : query.PageSize;
+        var skip = (page - 1) * pageSize;
 
         await _mutex.WaitAsync(ct);
         try
         {
-            var logs = await Task.Run(() => _logs.FindAll().ToList(), ct);
-            var filtered = ApplyQuery(logs, query);
-            var totalCount = filtered.Count;
-            var pageLogs = filtered
-                .OrderByDescending(x => x.Timestamp)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var result = await Task.Run(() =>
+            {
+                // Server-side: apply indexed filters (MinLevel, Area, StartTime, EndTime)
+                var serverQuery = BuildServerQuery(_logs, query);
 
-            return new SystemLogResult(pageLogs, totalCount, page, pageSize);
+                // In-memory: apply case-insensitive SearchText filter
+                // (LiteDB cannot translate case-insensitive substring matching)
+                var filtered = query.SearchText != null && !string.IsNullOrWhiteSpace(query.SearchText.Trim())
+                    ? serverQuery.ToList().Where(e => MatchesSearchText(e, query.SearchText!.Trim()))
+                    : serverQuery.ToList();
+
+                // Count after all filters applied
+                var totalCount = filtered.Count();
+
+                // Sort and paginate in-memory (timestamp ordering + pagination)
+                var pageLogs = filtered
+                    .OrderByDescending(x => x.Timestamp)
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new SystemLogResult(pageLogs, totalCount, page, pageSize);
+            }, ct);
+
+            return result;
         }
         finally
         {
@@ -94,16 +143,33 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
-            var logs = await Task.Run(() => _logs.FindAll().ToList(), ct);
-            var filtered = ApplyQuery(logs, query);
-
-            return new SystemLogCounts
+            var counts = await Task.Run(() =>
             {
-                Debug = filtered.Count(x => x.Level == LogLevel.Debug),
-                Info = filtered.Count(x => x.Level == LogLevel.Info),
-                Warning = filtered.Count(x => x.Level == LogLevel.Warning),
-                Error = filtered.Count(x => x.Level == LogLevel.Error)
-            };
+                // Server-side: apply indexed filters
+                var serverQuery = BuildServerQuery(_logs, query);
+
+                // In-memory: apply SearchText filter
+                IEnumerable<SystemLogEntry> filtered;
+                if (query.SearchText != null && !string.IsNullOrWhiteSpace(query.SearchText.Trim()))
+                {
+                    var searchText = query.SearchText.Trim();
+                    filtered = serverQuery.ToList().Where(e => MatchesSearchText(e, searchText));
+                }
+                else
+                {
+                    filtered = serverQuery.ToList();
+                }
+
+                return new SystemLogCounts
+                {
+                    Debug = filtered.Count(x => x.Level == LogLevel.Debug),
+                    Info = filtered.Count(x => x.Level == LogLevel.Info),
+                    Warning = filtered.Count(x => x.Level == LogLevel.Warning),
+                    Error = filtered.Count(x => x.Level == LogLevel.Error)
+                };
+            }, ct);
+
+            return counts;
         }
         finally
         {
@@ -116,12 +182,24 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
-            var areas = await Task.Run(() => _logs.FindAll()
-                .Select(x => x.Area)
-                .Where(area => !string.IsNullOrWhiteSpace(area))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(area => area, StringComparer.OrdinalIgnoreCase)
-                .ToList(), ct);
+            // Server-side: project Area column via Query() (pushes to LiteDB)
+            // Distinct/ordering done in-memory since LiteDB queryable doesn't support Distinct
+            var areas = await Task.Run(() =>
+            {
+                var queryableAreas = _logs.Query()
+                    .Select(x => x.Area)
+                    .ToList();
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var result = new List<string>();
+                foreach (var area in queryableAreas)
+                {
+                    if (!string.IsNullOrWhiteSpace(area) && seen.Add(area))
+                        result.Add(area);
+                }
+                result.Sort(StringComparer.OrdinalIgnoreCase);
+                return (IReadOnlyList<string>)result;
+            }, ct);
 
             return areas;
         }
@@ -136,6 +214,7 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
+            // Server-side count (already was, no change needed)
             return await Task.Run(() => _logs.Count(), ct);
         }
         finally
@@ -155,6 +234,7 @@ public sealed class LiteDbLogService : ILogService, IDisposable
         await _mutex.WaitAsync(ct);
         try
         {
+            // Server-side delete (already was, no change needed)
             await Task.Run(() => _logs.DeleteMany(x => x.Timestamp < cutoff), ct);
         }
         finally
@@ -180,39 +260,6 @@ public sealed class LiteDbLogService : ILogService, IDisposable
                 .ToList()
         };
     }
-
-    private static List<SystemLogEntry> ApplyQuery(IEnumerable<SystemLogEntry> logs, SystemLogQuery query)
-    {
-        var filtered = logs;
-
-        if (query.MinLevel.HasValue)
-            filtered = filtered.Where(x => x.Level >= query.MinLevel.Value);
-
-        if (!string.IsNullOrWhiteSpace(query.Area))
-            filtered = filtered.Where(x => string.Equals(x.Area, query.Area, StringComparison.OrdinalIgnoreCase));
-
-        if (query.StartTime.HasValue)
-            filtered = filtered.Where(x => x.Timestamp >= query.StartTime.Value);
-
-        if (query.EndTime.HasValue)
-            filtered = filtered.Where(x => x.Timestamp <= query.EndTime.Value);
-
-        if (!string.IsNullOrWhiteSpace(query.SearchText))
-        {
-            var searchText = query.SearchText.Trim();
-            filtered = filtered.Where(x =>
-                ContainsIgnoreCase(x.Message, searchText)
-                || ContainsIgnoreCase(x.Details, searchText)
-                || ContainsIgnoreCase(x.Exception, searchText)
-                || ContainsIgnoreCase(x.Area, searchText));
-        }
-
-        return filtered.ToList();
-    }
-
-    private static bool ContainsIgnoreCase(string? value, string searchText) =>
-        !string.IsNullOrWhiteSpace(value)
-        && value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
 
     public void Dispose()
     {
