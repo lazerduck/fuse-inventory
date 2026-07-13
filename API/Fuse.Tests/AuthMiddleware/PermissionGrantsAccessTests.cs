@@ -37,6 +37,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     {
         AuditLogsView,
         LoggingRead,
+        LoggingPurge,
         ConfigurationExport,
         UsersRead,
         RolesRead,
@@ -62,6 +63,7 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
     {
         [nameof(Permission.AuditLogsView)]        = AuditPermissions.ViewKey,
         [nameof(Permission.LoggingRead)]          = LoggingPermissions.ReadKey,
+        [nameof(Permission.LoggingPurge)]         = LoggingPermissions.PurgeKey,
         [nameof(Permission.ConfigurationExport)]  = ConfigPermissions.ExportKey,
         [nameof(Permission.UsersRead)]            = UserAccountPermissions.ReadKey,
         [nameof(Permission.UsersCreate)]          = UserAccountPermissions.CreateKey,
@@ -125,6 +127,12 @@ public class PermissionGrantsAccessTests : IAsyncLifetime
 
     public static IEnumerable<object[]> WritePermissionEndpointCases => new object[][]
     {
+        new object[]
+        {
+            nameof(Permission.LoggingPurge),
+            "POST", "/api/logging/cleanup",
+            new { }
+        },
         new object[]
         {
             nameof(Permission.AccountsCreate),
