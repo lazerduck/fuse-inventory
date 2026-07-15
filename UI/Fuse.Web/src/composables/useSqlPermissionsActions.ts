@@ -241,7 +241,9 @@ export function useSqlPermissionsActions(integrationId: MaybeRef<string | null |
         request
       })
 
-      await refreshSqlOverviewCache([result.accountId])
+      void refreshSqlOverviewCache([result.accountId]).catch((err) =>
+        console.warn('Failed to refresh SQL permissions after importing orphan principal', orphan.principalName, err)
+      )
       return result
     } catch (err: any) {
       const errorResponse = new ImportOrphanPrincipalResponse()
