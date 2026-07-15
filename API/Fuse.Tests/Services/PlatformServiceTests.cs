@@ -89,6 +89,80 @@ public class PlatformServiceTests
     }
 
     [Fact]
+    public async Task CreateCluster_WithNodesAndMultipleAddresses_Succeeds()
+    {
+        var store = NewStore();
+        var service = new PlatformService(store, new TagLookupService(store));
+        var result = await service.CreatePlatformAsync(new CreatePlatform(
+            "Cluster", Kind: PlatformKind.Cluster, IpAddresses: ["10.0.0.1", "10.0.0.2"],
+            Nodes: [new(null, "node-1", IpAddresses: ["10.0.1.1"])]));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.IpAddresses.Count);
+        var node = Assert.Single(result.Value.Nodes!);
+        Assert.NotEqual(Guid.Empty, node.Id);
+        Assert.Equal("10.0.1.1", Assert.Single(node.IpAddresses));
+    }
+
+    [Fact]
+    public async Task CreateNonCluster_WithNodes_ReturnsValidation()
+    {
+        var store = NewStore();
+        var service = new PlatformService(store, new TagLookupService(store));
+
+        var result = await service.CreatePlatformAsync(new CreatePlatform(
+            "Server", Kind: PlatformKind.Server, Nodes: [new(null, "node-1")]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Theory]
+    [InlineData("999.1.1.1")]
+    [InlineData("127.1")]
+    [InlineData("192.168.001.1")]
+    [InlineData("not-an-ip")]
+    public async Task CreatePlatform_InvalidIpAddress_ReturnsValidation(string address)
+    {
+        var store = NewStore();
+        var service = new PlatformService(store, new TagLookupService(store));
+
+        var result = await service.CreatePlatformAsync(new CreatePlatform("Server", IpAddresses: [address]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task CreateCluster_AcceptsIpv6Addresses()
+    {
+        var store = NewStore();
+        var service = new PlatformService(store, new TagLookupService(store));
+
+        var result = await service.CreatePlatformAsync(new CreatePlatform(
+            "Cluster", Kind: PlatformKind.Cluster, IpAddresses: ["2001:db8::1"],
+            Nodes: [new(null, "node-1", IpAddresses: ["2001:db8::2"])]));
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task UpdateCluster_PreservesExistingNodeId()
+    {
+        var nodeId = Guid.NewGuid();
+        var platform = new Platform(Guid.NewGuid(), "Cluster", null, null, PlatformKind.Cluster, [], null, [],
+            DateTime.UtcNow, DateTime.UtcNow, [new(nodeId, "node-1", null, null, [], null)]);
+        var store = NewStore(platforms: [platform]);
+        var service = new PlatformService(store, new TagLookupService(store));
+
+        var result = await service.UpdatePlatformAsync(new UpdatePlatform(platform.Id, platform.DisplayName,
+            Kind: PlatformKind.Cluster, Nodes: [new(nodeId, "renamed")]));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(nodeId, Assert.Single(result.Value!.Nodes!).Id);
+    }
+
+    [Fact]
     public async Task UpdatePlatform_NotFound()
     {
         var store = NewStore();

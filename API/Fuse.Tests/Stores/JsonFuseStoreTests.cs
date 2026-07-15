@@ -48,6 +48,35 @@ public class JsonFuseStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_MigratesLegacyPlatformIpAddressToArray()
+    {
+        var platformId = Guid.NewGuid();
+        var platformsJson = $$"""
+        [{
+          "id": "{{platformId}}",
+          "displayName": "legacy-host",
+          "dnsName": null,
+          "os": "linux",
+          "kind": "Server",
+          "ipAddress": "10.0.0.1",
+          "notes": null,
+          "tagIds": [],
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z"
+        }]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, "platforms.json"), platformsJson);
+
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        var snapshot = await store.LoadAsync();
+
+        Assert.Equal("10.0.0.1", Assert.Single(Assert.Single(snapshot.Platforms).IpAddresses));
+        var migratedJson = await File.ReadAllTextAsync(Path.Combine(_testDataDirectory, "platforms.json"));
+        Assert.Contains("\"ipAddresses\"", migratedJson);
+        Assert.DoesNotContain("\"ipAddress\":", migratedJson);
+    }
+
+    [Fact]
     public async Task LoadAsync_LoadsCurrentSecretBindingFormat()
     {
         var accountId = Guid.NewGuid();

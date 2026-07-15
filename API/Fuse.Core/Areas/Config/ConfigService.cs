@@ -158,7 +158,7 @@ public class ConfigService : IConfigService
                     DnsName: "platform.example.com",
                     Os: "linux",
                     Kind: PlatformKind.Server,
-                    IpAddress: "10.0.0.1",
+                    IpAddresses: ["10.0.0.1"],
                     Notes: "An example platform",
                     TagIds: new HashSet<Guid>(),
                     CreatedAt: DateTime.UtcNow,

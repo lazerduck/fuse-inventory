@@ -47,12 +47,27 @@
       </section>
 
       <!-- IP Address -->
-      <section v-if="platform.ipAddress" class="detail-section">
+      <section v-if="platform.ipAddresses?.length" class="detail-section">
         <h3 class="section-subtitle">
           <q-icon name="location_on" size="20px" />
           IP Address
         </h3>
-        <p class="section-value">{{ platform.ipAddress }}</p>
+        <p class="section-value">{{ platform.ipAddresses.join(', ') }}</p>
+      </section>
+
+      <section v-if="platform.kind === PlatformKind.Cluster && platform.nodes?.length" class="detail-section">
+        <h3 class="section-subtitle"><q-icon name="dns" size="20px" /> Cluster Nodes</h3>
+        <q-list bordered separator>
+          <q-item v-for="node in platform.nodes" :key="node.id">
+            <q-item-section>
+              <q-item-label>{{ node.displayName }}</q-item-label>
+              <q-item-label caption>
+                {{ [node.dnsName, node.os, ...(node.ipAddresses ?? [])].filter(Boolean).join(' · ') }}
+              </q-item-label>
+              <q-item-label v-if="node.notes" caption>{{ node.notes }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </section>
 
       <!-- Operating System -->
