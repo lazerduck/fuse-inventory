@@ -52,6 +52,15 @@ public static class SnapshotValidator
         foreach (var platform in s.Platforms)
         {
             TagsMustExist(platform.TagIds, $"Platform {platform.Id}");
+            if (platform.Nodes is { Count: > 0 })
+            {
+                if (platform.Kind != PlatformKind.Cluster)
+                    errs.Add($"Platform {platform.Id}: nodes are only valid for clusters");
+                if (platform.Nodes.Any(node => string.IsNullOrWhiteSpace(node.DisplayName)))
+                    errs.Add($"Platform {platform.Id}: node display names cannot be empty");
+                if (platform.Nodes.GroupBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+                    errs.Add($"Platform {platform.Id}: node display names must be unique");
+            }
         }
 
         // DataStores

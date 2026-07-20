@@ -483,6 +483,38 @@ export interface IFuseApiClient {
     refreshLicense(signal?: AbortSignal): Promise<LicenseStatusResponse>;
 
     /**
+     * @param minLevel (optional)
+     * @param area (optional)
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param searchText (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
+     * @return OK
+     */
+    querySystemLogs(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<SystemLogResult>;
+
+    /**
+     * @param minLevel (optional)
+     * @param area (optional)
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param searchText (optional)
+     * @return OK
+     */
+    getSystemLogCounts(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, signal?: AbortSignal): Promise<SystemLogCounts>;
+
+    /**
+     * @return OK
+     */
+    getSystemLogAreas(signal?: AbortSignal): Promise<string[]>;
+
+    /**
+     * @return No Content
+     */
+    cleanupSystemLogs(signal?: AbortSignal): Promise<void>;
+
+    /**
      * @return OK
      */
     messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]>;
@@ -512,7 +544,7 @@ export interface IFuseApiClient {
     /**
      * @return OK
      */
-    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+    progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
     /**
      * @param body (optional)
@@ -976,6 +1008,7 @@ export class FuseApiClient implements IFuseApiClient {
             method: "GET",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -5346,6 +5379,221 @@ export class FuseApiClient implements IFuseApiClient {
     }
 
     /**
+     * @param minLevel (optional)
+     * @param area (optional)
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param searchText (optional)
+     * @param page (optional)
+     * @param pageSize (optional)
+     * @return OK
+     */
+    querySystemLogs(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<SystemLogResult> {
+        let url_ = this.baseUrl + "/api/Logging?";
+        if (minLevel === null)
+            throw new globalThis.Error("The parameter 'minLevel' cannot be null.");
+        else if (minLevel !== undefined)
+            url_ += "minLevel=" + encodeURIComponent("" + minLevel) + "&";
+        if (area === null)
+            throw new globalThis.Error("The parameter 'area' cannot be null.");
+        else if (area !== undefined)
+            url_ += "area=" + encodeURIComponent("" + area) + "&";
+        if (startTime === null)
+            throw new globalThis.Error("The parameter 'startTime' cannot be null.");
+        else if (startTime !== undefined)
+            url_ += "startTime=" + encodeURIComponent(startTime ? "" + startTime.toISOString() : "") + "&";
+        if (endTime === null)
+            throw new globalThis.Error("The parameter 'endTime' cannot be null.");
+        else if (endTime !== undefined)
+            url_ += "endTime=" + encodeURIComponent(endTime ? "" + endTime.toISOString() : "") + "&";
+        if (searchText === null)
+            throw new globalThis.Error("The parameter 'searchText' cannot be null.");
+        else if (searchText !== undefined)
+            url_ += "searchText=" + encodeURIComponent("" + searchText) + "&";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processQuerySystemLogs(_response);
+        });
+    }
+
+    protected processQuerySystemLogs(response: Response): Promise<SystemLogResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SystemLogResult.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SystemLogResult>(null as any);
+    }
+
+    /**
+     * @param minLevel (optional)
+     * @param area (optional)
+     * @param startTime (optional)
+     * @param endTime (optional)
+     * @param searchText (optional)
+     * @return OK
+     */
+    getSystemLogCounts(minLevel: LogLevel | undefined, area: string | undefined, startTime: Date | undefined, endTime: Date | undefined, searchText: string | undefined, signal?: AbortSignal): Promise<SystemLogCounts> {
+        let url_ = this.baseUrl + "/api/Logging/counts?";
+        if (minLevel === null)
+            throw new globalThis.Error("The parameter 'minLevel' cannot be null.");
+        else if (minLevel !== undefined)
+            url_ += "minLevel=" + encodeURIComponent("" + minLevel) + "&";
+        if (area === null)
+            throw new globalThis.Error("The parameter 'area' cannot be null.");
+        else if (area !== undefined)
+            url_ += "area=" + encodeURIComponent("" + area) + "&";
+        if (startTime === null)
+            throw new globalThis.Error("The parameter 'startTime' cannot be null.");
+        else if (startTime !== undefined)
+            url_ += "startTime=" + encodeURIComponent(startTime ? "" + startTime.toISOString() : "") + "&";
+        if (endTime === null)
+            throw new globalThis.Error("The parameter 'endTime' cannot be null.");
+        else if (endTime !== undefined)
+            url_ += "endTime=" + encodeURIComponent(endTime ? "" + endTime.toISOString() : "") + "&";
+        if (searchText === null)
+            throw new globalThis.Error("The parameter 'searchText' cannot be null.");
+        else if (searchText !== undefined)
+            url_ += "searchText=" + encodeURIComponent("" + searchText) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetSystemLogCounts(_response);
+        });
+    }
+
+    protected processGetSystemLogCounts(response: Response): Promise<SystemLogCounts> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = SystemLogCounts.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SystemLogCounts>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getSystemLogAreas(signal?: AbortSignal): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Logging/areas";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetSystemLogAreas(_response);
+        });
+    }
+
+    protected processGetSystemLogAreas(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(item);
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    cleanupSystemLogs(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/Logging/cleanup";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCleanupSystemLogs(_response);
+        });
+    }
+
+    protected processCleanupSystemLogs(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return OK
      */
     messageBrokerAll(signal?: AbortSignal): Promise<MessageBroker[]> {
@@ -5609,7 +5857,7 @@ export class FuseApiClient implements IFuseApiClient {
     /**
      * @return OK
      */
-    progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+    progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
         let url_ = this.baseUrl + "/api/Onboarding/progress";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -5622,11 +5870,11 @@ export class FuseApiClient implements IFuseApiClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processProgressGETGET(_response);
+            return this.processProgressGET(_response);
         });
     }
 
-    protected processProgressGETGET(response: Response): Promise<UserGuideProgress> {
+    protected processProgressGET(response: Response): Promise<UserGuideProgress> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -9991,15 +10239,20 @@ export class FuseApiClient implements IFuseApiClient {
 }
 
 export class AboutResponse implements IAboutResponse {
-    application?: string;
-    version?: string;
-    channel?: string;
-    gitCommitId?: string;
-    gitCommitIdShort?: string;
-    buildDate?: string;
+    application?: string | undefined;
+    version?: string | undefined;
+    channel?: string | undefined;
+    gitCommitId?: string | undefined;
+    gitCommitIdShort?: string | undefined;
+    buildDate?: string | undefined;
 
     constructor(data?: IAboutResponse) {
-        if (data) Object.assign(this, data);
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
     }
 
     init(_data?: any) {
@@ -10015,7 +10268,7 @@ export class AboutResponse implements IAboutResponse {
 
     static fromJS(data: any): AboutResponse {
         data = typeof data === 'object' ? data : {};
-        const result = new AboutResponse();
+        let result = new AboutResponse();
         result.init(data);
         return result;
     }
@@ -10033,12 +10286,12 @@ export class AboutResponse implements IAboutResponse {
 }
 
 export interface IAboutResponse {
-    application?: string;
-    version?: string;
-    channel?: string;
-    gitCommitId?: string;
-    gitCommitIdShort?: string;
-    buildDate?: string;
+    application?: string | undefined;
+    version?: string | undefined;
+    channel?: string | undefined;
+    gitCommitId?: string | undefined;
+    gitCommitIdShort?: string | undefined;
+    buildDate?: string | undefined;
 }
 
 export class Account implements IAccount {
@@ -10517,69 +10770,6 @@ export interface IAppConfigurationEntryResponse {
     keyVaultReferenceUri?: string | undefined;
 }
 
-export enum LogLevel {
-    Debug = "Debug",
-    Info = "Info",
-    Warning = "Warning",
-    Error = "Error",
-}
-
-export class LoggingSettings implements ILoggingSettings {
-    enabled?: boolean;
-    minLevel?: LogLevel;
-    daysToKeep?: number | undefined;
-    excludeAreas?: string[] | undefined;
-
-    constructor(data?: ILoggingSettings) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.enabled = _data["enabled"];
-            this.minLevel = _data["minLevel"];
-            this.daysToKeep = _data["daysToKeep"];
-            if (Array.isArray(_data["excludeAreas"])) {
-                this.excludeAreas = [] as any;
-                for (let item of _data["excludeAreas"])
-                    this.excludeAreas!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): LoggingSettings {
-        data = typeof data === 'object' ? data : {};
-        let result = new LoggingSettings();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["enabled"] = this.enabled;
-        data["minLevel"] = this.minLevel;
-        data["daysToKeep"] = this.daysToKeep;
-        if (Array.isArray(this.excludeAreas)) {
-            data["excludeAreas"] = [];
-            for (let item of this.excludeAreas)
-                data["excludeAreas"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface ILoggingSettings {
-    enabled?: boolean;
-    minLevel?: LogLevel;
-    daysToKeep?: number | undefined;
-    excludeAreas?: string[] | undefined;
-}
-
 export class AppSettings implements IAppSettings {
     incompleteDataWarningEnabled?: boolean;
     localLicenseValidationOnly?: boolean;
@@ -10587,7 +10777,7 @@ export class AppSettings implements IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
-    logging?: LoggingSettings | undefined;
+    logging?: LoggingSettings;
     mcpServerEnabled?: boolean;
 
     constructor(data?: IAppSettings) {
@@ -10640,7 +10830,7 @@ export interface IAppSettings {
     versionHistoryKeepCount?: number;
     auditLogDaysToKeep?: number | undefined;
     healthCheckProvider?: HealthCheckProvider;
-    logging?: LoggingSettings | undefined;
+    logging?: LoggingSettings;
     mcpServerEnabled?: boolean;
 }
 
@@ -13098,9 +13288,10 @@ export class CreatePlatform implements ICreatePlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+    nodes?: PlatformNodeInput[] | undefined;
 
     constructor(data?: ICreatePlatform) {
         if (data) {
@@ -13117,12 +13308,21 @@ export class CreatePlatform implements ICreatePlatform {
             this.dnsName = _data["dnsName"];
             this.os = _data["os"];
             this.kind = _data["kind"];
-            this.ipAddress = _data["ipAddress"];
+            if (Array.isArray(_data["ipAddresses"])) {
+                this.ipAddresses = [] as any;
+                for (let item of _data["ipAddresses"])
+                    this.ipAddresses!.push(item);
+            }
             this.notes = _data["notes"];
             if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
+            }
+            if (Array.isArray(_data["nodes"])) {
+                this.nodes = [] as any;
+                for (let item of _data["nodes"])
+                    this.nodes!.push(PlatformNodeInput.fromJS(item));
             }
         }
     }
@@ -13140,12 +13340,21 @@ export class CreatePlatform implements ICreatePlatform {
         data["dnsName"] = this.dnsName;
         data["os"] = this.os;
         data["kind"] = this.kind;
-        data["ipAddress"] = this.ipAddress;
+        if (Array.isArray(this.ipAddresses)) {
+            data["ipAddresses"] = [];
+            for (let item of this.ipAddresses)
+                data["ipAddresses"].push(item);
+        }
         data["notes"] = this.notes;
         if (Array.isArray(this.tagIds)) {
             data["tagIds"] = [];
             for (let item of this.tagIds)
                 data["tagIds"].push(item);
+        }
+        if (Array.isArray(this.nodes)) {
+            data["nodes"] = [];
+            for (let item of this.nodes)
+                data["nodes"].push(item ? item.toJSON() : undefined as any);
         }
         return data;
     }
@@ -13156,9 +13365,10 @@ export interface ICreatePlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+    nodes?: PlatformNodeInput[] | undefined;
 }
 
 export class CreatePosition implements ICreatePosition {
@@ -14978,6 +15188,69 @@ export interface ILicenseStatusResponse {
     customerName?: string | undefined;
 }
 
+export enum LogLevel {
+    Debug = "Debug",
+    Info = "Info",
+    Warning = "Warning",
+    Error = "Error",
+}
+
+export class LoggingSettings implements ILoggingSettings {
+    enabled?: boolean;
+    minLevel?: LogLevel;
+    daysToKeep?: number | undefined;
+    excludeAreas?: string[] | undefined;
+
+    constructor(data?: ILoggingSettings) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.enabled = _data["enabled"];
+            this.minLevel = _data["minLevel"];
+            this.daysToKeep = _data["daysToKeep"];
+            if (Array.isArray(_data["excludeAreas"])) {
+                this.excludeAreas = [] as any;
+                for (let item of _data["excludeAreas"])
+                    this.excludeAreas!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): LoggingSettings {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoggingSettings();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["enabled"] = this.enabled;
+        data["minLevel"] = this.minLevel;
+        data["daysToKeep"] = this.daysToKeep;
+        if (Array.isArray(this.excludeAreas)) {
+            data["excludeAreas"] = [];
+            for (let item of this.excludeAreas)
+                data["excludeAreas"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface ILoggingSettings {
+    enabled?: boolean;
+    minLevel?: LogLevel;
+    daysToKeep?: number | undefined;
+    excludeAreas?: string[] | undefined;
+}
+
 export class LoginSecurityUser implements ILoginSecurityUser {
     userName?: string | undefined;
     password?: string | undefined;
@@ -15311,11 +15584,12 @@ export class Platform implements IPlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    nodes?: PlatformNode[] | undefined;
 
     constructor(data?: IPlatform) {
         if (data) {
@@ -15333,7 +15607,11 @@ export class Platform implements IPlatform {
             this.dnsName = _data["dnsName"];
             this.os = _data["os"];
             this.kind = _data["kind"];
-            this.ipAddress = _data["ipAddress"];
+            if (Array.isArray(_data["ipAddresses"])) {
+                this.ipAddresses = [] as any;
+                for (let item of _data["ipAddresses"])
+                    this.ipAddresses!.push(item);
+            }
             this.notes = _data["notes"];
             if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
@@ -15342,6 +15620,11 @@ export class Platform implements IPlatform {
             }
             this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
             this.updatedAt = _data["updatedAt"] ? new Date(_data["updatedAt"].toString()) : undefined as any;
+            if (Array.isArray(_data["nodes"])) {
+                this.nodes = [] as any;
+                for (let item of _data["nodes"])
+                    this.nodes!.push(PlatformNode.fromJS(item));
+            }
         }
     }
 
@@ -15359,7 +15642,11 @@ export class Platform implements IPlatform {
         data["dnsName"] = this.dnsName;
         data["os"] = this.os;
         data["kind"] = this.kind;
-        data["ipAddress"] = this.ipAddress;
+        if (Array.isArray(this.ipAddresses)) {
+            data["ipAddresses"] = [];
+            for (let item of this.ipAddresses)
+                data["ipAddresses"].push(item);
+        }
         data["notes"] = this.notes;
         if (Array.isArray(this.tagIds)) {
             data["tagIds"] = [];
@@ -15368,6 +15655,11 @@ export class Platform implements IPlatform {
         }
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["updatedAt"] = this.updatedAt ? this.updatedAt.toISOString() : undefined as any;
+        if (Array.isArray(this.nodes)) {
+            data["nodes"] = [];
+            for (let item of this.nodes)
+                data["nodes"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -15378,11 +15670,12 @@ export interface IPlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
     createdAt?: Date;
     updatedAt?: Date;
+    nodes?: PlatformNode[] | undefined;
 }
 
 export enum PlatformKind {
@@ -15390,6 +15683,134 @@ export enum PlatformKind {
     Cluster = "Cluster",
     Serverless = "Serverless",
     ContainerHost = "ContainerHost",
+}
+
+export class PlatformNode implements IPlatformNode {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    ipAddresses?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IPlatformNode) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.displayName = _data["displayName"];
+            this.dnsName = _data["dnsName"];
+            this.os = _data["os"];
+            if (Array.isArray(_data["ipAddresses"])) {
+                this.ipAddresses = [] as any;
+                for (let item of _data["ipAddresses"])
+                    this.ipAddresses!.push(item);
+            }
+            this.notes = _data["notes"];
+        }
+    }
+
+    static fromJS(data: any): PlatformNode {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlatformNode();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["displayName"] = this.displayName;
+        data["dnsName"] = this.dnsName;
+        data["os"] = this.os;
+        if (Array.isArray(this.ipAddresses)) {
+            data["ipAddresses"] = [];
+            for (let item of this.ipAddresses)
+                data["ipAddresses"].push(item);
+        }
+        data["notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IPlatformNode {
+    id?: string;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    ipAddresses?: string[] | undefined;
+    notes?: string | undefined;
+}
+
+export class PlatformNodeInput implements IPlatformNodeInput {
+    id?: string | undefined;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    ipAddresses?: string[] | undefined;
+    notes?: string | undefined;
+
+    constructor(data?: IPlatformNodeInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.displayName = _data["displayName"];
+            this.dnsName = _data["dnsName"];
+            this.os = _data["os"];
+            if (Array.isArray(_data["ipAddresses"])) {
+                this.ipAddresses = [] as any;
+                for (let item of _data["ipAddresses"])
+                    this.ipAddresses!.push(item);
+            }
+            this.notes = _data["notes"];
+        }
+    }
+
+    static fromJS(data: any): PlatformNodeInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlatformNodeInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["displayName"] = this.displayName;
+        data["dnsName"] = this.dnsName;
+        data["os"] = this.os;
+        if (Array.isArray(this.ipAddresses)) {
+            data["ipAddresses"] = [];
+            for (let item of this.ipAddresses)
+                data["ipAddresses"].push(item);
+        }
+        data["notes"] = this.notes;
+        return data;
+    }
+}
+
+export interface IPlatformNodeInput {
+    id?: string | undefined;
+    displayName?: string | undefined;
+    dnsName?: string | undefined;
+    os?: string | undefined;
+    ipAddresses?: string[] | undefined;
+    notes?: string | undefined;
 }
 
 export class Position implements IPosition {
@@ -17040,6 +17461,178 @@ export enum SyncStatus {
     NotApplicable = "NotApplicable",
 }
 
+export class SystemLogCounts implements ISystemLogCounts {
+    debug?: number;
+    info?: number;
+    warning?: number;
+    error?: number;
+    readonly total?: number;
+
+    constructor(data?: ISystemLogCounts) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.debug = _data["debug"];
+            this.info = _data["info"];
+            this.warning = _data["warning"];
+            this.error = _data["error"];
+            (this as any).total = _data["total"];
+        }
+    }
+
+    static fromJS(data: any): SystemLogCounts {
+        data = typeof data === 'object' ? data : {};
+        let result = new SystemLogCounts();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["debug"] = this.debug;
+        data["info"] = this.info;
+        data["warning"] = this.warning;
+        data["error"] = this.error;
+        data["total"] = this.total;
+        return data;
+    }
+}
+
+export interface ISystemLogCounts {
+    debug?: number;
+    info?: number;
+    warning?: number;
+    error?: number;
+    total?: number;
+}
+
+export class SystemLogEntry implements ISystemLogEntry {
+    id?: string;
+    timestamp?: Date;
+    level?: LogLevel;
+    area?: string | undefined;
+    message?: string | undefined;
+    details?: string | undefined;
+    exception?: string | undefined;
+
+    constructor(data?: ISystemLogEntry) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
+            this.level = _data["level"];
+            this.area = _data["area"];
+            this.message = _data["message"];
+            this.details = _data["details"];
+            this.exception = _data["exception"];
+        }
+    }
+
+    static fromJS(data: any): SystemLogEntry {
+        data = typeof data === 'object' ? data : {};
+        let result = new SystemLogEntry();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        data["level"] = this.level;
+        data["area"] = this.area;
+        data["message"] = this.message;
+        data["details"] = this.details;
+        data["exception"] = this.exception;
+        return data;
+    }
+}
+
+export interface ISystemLogEntry {
+    id?: string;
+    timestamp?: Date;
+    level?: LogLevel;
+    area?: string | undefined;
+    message?: string | undefined;
+    details?: string | undefined;
+    exception?: string | undefined;
+}
+
+export class SystemLogResult implements ISystemLogResult {
+    logs?: SystemLogEntry[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+    readonly totalPages?: number;
+
+    constructor(data?: ISystemLogResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["logs"])) {
+                this.logs = [] as any;
+                for (let item of _data["logs"])
+                    this.logs!.push(SystemLogEntry.fromJS(item));
+            }
+            this.totalCount = _data["totalCount"];
+            this.page = _data["page"];
+            this.pageSize = _data["pageSize"];
+            (this as any).totalPages = _data["totalPages"];
+        }
+    }
+
+    static fromJS(data: any): SystemLogResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new SystemLogResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.logs)) {
+            data["logs"] = [];
+            for (let item of this.logs)
+                data["logs"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["totalCount"] = this.totalCount;
+        data["page"] = this.page;
+        data["pageSize"] = this.pageSize;
+        data["totalPages"] = this.totalPages;
+        return data;
+    }
+}
+
+export interface ISystemLogResult {
+    logs?: SystemLogEntry[] | undefined;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+}
+
 export class Tag implements ITag {
     id?: string;
     name?: string | undefined;
@@ -18312,9 +18905,10 @@ export class UpdatePlatform implements IUpdatePlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+    nodes?: PlatformNodeInput[] | undefined;
 
     constructor(data?: IUpdatePlatform) {
         if (data) {
@@ -18332,12 +18926,21 @@ export class UpdatePlatform implements IUpdatePlatform {
             this.dnsName = _data["dnsName"];
             this.os = _data["os"];
             this.kind = _data["kind"];
-            this.ipAddress = _data["ipAddress"];
+            if (Array.isArray(_data["ipAddresses"])) {
+                this.ipAddresses = [] as any;
+                for (let item of _data["ipAddresses"])
+                    this.ipAddresses!.push(item);
+            }
             this.notes = _data["notes"];
             if (Array.isArray(_data["tagIds"])) {
                 this.tagIds = [] as any;
                 for (let item of _data["tagIds"])
                     this.tagIds!.push(item);
+            }
+            if (Array.isArray(_data["nodes"])) {
+                this.nodes = [] as any;
+                for (let item of _data["nodes"])
+                    this.nodes!.push(PlatformNodeInput.fromJS(item));
             }
         }
     }
@@ -18356,12 +18959,21 @@ export class UpdatePlatform implements IUpdatePlatform {
         data["dnsName"] = this.dnsName;
         data["os"] = this.os;
         data["kind"] = this.kind;
-        data["ipAddress"] = this.ipAddress;
+        if (Array.isArray(this.ipAddresses)) {
+            data["ipAddresses"] = [];
+            for (let item of this.ipAddresses)
+                data["ipAddresses"].push(item);
+        }
         data["notes"] = this.notes;
         if (Array.isArray(this.tagIds)) {
             data["tagIds"] = [];
             for (let item of this.tagIds)
                 data["tagIds"].push(item);
+        }
+        if (Array.isArray(this.nodes)) {
+            data["nodes"] = [];
+            for (let item of this.nodes)
+                data["nodes"].push(item ? item.toJSON() : undefined as any);
         }
         return data;
     }
@@ -18373,9 +18985,10 @@ export interface IUpdatePlatform {
     dnsName?: string | undefined;
     os?: string | undefined;
     kind?: PlatformKind;
-    ipAddress?: string | undefined;
+    ipAddresses?: string[] | undefined;
     notes?: string | undefined;
     tagIds?: string[] | undefined;
+    nodes?: PlatformNodeInput[] | undefined;
 }
 
 export class UpdatePosition implements IUpdatePosition {

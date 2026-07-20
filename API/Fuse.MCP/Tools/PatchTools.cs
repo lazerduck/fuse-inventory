@@ -198,17 +198,19 @@ public sealed class PatchTools(
     [McpServerTool(Name = "inventory_patch_platform", Destructive = true)]
     public async Task<object> PatchPlatform(Guid platformId, DateTime expectedUpdatedAt,
         string? displayName = null, string? dnsName = null, string? os = null, PlatformKind? kind = null,
-        string? ipAddress = null, string? notes = null, IReadOnlyList<Guid>? tagIds = null,
+        IReadOnlyList<string>? ipAddresses = null, string? notes = null, IReadOnlyList<Guid>? tagIds = null,
+        IReadOnlyList<PlatformNodeInput>? nodes = null,
         IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
     {
         await Require(PlatformPermissions.UpdateKey, ct);
         var x = await platforms.GetPlatformByIdAsync(platformId) ?? throw Missing("Platform", platformId);
         McpPatch.Current(x.UpdatedAt, expectedUpdatedAt);
-        McpPatch.ValidateClears(clearFields, "dnsName", "os", "kind", "ipAddress", "notes", "tagIds");
+        McpPatch.ValidateClears(clearFields, "dnsName", "os", "kind", "ipAddresses", "notes", "tagIds", "nodes");
         return McpResult.Value(await platforms.UpdatePlatformAsync(new(x.Id, displayName ?? x.DisplayName,
             McpPatch.Text(dnsName, x.DnsName, clearFields, "dnsName"), McpPatch.Text(os, x.Os, clearFields, "os"),
-            McpPatch.Value(kind, x.Kind, clearFields, "kind"), McpPatch.Text(ipAddress, x.IpAddress, clearFields, "ipAddress"),
-            McpPatch.Text(notes, x.Notes, clearFields, "notes"), McpPatch.Tags(tagIds, x.TagIds, clearFields))));
+            McpPatch.Value(kind, x.Kind, clearFields, "kind"), McpPatch.Clears(clearFields, "ipAddresses") ? [] : ipAddresses ?? x.IpAddresses,
+            McpPatch.Text(notes, x.Notes, clearFields, "notes"), McpPatch.Tags(tagIds, x.TagIds, clearFields),
+            McpPatch.Clears(clearFields, "nodes") ? [] : nodes ?? x.Nodes?.Select(n => new PlatformNodeInput(n.Id, n.DisplayName, n.DnsName, n.Os, n.IpAddresses, n.Notes)).ToList())));
     }
 
     [McpServerTool(Name = "inventory_patch_position", Destructive = true)]

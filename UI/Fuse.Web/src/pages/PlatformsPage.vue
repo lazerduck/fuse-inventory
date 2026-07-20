@@ -116,7 +116,7 @@ import { computed, reactive, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { Platform, CreatePlatform, UpdatePlatform } from 'api/client'
+import { Platform, CreatePlatform, UpdatePlatform, PlatformNodeInput } from 'api/client'
 import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
@@ -164,7 +164,8 @@ const columns: QTableColumn<Platform>[] = [
   { name: 'dnsName', label: 'DNS Name', field: 'dnsName', align: 'left' },
   { name: 'os', label: 'Operating System', field: 'os', align: 'left' },
   { name: 'kind', label: 'Kind', field: 'kind', align: 'left' },
-  { name: 'ipAddress', label: 'IP', field: 'ipAddress', align: 'left' },
+  { name: 'ipAddresses', label: 'IPs', field: row => row.ipAddresses?.join(', ') ?? '', align: 'left' },
+  { name: 'nodes', label: 'Nodes', field: row => row.nodes?.length ?? 0, align: 'left', sortable: true },
   { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
@@ -228,6 +229,17 @@ const deleteMutation = useMutation({
 
 const isAnyPending = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
+function toNodeInput(node: PlatformFormModel['nodes'][number]): PlatformNodeInput {
+  return new PlatformNodeInput({
+    id: node.id,
+    displayName: node.displayName || undefined,
+    dnsName: node.dnsName || undefined,
+    os: node.os || undefined,
+    ipAddresses: node.ipAddresses.length ? [...node.ipAddresses] : undefined,
+    notes: node.notes || undefined
+  })
+}
+
 function handleSubmit(model: PlatformFormModel) {
   if (dialogMode.value === 'create') {
     const payload = Object.assign(new CreatePlatform(), {
@@ -235,9 +247,10 @@ function handleSubmit(model: PlatformFormModel) {
       dnsName: model.dnsName || undefined,
       os: model.os || undefined,
       kind: model.kind || undefined,
-      ipAddress: model.ipAddress || undefined,
+      ipAddresses: model.ipAddresses.length ? [...model.ipAddresses] : undefined,
       notes: model.notes || undefined,
-      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined,
+      nodes: model.kind === 'Cluster' ? model.nodes.map(toNodeInput) : undefined
     })
     createMutation.mutate(payload)
   } else if (dialogMode.value === 'edit' && selectedPlatform.value?.id) {
@@ -246,9 +259,10 @@ function handleSubmit(model: PlatformFormModel) {
       dnsName: model.dnsName || undefined,
       os: model.os || undefined,
       kind: model.kind || undefined,
-      ipAddress: model.ipAddress || undefined,
+      ipAddresses: model.ipAddresses.length ? [...model.ipAddresses] : undefined,
       notes: model.notes || undefined,
-      tagIds: model.tagIds.length ? [...model.tagIds] : undefined
+      tagIds: model.tagIds.length ? [...model.tagIds] : undefined,
+      nodes: model.kind === 'Cluster' ? model.nodes.map(toNodeInput) : undefined
     })
     updateMutation.mutate({ id: selectedPlatform.value.id, payload })
   }

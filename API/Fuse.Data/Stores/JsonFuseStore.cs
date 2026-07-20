@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using System.IO.Compression;
 using Fuse.Core.Configs;
 using Fuse.Core.Helpers;
@@ -51,7 +52,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             _cache = new Snapshot(
                 Applications: await ReadAsync<Application>("applications.json", ct),
                 DataStores: await ReadAsync<DataStore>("datastores.json", ct),
-                Platforms: await ReadAsync<Platform>("platforms.json", ct),
+                Platforms: await ReadPlatformsAsync(ct),
                 ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
                 Accounts: await ReadAsync<Account>("accounts.json", ct),
                 Identities: await ReadAsync<Identity>("identities.json", ct),
@@ -210,6 +211,45 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
         if (!File.Exists(path)) return Array.Empty<T>();
         await using var fs = File.OpenRead(path);
         return (await JsonSerializer.DeserializeAsync<IReadOnlyList<T>>(fs, Json, ct)) ?? Array.Empty<T>();
+    }
+
+    private async Task<IReadOnlyList<Platform>> ReadPlatformsAsync(CancellationToken ct)
+    {
+        const string file = "platforms.json";
+        var path = Path.Combine(_options.DataDirectory, file);
+        if (!File.Exists(path)) return Array.Empty<Platform>();
+
+        var root = JsonNode.Parse(await File.ReadAllTextAsync(path, ct)) as JsonArray ?? [];
+        var migrated = false;
+        foreach (var platform in root.OfType<JsonObject>())
+        {
+            if (platform.TryGetPropertyValue("ipAddress", out var legacy))
+            {
+                if (!platform.ContainsKey("ipAddresses"))
+                {
+                    var addresses = new JsonArray();
+                    if (legacy is JsonValue value && value.TryGetValue<string>(out var address) && !string.IsNullOrWhiteSpace(address))
+                        addresses.Add(address);
+                    platform["ipAddresses"] = addresses;
+                }
+                platform.Remove("ipAddress");
+                migrated = true;
+            }
+            else if (!platform.ContainsKey("ipAddresses"))
+            {
+                platform["ipAddresses"] = new JsonArray();
+                migrated = true;
+            }
+        }
+
+        if (migrated)
+        {
+            var tmp = path + ".tmp";
+            await File.WriteAllTextAsync(tmp, root.ToJsonString(Json), ct);
+            File.Move(tmp, path, overwrite: true);
+        }
+
+        return root.Deserialize<IReadOnlyList<Platform>>(Json) ?? Array.Empty<Platform>();
     }
 
     private async Task WriteAsync<T>(string file, IReadOnlyList<T> value, CancellationToken ct)
