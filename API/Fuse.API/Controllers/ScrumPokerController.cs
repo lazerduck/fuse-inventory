@@ -51,7 +51,7 @@ public sealed class ScrumPokerController(
         if (!await IsEnabled())
             return NotFound();
 
-        var result = store.JoinRoom(roomCode, request.DisplayName, DateTime.UtcNow, request.ParticipantToken, request.AvatarColor);
+        var result = store.JoinOrCreateRoom(roomCode, request.DisplayName, DateTime.UtcNow, request.ParticipantToken, request.AvatarColor);
         return result.IsSuccess ? Ok(ToSessionResponse(result.Value!)) : ToError<ScrumPokerSessionResponse>(result);
     }
 
