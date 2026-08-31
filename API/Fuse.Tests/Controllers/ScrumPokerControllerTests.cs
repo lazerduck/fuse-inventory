@@ -45,10 +45,8 @@ public sealed class ScrumPokerControllerTests
         Assert.Null(bobBeforeReveal.Card);
         Assert.True(bobBeforeReveal.HasVoted);
 
-        var guestReveal = await controller.Reveal(session.RoomCode, new ScrumPokerParticipantRequest(guest.ParticipantToken));
-        Assert.IsType<UnauthorizedObjectResult>(guestReveal.Result);
-
-        await controller.Reveal(session.RoomCode, new ScrumPokerParticipantRequest(session.ParticipantToken));
+        var guestReveal = GetRoom(await controller.Reveal(session.RoomCode, new ScrumPokerParticipantRequest(guest.ParticipantToken)));
+        Assert.Equal(ScrumPokerPhase.Revealed, guestReveal.Phase);
         var afterReveal = GetRoom(await controller.GetState(session.RoomCode, session.ParticipantToken));
 
         Assert.Equal(ScrumPokerCard.Five, afterReveal.Participants.Single(p => p.DisplayName == "Alice").Card);
@@ -74,10 +72,7 @@ public sealed class ScrumPokerControllerTests
         var owner = GetSession(await controller.CreateRoom(new ScrumPokerJoinRequest("Alice")));
         var guest = GetSession(await controller.JoinRoom(owner.RoomCode, new ScrumPokerJoinRequest("Bob")));
 
-        var guestUpdate = await controller.SetAutoReveal(owner.RoomCode, new ScrumPokerAutoRevealRequest(guest.ParticipantToken, true));
-        Assert.IsType<UnauthorizedObjectResult>(guestUpdate.Result);
-
-        var updated = GetRoom(await controller.SetAutoReveal(owner.RoomCode, new ScrumPokerAutoRevealRequest(owner.ParticipantToken, true)));
+        var updated = GetRoom(await controller.SetAutoReveal(owner.RoomCode, new ScrumPokerAutoRevealRequest(guest.ParticipantToken, true)));
         var ownerView = GetRoom(await controller.GetState(owner.RoomCode, owner.ParticipantToken));
 
         Assert.True(updated.AutoReveal);

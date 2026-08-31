@@ -52,7 +52,11 @@
           <div class="section-kicker">Collaborative estimation</div>
           <div class="join-title">Create or join a room</div>
           <div class="join-copy">
-            Choose a display name, then share the room with your team.
+            {{
+              hasRoomCode
+                ? "Enter your details to join with the room code below."
+                : "Choose a display name, then share the room with your team."
+            }}
           </div>
         </div>
       </q-card-section>
@@ -63,9 +67,7 @@
           label="Your display name"
           maxlength="50"
           counter
-          @keyup.enter="
-            roomCodeFromUrl ? enterRoom() : createRoom()
-          "
+          @keyup.enter="submitRoomEntry"
         />
         <div class="avatar-picker q-mt-md">
           <div class="avatar-picker__label avatar-picker__label--images">
@@ -81,7 +83,7 @@
                 'avatar-picker__option--selected':
                   selectedAvatarColor === avatar.value,
               }"
-              :style="scrumPokerAvatarImageStyle(avatar)"
+              :style="scrumPokerAvatarImageStyle(avatar, true)"
               :aria-label="`Choose avatar ${avatar.index + 1}`"
               :aria-pressed="selectedAvatarColor === avatar.value"
               @click="selectedAvatarColor = avatar.value"
@@ -95,34 +97,27 @@
             </button>
           </div>
         </div>
-        <q-banner
-          v-if="roomCodeFromUrl"
-          rounded
-          dense
-          :class="[
-            'q-mt-md',
-            'room-notice',
-            { 'banner-error': roomEntryStatus === 'expired' },
-          ]"
-        >
-          <template v-if="roomEntryStatus === 'expired'">
-            Room <strong>{{ roomCodeFromUrl }}</strong> no longer exists and
-            will be recreated.
-          </template>
-          <template v-else>
-            Entering existing room <strong>{{ roomCodeFromUrl }}</strong
-            >.
-          </template>
-        </q-banner>
         <q-input
-          v-else
           v-model="joinCode"
           outlined
-          label="Room code (optional)"
+          label="Existing room code"
           class="q-mt-md"
           maxlength="20"
-          @keyup.enter="joinRoom"
-        />
+          @keyup.enter="submitRoomEntry"
+        >
+          <template v-if="hasRoomCode" #append>
+            <q-btn
+              flat
+              round
+              dense
+              icon="close"
+              aria-label="Clear room code"
+              @click="clearRoomCode"
+            >
+              <q-tooltip>Clear room code</q-tooltip>
+            </q-btn>
+          </template>
+        </q-input>
         <q-banner
           v-if="errorMessage"
           rounded
@@ -132,34 +127,26 @@
         >
       </q-card-section>
       <q-card-actions class="join-actions">
-        <template v-if="roomCodeFromUrl">
+        <q-btn
+          class="join-submit-btn"
+          size="lg"
+          unelevated
+          color="primary"
+          :label="hasRoomCode ? 'Join room' : 'Create room'"
+          :disable="!canSubmit"
+          :loading="loading"
+          @click="submitRoomEntry"
+        />
+        <div v-if="hasRoomCode" class="create-room-link-slot">
           <q-btn
-            unelevated
-            color="primary"
-            label="Enter room"
-            :disable="!canSubmit"
-            :loading="loading"
-            @click="enterRoom"
-          />
-        </template>
-        <template v-else>
-          <q-btn
+            class="create-room-btn"
             flat
-            color="grey-8"
-            label="Join existing room"
-            :disable="!canSubmit || !joinCode"
-            :loading="loading"
-            @click="joinRoom"
-          />
-          <q-btn
-            unelevated
+            dense
             color="primary"
-            label="Create new room"
-            :disable="!canSubmit"
-            :loading="loading"
+            label="Create a new room instead"
             @click="createRoom"
           />
-        </template>
+        </div>
       </q-card-actions>
     </q-card>
 
@@ -238,7 +225,7 @@
                   >
                 </h3>
               </div>
-              <div v-if="isCurrentHost" class="action-row">
+              <div class="action-row">
                 <q-btn
                   flat
                   class="control-btn"
@@ -271,7 +258,7 @@
             </div>
             <q-list class="participant-list">
               <q-item
-                v-for="participant in room?.participants ?? []"
+                v-for="participant in orderedParticipants"
                 :key="participant.id"
               >
                 <q-item-section avatar
@@ -296,53 +283,7 @@
                       label="You"
                       class="q-ml-sm"
                   /></q-item-label>
-                  <q-item-label caption class="participant-role-label">
-                    <span
-                      :class="{
-                        'participant-role-label--owner': sameParticipantId(
-                          participant.id,
-                          room?.ownerParticipantId,
-                        ),
-                      }"
-                      >{{
-                        sameParticipantId(
-                          participant.id,
-                          room?.ownerParticipantId,
-                        )
-                          ? "Owner"
-                          : "Participant"
-                      }}</span
-                    >
-                    <template
-                      v-if="
-                        sameParticipantId(
-                          participant.id,
-                          room?.currentHostParticipantId,
-                        )
-                      "
-                    >
-                      <span aria-hidden="true">-</span>
-                      <span class="participant-role-label--host">Host</span>
-                    </template>
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section side class="participant-remove-slot">
-                  <q-btn
-                    v-if="
-                      isRoomOwner && participant.id !== currentParticipantId
-                    "
-                    flat
-                    round
-                    dense
-                    icon="person_remove"
-                    class="participant-remove-btn"
-                    aria-label="Remove participant"
-                    @click="
-                      removeParticipant(participant.id, participant.displayName)
-                    "
-                  >
-                    <q-tooltip>Remove participant</q-tooltip>
-                  </q-btn>
+                  <q-item-label caption>Participant</q-item-label>
                 </q-item-section>
                 <q-item-section side class="participant-status-slot">
                   <span
@@ -434,7 +375,6 @@
               <div class="side-card-header">
                 <div class="side-title">Room</div>
                 <q-btn
-                  v-if="isCurrentHost"
                   flat
                   round
                   dense
@@ -459,7 +399,7 @@
             </q-card-section>
           </q-card>
 
-          <q-card v-if="isCurrentHost" flat bordered class="side-card">
+          <q-card flat bordered class="side-card">
             <q-card-section>
               <div class="side-title">Settings</div>
               <div class="settings-row">
@@ -526,7 +466,6 @@ import { Dialog, Notify, useQuasar } from "quasar";
 import {
   ScrumPokerCard,
   ScrumPokerPhase,
-  ScrumPokerRemoveParticipantRequest,
   ScrumPokerRoomResponse,
   ScrumPokerSessionResponse,
   ApiException,
@@ -559,7 +498,6 @@ const lockVotesAfterReveal = ref(false);
 const lockVotesAfterRevealSaving = ref(false);
 const roomName = ref("");
 const errorMessage = ref("");
-const roomEntryStatus = ref<"unknown" | "expired">("unknown");
 const selectedCard = ref<ScrumPokerCard | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -567,27 +505,15 @@ const featureEnabled = computed(
   () => fuseStore.appSettings?.scrumPokerEnabled === true,
 );
 const isDark = computed(() => $q.dark.isActive);
-const roomCodeFromUrl = computed(() =>
-  typeof route.params.roomCode === "string"
-    ? route.params.roomCode.toUpperCase()
-    : "",
-);
 const canSubmit = computed(
   () =>
     displayName.value.trim().length > 0 &&
     displayName.value.trim().length <= 50 &&
     selectedAvatarColor.value !== null,
 );
+const hasRoomCode = computed(() => joinCode.value.trim().length > 0);
 const currentParticipantId = computed(() => session.value?.participantId);
-const isRoomOwner = computed(() =>
-  sameParticipantId(currentParticipantId.value, room.value?.ownerParticipantId),
-);
-const isCurrentHost = computed(() =>
-  sameParticipantId(
-    currentParticipantId.value,
-    room.value?.currentHostParticipantId,
-  ),
-);
+const orderedParticipants = computed(() => room.value?.participants ?? []);
 const roomAutoReveal = computed(() => room.value?.autoReveal === true);
 const roomLockVotesAfterReveal = computed(
   () => room.value?.lockVotesAfterReveal === true,
@@ -716,13 +642,13 @@ function participantAvatarStyle(participant: {
   const selectedImage = scrumPokerAvatarImages.find(
     (avatar) => avatar.value === participant.avatarColor,
   );
-  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, 50);
+  if (selectedImage) return scrumPokerAvatarImageStyle(selectedImage, false);
 
   if (sameParticipantId(participant.id, currentParticipantId.value)) {
     const currentImage = scrumPokerAvatarImages.find(
       (avatar) => avatar.value === selectedAvatarColor.value,
     );
-    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, 50);
+    if (currentImage) return scrumPokerAvatarImageStyle(currentImage, false);
   }
 
   return {};
@@ -740,9 +666,6 @@ function participantHasImage(participant: {
         (avatar) => avatar.value === selectedAvatarColor.value,
       ))
   );
-}
-function avatarColorForRequest(selection: string) {
-  return selection;
 }
 function sameParticipantId(left?: unknown, right?: unknown) {
   return (
@@ -776,49 +699,55 @@ function cardValue(card: ScrumPokerCard): number | null {
 function storageKey(code: string) {
   return `fuse:scrum-poker:${code}`;
 }
-function identityStorageKey(code: string) {
-  return `fuse:scrum-poker-identity:${code}`;
+const leaveRequestSent = ref(false);
+function clearLegacyParticipantIdentityStorage() {
+  const prefix = "fuse:scrum-poker-identity:";
+  for (const storage of [localStorage, sessionStorage]) {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(prefix)) storage.removeItem(key);
+    }
+  }
 }
 function apiUrl(path: string) {
   return `${import.meta.env.VITE_API_BASE_URL ?? ""}${path}`;
 }
-function storedParticipantIdentity(code: string) {
-  const key = identityStorageKey(code);
-  const stored = localStorage.getItem(key) ?? sessionStorage.getItem(key);
-  if (!stored) return undefined;
-  try {
-    const identity = JSON.parse(stored) as {
-      participantId?: string;
-      participantToken?: string;
-      displayName?: string;
-    };
-    localStorage.setItem(key, JSON.stringify(identity));
-    return identity;
-  } catch {
-    localStorage.removeItem(key);
-    return undefined;
-  }
+function normalizedRoomCode(code: string) {
+  return code.trim().toUpperCase();
 }
-function storedParticipantToken(code: string, displayName: string) {
-  const identity = storedParticipantIdentity(code);
-  return identity?.displayName?.localeCompare(displayName, undefined, {
-    sensitivity: "accent",
-  }) === 0
-    ? identity.participantToken
-    : undefined;
+function sessionActionError(error: unknown, fallback: string) {
+  if (error instanceof ApiException) {
+    try {
+      const payload = JSON.parse(error.response) as { error?: string };
+      if (payload.error) return payload.error;
+    } catch {
+      // Use the generated API error when the response is not JSON.
+    }
+  }
+
+  return error instanceof Error ? error.message : fallback;
 }
 
 function editRoomName() {
-  if (!isRoomOwner.value) return;
-
   Dialog.create({
     title: "Edit room name",
+    color: "primary",
     prompt: {
       model: roomName.value || `Sprint ${room.value?.round ?? 1} planning`,
       type: "text",
+      color: "primary",
       maxlength: 80,
     },
-    cancel: true,
+    ok: {
+      color: "primary",
+      unelevated: true,
+      label: "Save",
+    },
+    cancel: {
+      label: "Cancel",
+      color: "primary",
+      flat: true,
+    },
     persistent: true,
   }).onOk((name: string) => {
     const trimmedName = name.trim();
@@ -827,11 +756,16 @@ function editRoomName() {
 }
 
 async function createRoom() {
-  if (!canSubmit.value) return;
+  if (!canSubmit.value) {
+    errorMessage.value =
+      "Enter a display name and choose an avatar before creating a room.";
+    return;
+  }
+  joinCode.value = "";
   await runSessionAction(() =>
     client.scrumPokerRoomsPOST({
       displayName: displayName.value.trim(),
-      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
+      avatarColor: selectedAvatarColor.value!,
     } as any),
   );
 }
@@ -842,37 +776,32 @@ async function joinRoom() {
   await runSessionAction(() =>
     client.scrumPokerRoomsEnter(code, {
       displayName: displayName.value.trim(),
-      participantToken: storedParticipantToken(code, displayName.value.trim()),
-      avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
+      avatarColor: selectedAvatarColor.value!,
     } as any),
   );
 }
 
-async function enterRoom() {
-  if (!canSubmit.value || !roomCodeFromUrl.value) return;
-  await runSessionAction(
-    () =>
-      client.scrumPokerRoomsEnter(roomCodeFromUrl.value, {
-        displayName: displayName.value.trim(),
-        participantToken: storedParticipantToken(
-          roomCodeFromUrl.value,
-          displayName.value.trim(),
-        ),
-        avatarColor: avatarColorForRequest(selectedAvatarColor.value!),
-      } as any),
-    true,
-  );
+function clearRoomCode() {
+  joinCode.value = "";
+  errorMessage.value = "";
+}
+
+function submitRoomEntry() {
+  if (hasRoomCode.value) {
+    void joinRoom();
+  } else {
+    void createRoom();
+  }
 }
 
 async function runSessionAction(
   action: () => Promise<ScrumPokerSessionResponse>,
-  enteringExistingRoom = false,
 ) {
   loading.value = true;
   errorMessage.value = "";
   try {
     const result = await action();
-    if (enteringExistingRoom) roomEntryStatus.value = "unknown";
+    leaveRequestSent.value = false;
     session.value = result;
     room.value = result.room ?? null;
     participantName.value = displayName.value.trim();
@@ -885,15 +814,6 @@ async function runSessionAction(
         currentAvatarColor() ?? selectedAvatarColor.value;
     }
     selectedCard.value = currentCard();
-    if (result.roomCode && result.participantToken)
-      localStorage.setItem(
-        identityStorageKey(result.roomCode),
-        JSON.stringify({
-          participantId: result.participantId,
-          participantToken: result.participantToken,
-          displayName: participantName.value,
-        }),
-      );
     if (result.roomCode && result.participantToken)
       sessionStorage.setItem(
         storageKey(result.roomCode),
@@ -910,16 +830,7 @@ async function runSessionAction(
     await nextTick();
     showEntranceSplash.value = true;
   } catch (error) {
-    if (
-      enteringExistingRoom &&
-      ((error instanceof ApiException && error.status === 404) ||
-        (error instanceof Error &&
-          /404|not found|expired/i.test(error.message)))
-    ) {
-      roomEntryStatus.value = "expired";
-    }
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to join the room.";
+    errorMessage.value = sessionActionError(error, "Unable to join the room.");
   } finally {
     loading.value = false;
   }
@@ -942,24 +853,11 @@ function currentAvatarColor() {
 async function refreshRoom() {
   if (!session.value?.roomCode || !session.value.participantToken) return;
   try {
-    const previousHostId = room.value?.currentHostParticipantId;
     const result = await client.scrumPokerState(
       session.value.roomCode,
       session.value.participantToken,
     );
     room.value = result;
-    const nextHost = result.participants?.find(
-      (participant) => participant.id === result.currentHostParticipantId,
-    );
-    if (previousHostId && nextHost?.id && previousHostId !== nextHost.id) {
-      Notify.create({
-        message:
-          nextHost.id === currentParticipantId.value
-            ? "You are now the host."
-            : `${nextHost.displayName ?? "A participant"} is now the host.`,
-        color: "positive",
-      });
-    }
     const me = result.participants?.find(
       (p) => p.id === currentParticipantId.value,
     );
@@ -968,7 +866,7 @@ async function refreshRoom() {
     if (isInvalidSessionError(error)) {
       try {
         const result = await client.scrumPokerRoomsEnter(
-          session.value.roomCode,
+          session.value.roomCode!,
           {
             displayName: participantName.value || displayName.value.trim(),
             participantToken: session.value.participantToken,
@@ -984,7 +882,6 @@ async function refreshRoom() {
       const roomCode = session.value.roomCode!;
       stopPolling();
       sessionStorage.removeItem(storageKey(roomCode));
-      localStorage.removeItem(identityStorageKey(roomCode));
       session.value = null;
       room.value = null;
       selectedCard.value = null;
@@ -1019,23 +916,6 @@ function stopPolling() {
   }
 }
 
-function leaveRoomOnPageExit() {
-  const currentSession = session.value;
-  if (!currentSession?.roomCode || !currentSession.participantToken) return;
-
-  const body = new Blob(
-    [JSON.stringify({ participantToken: currentSession.participantToken })],
-    { type: "application/json" },
-  );
-  const sent = navigator.sendBeacon(
-    apiUrl(
-      `/api/scrum-poker/rooms/${encodeURIComponent(currentSession.roomCode)}/leave`,
-    ),
-    body,
-  );
-  if (sent) sessionStorage.removeItem(storageKey(currentSession.roomCode));
-}
-
 async function selectCard(card: ScrumPokerCard | null) {
   if (!session.value) return;
   actionLoading.value = true;
@@ -1054,7 +934,7 @@ async function selectCard(card: ScrumPokerCard | null) {
   }
 }
 async function revealCards() {
-  if (!isCurrentHost.value || readyCount.value === 0) return;
+  if (readyCount.value === 0) return;
   await roomAction(() =>
     client.scrumPokerReveal(session.value!.roomCode!, {
       participantToken: session.value!.participantToken,
@@ -1062,7 +942,7 @@ async function revealCards() {
   );
 }
 async function hideCards() {
-  if (!isCurrentHost.value || readyCount.value === 0) return;
+  if (readyCount.value === 0) return;
   await roomAction(() =>
     client.scrumPokerHide(session.value!.roomCode!, {
       participantToken: session.value!.participantToken,
@@ -1070,7 +950,7 @@ async function hideCards() {
   );
 }
 async function resetRound() {
-  if (!isCurrentHost.value || readyCount.value === 0) return;
+  if (readyCount.value === 0) return;
   await roomAction(() =>
     client.scrumPokerReset(session.value!.roomCode!, {
       participantToken: session.value!.participantToken,
@@ -1101,36 +981,6 @@ async function copyInviteLink() {
   const inviteUrl = `${window.location.origin}/scrum-poker/${session.value.roomCode}`;
   await navigator.clipboard?.writeText(inviteUrl);
   Notify.create({ message: "Invite link copied", color: "positive" });
-}
-
-function removeParticipant(participantId?: string, displayName?: string) {
-  if (!isRoomOwner.value || !participantId || !session.value?.roomCode) return;
-
-  Dialog.create({
-    title: "Remove participant?",
-    message: `Remove ${displayName || "this participant"} from the room?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    actionLoading.value = true;
-    errorMessage.value = "";
-    try {
-      room.value = await client.scrumPokerRemoveParticipant(
-        session.value!.roomCode!,
-        new ScrumPokerRemoveParticipantRequest({
-          ownerToken: session.value!.participantToken,
-          participantId,
-        }),
-      );
-    } catch (error) {
-      errorMessage.value =
-        error instanceof Error
-          ? error.message
-          : "Unable to remove participant.";
-    } finally {
-      actionLoading.value = false;
-    }
-  });
 }
 
 async function updateAutoReveal(enabled: boolean) {
@@ -1271,17 +1121,11 @@ async function setLockVotesAfterRevealOnServer(
 
 async function leaveRoom() {
   const currentSession = session.value;
+
   if (currentSession?.roomCode) joinCode.value = currentSession.roomCode;
   stopPolling();
   if (currentSession?.roomCode && currentSession.participantToken) {
-    localStorage.setItem(
-      identityStorageKey(currentSession.roomCode),
-      JSON.stringify({
-        participantId: currentSession.participantId,
-        participantToken: currentSession.participantToken,
-        displayName: participantName.value || displayName.value.trim(),
-      }),
-    );
+    leaveRequestSent.value = true;
     try {
       await client.scrumPokerLeave(currentSession.roomCode, {
         participantToken: currentSession.participantToken,
@@ -1298,23 +1142,44 @@ async function leaveRoom() {
   await router.replace({ name: "scrumPoker" });
 }
 
+function leaveRoomOnPageHide(event: PageTransitionEvent) {
+  if (event.persisted || leaveRequestSent.value) return;
+
+  const currentSession = session.value;
+  if (!currentSession?.roomCode || !currentSession.participantToken) return;
+
+  leaveRequestSent.value = true;
+  const body = new Blob(
+    [JSON.stringify({ participantToken: currentSession.participantToken })],
+    { type: "application/json" },
+  );
+  const endpoint = apiUrl(
+    `/api/scrum-poker/rooms/${encodeURIComponent(currentSession.roomCode)}/leave`,
+  );
+  if (!navigator.sendBeacon(endpoint, body)) {
+    void fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantToken: currentSession.participantToken,
+      }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }
+}
+
 async function loadStoredSession() {
   if (!featureEnabled.value) return;
   const code = route.params.roomCode as string | undefined;
   if (!code) return;
   const stored = sessionStorage.getItem(storageKey(code));
   if (!stored) {
-    joinCode.value = code;
+    joinCode.value = normalizedRoomCode(code);
     return;
   }
   try {
     const saved = JSON.parse(stored);
     session.value = saved.session ?? saved;
-    if (!session.value?.participantId) {
-      const identity = storedParticipantIdentity(code);
-      if (identity?.participantId)
-        session.value!.participantId = identity.participantId;
-    }
     participantName.value = saved.participantName ?? "";
     displayName.value = participantName.value;
     room.value = session.value?.room ?? null;
@@ -1326,38 +1191,23 @@ async function loadStoredSession() {
   }
 }
 
-async function checkRoomAvailability() {
-  if (session.value || !roomCodeFromUrl.value) return;
-
-  try {
-    const response = await fetch(
-      apiUrl(
-        `/api/scrum-poker/rooms/${encodeURIComponent(roomCodeFromUrl.value)}/availability`,
-      ),
-    );
-    if (response.ok) {
-      const result = (await response.json()) as { exists?: boolean };
-      if (result.exists === false) roomEntryStatus.value = "expired";
-    }
-  } catch {
-    // Keep the neutral entry state when availability cannot be checked.
-  }
-}
-
 onMounted(async () => {
+  window.addEventListener("pagehide", leaveRoomOnPageHide);
+  clearLegacyParticipantIdentityStorage();
   await fuseStore.fetchStatus();
   await loadStoredSession();
-  await checkRoomAvailability();
 });
 watch(
   () => route.params.roomCode,
   () => {
     if (!session.value) {
-      roomEntryStatus.value = "unknown";
-      void loadStoredSession().then(checkRoomAvailability);
+      void loadStoredSession();
     }
   },
 );
+watch(joinCode, (code) => {
+  if (!code.trim()) errorMessage.value = "";
+});
 watch(
   roomAutoReveal,
   (enabled) => {
@@ -1372,9 +1222,8 @@ watch(
   },
   { immediate: true },
 );
-onMounted(() => window.addEventListener("pagehide", leaveRoomOnPageExit));
 onBeforeUnmount(() => {
-  window.removeEventListener("pagehide", leaveRoomOnPageExit);
+  window.removeEventListener("pagehide", leaveRoomOnPageHide);
   stopPolling();
 });
 </script>
@@ -1617,9 +1466,27 @@ onBeforeUnmount(() => {
 }
 
 .join-actions {
-  justify-content: flex-end;
+  align-items: stretch;
+  flex-direction: column;
   gap: 0.5rem;
+  min-height: 5.25rem;
   padding: 0 2rem 1.75rem;
+}
+
+.create-room-link-slot {
+  min-height: 2.25rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.create-room-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.join-submit-btn {
+  width: 100%;
+  margin-top: 0.35rem;
 }
 
 .room-notice {
@@ -1785,8 +1652,8 @@ onBeforeUnmount(() => {
 }
 
 .participant-avatar {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   background: transparent;
   color: inherit;
   font-weight: 700;
@@ -1806,25 +1673,9 @@ onBeforeUnmount(() => {
   background: #36b37e;
 }
 
-.participant-role-label {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
 .participant-name-label {
   font-weight: 500;
   font-size: 1rem;
-}
-
-.participant-role-label--owner {
-  color: var(--fuse-text-muted);
-  font-weight: 400;
-}
-
-.participant-role-label--host {
-  color: var(--fuse-text-muted);
-  font-weight: 400;
 }
 
 .participant-status-slot {
@@ -1944,7 +1795,6 @@ onBeforeUnmount(() => {
   transform: rotateY(180deg);
 }
 
-.participant-remove-slot,
 .participant-score-slot {
   flex: 0 0 52px;
   width: 52px;
@@ -1974,15 +1824,6 @@ onBeforeUnmount(() => {
   flex: 0 0 92px;
   width: 92px;
   min-width: 92px;
-}
-
-.participant-remove-btn {
-  color: #d3d9e1;
-  margin-right: 2rem;
-}
-
-.participant-remove-btn:hover {
-  color: #7f8da0;
 }
 
 .participant-summary {

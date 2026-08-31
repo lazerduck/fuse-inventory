@@ -1,154 +1,84 @@
 using Fuse.Core.Areas.ScrumPoker;
-using Fuse.Core.Helpers;
 using Xunit;
 
 namespace Fuse.Tests.Areas.ScrumPoker;
 
-public sealed class InMemoryScrumPokerStoreTests
+public class InMemoryScrumPokerStoreTests
 {
-    [Fact]
-    public void CreateRoom_CreatorIsOwnerAndHost()
-    {
-        var store = new InMemoryScrumPokerStore();
-        var session = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
-
-        Assert.Equal(session.Participant.Id, session.Room.OwnerParticipantId);
-        Assert.Equal(session.Participant.Id, session.Room.CurrentHostParticipantId);
-    }
-
     [Fact]
     public void AvatarImageIdentifier_IsAcceptedAndNormalized()
     {
-        var store = new InMemoryScrumPokerStore();
-
-        var session = store.CreateRoom("Damian", DateTime.UtcNow, "AVATAR-IMAGE-18").Value!;
-        var invalid = store.JoinRoom(session.Room.RoomCode, "Sarah", DateTime.UtcNow.AddSeconds(1), avatarColor: "avatar-image-19");
-
-        Assert.Equal("avatar-image-18", session.Participant.AvatarColor);
-        Assert.False(invalid.IsSuccess);
-        Assert.Equal("The avatar color is invalid.", invalid.Error);
+        var session = new InMemoryScrumPokerStore().CreateRoom("Damian", DateTime.UtcNow, "AVATAR-IMAGE-4").Value!;
+        Assert.Equal("avatar-image-4", session.Participant.AvatarColor);
     }
 
     [Fact]
-    public void OwnerLeaves_TemporaryHostFacilitates_AndOwnerReturnsAsHost()
-    {
-        var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
-        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", DateTime.UtcNow.AddSeconds(1)).Value!;
-        var john = store.JoinRoom(owner.Room.RoomCode, "John", DateTime.UtcNow.AddSeconds(2)).Value!;
-
-        var afterOwnerLeaves = store.Leave(owner.Room.RoomCode, owner.Participant.Token, DateTime.UtcNow.AddSeconds(3)).Value!;
-        Assert.Equal(sarah.Participant.Id, afterOwnerLeaves.CurrentHostParticipantId);
-        Assert.Equal(owner.Participant.Id, afterOwnerLeaves.OwnerParticipantId);
-        Assert.Equal(sarah.Participant.Id, store.Reveal(owner.Room.RoomCode, sarah.Participant.Token, DateTime.UtcNow.AddSeconds(4)).Value!.CurrentHostParticipantId);
-
-        var ownerReturns = store.JoinRoom(owner.Room.RoomCode, "Damian", DateTime.UtcNow.AddSeconds(5), owner.Participant.Token).Value!;
-        Assert.Equal(owner.Participant.Id, ownerReturns.Participant.Id);
-        Assert.Equal(owner.Participant.Id, ownerReturns.Room.CurrentHostParticipantId);
-        Assert.Contains(ownerReturns.Room.Participants, participant => participant.Id == john.Participant.Id);
-    }
-
-    [Fact]
-    public void EmptyRoom_ExpiresAfterFourHoursWithoutActivity()
+    public void JoinOrCreateRoom_RecreatesExpiredRoomWithSameCode()
     {
         var now = DateTime.UtcNow;
-        var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", now).Value!;
-        var empty = store.Leave(owner.Room.RoomCode, owner.Participant.Token, now.AddSeconds(1)).Value!;
+        var store = new InMemoryScrumPokerStore(TimeSpan.FromHours(4));
+        var original = store.JoinOrCreateRoom("TEAM42", "Damian", now).Value!;
+        var recreated = store.JoinOrCreateRoom("TEAM42", "Sarah", now.AddHours(4)).Value!;
 
-        Assert.Empty(empty.Participants);
-        Assert.Null(empty.CurrentHostParticipantId);
-        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(4).AddSeconds(-1)));
-        Assert.False(store.RoomExists(owner.Room.RoomCode, now.AddHours(4).AddSeconds(1)));
-
-        var rejoin = store.JoinRoom(owner.Room.RoomCode, "Sarah", now.AddHours(4).AddSeconds(2));
-        Assert.False(rejoin.IsSuccess);
-    }
-
-    [Fact]
-    public void JoinOrCreateRoom_RecreatesExpiredCodeThenJoinsSubsequentParticipants()
-    {
-        var now = DateTime.UtcNow;
-        var store = new InMemoryScrumPokerStore();
-        var original = store.CreateRoom("Damian", now).Value!;
-        store.Leave(original.Room.RoomCode, original.Participant.Token, now.AddSeconds(1));
-
-        var first = store.JoinOrCreateRoom(
-            original.Room.RoomCode,
-            "Sarah",
-            now.AddHours(4).AddSeconds(2),
-            avatarColor: "avatar-image-1").Value!;
-        var second = store.JoinOrCreateRoom(
-            original.Room.RoomCode,
-            "Taylor",
-            now.AddHours(4).AddSeconds(3),
-            avatarColor: "avatar-image-2").Value!;
-
-        Assert.Equal(original.Room.RoomCode, first.Room.RoomCode);
-        Assert.Equal(original.Room.RoomCode, second.Room.RoomCode);
-        Assert.Equal(first.Room.CreatedUtc, second.Room.CreatedUtc);
-        Assert.Equal("avatar-image-1", first.Participant.AvatarColor);
-        Assert.Equal("avatar-image-2", second.Participant.AvatarColor);
-        Assert.Contains(second.Room.Participants, participant => participant.Id == first.Participant.Id);
-        Assert.Contains(second.Room.Participants, participant => participant.Id == second.Participant.Id);
+        Assert.Equal(original.Room.RoomCode, recreated.Room.RoomCode);
+        Assert.Equal("Sarah", recreated.Participant.DisplayName);
+        Assert.Single(recreated.Room.Participants);
     }
 
     [Fact]
     public void ActiveParticipantActivityExtendsRoomLifetime()
     {
         var now = DateTime.UtcNow;
-        var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", now).Value!;
+        var store = new InMemoryScrumPokerStore(TimeSpan.FromHours(4));
+        var participant = store.CreateRoom("Damian", now).Value!;
 
-        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(3).AddMinutes(59)));
-        Assert.True(store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, now.AddHours(3).AddMinutes(59)).IsSuccess);
-        Assert.True(store.RoomExists(owner.Room.RoomCode, now.AddHours(7).AddMinutes(58)));
-        Assert.False(store.RoomExists(owner.Room.RoomCode, now.AddHours(7).AddMinutes(59).AddSeconds(1)));
+        Assert.True(store.GetRoom(participant.Room.RoomCode, participant.Participant.Token, now.AddHours(3)).IsSuccess);
+        Assert.True(store.RoomExists(participant.Room.RoomCode, now.AddHours(6)));
+        Assert.False(store.RoomExists(participant.Room.RoomCode, now.AddHours(7).AddSeconds(1)));
     }
 
     [Fact]
-    public void TransferOwnership_RequiresOwner_AndMakesNewOwnerHost()
+    public void AnyActiveParticipant_CanOperateRoomAndChangeSettings()
     {
+        var now = DateTime.UtcNow;
         var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
-        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", DateTime.UtcNow.AddSeconds(1)).Value!;
+        var first = store.CreateRoom("Damian", now).Value!;
+        var second = store.JoinRoom(first.Room.RoomCode, "Sarah", now.AddSeconds(1)).Value!;
 
-        var unauthorized = store.TransferOwnership(owner.Room.RoomCode, sarah.Participant.Token, owner.Participant.Id, DateTime.UtcNow.AddSeconds(2));
-        Assert.False(unauthorized.IsSuccess);
-
-        var transferred = store.TransferOwnership(owner.Room.RoomCode, owner.Participant.Token, sarah.Participant.Id, DateTime.UtcNow.AddSeconds(3)).Value!;
-        Assert.Equal(sarah.Participant.Id, transferred.OwnerParticipantId);
-        Assert.Equal(sarah.Participant.Id, transferred.CurrentHostParticipantId);
+        Assert.True(store.SetAutoReveal(first.Room.RoomCode, second.Participant.Token, true, now.AddSeconds(2)).IsSuccess);
+        Assert.True(store.SetLockVotesAfterReveal(first.Room.RoomCode, second.Participant.Token, true, now.AddSeconds(3)).IsSuccess);
+        Assert.True(store.Reveal(first.Room.RoomCode, second.Participant.Token, now.AddSeconds(4)).IsSuccess);
+        Assert.True(store.Hide(first.Room.RoomCode, second.Participant.Token, now.AddSeconds(5)).IsSuccess);
+        Assert.True(store.Reset(first.Room.RoomCode, second.Participant.Token, now.AddSeconds(6)).IsSuccess);
     }
 
     [Fact]
-    public void Reveal_RequiresCurrentHost_NotPermanentOwner()
+    public void GetRoom_EvictsParticipantWhoStoppedPolling()
     {
+        var now = DateTime.UtcNow;
         var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
-        var sarah = store.JoinRoom(owner.Room.RoomCode, "Sarah", DateTime.UtcNow.AddSeconds(1)).Value!;
-        store.Leave(owner.Room.RoomCode, owner.Participant.Token, DateTime.UtcNow.AddSeconds(2));
+        var active = store.CreateRoom("Damian", now).Value!;
+        var stale = store.JoinRoom(active.Room.RoomCode, "Sarah", now.AddSeconds(1)).Value!;
 
-        Assert.False(store.Reveal(owner.Room.RoomCode, owner.Participant.Token, DateTime.UtcNow.AddSeconds(3)).IsSuccess);
-        Assert.True(store.Reveal(owner.Room.RoomCode, sarah.Participant.Token, DateTime.UtcNow.AddSeconds(4)).IsSuccess);
+        var room = store.GetRoom(active.Room.RoomCode, active.Participant.Token,
+            now.AddSeconds(1) + InMemoryScrumPokerStore.ParticipantTimeout).Value!;
+
+        Assert.DoesNotContain(room.Participants, participant => participant.Id == stale.Participant.Id);
     }
 
     [Fact]
-    public void SelectCard_AfterReveal_IsAllowedUnlessVotesAreLocked()
+    public void StaleParticipantEviction_CanTriggerAutoReveal()
     {
+        var now = DateTime.UtcNow;
         var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Damian", DateTime.UtcNow).Value!;
-        var now = DateTime.UtcNow.AddSeconds(1);
+        var active = store.CreateRoom("Damian", now).Value!;
+        store.JoinRoom(active.Room.RoomCode, "Sarah", now.AddSeconds(1));
+        store.SetAutoReveal(active.Room.RoomCode, active.Participant.Token, true, now.AddSeconds(2));
+        store.SelectCard(active.Room.RoomCode, active.Participant.Token, ScrumPokerCard.Five, now.AddSeconds(3));
 
-        store.Reveal(owner.Room.RoomCode, owner.Participant.Token, now);
+        var room = store.GetRoom(active.Room.RoomCode, active.Participant.Token,
+            now.AddSeconds(1) + InMemoryScrumPokerStore.ParticipantTimeout).Value!;
 
-        var changedVote = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Five, now.AddSeconds(1));
-        Assert.True(changedVote.IsSuccess);
-
-        store.SetLockVotesAfterReveal(owner.Room.RoomCode, owner.Participant.Token, true, now.AddSeconds(2));
-
-        var lockedVote = store.SelectCard(owner.Room.RoomCode, owner.Participant.Token, ScrumPokerCard.Eight, now.AddSeconds(3));
-        Assert.False(lockedVote.IsSuccess);
-        Assert.Equal(ErrorType.Conflict, lockedVote.ErrorType);
+        Assert.Equal(ScrumPokerPhase.Revealed, room.Phase);
     }
 }

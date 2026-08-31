@@ -387,16 +387,6 @@ export interface IFuseApiClient {
     body: ScrumPokerParticipantRequest | undefined,
     signal?: AbortSignal,
   ): Promise<void>;
-  scrumPokerRemoveParticipant(
-    roomCode: string,
-    body: ScrumPokerRemoveParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerTransferOwnership(
-    roomCode: string,
-    body: ScrumPokerTransferOwnershipRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
 
   /**
    * @param startTime (optional)
@@ -4802,66 +4792,6 @@ export class FuseApiClient implements IFuseApiClient {
         headers: { "Content-Type": "application/json" },
       })
       .then((response) => this.processScrumPokerVoidResponse(response));
-  }
-
-  scrumPokerRemoveParticipant(
-    roomCode: string,
-    body: ScrumPokerRemoveParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    let url_ =
-      this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/remove-participant";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerRoomResponse.fromJS(data),
-          [200],
-        ),
-      );
-  }
-
-  scrumPokerTransferOwnership(
-    roomCode: string,
-    body: ScrumPokerTransferOwnershipRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    let url_ =
-      this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/transfer-ownership";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerRoomResponse.fromJS(data),
-          [200],
-        ),
-      );
   }
 
   private processScrumPokerVoidResponse(response: Response): Promise<void> {
@@ -25305,30 +25235,6 @@ export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
   }
 }
 
-export interface IScrumPokerTransferOwnershipRequest {
-  ownerToken?: string;
-  participantId?: string;
-}
-export class ScrumPokerTransferOwnershipRequest implements IScrumPokerTransferOwnershipRequest {
-  ownerToken?: string;
-  participantId?: string;
-  constructor(data?: IScrumPokerTransferOwnershipRequest) {
-    if (data) {
-      this.ownerToken = data.ownerToken;
-      this.participantId = data.participantId;
-    }
-  }
-  static fromJS(data: any): ScrumPokerTransferOwnershipRequest {
-    return new ScrumPokerTransferOwnershipRequest(data);
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["ownerToken"] = this.ownerToken;
-    data["participantId"] = this.participantId;
-    return data;
-  }
-}
-
 export interface IScrumPokerParticipantRequest {
   participantToken?: string;
 }
@@ -25343,30 +25249,6 @@ export class ScrumPokerParticipantRequest implements IScrumPokerParticipantReque
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
     data["participantToken"] = this.participantToken;
-    return data;
-  }
-}
-
-export interface IScrumPokerRemoveParticipantRequest {
-  ownerToken?: string;
-  participantId?: string;
-}
-export class ScrumPokerRemoveParticipantRequest implements IScrumPokerRemoveParticipantRequest {
-  ownerToken?: string;
-  participantId?: string;
-  constructor(data?: IScrumPokerRemoveParticipantRequest) {
-    if (data) {
-      this.ownerToken = data.ownerToken;
-      this.participantId = data.participantId;
-    }
-  }
-  static fromJS(data: any): ScrumPokerRemoveParticipantRequest {
-    return new ScrumPokerRemoveParticipantRequest(data);
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["ownerToken"] = this.ownerToken;
-    data["participantId"] = this.participantId;
     return data;
   }
 }
@@ -25441,8 +25323,6 @@ export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResp
 
 export interface IScrumPokerRoomResponse {
   roomCode?: string;
-  ownerParticipantId?: string;
-  currentHostParticipantId?: string;
   round?: number;
   phase?: ScrumPokerPhase;
   autoReveal?: boolean;
@@ -25455,8 +25335,6 @@ export interface IScrumPokerRoomResponse {
 }
 export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
   roomCode?: string;
-  ownerParticipantId?: string;
-  currentHostParticipantId?: string;
   round?: number;
   phase?: ScrumPokerPhase;
   autoReveal?: boolean;
@@ -25472,8 +25350,6 @@ export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
   init(_data?: any) {
     if (_data) {
       this.roomCode = _data["roomCode"];
-      this.ownerParticipantId = _data["ownerParticipantId"];
-      this.currentHostParticipantId = _data["currentHostParticipantId"];
       this.round = _data["round"];
       this.phase = _data["phase"];
       this.autoReveal = _data["autoReveal"];
@@ -25501,8 +25377,6 @@ export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
     data["roomCode"] = this.roomCode;
-    data["ownerParticipantId"] = this.ownerParticipantId;
-    data["currentHostParticipantId"] = this.currentHostParticipantId;
     data["round"] = this.round;
     data["phase"] = this.phase;
     data["autoReveal"] = this.autoReveal;
