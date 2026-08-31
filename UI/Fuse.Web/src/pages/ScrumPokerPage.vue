@@ -64,9 +64,7 @@
           maxlength="50"
           counter
           @keyup.enter="
-            roomCodeFromUrl && roomEntryStatus !== 'expired'
-              ? enterRoom()
-              : createRoom()
+            roomCodeFromUrl ? enterRoom() : createRoom()
           "
         />
         <div class="avatar-picker q-mt-md">
@@ -108,7 +106,8 @@
           ]"
         >
           <template v-if="roomEntryStatus === 'expired'">
-            Room <strong>{{ roomCodeFromUrl }}</strong> no longer exists.
+            Room <strong>{{ roomCodeFromUrl }}</strong> no longer exists and
+            will be recreated.
           </template>
           <template v-else>
             Entering existing room <strong>{{ roomCodeFromUrl }}</strong
@@ -135,22 +134,12 @@
       <q-card-actions class="join-actions">
         <template v-if="roomCodeFromUrl">
           <q-btn
-            v-if="roomEntryStatus !== 'expired'"
             unelevated
             color="primary"
             label="Enter room"
             :disable="!canSubmit"
             :loading="loading"
             @click="enterRoom"
-          />
-          <q-btn
-            v-else
-            unelevated
-            color="primary"
-            label="Create new room"
-            :disable="!canSubmit"
-            :loading="loading"
-            @click="createRoom"
           />
         </template>
         <template v-else>
@@ -851,7 +840,7 @@ async function joinRoom() {
   if (!canSubmit.value || !joinCode.value.trim()) return;
   const code = joinCode.value.trim().toUpperCase();
   await runSessionAction(() =>
-    client.scrumPokerRoomsJoin(code, {
+    client.scrumPokerRoomsEnter(code, {
       displayName: displayName.value.trim(),
       participantToken: storedParticipantToken(code, displayName.value.trim()),
       avatarColor: avatarColorForRequest(selectedAvatarColor.value!),

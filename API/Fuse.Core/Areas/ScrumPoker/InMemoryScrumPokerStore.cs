@@ -107,25 +107,28 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
         }
     }
 
-    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow)
+    public Result<ScrumPokerSession> JoinOrCreateRoom(string roomCode, string displayName, DateTime utcNow, string? participantToken = null, string? avatarColor = null)
     {
         var nameResult = ValidateDisplayName(displayName);
         if (!nameResult.IsSuccess)
             return Result<ScrumPokerSession>.Failure(nameResult.Error!, nameResult);
+        var avatarResult = ValidateAvatarColor(avatarColor);
+        if (!avatarResult.IsSuccess)
+            return Result<ScrumPokerSession>.Failure(avatarResult.Error!, avatarResult);
 
         var normalizedCode = NormalizeRoomCode(roomCode);
         if (normalizedCode is null)
             return Result<ScrumPokerSession>.Failure("The room code is invalid.");
 
         if (FindActiveRoom(normalizedCode, utcNow) is not null)
-            return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
+            return JoinRoom(normalizedCode, nameResult.Value!, utcNow, participantToken, avatarResult.Value);
 
         lock (_roomsLock)
         {
             if (_rooms.ContainsKey(normalizedCode))
-                return JoinRoom(normalizedCode, nameResult.Value!, utcNow);
+                return JoinRoom(normalizedCode, nameResult.Value!, utcNow, participantToken, avatarResult.Value);
 
-            var participant = CreateParticipant(nameResult.Value!, utcNow, null);
+            var participant = CreateParticipant(nameResult.Value!, utcNow, avatarResult.Value);
             var state = new RoomState(normalizedCode, utcNow, participant);
             _rooms.Add(normalizedCode, state);
             return Result<ScrumPokerSession>.Success(CreateSession(state));
