@@ -38,7 +38,7 @@ public sealed class ScrumPokerController(
         if (!await IsEnabled())
             return NotFound();
 
-        var result = store.JoinRoom(roomCode, request.DisplayName, DateTime.UtcNow, request.ParticipantToken, request.AvatarColor, allowRemovedParticipantAsNew: true);
+        var result = store.JoinRoom(roomCode, request.DisplayName, DateTime.UtcNow, request.ParticipantToken, request.AvatarColor);
         return result.IsSuccess ? Ok(ToSessionResponse(result.Value!)) : ToError<ScrumPokerSessionResponse>(result);
     }
 
@@ -171,43 +171,15 @@ public sealed class ScrumPokerController(
         return result.IsSuccess ? NoContent() : ToErrorResult(result);
     }
 
-    [HttpPost("rooms/{roomCode}/remove-participant")]
-    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ScrumPokerRoomResponse>> RemoveParticipant(string roomCode, [FromBody] ScrumPokerRemoveParticipantRequest request)
-    {
-        if (!await IsEnabled())
-            return NotFound();
-
-        var result = store.RemoveParticipant(roomCode, request.OwnerToken, request.ParticipantId, DateTime.UtcNow);
-        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.OwnerToken)) : ToError<ScrumPokerRoomResponse>(result);
-    }
-
-    [HttpPost("rooms/{roomCode}/transfer-ownership")]
-    [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ScrumPokerRoomResponse>> TransferOwnership(string roomCode, [FromBody] ScrumPokerTransferOwnershipRequest request)
-    {
-        if (!await IsEnabled())
-            return NotFound();
-
-        var result = store.TransferOwnership(roomCode, request.OwnerToken, request.ParticipantId, DateTime.UtcNow);
-        return result.IsSuccess ? Ok(ToRoomResponse(result.Value!, request.OwnerToken)) : ToError<ScrumPokerRoomResponse>(result);
-    }
-
     private Task<bool> IsEnabled() => fuseStore.GetAsync(snapshot => snapshot.AppSettings.ScrumPokerEnabled);
 
     private static ScrumPokerSessionResponse ToSessionResponse(ScrumPokerSession session) =>
-        new(session.Room.RoomCode, session.Participant.Id, session.Participant.Token, ToRoomResponse(session.Room, session.Participant.Token));
+        new(session.Room.RoomCode, session.Participant.Id, session.Participant.Token,
+            ToRoomResponse(session.Room, session.Participant.Token));
 
     private static ScrumPokerRoomResponse ToRoomResponse(ScrumPokerRoom room, string participantToken) =>
         new(
             room.RoomCode,
-            room.OwnerParticipantId,
-            room.CurrentHostParticipantId,
             room.Round,
             room.Phase,
             room.AutoReveal,
@@ -280,11 +252,7 @@ public sealed class ScrumPokerController(
 
 public sealed record ScrumPokerJoinRequest(string DisplayName, string? ParticipantToken = null, string? AvatarColor = null);
 
-public sealed record ScrumPokerTransferOwnershipRequest(string OwnerToken, Guid ParticipantId);
-
 public sealed record ScrumPokerParticipantRequest(string ParticipantToken);
-
-public sealed record ScrumPokerRemoveParticipantRequest(string OwnerToken, Guid ParticipantId);
 
 public sealed record ScrumPokerCardRequest(string ParticipantToken, ScrumPokerCard? Card);
 
@@ -300,8 +268,6 @@ public sealed record ScrumPokerSessionResponse(
 
 public sealed record ScrumPokerRoomResponse(
     string RoomCode,
-    Guid OwnerParticipantId,
-    Guid? CurrentHostParticipantId,
     int Round,
     ScrumPokerPhase Phase,
     bool AutoReveal,

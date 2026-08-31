@@ -25,15 +25,15 @@ public sealed class ScrumPokerStoreTests
     }
 
     [Fact]
-    public void JoinRoom_RejectsDuplicateNamesIgnoringCase()
+    public void JoinRoom_AllowsDuplicateDisplayNamesBecauseNamesAreNotIdentity()
     {
         var store = new InMemoryScrumPokerStore();
         var owner = store.CreateRoom("Alice", Start).Value!;
 
         var result = store.JoinRoom(owner.Room.RoomCode, " alice ", Start.AddSeconds(1));
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(owner.Participant.Id, result.Value!.Participant.Id);
     }
 
     [Fact]
@@ -81,17 +81,16 @@ public sealed class ScrumPokerStoreTests
     }
 
     [Fact]
-    public void Reveal_IsRestrictedToTheCurrentHostAndIsIdempotent()
+    public void Reveal_IsAvailableToAnyParticipantAndIsIdempotent()
     {
         var store = new InMemoryScrumPokerStore();
         var owner = store.CreateRoom("Alice", Start).Value!;
         var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
 
-        var unauthorized = store.Reveal(owner.Room.RoomCode, guest.Participant.Token, Start.AddSeconds(2));
-        var first = store.Reveal(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(3));
+        var first = store.Reveal(owner.Room.RoomCode, guest.Participant.Token, Start.AddSeconds(2));
         var second = store.Reveal(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(4));
 
-        Assert.False(unauthorized.IsSuccess);
+        Assert.True(first.IsSuccess);
         Assert.Equal(ScrumPokerPhase.Revealed, first.Value!.Phase);
         Assert.Equal(first.Value.Revision, second.Value!.Revision);
     }
@@ -105,11 +104,9 @@ public sealed class ScrumPokerStoreTests
 
         Assert.False(owner.Room.AutoReveal);
 
-        var unauthorized = store.SetAutoReveal(owner.Room.RoomCode, guest.Participant.Token, true, Start.AddSeconds(2));
-        var updated = store.SetAutoReveal(owner.Room.RoomCode, owner.Participant.Token, true, Start.AddSeconds(3));
+        var updated = store.SetAutoReveal(owner.Room.RoomCode, guest.Participant.Token, true, Start.AddSeconds(2));
         var ownerView = store.GetRoom(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(4));
 
-        Assert.False(unauthorized.IsSuccess);
         Assert.True(updated.IsSuccess);
         Assert.True(updated.Value!.AutoReveal);
         Assert.True(ownerView.Value!.AutoReveal);
@@ -197,48 +194,7 @@ public sealed class ScrumPokerStoreTests
     }
 
     [Fact]
-    public void RemoveParticipant_DoesNotAllowTheRemovedTokenToRejoin()
-    {
-        var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Alice", Start).Value!;
-        var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
-
-        var removed = store.RemoveParticipant(owner.Room.RoomCode, owner.Participant.Token, guest.Participant.Id, Start.AddSeconds(2));
-        var rejoin = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(3), guest.Participant.Token);
-
-        Assert.True(removed.IsSuccess);
-        Assert.False(rejoin.IsSuccess);
-        Assert.Equal(ErrorType.Unauthorized, rejoin.ErrorType);
-
-        var manualRejoin = store.JoinRoom(
-            owner.Room.RoomCode,
-            "Bob",
-            Start.AddSeconds(4),
-            guest.Participant.Token,
-            allowRemovedParticipantAsNew: true);
-
-        Assert.True(manualRejoin.IsSuccess);
-        Assert.NotEqual(guest.Participant.Id, manualRejoin.Value!.Participant.Id);
-    }
-
-    [Fact]
-    public void Leave_PreservesOwnershipAndTransfersCurrentHost()
-    {
-        var store = new InMemoryScrumPokerStore();
-        var owner = store.CreateRoom("Alice", Start).Value!;
-        var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
-
-        var left = store.Leave(owner.Room.RoomCode, owner.Participant.Token, Start.AddSeconds(2));
-        var reveal = store.Reveal(owner.Room.RoomCode, guest.Participant.Token, Start.AddSeconds(3));
-
-        Assert.True(left.IsSuccess);
-        Assert.True(reveal.IsSuccess);
-        Assert.Equal(owner.Participant.Id, left.Value!.OwnerParticipantId);
-        Assert.Equal(ScrumPokerPhase.Revealed, reveal.Value!.Phase);
-    }
-
-    [Fact]
-    public void EmptyRoom_CanBeRejoinedAndNewParticipantBecomesTemporaryHost()
+    public void EmptyRoom_CanBeRejoinedAndOperatedByNewParticipant()
     {
         var store = new InMemoryScrumPokerStore();
         var owner = store.CreateRoom("Alice", Start).Value!;
@@ -250,8 +206,6 @@ public sealed class ScrumPokerStoreTests
         Assert.True(left.IsSuccess);
         Assert.True(rejoined.IsSuccess);
         Assert.True(reveal.IsSuccess);
-        Assert.Equal(owner.Participant.Id, rejoined.Value!.Room.OwnerParticipantId);
-        Assert.Equal(rejoined.Value.Participant.Id, rejoined.Value.Room.CurrentHostParticipantId);
     }
 
     [Fact]
@@ -264,8 +218,6 @@ public sealed class ScrumPokerStoreTests
         var result = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(32));
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(owner.Participant.Id, result.Value!.Room.OwnerParticipantId);
-        Assert.Equal(result.Value.Participant.Id, result.Value.Room.CurrentHostParticipantId);
     }
 
     [Fact]

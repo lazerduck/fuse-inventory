@@ -46,7 +46,7 @@ let completionTimer: ReturnType<typeof setTimeout> | undefined;
 let completed = false;
 const avatarStyle = computed(() => {
   const avatar = scrumPokerAvatarForSelection(props.avatar);
-  return avatar ? scrumPokerAvatarImageStyle(avatar, 180) : {};
+  return avatar ? scrumPokerAvatarImageStyle(avatar, true) : {};
 });
 
 function finish(event?: AnimationEvent) {

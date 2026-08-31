@@ -33,8 +33,6 @@ public sealed record ScrumPokerParticipant(
 
 public sealed record ScrumPokerRoom(
     string RoomCode,
-    Guid OwnerParticipantId,
-    Guid? CurrentHostParticipantId,
     int Round,
     ScrumPokerPhase Phase,
     bool AutoReveal,

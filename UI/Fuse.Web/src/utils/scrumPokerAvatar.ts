@@ -10,14 +10,16 @@ export const scrumPokerAvatarSheetUrl = "/avatar-sprite.png";
 
 export function scrumPokerAvatarImageStyle(
   avatar: (typeof scrumPokerAvatarImages)[number],
-  displaySize = 60,
+  includeVerticalOffset = true,
 ) {
   const column = avatar.index % 6;
   const row = Math.floor(avatar.index / 6);
+  const verticalOffset = includeVerticalOffset ? "3px" : "0px";
   return {
     backgroundImage: `url("${scrumPokerAvatarSheetUrl}")`,
-    backgroundPosition: `-${column * displaySize}px -${row * displaySize}px`,
-    backgroundSize: `${displaySize * 6}px ${displaySize * 3}px`,
+    backgroundPosition: `${column * 20}% calc(${row * 50}% + ${verticalOffset})`,
+    backgroundSize: "600% 300%",
+    backgroundOrigin: "border-box",
     backgroundRepeat: "no-repeat",
   };
 }
