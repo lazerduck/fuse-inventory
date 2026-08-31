@@ -21,11 +21,11 @@
   --fuse-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   /* Text selection */
-  --fuse-selection-bg: rgba(33, 150, 243, 0.30); /* primary 500 with opacity */
+  --fuse-selection-bg: rgba(33, 150, 243, 0.3); /* primary 500 with opacity */
   --fuse-selection-color: #000;
 
   /* Status summary backgrounds (light) */
-  --fuse-status-in-sync-bg: rgba(76, 175, 80, 0.10); /* green */
+  --fuse-status-in-sync-bg: rgba(76, 175, 80, 0.1); /* green */
   --fuse-status-drift-bg: rgba(255, 152, 0, 0.12); /* orange */
   --fuse-status-error-bg: rgba(244, 67, 54, 0.12); /* red */
   --fuse-status-na-bg: rgba(158, 158, 158, 0.12); /* grey */
@@ -52,7 +52,7 @@ body.body--dark {
   /* Status summary backgrounds (dark) */
   --fuse-status-in-sync-bg: rgba(76, 175, 80, 0.25);
   --fuse-status-drift-bg: rgba(255, 152, 0, 0.28);
-  --fuse-status-error-bg: rgba(244, 67, 54, 0.30);
+  --fuse-status-error-bg: rgba(244, 67, 54, 0.3);
   --fuse-status-na-bg: rgba(158, 158, 158, 0.24);
 }
 
@@ -65,6 +65,19 @@ body.body--dark {
 
 .q-card {
   background-color: var(--fuse-card-bg);
+}
+
+/* Use a dark elevation shadow instead of Quasar's bright dark-card shadow. */
+.body--dark .q-dialog-plugin {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Keep Quasar prompt fields aligned with the primary action in dark dialogs. */
+.body--dark .q-dialog-plugin .q-field--focused .q-field__control:before {
+  border-color: var(--q-primary);
 }
 
 /* Global selection styling */

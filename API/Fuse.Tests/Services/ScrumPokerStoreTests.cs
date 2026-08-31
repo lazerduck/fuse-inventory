@@ -19,21 +19,22 @@ public sealed class ScrumPokerStoreTests
         Assert.Equal("Alice", result.Value!.Participant.DisplayName);
         Assert.Equal(result.Value.Participant.Id, Assert.Single(result.Value.Room.Participants).Id);
         Assert.NotEmpty(result.Value.Participant.Token);
+        Assert.NotEmpty(result.Value.OwnerToken);
         Assert.Equal(ScrumPokerPhase.Voting, result.Value.Room.Phase);
         Assert.Equal(1, result.Value.Room.Round);
         Assert.False(result.Value.Room.AutoReveal);
     }
 
     [Fact]
-    public void JoinRoom_RejectsDuplicateNamesIgnoringCase()
+    public void JoinRoom_AllowsDuplicateDisplayNamesBecauseNamesAreNotIdentity()
     {
         var store = new InMemoryScrumPokerStore();
         var owner = store.CreateRoom("Alice", Start).Value!;
 
         var result = store.JoinRoom(owner.Room.RoomCode, " alice ", Start.AddSeconds(1));
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(owner.Participant.Id, result.Value!.Participant.Id);
     }
 
     [Fact]
@@ -203,7 +204,7 @@ public sealed class ScrumPokerStoreTests
         var owner = store.CreateRoom("Alice", Start).Value!;
         var guest = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(1)).Value!;
 
-        var removed = store.RemoveParticipant(owner.Room.RoomCode, owner.Participant.Token, guest.Participant.Id, Start.AddSeconds(2));
+        var removed = store.RemoveParticipant(owner.Room.RoomCode, owner.Room.OwnerToken, guest.Participant.Id, Start.AddSeconds(2));
         var rejoin = store.JoinRoom(owner.Room.RoomCode, "Bob", Start.AddSeconds(3), guest.Participant.Token);
 
         Assert.True(removed.IsSuccess);

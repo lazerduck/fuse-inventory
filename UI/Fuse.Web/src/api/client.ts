@@ -397,6 +397,11 @@ export interface IFuseApiClient {
     body: ScrumPokerTransferOwnershipRequest | undefined,
     signal?: AbortSignal,
   ): Promise<ScrumPokerRoomResponse>;
+  scrumPokerTransferHost(
+    roomCode: string,
+    body: ScrumPokerTransferHostRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
 
   /**
    * @param startTime (optional)
@@ -4841,6 +4846,35 @@ export class FuseApiClient implements IFuseApiClient {
   ): Promise<ScrumPokerRoomResponse> {
     let url_ =
       this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/transfer-ownership";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    const content_ = JSON.stringify(body);
+    return this.http
+      .fetch(url_, {
+        body: content_,
+        method: "POST",
+        signal,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+      .then((response) =>
+        this.processScrumPokerResponse(
+          response,
+          (data) => ScrumPokerRoomResponse.fromJS(data),
+          [200],
+        ),
+      );
+  }
+
+  scrumPokerTransferHost(
+    roomCode: string,
+    body: ScrumPokerTransferHostRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/transfer-host";
     if (roomCode === undefined || roomCode === null)
       throw new globalThis.Error("The parameter 'roomCode' must be defined.");
     url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
@@ -25281,16 +25315,19 @@ export interface IScrumPokerJoinRequest {
   displayName?: string;
   participantToken?: string;
   avatarColor?: string;
+  ownerToken?: string;
 }
 export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
   displayName?: string;
   participantToken?: string;
   avatarColor?: string;
+  ownerToken?: string;
   constructor(data?: IScrumPokerJoinRequest) {
     if (data) {
       this.displayName = data.displayName;
       this.participantToken = data.participantToken;
       this.avatarColor = data.avatarColor;
+      this.ownerToken = data.ownerToken;
     }
   }
   static fromJS(data: any): ScrumPokerJoinRequest {
@@ -25301,6 +25338,7 @@ export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
     data["displayName"] = this.displayName;
     data["participantToken"] = this.participantToken;
     data["avatarColor"] = this.avatarColor;
+    data["ownerToken"] = this.ownerToken;
     return data;
   }
 }
@@ -25324,6 +25362,30 @@ export class ScrumPokerTransferOwnershipRequest implements IScrumPokerTransferOw
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
     data["ownerToken"] = this.ownerToken;
+    data["participantId"] = this.participantId;
+    return data;
+  }
+}
+
+export interface IScrumPokerTransferHostRequest {
+  participantToken?: string;
+  participantId?: string;
+}
+export class ScrumPokerTransferHostRequest implements IScrumPokerTransferHostRequest {
+  participantToken?: string;
+  participantId?: string;
+  constructor(data?: IScrumPokerTransferHostRequest) {
+    if (data) {
+      this.participantToken = data.participantToken;
+      this.participantId = data.participantId;
+    }
+  }
+  static fromJS(data: any): ScrumPokerTransferHostRequest {
+    return new ScrumPokerTransferHostRequest(data);
+  }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["participantToken"] = this.participantToken;
     data["participantId"] = this.participantId;
     return data;
   }
@@ -25520,17 +25582,20 @@ export interface IScrumPokerSessionResponse {
   roomCode?: string;
   participantId?: string;
   participantToken?: string;
+  ownerToken?: string;
   room?: ScrumPokerRoomResponse;
 }
 export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
   roomCode?: string;
   participantId?: string;
   participantToken?: string;
+  ownerToken?: string;
   room?: ScrumPokerRoomResponse;
   constructor(data?: IScrumPokerSessionResponse) {
     if (data) {
       this.roomCode = data.roomCode;
       this.participantToken = data.participantToken;
+      this.ownerToken = data.ownerToken;
       this.room = data.room;
     }
   }
@@ -25539,6 +25604,7 @@ export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
       this.roomCode = _data["roomCode"];
       this.participantId = _data["participantId"];
       this.participantToken = _data["participantToken"];
+      this.ownerToken = _data["ownerToken"];
       this.room = _data["room"]
         ? ScrumPokerRoomResponse.fromJS(_data["room"])
         : undefined;
@@ -25554,6 +25620,7 @@ export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
     data["roomCode"] = this.roomCode;
     data["participantId"] = this.participantId;
     data["participantToken"] = this.participantToken;
+    data["ownerToken"] = this.ownerToken;
     data["room"] = this.room?.toJSON();
     return data;
   }

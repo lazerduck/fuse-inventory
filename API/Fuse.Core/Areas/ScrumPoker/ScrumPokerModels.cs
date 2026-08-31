@@ -34,6 +34,7 @@ public sealed record ScrumPokerParticipant(
 public sealed record ScrumPokerRoom(
     string RoomCode,
     Guid OwnerParticipantId,
+    string OwnerToken,
     Guid? CurrentHostParticipantId,
     int Round,
     ScrumPokerPhase Phase,
@@ -46,4 +47,5 @@ public sealed record ScrumPokerRoom(
 
 public sealed record ScrumPokerSession(
     ScrumPokerRoom Room,
-    ScrumPokerParticipant Participant);
+    ScrumPokerParticipant Participant,
+    string? OwnerToken = null);
