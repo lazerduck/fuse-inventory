@@ -1,4 +1,4 @@
-import { onActivated, onMounted, watch, type Ref } from 'vue'
+import { onActivated, watch, type Ref } from 'vue'
 
 interface PaginationState {
   page: number
@@ -37,6 +37,10 @@ export function usePersistedTableState({
     }
   }
 
+  // Restore before child tables mount: a later filter change makes QTable reset to page 1.
+  // Do this before the persistence watchers can write their initial defaults.
+  restoreState()
+
   watch(filter, (newValue) => {
     if (newValue) {
       sessionStorage.setItem(filterStorageKey, newValue)
@@ -56,6 +60,5 @@ export function usePersistedTableState({
     { deep: true }
   )
 
-  onMounted(restoreState)
   onActivated(restoreState)
 }

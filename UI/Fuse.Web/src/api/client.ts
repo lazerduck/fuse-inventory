@@ -22254,6 +22254,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  permissions?: string[];
 
   constructor(data?: ISecurityStateResponse) {
     if (data) {
@@ -22266,6 +22267,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
   init(_data?: any) {
     if (_data) {
+      this.permissions = Array.isArray(_data["permissions"]) ? [..._data["permissions"]] : [];
       this.posture = _data["posture"];
       this.requiresSetup = _data["requiresSetup"];
       this.currentUser = _data["currentUser"]
@@ -22283,6 +22285,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
+    data["permissions"] = this.permissions ? [...this.permissions] : [];
     data["posture"] = this.posture;
     data["requiresSetup"] = this.requiresSetup;
     data["currentUser"] = this.currentUser
@@ -22296,6 +22299,7 @@ export interface ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  permissions?: string[];
 }
 
 export class SecurityUserInfo implements ISecurityUserInfo {

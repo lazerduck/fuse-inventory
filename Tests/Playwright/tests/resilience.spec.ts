@@ -90,6 +90,5 @@ test('tag pagination changes page and preserves the selected page on reload', as
   await page.getByRole('button', { name: 'Next page', exact: true }).click();
   await expect(page.getByText('11–12 of 12', { exact: true })).toBeVisible();
   await page.reload();
-  test.fail(true, 'UI-003 in Tests/UI_TEST_FINDINGS.md: Tags page does not persist pagination changes');
   await expect(page.getByText('11–12 of 12', { exact: true })).toBeVisible();
 });

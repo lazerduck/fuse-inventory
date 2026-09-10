@@ -36,6 +36,7 @@
         row-key="id"
         :loading="applicationsLoading || applicationCompletenessLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
         data-tour-id="applications-table"
       >

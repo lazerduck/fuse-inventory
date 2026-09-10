@@ -35,6 +35,7 @@
           row-key="id"
           :loading="isLoading"
           :pagination="pagination"
+          @update:pagination="Object.assign(pagination, $event)"
           :filter="filter"
         >
           <template #top-right>

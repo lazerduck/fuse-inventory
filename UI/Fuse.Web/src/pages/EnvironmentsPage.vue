@@ -43,6 +43,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
         data-tour-id="environments-table"
       >

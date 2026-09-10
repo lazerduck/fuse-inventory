@@ -86,40 +86,12 @@ export const useFuseStore = defineStore("fuse", {
       this.currentUser = null;
       this.userPermissions = null;
     },
-    async resolveUserPermissions() {
-      if (!this.currentUser?.roleIds?.length) {
-        this.userPermissions = [];
-        return;
-      }
-      try {
-        const roleIds = [...new Set(this.currentUser.roleIds ?? [])];
-        const roleResults = await Promise.allSettled(
-          roleIds.map((id) => fuseClient().roleGET(id))
-        );
-
-        const permissions: Permission[] = [];
-        for (const result of roleResults) {
-          if (result.status !== "fulfilled") {
-            continue;
-          }
-
-          for (const perm of (result.value.permissions ?? [])) {
-            if (!permissions.includes(perm as Permission)) {
-              permissions.push(perm as Permission);
-            }
-          }
-        }
-
-        this.userPermissions = permissions;
-      } catch {
-        this.userPermissions = [];
-      }
-    },
     async fetchStatus() {
       const status = await fuseClient().state();
       this.requireSetup = status.requiresSetup || false;
       this.securityPosture = status.posture || null;
       this.currentUser = status.currentUser || null;
+      this.userPermissions = this.currentUser ? (status.permissions ?? []) : null;
 
       this.appSettings = await fuseClient().getAppSettings().catch(() => null);
       this.licenseStatus = await getLicenseStatus().catch(() => null);
@@ -127,8 +99,6 @@ export const useFuseStore = defineStore("fuse", {
       if (!this.currentUser) {
         this.sessionToken = null;
         this.userPermissions = null;
-      } else {
-        await this.resolveUserPermissions();
       }
     },
     async updateAppSettings(changes: Partial<AppSettings>) {

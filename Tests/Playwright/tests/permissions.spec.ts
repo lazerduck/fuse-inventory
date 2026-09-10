@@ -9,7 +9,7 @@ for (const [name, permissions, canCreate, canUpdate, canDelete] of [
 ] as const) {
   test(`real role: ${name}`, async ({ page, request, adminApi }) => {
     const suffix = randomUUID().slice(0, 8);
-    const roleResponse = await adminApi.post('/api/role', { data: { name: `${name}-${suffix}`, description: 'UI regression role', permissions: [...permissions, 'roles:read'] } });
+    const roleResponse = await adminApi.post('/api/role', { data: { name: `${name}-${suffix}`, description: 'UI regression role', permissions } });
     expect(roleResponse.ok(), await roleResponse.text()).toBeTruthy();
     const role = await roleResponse.json();
     const user = { userName: `User-${suffix}`, password: 'DisposableTest123!' };
@@ -33,7 +33,7 @@ for (const [name, permissions, canCreate, canUpdate, canDelete] of [
   });
 }
 
-// UI-002: the backend authorises tags:read, but UI permission resolution requires roles:read.
+// UI-002 regression: own permissions are available without reading role definitions.
 test('UI-002: a tag reader can view tags without administrative role-read permission', async ({ page, request, adminApi }) => {
   const suffix = randomUUID().slice(0, 8);
   const roleResponse = await adminApi.post('/api/role', { data: { name: `Minimal-${suffix}`, description: 'Minimal tag reader', permissions: ['tags:read'] } });
@@ -45,13 +45,13 @@ test('UI-002: a tag reader can view tags without administrative role-read permis
   expect((await request.get('/api/tag', { headers: { Authorization: `Bearer ${session.token}` } })).status()).toBe(200);
   await page.goto('/tags');
   await expect(page.getByRole('heading', { name: 'Tags', exact: true })).toBeVisible();
-  // Activate expected failure only after prerequisites and backend authorisation are established.
-  test.fail(true, 'UI-002 in Tests/UI_TEST_FINDINGS.md');
+  expect((await request.get('/api/role', { headers: { Authorization: `Bearer ${session.token}` } })).status()).toBe(403);
+  expect((await request.get(`/api/role/${role.id}`, { headers: { Authorization: `Bearer ${session.token}` } })).status()).toBe(403);
   await expect(page.getByRole('table')).toBeVisible();
 });
 test('server revocation rejects an open create form and refresh updates controls', async ({ page, request, adminApi }) => {
   const suffix = randomUUID().slice(0, 8);
-  const roleData = { name: `Revoked-${suffix}`, description: 'Revocation regression', permissions: ['tags:read', 'tags:create', 'roles:read'] };
+  const roleData = { name: `Revoked-${suffix}`, description: 'Revocation regression', permissions: ['tags:read', 'tags:create'] };
   const roleResponse = await adminApi.post('/api/role', { data: roleData });
   expect(roleResponse.ok()).toBeTruthy();
   const role = await roleResponse.json();
@@ -62,7 +62,7 @@ test('server revocation rejects an open create form and refresh updates controls
   await page.getByRole('button', { name: 'Create Tag', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Name', { exact: true }).fill(`Forbidden-${suffix}`);
-  expect((await adminApi.put(`/api/role/${role.id}`, { data: { ...roleData, permissions: ['tags:read', 'roles:read'] } })).ok()).toBeTruthy();
+  expect((await adminApi.put(`/api/role/${role.id}`, { data: { ...roleData, permissions: ['tags:read'] } })).ok()).toBeTruthy();
   const responsePromise = page.waitForResponse(response => response.url().endsWith('/api/Tag') && response.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
   expect((await responsePromise).status()).toBe(403);

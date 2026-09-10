@@ -79,12 +79,12 @@ The temporary override and exploratory records are not the final automated-test 
 
 ## Implemented coverage
 
-The suite now has two layers: mounted Vue/Quasar component tests and Chromium tests against a disposable production Docker build. The browser bootstrap project exercises administrator setup and the environment wizard before any seeded journeys. Browser contexts isolate sessions; one worker avoids races on server-wide settings. Tests do not modify product source code.
+The suite now has two layers: mounted Vue/Quasar component tests and Chromium tests against a disposable production Docker build. The browser bootstrap project exercises administrator setup and the environment wizard before any seeded journeys. Browser contexts isolate sessions; one worker avoids races on server-wide settings. The initial test-only pass did not modify product source code; the subsequent UI-002/UI-003 fix pass updates permission loading and pagination wiring.
 
 | Area | Regression assertions |
 | --- | --- |
 | Authentication | Invalid password, real login, session after reload, logout, protected bearer API access, anonymous access under all three postures |
-| Granular access | Tags read/create/update/delete and unrelated-write roles; admin; open-form revocation and delete confirmation recheck; backend revocation during an open form; explicit UI-002 expected failure |
+| Granular access | Tags read/create/update/delete and unrelated-write roles; admin; open-form revocation and delete confirmation recheck; backend revocation during an open form; UI-002 permission-resolution regression |
 | Inventory CRUD | Tags, environments, platforms, data stores, brokers, external resources, positions and responsibility types: create, cancelled edit, save, reload, delete and backend persistence |
 | Linked inventory | Application details preserve instances, pipelines and dependencies; account details preserve grants; identity details preserve assignments; deletion leaves independently owned target records intact |
 | Forms and recovery | Required names, blank/duplicate tag names, cancelled drafts, read-only forms, failed and delayed saves, retry after a failed save, search across reload, pagination navigation and UI-003 reload regression, missing application recovery |
@@ -98,7 +98,7 @@ The suite now has two layers: mounted Vue/Quasar component tests and Chromium te
 
 This is a broad regression baseline, not exhaustive coverage of every combination on every screen. The permission matrix is strongest on Tags; other inventory pages have administrator journeys. Graph tests cover rendering/filter controls, not pixel-perfect node/edge placement. Instance/pipeline lifecycle is covered through creation, preservation and parent deletion; independently editing/deleting each nested record, cross-environment cloning, large imports, concurrent edit conflicts, detailed SQL drift resolution, Azure secret rotation/reveal and every Scrum room setting remain useful extensions. External-service responses are deterministic test fixtures and do not prove live connectivity. Firefox/WebKit, phone-sized visual baselines and a full accessibility audit are not enabled.
 
-Confirmed product defects and expected failures are tracked in `UI_TEST_FINDINGS.md`; no product fixes are bundled with the tests.
+The original product defects and their subsequent resolutions are tracked in `UI_TEST_FINDINGS.md`.
 
 ### Verification on 2026-09-10
 
@@ -108,3 +108,15 @@ Confirmed product defects and expected failures are tracked in `UI_TEST_FINDINGS
 - The final test project's container, volume, network and image were removed. The separate earlier exploration instance remains available.
 - CI configuration is added; a hosted GitHub Actions run has not been triggered from this workspace.
 - Local results: `Tests/Playwright/artifacts/results.json`, `Tests/Playwright/artifacts/server.log`, and `Tests/Playwright/playwright-report/index.html` (generated files, ignored by Git).
+
+
+### Defect fix follow-up
+
+UI-002 and UI-003 are fixed. The browser role matrix no longer grants `roles:read`, and both former expected failures are normal passing-test requirements. The security-state response carries the signed-in user’s assigned permission keys while role-definition access remains protected. Persisted pagination updates are wired on all 11 affected pages, and filter/page restoration runs before the table’s initial render. See `UI_TEST_FINDINGS.md` for the resolutions; the initial verification figures above describe the pre-fix baseline.
+
+Verification after the fixes on 2026-09-10:
+
+- Backend non-integration suite: 601 passed.
+- Component suite: 26 passed; component/source type check passed.
+- Fresh-data Chromium suite: 48 passed, with zero expected failures, unexpected failures, skips or flaky results.
+- Production Docker build and browser-fixture type check passed; the disposable browser-test environment was cleaned up.
