@@ -1,0 +1,88 @@
+import { test, expect } from '../fixtures/auth';
+import { randomUUID } from 'node:crypto';
+test('configuration exports inventory and rejects malformed import without losing data', async ({ authenticatedPage: page, adminApi }) => {
+  const name = `Export-${randomUUID()}`;
+  expect((await adminApi.post('/api/tag', { data: { name } })).ok()).toBeTruthy();
+  await page.goto('/config');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export Configuration', exact: true }).click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  expect(stream).not.toBeNull();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  const exported = Buffer.concat(chunks).toString();
+  expect(exported).toContain(name);
+  await page.locator('input[type=file]').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from('{ broken') });
+  const rejected = page.waitForResponse(response => response.url().includes('/api/Config/import'));
+  await page.getByRole('button', { name: 'Import Configuration', exact: true }).click();
+  expect((await rejected).status()).toBe(400);
+  await expect(page.locator('.q-banner.bg-red-1')).toBeVisible();
+  expect((await (await adminApi.get('/api/tag')).json()).some((tag: any) => tag.name === name)).toBe(true);
+  const config = JSON.parse(exported);
+  const exportedTag = config.tags.find((tag: any) => tag.name === name);
+  expect(exportedTag).toBeTruthy();
+  exportedTag.description = 'Round-trip import';
+  await page.locator('input[type=file]').setInputFiles({ name: 'roundtrip.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(config)) });
+  const imported = page.waitForResponse(response => response.url().includes('/api/Config/import'));
+  await page.getByRole('button', { name: 'Import Configuration', exact: true }).click();
+  expect((await imported).ok()).toBeTruthy();
+  await expect(page.getByText('Configuration imported successfully. Data has been refreshed.', { exact: true })).toBeVisible();
+  const saved = (await (await adminApi.get('/api/tag')).json()).find((tag: any) => tag.name === name);
+  expect(saved.description).toBe('Round-trip import');
+
+});
+test('documentation alerts link to the affected application', async ({ authenticatedPage: page, adminApi }) => {
+  const name = `Incomplete-${randomUUID().slice(0, 8)}`;
+  const response = await adminApi.post('/api/application', { data: { name } });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  const app = await response.json();
+  await page.goto('/insights/documentation-completeness');
+  await page.getByPlaceholder('Search alerts...').fill(name);
+  const row = page.getByRole('row').filter({ hasText: name }).first();
+  await expect(row).toBeVisible();
+  await expect.poll(async () => (await page.locator('tbody tr').allTextContents()).every(text => text.includes(name))).toBe(true);
+  await row.getByRole('button', { name: 'Open Application', exact: true }).click();
+  await expect(page).toHaveURL(`/applications/${app.id}`);
+  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+});
+test('missing application shows a recoverable load error', async ({ authenticatedPage: page }) => {
+  await page.goto(`/applications/${randomUUID()}`);
+  await expect(page.locator('.q-banner.bg-red-1')).toBeVisible({ timeout: 15_000 });
+  await page.goto('/applications');
+  await expect(page.getByRole('button', { name: 'Create Application', exact: true })).toBeEnabled();
+});
+test('Scrum Poker disabled state', async ({ authenticatedPage: page }) => {
+  await page.goto('/scrum-poker');
+  await expect(page.getByRole('alert')).toContainText('Scrum Poker is currently disabled');
+  await expect(page.getByRole('button', { name: 'Create room', exact: true })).toBeHidden();
+});
+test('graph renders inventory and supports environment and risk filters', async ({ authenticatedPage: page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/graph');
+  await expect(page.locator('canvas').first()).toBeVisible();
+  await page.getByLabel('Filter environments', { exact: true }).click();
+  await page.getByRole('option', { name: 'UI test environment', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Full Chain', exact: true }).click();
+  await page.getByRole('switch', { name: 'Risk Overlay', exact: true }).setChecked(true);
+  await expect(page.getByText('Critical', { exact: true })).toBeVisible();
+  await expect(page.locator('canvas').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+test('narrow viewport supports keyboard-driven tag creation', async ({ authenticatedPage: page }) => {
+  await page.setViewportSize({ width: 600, height: 900 });
+  const name = `Keyboard-${randomUUID().slice(0, 8)}`;
+  await page.goto('/tags');
+  const opener = page.getByRole('button', { name: 'Create Tag', exact: true });
+  await opener.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Create', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeHidden();
+  await page.getByPlaceholder('Search...').fill(name);
+  await expect(page.getByRole('row').filter({ hasText: name })).toBeVisible();
+});

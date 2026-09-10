@@ -1,0 +1,27 @@
+import { test, expect } from '@playwright/test';
+import { credentials } from '../fixtures/setup';
+test('fresh install creates its administrator and first environment through the UI', async ({ page, request }) => {
+  const response = await request.get('/api/security/state');
+  expect(response.ok()).toBeTruthy();
+  expect((await response.json()).requiresSetup, 'Tests require fresh disposable data; use npm test.').toBe(true);
+  await page.goto('/');
+  await expect(page).toHaveURL('/security');
+  await page.getByLabel('Username', { exact: true }).fill(credentials.userName);
+  await page.getByLabel('Password', { exact: true }).fill(credentials.password);
+  await page.getByLabel('Confirm Password', { exact: true }).fill(credentials.password);
+  await page.getByRole('button', { name: 'Create Account & Continue', exact: true }).click();
+  const wizard = page.getByRole('dialog');
+  await expect(wizard.getByText('Set up Fuse Inventory', { exact: true })).toBeVisible();
+  await wizard.getByLabel('Environment name', { exact: true }).fill('UI test environment');
+  await wizard.getByRole('button', { name: 'Create environment and continue', exact: true }).click();
+  await expect(wizard).toBeHidden();
+  const sessionResponse = await request.post('/api/security/login', { data: credentials });
+  expect(sessionResponse.ok()).toBeTruthy();
+  const session = await sessionResponse.json();
+  const headers = { Authorization: `Bearer ${session.token}` };
+  expect((await request.post('/api/security/settings', { headers, data: { posture: 'FullyRestricted' } })).ok()).toBeTruthy();
+  const environments = await (await request.get('/api/environment', { headers })).json();
+  expect(environments).toHaveLength(1);
+  expect(environments[0].name).toBe('UI test environment');
+  await expect.poll(async () => (await request.get('/api/health/ready')).status()).toBe(200);
+});
