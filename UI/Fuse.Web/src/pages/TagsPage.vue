@@ -9,7 +9,7 @@
         color="primary" 
         label="Create Tag" 
         icon="add" 
-        :disable="!fuseStore.canModify"
+        :disable="!canCreate"
         @click="openCreateDialog" 
       />
     </div>
@@ -18,11 +18,11 @@
       {{ tagError }}
     </q-banner>
 
-    <q-banner v-if="!fuseStore.canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
+    <q-banner v-if="!canRead" dense class="bg-orange-1 text-orange-9 q-mb-md">
       You do not have permission to view tags. Please log in with appropriate credentials.
     </q-banner>
 
-    <q-card v-if="fuseStore.canRead" class="content-card">
+    <q-card v-if="canRead" class="content-card">
       <q-table
         flat
         bordered
@@ -65,7 +65,7 @@
               round 
               icon="edit" 
               color="primary" 
-              :disable="!fuseStore.canModify"
+              :disable="!canUpdate"
               @click="openEditDialog(props.row)" 
             />
             <q-btn
@@ -75,7 +75,7 @@
               icon="delete"
               color="negative"
               class="q-ml-xs"
-              :disable="!fuseStore.canModify"
+              :disable="!canDelete"
               @click="confirmDelete(props.row)"
             />
           </q-td>
@@ -120,7 +120,7 @@
           <q-separator />
           <q-card-actions align="right">
             <q-btn flat label="Cancel" @click="isCreateDialogOpen = false" />
-            <q-btn color="primary" type="submit" label="Create" :loading="createMutation.isPending.value" />
+            <q-btn color="primary" type="submit" label="Create" :disable="!canCreate" :loading="createMutation.isPending.value" />
           </q-card-actions>
         </q-form>
       </q-card>
@@ -160,7 +160,7 @@
           <q-separator />
           <q-card-actions align="right">
             <q-btn flat label="Cancel" @click="closeEditDialog" />
-            <q-btn color="primary" type="submit" label="Save" :loading="updateMutation.isPending.value" />
+            <q-btn color="primary" type="submit" label="Save" :disable="!canUpdate" :loading="updateMutation.isPending.value" />
           </q-card-actions>
         </q-form>
       </q-card>
@@ -174,6 +174,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
 import { Tag, TagColor, CreateTag, UpdateTag } from 'api/client'
+import { Permission } from 'permissions'
 import { useTags } from '../composables/useTags'
 import { useFuseClient } from '../composables/useFuseClient'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
@@ -189,7 +190,11 @@ interface TagForm {
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
-const tagsStore = useTags()
+const canRead = computed(() => fuseStore.hasPermission(Permission.TagsRead))
+const canCreate = computed(() => fuseStore.hasPermission(Permission.TagsCreate))
+const canUpdate = computed(() => fuseStore.hasPermission(Permission.TagsUpdate))
+const canDelete = computed(() => fuseStore.hasPermission(Permission.TagsDelete))
+const tagsStore = useTags(canRead)
 
 // sessionStorage persistence for filter and pagination state
 const STORAGE_KEY_FILTER = 'TagsPage_filter'
@@ -227,12 +232,13 @@ const createForm = reactive<TagForm>({ name: '', description: '', color: null })
 const editForm = reactive<TagForm & { id: string | null }>({ id: null, name: '', description: '', color: null })
 
 function openCreateDialog() {
+  if (!canCreate.value) return
   Object.assign(createForm, { name: '', description: '', color: null })
   isCreateDialogOpen.value = true
 }
 
 function openEditDialog(tag: Tag) {
-  if (!tag.id) return
+  if (!canUpdate.value || !tag.id) return
   selectedTag.value = tag
   Object.assign(editForm, {
     id: tag.id ?? null,
@@ -284,6 +290,7 @@ const deleteMutation = useMutation({
 })
 
 function submitCreate() {
+  if (!canCreate.value) return
   const payload = Object.assign(new CreateTag(), {
     name: createForm.name || undefined,
     description: createForm.description || undefined,
@@ -293,7 +300,7 @@ function submitCreate() {
 }
 
 function submitEdit() {
-  if (!editForm.id) return
+  if (!canUpdate.value || !editForm.id) return
   const payload = Object.assign(new UpdateTag(), {
     name: editForm.name || undefined,
     description: editForm.description || undefined,
@@ -303,13 +310,15 @@ function submitEdit() {
 }
 
 function confirmDelete(tag: Tag) {
-  if (!tag.id) return
+  if (!canDelete.value || !tag.id) return
   Dialog.create({
     title: 'Delete tag',
     message: `Delete "${tag.name ?? 'this tag'}"?`,
     cancel: true,
     persistent: true
-  }).onOk(() => deleteMutation.mutate(tag.id!))
+  }).onOk(() => {
+    if (canDelete.value) deleteMutation.mutate(tag.id!)
+  })
 }
 
 function badgeColor(color: TagColor) {

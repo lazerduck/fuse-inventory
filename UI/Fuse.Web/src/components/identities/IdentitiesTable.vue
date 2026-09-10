@@ -69,7 +69,7 @@
             icon="delete"
             color="negative"
             class="q-ml-xs"
-            :disable="!(props.canDelete ?? props.canModify)"
+            :disable="!props.canDelete"
             @click="emit('delete', cellProps.row)"
           />
         </q-td>
@@ -95,7 +95,7 @@ interface Props {
   tagInfoLookup: Record<string, TagInfo>
   ownerInstanceResolver: (identity: Identity) => string
   canModify: boolean
-  canDelete?: boolean
+  canDelete: boolean
 }
 
 const props = defineProps<Props>()

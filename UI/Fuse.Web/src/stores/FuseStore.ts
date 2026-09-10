@@ -67,25 +67,6 @@ export const useFuseStore = defineStore("fuse", {
       // Permissions not loaded yet, deny
       return false;
     },
-    canModify: (state) => {
-      switch (state.securityPosture) {
-        case SecurityPosture.Unrestricted:
-          return true;
-        case SecurityPosture.RestrictedEditing:
-        case SecurityPosture.FullyRestricted:
-          if (!state.currentUser) return false;
-
-          if (hasHighestAccess(state.currentUser)) return true;
-
-          // Check if user has any write permissions
-          if (state.userPermissions !== null) {
-            return state.userPermissions.length > 0;
-          }
-          return false;
-        default:
-          return false;
-      }
-    },
     canRead: (state) => {
       switch (state.securityPosture) {
         case SecurityPosture.Unrestricted:
