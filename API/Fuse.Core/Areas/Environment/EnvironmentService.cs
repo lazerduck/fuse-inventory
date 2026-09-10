@@ -36,7 +36,7 @@ public class EnvironmentService : IEnvironmentService
         }
 
         var environments = (await _fuseStore.GetAsync()).Environments;
-        if (environments.Any(e => string.Equals(e.Name,command.Name, StringComparison.OrdinalIgnoreCase)))
+        if (environments.Any(e => string.Equals(e.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
         {
             return Result<EnvironmentInfo>.Failure($"Environment with name '{command.Name}' already exists.", ErrorType.Conflict);
         }
@@ -120,21 +120,26 @@ public class EnvironmentService : IEnvironmentService
             return Result<EnvironmentInfo>.Failure($"Environment with ID '{command.Id}' not found.", ErrorType.NotFound);
         }
 
-        var updatedEnvironment = environment with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            TagIds = tagIds,
-            AutoCreateInstances = command.AutoCreateInstances,
-            BaseUriTemplate = command.BaseUriTemplate,
-            HealthUriTemplate = command.HealthUriTemplate,
-            OpenApiUriTemplate = command.OpenApiUriTemplate
-        };
+        var updatedEnvironment = environment;
 
         await _fuseStore.UpdateAsync(store =>
         {
             var updatedEnvironments = store.Environments
-                .Select(e => e.Id == command.Id ? updatedEnvironment : e)
+                .Select(e =>
+                {
+                    if (e.Id != command.Id) return e;
+                    updatedEnvironment = e with
+                    {
+                        Name = command.Name,
+                        Description = command.Description,
+                        TagIds = tagIds,
+                        AutoCreateInstances = command.AutoCreateInstances,
+                        BaseUriTemplate = command.BaseUriTemplate,
+                        HealthUriTemplate = command.HealthUriTemplate,
+                        OpenApiUriTemplate = command.OpenApiUriTemplate
+                    };
+                    return updatedEnvironment;
+                })
                 .ToList();
             return store with { Environments = updatedEnvironments };
         });

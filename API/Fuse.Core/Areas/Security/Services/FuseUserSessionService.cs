@@ -54,18 +54,20 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
         }
 
         var refreshedToken = Guid.NewGuid().ToString("N");
-        var refreshed = existing with
-        {
-            Token = refreshedToken,
-            ExpiresAt = DateTime.UtcNow.Add(SessionLifetime)
-        };
-
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
                 Sessions = s.SecurityContext.Sessions
-                    .Select(x => x.Token == token ? refreshed : x)
+                    .Select(x =>
+                    {
+                        if (x.Token != token) return x;
+                        return x with
+                        {
+                            Token = refreshedToken,
+                            ExpiresAt = DateTime.UtcNow.Add(SessionLifetime)
+                        };
+                    })
                     .ToList()
             }
         });
@@ -111,7 +113,7 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
         var snapshot = await fuseStore.GetAsync();
         var session = snapshot.SecurityContext.Sessions.FirstOrDefault(s => s.Token == token);
 
-        if(session is null)
+        if (session is null)
         {
             return Result<DateTime>.Failure("Could not find session", ErrorType.NotFound);
         }

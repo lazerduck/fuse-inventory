@@ -93,17 +93,22 @@ public class TagService : ITagService
             return Result<Models.Tag>.Failure($"Tag with name '{command.Name}' already exists.", ErrorType.Conflict);
         }
 
-        var updatedTag = existingTag with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            Color = command.Color
-        };
+        var updatedTag = existingTag;
 
         await _fuseStore.UpdateAsync(store =>
         {
             var updatedTags = store.Tags
-                .Select(t => t.Id == command.Id ? updatedTag : t)
+                .Select(t =>
+                {
+                    if (t.Id != command.Id) return t;
+                    updatedTag = t with
+                    {
+                        Name = command.Name,
+                        Description = command.Description,
+                        Color = command.Color
+                    };
+                    return updatedTag;
+                })
                 .ToList();
             return store with { Tags = updatedTags };
         });

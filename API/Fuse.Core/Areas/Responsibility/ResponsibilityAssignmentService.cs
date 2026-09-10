@@ -133,19 +133,27 @@ public class ResponsibilityAssignmentService : IResponsibilityAssignmentService
                 return Result<ResponsibilityAssignment>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
         }
 
-        var updated = existing with
-        {
-            PositionId = command.PositionId,
-            ResponsibilityTypeId = command.ResponsibilityTypeId,
-            ApplicationId = command.ApplicationId,
-            Scope = command.Scope,
-            EnvironmentId = command.EnvironmentId,
-            Notes = command.Notes,
-            Primary = command.Primary,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { ResponsibilityAssignments = s.ResponsibilityAssignments.Select(ra => ra.Id == command.Id ? updated : ra).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            ResponsibilityAssignments = s.ResponsibilityAssignments.Select(ra =>
+            {
+                if (ra.Id != command.Id) return ra;
+                updated = ra with
+                {
+                    PositionId = command.PositionId,
+                    ResponsibilityTypeId = command.ResponsibilityTypeId,
+                    ApplicationId = command.ApplicationId,
+                    Scope = command.Scope,
+                    EnvironmentId = command.EnvironmentId,
+                    Notes = command.Notes,
+                    Primary = command.Primary,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
 
         // Audit log
         var auditLog = AuditHelper.CreateLog(

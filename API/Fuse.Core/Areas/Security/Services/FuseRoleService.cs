@@ -106,19 +106,24 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
         if (snapshot.SecurityContext.Roles.Any(r => r.Id != id && string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase)))
             return Result<FuseRole>.Failure($"A role with name '{name}' already exists.", ErrorType.Conflict);
 
-        var updatedRole = existingRole with
-        {
-            Name = name.Trim(),
-            Description = description?.Trim() ?? string.Empty,
-            Permissions = normalizedPermissionsResult.Value!,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updatedRole = existingRole;
 
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
-                Roles = s.SecurityContext.Roles.Select(r => r.Id == id ? updatedRole : r).ToList()
+                Roles = s.SecurityContext.Roles.Select(r =>
+                {
+                    if (r.Id != id) return r;
+                    updatedRole = r with
+                    {
+                        Name = name.Trim(),
+                        Description = description?.Trim() ?? string.Empty,
+                        Permissions = normalizedPermissionsResult.Value!,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    return updatedRole;
+                }).ToList()
             }
         });
 

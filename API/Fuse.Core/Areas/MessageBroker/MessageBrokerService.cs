@@ -91,20 +91,28 @@ public class MessageBrokerService : IMessageBrokerService
         if (store.MessageBrokers.Any(m => m.Id != command.Id && string.Equals(m.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.MessageBroker>.Failure($"Message broker with name '{command.Name}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            Kind = command.Kind,
-            EnvironmentId = command.EnvironmentId,
-            ConnectionUri = command.ConnectionUri,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow,
-            Queues = command.Queues?.Select(q => new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
-            Topics = command.Topics?.Select(t => new BrokerTopic(Guid.NewGuid(), t.Name, t.Description, t.Subscribers ?? new List<string>())).ToList()
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { MessageBrokers = s.MessageBrokers.Select(m => m.Id == command.Id ? updated : m).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            MessageBrokers = s.MessageBrokers.Select(m =>
+            {
+                if (m.Id != command.Id) return m;
+                updated = m with
+                {
+                    Name = command.Name,
+                    Description = command.Description,
+                    Kind = command.Kind,
+                    EnvironmentId = command.EnvironmentId,
+                    ConnectionUri = command.ConnectionUri,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow,
+                    Queues = command.Queues?.Select(q => new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
+                    Topics = command.Topics?.Select(t => new BrokerTopic(Guid.NewGuid(), t.Name, t.Description, t.Subscribers ?? new List<string>())).ToList()
+                };
+                return updated;
+            }).ToList()
+        });
         return Result<Models.MessageBroker>.Success(updated);
     }
 

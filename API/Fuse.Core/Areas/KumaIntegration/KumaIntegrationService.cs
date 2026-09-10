@@ -125,20 +125,25 @@ public class KumaIntegrationService : IKumaIntegrationService
                 return Result<KumaIntegrationResponse>.Failure("Failed to validate Kuma integration (URI/API key invalid).", ErrorType.Validation);
         }
 
-        var updated = existing with
-        {
-            Name = command.Name ?? existing.Name,
-            EnvironmentIds = command.EnvironmentIds.AsReadOnly(),
-            PlatformId = command.PlatformId,
-            AccountId = command.AccountId,
-            Uri = command.Uri,
-            ApiKey = command.ApiKey,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
         await _store.UpdateAsync(s => s with
         {
-            KumaIntegrations = s.KumaIntegrations.Select(k => k.Id == existing.Id ? updated : k).ToList()
+            KumaIntegrations = s.KumaIntegrations.Select(k =>
+            {
+                if (k.Id != existing.Id) return k;
+                updated = k with
+                {
+                    Name = command.Name ?? k.Name,
+                    EnvironmentIds = command.EnvironmentIds.AsReadOnly(),
+                    PlatformId = command.PlatformId,
+                    AccountId = command.AccountId,
+                    Uri = command.Uri,
+                    ApiKey = command.ApiKey,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
         }, ct);
         return Result<KumaIntegrationResponse>.Success(new KumaIntegrationResponse(
             updated.Id,

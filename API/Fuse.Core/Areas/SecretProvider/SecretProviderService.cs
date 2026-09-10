@@ -104,19 +104,24 @@ public class SecretProviderService : ISecretProviderService
                 return Result<Models.SecretProvider>.Failure(updateManagerResult.Error!, updateManagerResult.ErrorType ?? ErrorType.Validation);
         }
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            VaultUri = command.VaultUri,
-            AuthMode = command.AuthMode,
-            Credentials = command.AuthMode == SecretProviderAuthMode.ClientSecret ? null : command.Credentials,
-            Capabilities = command.Capabilities,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
         await _fuseStore.UpdateAsync(s => s with 
         { 
-            SecretProviders = s.SecretProviders.Select(p => p.Id == command.Id ? updated : p).ToList() 
+            SecretProviders = s.SecretProviders.Select(p =>
+            {
+                if (p.Id != command.Id) return p;
+                updated = p with
+                {
+                    Name = command.Name,
+                    VaultUri = command.VaultUri,
+                    AuthMode = command.AuthMode,
+                    Credentials = command.AuthMode == SecretProviderAuthMode.ClientSecret ? null : command.Credentials,
+                    Capabilities = command.Capabilities,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
         });
         return Result<Models.SecretProvider>.Success(updated);
     }

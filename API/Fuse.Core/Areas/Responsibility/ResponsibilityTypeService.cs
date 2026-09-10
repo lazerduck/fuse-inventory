@@ -76,14 +76,22 @@ public class ResponsibilityTypeService : IResponsibilityTypeService
         if (store.ResponsibilityTypes.Any(rt => rt.Id != command.Id && string.Equals(rt.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<ResponsibilityType>.Failure($"Responsibility type with name '{command.Name}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { ResponsibilityTypes = s.ResponsibilityTypes.Select(rt => rt.Id == command.Id ? updated : rt).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            ResponsibilityTypes = s.ResponsibilityTypes.Select(rt =>
+            {
+                if (rt.Id != command.Id) return rt;
+                updated = rt with
+                {
+                    Name = command.Name,
+                    Description = command.Description,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
 
         // Audit log
         var auditLog = AuditHelper.CreateLog(

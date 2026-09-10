@@ -71,18 +71,26 @@ public class IdentityService : IIdentityService
 
         var normalizedAssignments = assignmentValidation.Value!;
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Kind = command.Kind,
-            Notes = command.Notes,
-            OwnerInstanceId = command.OwnerInstanceId,
-            Assignments = normalizedAssignments,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { Identities = s.Identities.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Identities = s.Identities.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                updated = x with
+                {
+                    Name = command.Name,
+                    Kind = command.Kind,
+                    Notes = command.Notes,
+                    OwnerInstanceId = command.OwnerInstanceId,
+                    Assignments = normalizedAssignments,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
         return Result<Models.Identity>.Success(updated);
     }
 
@@ -183,13 +191,7 @@ public class IdentityService : IIdentityService
         if (!targetExists)
             return Result<IdentityAssignment>.Failure($"Target {command.TargetKind}/{command.TargetId} not found.", ErrorType.Validation);
 
-        var updatedAssignment = existingAssignment with
-        {
-            TargetKind = command.TargetKind,
-            TargetId = command.TargetId,
-            Role = command.Role,
-            Notes = command.Notes
-        };
+        var updatedAssignment = existingAssignment;
 
         await _fuseStore.UpdateAsync(s =>
         {
@@ -197,7 +199,18 @@ public class IdentityService : IIdentityService
             {
                 if (i.Id == command.IdentityId)
                 {
-                    var updatedAssignments = i.Assignments.Select(a => a.Id == command.AssignmentId ? updatedAssignment : a).ToList();
+                    var updatedAssignments = i.Assignments.Select(a =>
+                    {
+                        if (a.Id != command.AssignmentId) return a;
+                        updatedAssignment = a with
+                        {
+                            TargetKind = command.TargetKind,
+                            TargetId = command.TargetId,
+                            Role = command.Role,
+                            Notes = command.Notes
+                        };
+                        return updatedAssignment;
+                    }).ToList();
                     return i with { Assignments = updatedAssignments, UpdatedAt = DateTime.UtcNow };
                 }
                 return i;

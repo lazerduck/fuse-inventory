@@ -74,16 +74,24 @@ public class ExternalResourceService : IExternalResourceService
         if (store.ExternalResources.Any(r => r.Id != command.Id && string.Equals(r.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.ExternalResource>.Failure($"External resource with name '{command.Name}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            ResourceUri = command.ResourceUri,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { ExternalResources = s.ExternalResources.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            ExternalResources = s.ExternalResources.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                updated = x with
+                {
+                    Name = command.Name,
+                    Description = command.Description,
+                    ResourceUri = command.ResourceUri,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
         return Result<Models.ExternalResource>.Success(updated);
     }
 
