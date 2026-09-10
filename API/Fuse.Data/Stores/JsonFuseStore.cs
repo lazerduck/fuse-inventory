@@ -13,7 +13,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
 {
     private readonly JsonFuseStoreOptions _options;
     private readonly SemaphoreSlim _mutex = new(1, 1);
-    private Snapshot? _cache;
+    private volatile Snapshot? _cache;
     private bool _disposed;
 
     private static readonly JsonSerializerOptions Json = new()
@@ -36,51 +36,65 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
     public event Action<Snapshot>? Changed;
 
     public async Task<Snapshot> GetAsync(CancellationToken ct = default)
-        => _cache is not null ? _cache : await LoadAsync(ct);
-    
-    public async Task<T> GetAsync<T>(Func<Snapshot, T> selector, CancellationToken ct = default)
     {
-        var snapshot = _cache ?? await LoadAsync(ct);
-        return selector(snapshot);
+        var snapshot = _cache;
+        if (snapshot is not null) return snapshot;
+
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            return _cache ?? await LoadCoreAsync(ct);
+        }
+        finally { _mutex.Release(); }
     }
+
+    public async Task<T> GetAsync<T>(Func<Snapshot, T> selector, CancellationToken ct = default)
+        => selector(await GetAsync(ct));
 
     public async Task<Snapshot> LoadAsync(CancellationToken ct = default)
     {
         await _mutex.WaitAsync(ct);
         try
         {
-            _cache = new Snapshot(
-                Applications: await ReadAsync<Application>("applications.json", ct),
-                DataStores: await ReadAsync<DataStore>("datastores.json", ct),
-                Platforms: await ReadPlatformsAsync(ct),
-                ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
-                Accounts: await ReadAsync<Account>("accounts.json", ct),
-                Identities: await ReadAsync<Identity>("identities.json", ct),
-                Tags: await ReadAsync<Tag>("tags.json", ct),
-                Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
-                KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
-                SecretProviders: await ReadAsync<SecretProvider>("secretproviders.json", ct),
-                SqlIntegrations: await ReadAsync<SqlIntegration>("sqlintegrations.json", ct),
-                Positions: await ReadAsync<Position>("positions.json", ct),
-                ResponsibilityTypes: await ReadAsync<ResponsibilityType>("responsibilitytypes.json", ct),
-                ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
-                Risks: await ReadAsync<Risk>("risks.json", ct),
-                MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
-                SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
-                AppSettings: await ReadObjectAsync<AppSettings>("appsettings.json", ct) ?? new AppSettings(),
-                PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
-                AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct),
-                License: await ReadObjectAsync<LicenseState>("license.json", ct)
-
-            );
-
-            var errors = SnapshotValidator.Validate(_cache);
-            if (errors.Count > 0)
-                throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
-
-            return _cache;
+            return await LoadCoreAsync(ct);
         }
         finally { _mutex.Release(); }
+    }
+
+    // The caller must hold _mutex.
+    private async Task<Snapshot> LoadCoreAsync(CancellationToken ct)
+    {
+        var snapshot = new Snapshot(
+            Applications: await ReadAsync<Application>("applications.json", ct),
+            DataStores: await ReadAsync<DataStore>("datastores.json", ct),
+            Platforms: await ReadPlatformsAsync(ct),
+            ExternalResources: await ReadAsync<ExternalResource>("externalresources.json", ct),
+            Accounts: await ReadAsync<Account>("accounts.json", ct),
+            Identities: await ReadAsync<Identity>("identities.json", ct),
+            Tags: await ReadAsync<Tag>("tags.json", ct),
+            Environments: await ReadAsync<EnvironmentInfo>("environments.json", ct),
+            KumaIntegrations: await ReadAsync<KumaIntegration>("kumaintegrations.json", ct),
+            SecretProviders: await ReadAsync<SecretProvider>("secretproviders.json", ct),
+            SqlIntegrations: await ReadAsync<SqlIntegration>("sqlintegrations.json", ct),
+            Positions: await ReadAsync<Position>("positions.json", ct),
+            ResponsibilityTypes: await ReadAsync<ResponsibilityType>("responsibilitytypes.json", ct),
+            ResponsibilityAssignments: await ReadAsync<ResponsibilityAssignment>("responsibilityassignments.json", ct),
+            Risks: await ReadAsync<Risk>("risks.json", ct),
+            MessageBrokers: await ReadAsync<MessageBroker>("messagebrokers.json", ct),
+            SecurityContext: await ReadSecurityContextAsync("securitycontext.json", ct),
+            AppSettings: await ReadObjectAsync<AppSettings>("appsettings.json", ct) ?? new AppSettings(),
+            PasswordGeneratorConfig: await ReadObjectAsync<PasswordGeneratorConfig>("passwordgeneratorconfig.json", ct),
+            AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct),
+            License: await ReadObjectAsync<LicenseState>("license.json", ct)
+
+        );
+
+        var errors = SnapshotValidator.Validate(snapshot);
+        if (errors.Count > 0)
+            throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
+
+        _cache = snapshot;
+        return snapshot;
     }
 
     public async Task SaveAsync(Snapshot snapshot, CancellationToken ct = default)
@@ -88,69 +102,82 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
         await _mutex.WaitAsync(ct);
         try
         {
-            var errors = SnapshotValidator.Validate(snapshot);
-            if (errors.Count > 0)
-                throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
-
-            var writeTasks = new List<Task>();
-
-            if (_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
-                writeTasks.Add(WriteAsync("applications.json", snapshot.Applications, ct));
-            if (_cache is null || !ReferenceEquals(_cache.DataStores, snapshot.DataStores))
-                writeTasks.Add(WriteAsync("datastores.json", snapshot.DataStores, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Platforms, snapshot.Platforms))
-                writeTasks.Add(WriteAsync("platforms.json", snapshot.Platforms, ct));
-            if (_cache is null || !ReferenceEquals(_cache.ExternalResources, snapshot.ExternalResources))
-                writeTasks.Add(WriteAsync("externalresources.json", snapshot.ExternalResources, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Accounts, snapshot.Accounts))
-                writeTasks.Add(WriteAsync("accounts.json", snapshot.Accounts, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Identities, snapshot.Identities))
-                writeTasks.Add(WriteAsync("identities.json", snapshot.Identities, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Tags, snapshot.Tags))
-                writeTasks.Add(WriteAsync("tags.json", snapshot.Tags, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Environments, snapshot.Environments))
-                writeTasks.Add(WriteAsync("environments.json", snapshot.Environments, ct));
-            if (_cache is null || !ReferenceEquals(_cache.KumaIntegrations, snapshot.KumaIntegrations))
-                writeTasks.Add(WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct));
-            if (_cache is null || !ReferenceEquals(_cache.SecretProviders, snapshot.SecretProviders))
-                writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
-            if (_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
-                writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
-                writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
-            if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
-                writeTasks.Add(WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct));
-            if (_cache is null || !ReferenceEquals(_cache.ResponsibilityAssignments, snapshot.ResponsibilityAssignments))
-                writeTasks.Add(WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct));
-            if (_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
-                writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
-            if (_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
-                writeTasks.Add(WriteAsync("messagebrokers.json", snapshot.MessageBrokers, ct));
-            if (snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
-                writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
-            if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
-                writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
-            if (_cache is null || !ReferenceEquals(_cache.AppSettings, snapshot.AppSettings))
-                writeTasks.Add(WriteAsync("appsettings.json", snapshot.AppSettings, ct));
-            if (_cache is null || !ReferenceEquals(_cache.AzureIntegrationManager, snapshot.AzureIntegrationManager))
-                writeTasks.Add(WriteAsync("azureintegrationmanager.json", snapshot.AzureIntegrationManager, ct));
-            if (_cache is null || !ReferenceEquals(_cache.License, snapshot.License))
-                writeTasks.Add(WriteAsync("license.json", snapshot.License, ct));
-
-            if (writeTasks.Count > 0)
-                await Task.WhenAll(writeTasks);
-
-            _cache = snapshot; // swap the in-memory snapshot
-            Changed?.Invoke(snapshot);
+            await SaveCoreAsync(snapshot, ct);
         }
         finally { _mutex.Release(); }
     }
 
+    // The caller must hold _mutex.
+    private async Task SaveCoreAsync(Snapshot snapshot, CancellationToken ct)
+    {
+        var errors = SnapshotValidator.Validate(snapshot);
+        if (errors.Count > 0)
+            throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
+
+        var writeTasks = new List<Task>();
+
+        if (_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
+            writeTasks.Add(WriteAsync("applications.json", snapshot.Applications, ct));
+        if (_cache is null || !ReferenceEquals(_cache.DataStores, snapshot.DataStores))
+            writeTasks.Add(WriteAsync("datastores.json", snapshot.DataStores, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Platforms, snapshot.Platforms))
+            writeTasks.Add(WriteAsync("platforms.json", snapshot.Platforms, ct));
+        if (_cache is null || !ReferenceEquals(_cache.ExternalResources, snapshot.ExternalResources))
+            writeTasks.Add(WriteAsync("externalresources.json", snapshot.ExternalResources, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Accounts, snapshot.Accounts))
+            writeTasks.Add(WriteAsync("accounts.json", snapshot.Accounts, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Identities, snapshot.Identities))
+            writeTasks.Add(WriteAsync("identities.json", snapshot.Identities, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Tags, snapshot.Tags))
+            writeTasks.Add(WriteAsync("tags.json", snapshot.Tags, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Environments, snapshot.Environments))
+            writeTasks.Add(WriteAsync("environments.json", snapshot.Environments, ct));
+        if (_cache is null || !ReferenceEquals(_cache.KumaIntegrations, snapshot.KumaIntegrations))
+            writeTasks.Add(WriteAsync("kumaintegrations.json", snapshot.KumaIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.SecretProviders, snapshot.SecretProviders))
+            writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
+        if (_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
+            writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
+            writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
+        if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
+            writeTasks.Add(WriteAsync("responsibilitytypes.json", snapshot.ResponsibilityTypes, ct));
+        if (_cache is null || !ReferenceEquals(_cache.ResponsibilityAssignments, snapshot.ResponsibilityAssignments))
+            writeTasks.Add(WriteAsync("responsibilityassignments.json", snapshot.ResponsibilityAssignments, ct));
+        if (_cache is null || !ReferenceEquals(_cache.Risks, snapshot.Risks))
+            writeTasks.Add(WriteAsync("risks.json", snapshot.Risks, ct));
+        if (_cache is null || !ReferenceEquals(_cache.MessageBrokers, snapshot.MessageBrokers))
+            writeTasks.Add(WriteAsync("messagebrokers.json", snapshot.MessageBrokers, ct));
+        if (snapshot.PasswordGeneratorConfig is not null && (_cache is null || !ReferenceEquals(_cache.PasswordGeneratorConfig, snapshot.PasswordGeneratorConfig)))
+            writeTasks.Add(WriteAsync("passwordgeneratorconfig.json", snapshot.PasswordGeneratorConfig, ct));
+        if (_cache is null || !ReferenceEquals(_cache.SecurityContext, snapshot.SecurityContext))
+            writeTasks.Add(WriteAsync("securitycontext.json", snapshot.SecurityContext, ct));
+        if (_cache is null || !ReferenceEquals(_cache.AppSettings, snapshot.AppSettings))
+            writeTasks.Add(WriteAsync("appsettings.json", snapshot.AppSettings, ct));
+        if (_cache is null || !ReferenceEquals(_cache.AzureIntegrationManager, snapshot.AzureIntegrationManager))
+            writeTasks.Add(WriteAsync("azureintegrationmanager.json", snapshot.AzureIntegrationManager, ct));
+        if (_cache is null || !ReferenceEquals(_cache.License, snapshot.License))
+            writeTasks.Add(WriteAsync("license.json", snapshot.License, ct));
+
+        if (writeTasks.Count > 0)
+            await Task.WhenAll(writeTasks);
+
+        _cache = snapshot; // swap the in-memory snapshot
+        Changed?.Invoke(snapshot);
+    }
+
     public async Task UpdateAsync(Func<Snapshot, Snapshot> mutate, CancellationToken ct = default)
     {
-        var current = _cache ?? await LoadAsync(ct);
-        var next = mutate(current);
-        await SaveAsync(next, ct);
+        await _mutex.WaitAsync(ct);
+        try
+        {
+            // Read and mutate only after acquiring the lock, so queued updates use
+            // the snapshot published by the previous successful save.
+            var current = _cache ?? await LoadCoreAsync(ct);
+            var next = mutate(current);
+            await SaveCoreAsync(next, ct);
+        }
+        finally { _mutex.Release(); }
     }
 
     public async Task CreateBackupAsync(CancellationToken ct = default)
