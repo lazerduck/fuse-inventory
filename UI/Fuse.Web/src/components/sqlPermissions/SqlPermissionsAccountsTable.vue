@@ -96,7 +96,7 @@
             >
               <q-tooltip>Import SQL permissions to Fuse</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="View item"
               flat
               dense
               round

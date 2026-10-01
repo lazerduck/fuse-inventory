@@ -51,7 +51,7 @@ Build dependable UI regression coverage while preserving application behaviour. 
 
 ## Product observations to investigate separately
 
-- Several icon-only action buttons expose no descriptive accessible name in the browser snapshot. This complicates keyboard/screen-reader use and stable semantic selectors. Inventory and label the affected controls before changing them.
+- The initial browser snapshot exposed unnamed icon-only actions. UI-001 is now resolved with descriptive names and semantic browser selectors; see the accessibility follow-up below.
 - The Security page still describes locked-down mode as “Read account required to read, Admin to edit.” This wording needs review against the granular role model.
 - The guide panel affects the available page area during first-run exploration. Include it in responsive/layout coverage; the initial exploration does not establish a product defect.
 
@@ -120,3 +120,9 @@ Verification after the fixes on 2026-09-10:
 - Component suite: 26 passed; component/source type check passed.
 - Fresh-data Chromium suite: 48 passed, with zero expected failures, unexpected failures, skips or flaky results.
 - Production Docker build and browser-fixture type check passed; the disposable browser-test environment was cleaned up.
+
+### Accessibility follow-up
+
+UI-001 is fixed with accessible names for icon-only controls and dependency fields, plus state-aware labels for toggles. Inventory, ownership, account/identity and permission browser journeys now select row actions by name. The dependency journey checks named fields and save/edit/delete/discard actions. A new keyboard test covers navigation expansion, theme labels, closing a dialog and restoring focus to its opener.
+
+Verification on 2026-09-10: 26 component tests, frontend and browser type checks, and the production Docker build passed. All 48 existing browser tests passed in the full run. The new keyboard test initially used a mouse opener; after correcting it to use the keyboard throughout, a targeted run passed all three tests (bootstrap, keyboard accessibility and the extended dependency journey). Disposable test resources were removed. These checks address the documented missing-name defect; a full accessibility audit remains outside this pass.

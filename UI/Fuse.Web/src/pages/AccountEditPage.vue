@@ -108,7 +108,7 @@
       <q-card style="min-width: 480px">
         <q-card-section style="display: flex; justify-content: space-between; align-items: center">
           <div class="text-h6">Clone across environments</div>
-          <q-btn flat round dense icon="close" @click="isCloneDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCloneDialogOpen = false" />
         </q-card-section>
         <q-separator />
         <q-card-section>

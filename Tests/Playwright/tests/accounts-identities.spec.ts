@@ -32,7 +32,7 @@ test('identity assignments survive editing identity details', async ({ authentic
   expect(saved.assignments).toHaveLength(1);
   expect(saved.assignments[0].targetId).toBe(target.id);
   await page.goto('/identities');
-  await page.getByRole('row').filter({ hasText: name }).getByRole('button').last().click();
+  await page.getByRole('row').filter({ hasText: name }).getByRole('button', { name: /^Delete / }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();
   await expect(page.getByRole('row').filter({ hasText: name })).toBeHidden();
   expect((await adminApi.get(`/api/identity/${created.id}`)).status()).toBe(404);
@@ -73,7 +73,7 @@ test('account grants survive saving account details', async ({ authenticatedPage
   expect(saved.grants).toHaveLength(1);
   expect(saved.grants[0].database).toBe('Inventory');
   await page.goto('/accounts');
-  await page.getByRole('row').filter({ hasText: `${name}-saved` }).getByRole('button').last().click();
+  await page.getByRole('row').filter({ hasText: `${name}-saved` }).getByRole('button', { name: /^Delete / }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();
   await expect(page.getByRole('row').filter({ hasText: `${name}-saved` })).toBeHidden();
   expect((await adminApi.get(`/api/account/${created.id}`)).status()).toBe(404);

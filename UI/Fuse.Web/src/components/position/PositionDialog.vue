@@ -3,7 +3,7 @@
     <q-card class="form-dialog">
       <q-card-section class="dialog-header">
         <div class="text-h6">{{ title }}</div>
-        <q-btn flat round dense icon="close" @click="closeDialog" />
+        <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeDialog" />
       </q-card-section>
       <q-separator />
       <q-form ref="formRef" @submit.prevent="handleSubmit">

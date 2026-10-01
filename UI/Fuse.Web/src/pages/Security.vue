@@ -25,7 +25,7 @@
           <div class="text-body2">
             <p>
               <strong>Security Level:</strong> {{ fuseStore.securityPosture }} - {{ levelDescription }}
-              <q-btn 
+              <q-btn aria-label="Edit security level"
                 v-if="isAdmin"
                 flat 
                 dense 
@@ -118,10 +118,10 @@
               </q-item-section>
               <q-item-section side>
                 <div class="row q-gutter-xs">
-                  <q-btn flat dense round icon="refresh" color="warning" @click="confirmRegenerate(key)">
+                  <q-btn aria-label="Regenerate API key" flat dense round icon="refresh" color="warning" @click="confirmRegenerate(key)">
                     <q-tooltip>Regenerate key</q-tooltip>
                   </q-btn>
-                  <q-btn flat dense round icon="delete" color="negative" @click="confirmDeleteApiKey(key)">
+                  <q-btn aria-label="Delete API key" flat dense round icon="delete" color="negative" @click="confirmDeleteApiKey(key)">
                     <q-tooltip>Delete key</q-tooltip>
                   </q-btn>
                 </div>
@@ -172,7 +172,7 @@
           </template>
           <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="Edit user"
               flat 
               dense 
               round 
@@ -184,7 +184,7 @@
             >
               <q-tooltip v-if="isCurrentUser(props.row)">You cannot edit your own account</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Reset password"
               flat
               dense
               round
@@ -196,7 +196,7 @@
             >
               <q-tooltip>Reset password</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Delete user"
               flat
               dense
               round
@@ -270,7 +270,7 @@
         <q-card style="min-width: 480px; max-width: 600px">
           <q-card-section class="dialog-header">
             <div class="text-h6">Role Permissions: {{ selectedRole?.name }}</div>
-            <q-btn flat round dense icon="close" @click="isPermissionsDialogOpen = false" />
+            <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isPermissionsDialogOpen = false" />
           </q-card-section>
           <q-separator />
           <q-card-section>
@@ -404,7 +404,7 @@
               label="API Key"
             >
               <template #append>
-                <q-btn flat dense round icon="content_copy" @click="copyApiKey">
+                <q-btn aria-label="Copy to clipboard" flat dense round icon="content_copy" @click="copyApiKey">
                   <q-tooltip>Copy to clipboard</q-tooltip>
                 </q-btn>
               </template>

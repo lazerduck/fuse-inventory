@@ -92,8 +92,8 @@
                 :type="showPassword ? 'text' : 'password'"
               >
                 <template #append>
-                  <q-btn flat dense round :icon="showPassword ? 'visibility_off' : 'visibility'" @click="showPassword = !showPassword" />
-                  <q-btn flat dense round icon="content_copy" @click="copyToClipboard" />
+                  <q-btn :aria-label="showPassword ? 'Hide password' : 'Show password'" flat dense round :icon="showPassword ? 'visibility_off' : 'visibility'" @click="showPassword = !showPassword" />
+                  <q-btn aria-label="Copy to clipboard" flat dense round icon="content_copy" @click="copyToClipboard" />
                 </template>
               </q-input>
               <div class="text-caption text-grey-6 q-mt-xs">

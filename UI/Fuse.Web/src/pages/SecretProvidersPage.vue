@@ -106,7 +106,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Open explorer"
               flat
               dense
               round
@@ -116,7 +116,7 @@
             >
               <q-tooltip>{{ isAppConfiguration(props.row) ? 'Explore App Configuration' : 'Explore Vault' }}</q-tooltip>
             </q-btn>
-            <q-btn 
+            <q-btn aria-label="Edit secret provider"
               flat 
               dense 
               round 
@@ -128,7 +128,7 @@
             >
               <q-tooltip>Edit Integration</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Delete secret provider"
               flat
               dense
               round
@@ -166,7 +166,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Shared Azure Credentials</div>
-          <q-btn flat round dense icon="close" @click="closeAzureManagerDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeAzureManagerDialog" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitAzureManagerCredentials">

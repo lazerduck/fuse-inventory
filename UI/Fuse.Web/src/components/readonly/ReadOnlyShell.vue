@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="shell-header">
       <div class="header-content">
-        <q-btn flat dense icon="arrow_back" @click="goBack" class="back-btn">
+        <q-btn aria-label="Go back" flat dense icon="arrow_back" @click="goBack" class="back-btn">
           <q-tooltip>Back to Search</q-tooltip>
         </q-btn>
         <h1 class="shell-title">{{ title }}</h1>

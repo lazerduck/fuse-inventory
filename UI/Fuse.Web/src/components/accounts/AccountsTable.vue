@@ -48,7 +48,7 @@
       </template>
       <template #body-cell-actions="cellProps">
         <q-td :props="cellProps" class="text-right">
-          <q-btn 
+          <q-btn aria-label="Edit account"
             flat 
             dense 
             round 
@@ -57,7 +57,7 @@
             :disable="!props.canModify"
             @click="emit('edit', cellProps.row)" 
           />
-          <q-btn
+          <q-btn aria-label="Delete account"
             flat
             dense
             round

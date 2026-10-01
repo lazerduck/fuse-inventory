@@ -2,7 +2,7 @@
   <q-card class="form-dialog" :class="{ 'cluster-dialog': isCluster }">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
     </q-card-section>
     <q-separator />
     <q-form class="dialog-form" @submit.prevent="handleSubmit">

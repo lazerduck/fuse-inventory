@@ -1,6 +1,5 @@
 import { test, expect } from '../fixtures/auth';
 import { randomUUID } from 'node:crypto';
-// Scoped positional action locators until icon-only buttons gain names (UI-001).
 const resources = [
   { route: 'data-stores', create: 'Create Data Store', api: 'dataStore', field: 'name' },
   { route: 'message-brokers', create: 'Create Broker', api: 'messageBroker', field: 'name' },
@@ -28,12 +27,12 @@ for (const resource of resources) {
     await expect(dialog).toBeHidden();
     let row = page.getByRole('row').filter({ hasText: name });
     await expect(row).toBeVisible();
-    await row.getByRole('button').first().click();
+    await row.getByRole('button', { name: /^Edit / }).click();
     await dialog.getByLabel(/^Name\*?$/).fill(`${name}-cancelled`);
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
     await page.reload();
     await expect(row).toBeVisible();
-    await row.getByRole('button').first().click();
+    await row.getByRole('button', { name: /^Edit / }).click();
     await dialog.getByLabel(/^Name\*?$/).fill(`${name}-saved`);
     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(dialog).toBeHidden();
@@ -44,7 +43,7 @@ for (const resource of resources) {
     expect(response.ok(), await response.text()).toBeTruthy();
     const saved = (await response.json()).find((record: any) => record[resource.field] === `${name}-saved`);
     expect(saved).toBeTruthy();
-    await row.getByRole('button').last().click();
+    await row.getByRole('button', { name: /^Delete / }).click();
     await dialog.getByRole('button', { name: 'OK', exact: true }).click();
     await expect(row).toBeHidden();
     await page.reload();

@@ -41,9 +41,9 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn flat dense round icon="edit" color="primary" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
+            <q-btn aria-label="Edit Kuma integration" flat dense round icon="edit" color="primary" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsCreate)"
               @click="openEditDialog(props.row)" />
-            <q-btn flat dense round icon="delete" color="negative" class="q-ml-xs" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsDelete)"
+            <q-btn aria-label="Delete Kuma integration" flat dense round icon="delete" color="negative" class="q-ml-xs" :disable="!fuseStore.hasPermission(Permission.KumaIntegrationsDelete)"
               @click="confirmDelete(props.row)" />
           </q-td>
         </template>

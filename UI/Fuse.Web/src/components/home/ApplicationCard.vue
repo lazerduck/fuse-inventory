@@ -25,7 +25,7 @@
           >
             {{ application.framework }}
           </q-chip>
-          <q-btn
+          <q-btn aria-label="Edit application"
             flat
             round
             dense
@@ -36,7 +36,7 @@
           >
             <q-tooltip>Edit application</q-tooltip>
           </q-btn>
-          <q-btn
+          <q-btn :aria-label="expanded ? 'Collapse application details' : 'Expand application details'" :aria-expanded="expanded"
             flat
             round
             dense

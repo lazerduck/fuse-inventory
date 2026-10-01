@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <q-btn flat round dense icon="arrow_back" @click="router.push({ name: 'secretProviders' })" />
+        <q-btn aria-label="Go back" flat round dense icon="arrow_back" @click="router.push({ name: 'secretProviders' })" />
         <div>
           <h1>Vault Explorer</h1>
           <p class="subtitle">
@@ -91,7 +91,7 @@
 
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Reveal secret"
               v-if="canRevealSecret"
               flat
               dense
@@ -102,7 +102,7 @@
             >
               <q-tooltip>Reveal Value</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Edit secret"
               v-if="canUpdateSecret"
               flat
               dense
@@ -131,7 +131,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Secret Value — {{ selectedSecret?.name }}</div>
-          <q-btn flat round dense icon="close" @click="closeRevealDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeRevealDialog" />
         </q-card-section>
         <q-separator />
         <q-card-section>
@@ -152,14 +152,14 @@
               :type="showRevealedValue ? 'text' : 'password'"
             >
               <template #append>
-                <q-btn
+                <q-btn :aria-label="showRevealedValue ? 'Hide secret' : 'Show secret'"
                   flat
                   round
                   dense
                   :icon="showRevealedValue ? 'visibility_off' : 'visibility'"
                   @click="showRevealedValue = !showRevealedValue"
                 />
-                <q-btn
+                <q-btn aria-label="Copy to clipboard"
                   flat
                   round
                   dense
@@ -183,7 +183,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Secret</div>
-          <q-btn flat round dense icon="close" @click="closeCreateDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeCreateDialog" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="handleCreateSubmit">
@@ -225,7 +225,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Update Secret — {{ selectedSecret?.name }}</div>
-          <q-btn flat round dense icon="close" @click="closeUpdateDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeUpdateDialog" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="handleUpdateSubmit">

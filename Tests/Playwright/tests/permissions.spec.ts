@@ -23,8 +23,8 @@ for (const [name, permissions, canCreate, canUpdate, canDelete] of [
     const create = page.getByRole('button', { name: 'Create Tag', exact: true });
     if (canCreate) await expect(create).toBeEnabled(); else await expect(create).toBeDisabled();
     const row = page.getByRole('row').filter({ hasText: `Role tag-${suffix}` });
-    if (canUpdate) await expect(row.getByRole('button').first()).toBeEnabled(); else await expect(row.getByRole('button').first()).toBeDisabled();
-    if (canDelete) await expect(row.getByRole('button').last()).toBeEnabled(); else await expect(row.getByRole('button').last()).toBeDisabled();
+    if (canUpdate) await expect(row.getByRole('button', { name: /^Edit / })).toBeEnabled(); else await expect(row.getByRole('button', { name: /^Edit / })).toBeDisabled();
+    if (canDelete) await expect(row.getByRole('button', { name: /^Delete / })).toBeEnabled(); else await expect(row.getByRole('button', { name: /^Delete / })).toBeDisabled();
     const headers = { Authorization: `Bearer ${session.token}` };
     expect((await request.get('/api/tag', { headers })).status()).toBe(200);
     if (!canCreate) expect((await request.post('/api/tag', { headers, data: { name: 'Forbidden' } })).status()).toBe(403);

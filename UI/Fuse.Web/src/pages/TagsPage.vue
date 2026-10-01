@@ -60,7 +60,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="Edit tag"
               flat 
               dense 
               round 
@@ -69,7 +69,7 @@
               :disable="!canUpdate"
               @click="openEditDialog(props.row)" 
             />
-            <q-btn
+            <q-btn aria-label="Delete tag"
               flat
               dense
               round
@@ -91,7 +91,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Tag</div>
-          <q-btn flat round dense icon="close" @click="isCreateDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCreateDialogOpen = false" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitCreate">
@@ -131,7 +131,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Edit Tag</div>
-          <q-btn flat round dense icon="close" @click="closeEditDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeEditDialog" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitEdit">

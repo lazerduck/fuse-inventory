@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <div class="row items-center q-gutter-sm">
-        <q-btn
+        <q-btn aria-label="Go back"
           flat
           round
           dense

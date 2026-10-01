@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn v-if="!requireSetup" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" v-if="!requireSetup" flat round dense icon="close" @click="emit('cancel')" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">

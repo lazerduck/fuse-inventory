@@ -7,7 +7,7 @@
       </div>
       <div class="row items-center q-gutter-sm">
         <q-chip v-if="isFetching" dense icon="sync" color="primary" text-color="white" label="Refreshing..." />
-        <q-btn flat round dense icon="refresh" :loading="isFetching" @click="refresh" />
+        <q-btn aria-label="Refresh" flat round dense icon="refresh" :loading="isFetching" @click="refresh" />
       </div>
     </div>
 

@@ -63,7 +63,7 @@
           hint="Select a secret stored in the integration"
         >
           <template #after>
-            <q-btn
+            <q-btn aria-label="Refresh secrets"
               flat
               dense
               round
@@ -104,7 +104,7 @@
               required
             >
               <template #append>
-                <q-btn flat dense round :icon="showNewSecretValue ? 'visibility_off' : 'visibility'" @click="showNewSecretValue = !showNewSecretValue" />
+                <q-btn :aria-label="showNewSecretValue ? 'Hide secret' : 'Show secret'" flat dense round :icon="showNewSecretValue ? 'visibility_off' : 'visibility'" @click="showNewSecretValue = !showNewSecretValue" />
               </template>
             </q-input>
             <div class="flex justify-between items-center q-mt-xs">
@@ -163,7 +163,7 @@
       <div v-for="(pair, index) in form.parameters" :key="index" class="parameter-row">
         <q-input v-model="pair.key" label="Key" dense outlined />
         <q-input v-model="pair.value" label="Value" dense outlined />
-        <q-btn flat dense round icon="delete" color="negative" @click="removeParameter(index)" />
+        <q-btn aria-label="Delete parameter" flat dense round icon="delete" color="negative" @click="removeParameter(index)" />
       </div>
     </div>
     <div v-else class="text-grey">No parameters.</div>

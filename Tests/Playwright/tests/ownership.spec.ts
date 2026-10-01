@@ -19,14 +19,14 @@ test('application ownership assignment can be created, updated and deleted', asy
   await expect(dialog).toBeHidden();
   const row = page.getByRole('row').filter({ hasText: `Owner-${suffix}` });
   await expect(row).toBeVisible();
-  await row.getByRole('button').first().click();
+  await row.getByRole('button', { name: /^Edit / }).click();
   await dialog.getByLabel('Notes', { exact: true }).fill('Ownership regression');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog).toBeHidden();
   await page.reload();
   await page.getByRole('tab', { name: 'Ownership', exact: true }).click();
   await expect(row).toContainText('Ownership regression');
-  await row.getByRole('button').last().click();
+  await row.getByRole('button', { name: /^Delete / }).click();
   await dialog.getByRole('button', { name: 'OK', exact: true }).click();
   await expect(row).toBeHidden();
 });

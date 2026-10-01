@@ -79,7 +79,7 @@
         </q-item-section>
         <q-item-section side>
           <div class="flex q-gutter-xs">
-            <q-btn
+            <q-btn aria-label="Edit assignment"
               flat
               dense
               round
@@ -88,7 +88,7 @@
               :disable="disableActions"
               @click="emit('edit', { assignment })"
             />
-            <q-btn
+            <q-btn aria-label="Delete assignment"
               flat
               dense
               round

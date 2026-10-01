@@ -78,7 +78,7 @@
 
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit application"
               flat
               dense
               round
@@ -87,7 +87,7 @@
               :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
               @click="navigateToEdit(props.row)"
             />
-            <q-btn
+            <q-btn aria-label="Delete application"
               flat
               dense
               round
@@ -112,7 +112,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Application</div>
-          <q-btn flat round dense icon="close" @click="isCreateDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCreateDialogOpen = false" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitCreate">

@@ -1,10 +1,14 @@
 # UI test findings
 
-The initial regression pass preserved product behaviour. UI-002 and UI-003 are now fixed; UI-001 remains a separate accessibility improvement.
+The initial regression pass preserved product behaviour. UI-001, UI-002 and UI-003 are now fixed.
 
-## UI-001 — controls without accessible names
+## UI-001 — Fixed: controls without accessible names
 
-Tags and several inventory tables expose edit/delete as unnamed icon buttons. Dependency row inputs and actions are also unnamed. Tests currently scope these controls to a uniquely identified row and use their documented order. Add descriptive accessible names in a separate accessibility pass.
+Previously, Tags and several inventory tables exposed edit/delete as unnamed icon buttons, and dependency row inputs and actions were unnamed. Tests relied on button order within each row.
+
+Resolution: icon-only actions now have descriptive accessible names across inventory tables, dependency editors, dialog close controls, navigation, and integration screens. Theme and secret-visibility controls have state-dependent names; navigation and application expansion controls expose their expanded state. Dependency inputs and selectors are explicitly named. Browser journeys now locate row actions and dependency fields by accessible name instead of position, and a keyboard regression covers navigation, theme state, dialog closing and focus restoration.
+
+This resolves the documented missing-name defect; it is not a full accessibility audit of contrast, screen-reader flows or every custom widget.
 
 ## UI-002 — Fixed: UI permission resolution requires an unrelated permission
 

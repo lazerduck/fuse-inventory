@@ -31,6 +31,7 @@
       <template #body-cell-targetKind="cellProps">
         <q-td :props="cellProps">
           <q-select
+            aria-label="Target kind"
             v-if="cellProps.row.isEditing"
             :model-value="cellProps.row.form.targetKind"
             @update:model-value="(v) => onTargetKindChange(cellProps.row.form, v)"
@@ -48,6 +49,7 @@
       <template #body-cell-target="cellProps">
         <q-td :props="cellProps">
           <q-select
+            aria-label="Target"
             v-if="cellProps.row.isEditing"
             :model-value="cellProps.row.form.targetId"
             @update:model-value="(v) => onTargetIdChange(cellProps.row.form, v)"
@@ -66,6 +68,7 @@
       <template #body-cell-port="cellProps">
         <q-td :props="cellProps">
           <q-input
+            aria-label="Port"
             v-if="cellProps.row.isEditing"
             v-model.number="cellProps.row.form.port"
             dense
@@ -84,6 +87,7 @@
       <template #body-cell-severity="cellProps">
         <q-td :props="cellProps">
           <q-select
+            aria-label="Severity"
             v-if="cellProps.row.isEditing"
             v-model="cellProps.row.form.severity"
             dense
@@ -105,6 +109,7 @@
       <template #body-cell-authKind="cellProps">
         <q-td :props="cellProps">
           <q-select
+            aria-label="Authentication kind"
             v-if="cellProps.row.isEditing"
             :model-value="cellProps.row.form.authKind"
             @update:model-value="(v) => onAuthKindChange(cellProps.row.form, v)"
@@ -123,6 +128,7 @@
         <q-td :props="cellProps">
           <template v-if="cellProps.row.isEditing">
             <q-select
+              aria-label="Account"
               v-if="cellProps.row.form.authKind === DependencyAuthKind.Account"
               v-model="cellProps.row.form.accountId"
               dense
@@ -135,6 +141,7 @@
               class="dep-select-wide"
             />
             <q-select
+              aria-label="Identity"
               v-else-if="cellProps.row.form.authKind === DependencyAuthKind.Identity"
               v-model="cellProps.row.form.identityId"
               dense
@@ -156,7 +163,7 @@
       <template #body-cell-actions="cellProps">
         <q-td :props="cellProps" class="text-right">
           <template v-if="cellProps.row.isEditing">
-            <q-btn
+            <q-btn aria-label="Save dependency"
               dense
               flat
               round
@@ -168,7 +175,7 @@
             >
               <q-tooltip>Save dependency</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Discard dependency changes"
               dense
               flat
               round
@@ -182,7 +189,7 @@
             </q-btn>
           </template>
           <template v-else>
-            <q-btn
+            <q-btn aria-label="Edit dependency"
               dense
               flat
               round
@@ -191,7 +198,7 @@
               :disable="!canUpdate"
               @click="startEdit(cellProps.row.dep)"
             />
-            <q-btn
+            <q-btn aria-label="Delete dependency"
               dense
               flat
               round

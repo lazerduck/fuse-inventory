@@ -74,7 +74,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="Edit data store"
               flat 
               dense 
               round 
@@ -87,13 +87,13 @@
               flat
               dense
               round
-              icon="history"
+              icon="history" aria-label="View data store history"
               color="info"
               class="q-ml-xs"
               :disable="!props.row.id"
               @click="openHistoryDialog(props.row)"
             />
-            <q-btn
+            <q-btn aria-label="Delete data store"
               flat
               dense
               round
@@ -129,7 +129,7 @@
             <div class="text-h6">Data Store History</div>
             <div class="text-caption text-grey-7">Recent changes for {{ historyDataStoreName }}</div>
           </div>
-          <q-btn flat round dense icon="close" @click="closeHistoryDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeHistoryDialog" />
         </q-card-section>
         <q-separator />
         <q-card-section>

@@ -2,7 +2,7 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn aria-label="Toggle navigation" :aria-expanded="leftDrawerOpen" dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           Fuse Inventory
         </q-toolbar-title>
@@ -19,7 +19,7 @@
           class="q-mr-md"
         />
 
-        <q-btn dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleTheme" />
+        <q-btn :aria-label="$q.dark.isActive ? 'Switch to light theme' : 'Switch to dark theme'" dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleTheme" />
 
         <LicenseChip />
 
@@ -27,7 +27,7 @@
           <q-tooltip>About Fuse Inventory</q-tooltip>
         </q-btn>
 
-        <q-btn dense flat round icon="help_outline">
+        <q-btn aria-label="Help" dense flat round icon="help_outline">
           <q-menu anchor="bottom right" self="top right" auto-close>
             <q-list style="min-width: 220px">
               <q-item clickable @click="handleStartTour">
@@ -62,7 +62,7 @@
           </q-menu>
         </q-btn>
 
-        <q-btn data-testid="auth-button" dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
+        <q-btn :aria-label="fuseStore.isLoggedIn ? 'Log out' : 'Log in'" data-testid="auth-button" dense flat round :icon="fuseStore.isLoggedIn ? 'lock' : 'lock_open'" @click="handleAuthClick">
           <q-tooltip>{{ fuseStore.isLoggedIn ? `Logged in as ${fuseStore.userName}` : 'Login' }}</q-tooltip>
         </q-btn>
       </q-toolbar>
