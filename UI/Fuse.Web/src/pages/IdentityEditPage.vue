@@ -78,7 +78,7 @@
     <q-dialog v-model="isAssignmentDialogOpen" persistent>      <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">{{ assignmentDialogTitle }}</div>
-          <q-btn flat round dense icon="close" @click="closeAssignmentDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeAssignmentDialog" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitAssignment">
@@ -132,7 +132,7 @@
       <q-card style="min-width: 480px">
         <q-card-section class="dialog-header">
           <div class="text-h6">Clone across environments</div>
-          <q-btn flat round dense icon="close" @click="isCloneDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCloneDialogOpen = false" />
         </q-card-section>
         <q-separator />
         <q-card-section>

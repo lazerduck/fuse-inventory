@@ -25,6 +25,166 @@ public class JsonFuseStoreTests : IDisposable
         }
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task UpdateAsync_QueuedMutationsUseLatestSnapshot_WithoutBlockingCachedReads(bool preload, bool updateDifferentCollection)
+    {
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        if (preload) await store.GetAsync();
+
+        var firstTag = new Tag(Guid.NewGuid(), "First", null, null);
+        var secondTag = new Tag(Guid.NewGuid(), "Second", null, null);
+        var entered = new TaskCompletionSource<Snapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var first = Task.Run(() => store.UpdateAsync(snapshot =>
+        {
+            entered.SetResult(snapshot);
+            if (!release.Wait(TimeSpan.FromSeconds(10)))
+                throw new TimeoutException("The test did not release the first mutation.");
+            return snapshot with { Tags = snapshot.Tags.Append(firstTag).ToList() };
+        }));
+
+        Task second = Task.CompletedTask;
+        var secondInvoked = false;
+        try
+        {
+            var original = await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            second = store.UpdateAsync(snapshot =>
+            {
+                secondInvoked = true;
+                return updateDifferentCollection
+                    ? snapshot with { AppSettings = snapshot.AppSettings with { ScrumPokerEnabled = true } }
+                    : snapshot with { Tags = snapshot.Tags.Append(secondTag).ToList() };
+            });
+
+            // This call has reached the semaphore, but must not build its snapshot yet.
+            Assert.False(secondInvoked);
+            Assert.False(second.IsCompleted);
+            Assert.Same(original, await store.GetAsync().WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.Empty(await store.GetAsync(s => s.Tags).WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.Same(original, store.Current);
+        }
+        finally
+        {
+            release.Set();
+            await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10));
+        }
+
+        var expectedTags = updateDifferentCollection ? new[] { firstTag } : new[] { firstTag, secondTag };
+        var current = await store.GetAsync();
+        Assert.Equal(expectedTags, current.Tags);
+        Assert.Equal(updateDifferentCollection, current.AppSettings.ScrumPokerEnabled);
+        using var reloaded = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        var persisted = await reloaded.GetAsync();
+        Assert.Equal(expectedTags, persisted.Tags);
+        Assert.Equal(updateDifferentCollection, persisted.AppSettings.ScrumPokerEnabled);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CancelledWait_DoesNotInvokeMutation_AndAllowsNextUpdate()
+    {
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        await store.GetAsync();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var first = Task.Run(() => store.UpdateAsync(snapshot =>
+        {
+            entered.SetResult();
+            if (!release.Wait(TimeSpan.FromSeconds(10)))
+                throw new TimeoutException("The test did not release the first mutation.");
+            return snapshot;
+        }));
+
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            using var cancellation = new CancellationTokenSource();
+            var invoked = false;
+            var cancelled = store.UpdateAsync(snapshot =>
+            {
+                invoked = true;
+                return snapshot;
+            }, cancellation.Token);
+            cancellation.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled);
+            Assert.False(invoked);
+        }
+        finally
+        {
+            release.Set();
+            await first.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+
+        var tag = new Tag(Guid.NewGuid(), "After cancellation", null, null);
+        await store.UpdateAsync(s => s with { Tags = new[] { tag } }).WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(tag, Assert.Single((await store.GetAsync()).Tags));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MutationThrows_PreservesCacheAndReleasesLock()
+    {
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        var original = await store.GetAsync();
+        var notifications = 0;
+        store.Changed += _ => notifications++;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            store.UpdateAsync(_ => throw new InvalidOperationException("Mutation failed.")));
+
+        Assert.Same(original, store.Current);
+        Assert.Equal(0, notifications);
+        var tag = new Tag(Guid.NewGuid(), "After failure", null, null);
+        await store.UpdateAsync(s => s with { Tags = new[] { tag } }).WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(tag, Assert.Single((await store.GetAsync()).Tags));
+        Assert.Equal(1, notifications);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WriteFails_PreservesCacheAndReleasesLock()
+    {
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        var original = await store.GetAsync();
+        var tag = new Tag(Guid.NewGuid(), "Retry", null, null);
+        var notifications = 0;
+        store.Changed += _ => notifications++;
+        var temporaryPath = Path.Combine(_testDataDirectory, "tags.json.tmp");
+        Directory.CreateDirectory(temporaryPath); // Prevent opening the temporary file for writing.
+
+        var error = await Record.ExceptionAsync(() => store.UpdateAsync(s => s with { Tags = new[] { tag } }));
+        Assert.True(error is IOException or UnauthorizedAccessException, $"Unexpected error: {error}");
+        Assert.Same(original, store.Current);
+        Assert.Equal(0, notifications);
+
+        Directory.Delete(temporaryPath);
+        await store.UpdateAsync(s => s with { Tags = new[] { tag } }).WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(tag, Assert.Single((await store.GetAsync()).Tags));
+        Assert.Equal(1, notifications);
+        using var reloaded = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        Assert.Equal(tag, Assert.Single((await reloaded.GetAsync()).Tags));
+    }
+
+    [Fact]
+    public async Task LoadAsync_ValidationFails_DoesNotPublishInvalidSnapshot()
+    {
+        using var store = new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = _testDataDirectory });
+        var original = await store.GetAsync();
+        var id = Guid.NewGuid();
+        var path = Path.Combine(_testDataDirectory, "tags.json");
+        await File.WriteAllTextAsync(path, $$"""
+            [{"id":"{{id}}","name":"First"},{"id":"{{id}}","name":"Duplicate"}]
+            """);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.LoadAsync());
+        Assert.Same(original, await store.GetAsync());
+
+        await File.WriteAllTextAsync(path, "[]");
+        Assert.Empty((await store.LoadAsync().WaitAsync(TimeSpan.FromSeconds(10))).Tags);
+    }
+
     [Fact]
     public async Task CreateBackupAsync_CreatesArchiveContainingCurrentDataFiles()
     {

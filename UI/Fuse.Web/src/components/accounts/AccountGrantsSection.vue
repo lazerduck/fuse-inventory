@@ -40,7 +40,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit grant"
               dense
               flat
               round
@@ -49,7 +49,7 @@
               :disable="disableActions"
               @click="emit('edit', { grant: props.row.__source, index: props.row.__index })"
             />
-            <q-btn
+            <q-btn aria-label="Delete grant"
               dense
               flat
               round

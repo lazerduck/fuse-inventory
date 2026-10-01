@@ -344,19 +344,24 @@ public class SqlIntegrationService : ISqlIntegrationService
             permissions = newPermissions;
         }
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            DataStoreId = command.DataStoreId,
-            ConnectionString = connectionString,
-            AccountId = accountId,
-            Permissions = permissions,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
         await _store.UpdateAsync(s => s with
         {
-            SqlIntegrations = s.SqlIntegrations.Select(si => si.Id == existing.Id ? updated : si).ToList()
+            SqlIntegrations = s.SqlIntegrations.Select(si =>
+            {
+                if (si.Id != existing.Id) return si;
+                updated = si with
+                {
+                    Name = command.Name,
+                    DataStoreId = command.DataStoreId,
+                    ConnectionString = connectionString,
+                    AccountId = accountId,
+                    Permissions = permissions,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
         }, ct);
 
         return Result<SqlIntegrationResponse>.Success(new SqlIntegrationResponse(
@@ -820,17 +825,28 @@ public class SqlIntegrationService : ISqlIntegrationService
             ))
             .ToList();
 
-        // Update the account with imported grants
-        var updatedAccount = account with
+        // Apply grants to the latest account, but only if it still represents
+        // the principal that was inspected outside the store lock.
+        var updatedAccount = account;
+        Result<ImportPermissionsResponse>? importFailure = null;
+        await _store.UpdateAsync(s =>
         {
-            Grants = importedGrants,
-            UpdatedAt = DateTime.UtcNow
-        };
+            var current = s.Accounts.FirstOrDefault(a => a.Id == account.Id);
+            if (current is null)
+            {
+                importFailure = Result<ImportPermissionsResponse>.Failure("Account was deleted during permission inspection.", ErrorType.NotFound);
+                return s;
+            }
+            if (current.UserName != account.UserName || current.TargetId != account.TargetId || current.TargetKind != account.TargetKind)
+            {
+                importFailure = Result<ImportPermissionsResponse>.Failure("Account principal changed during permission inspection. Retry the import.", ErrorType.Conflict);
+                return s;
+            }
 
-        await _store.UpdateAsync(s => s with
-        {
-            Accounts = s.Accounts.Select(a => a.Id == account.Id ? updatedAccount : a).ToList()
+            updatedAccount = current with { Grants = importedGrants, UpdatedAt = DateTime.UtcNow };
+            return s with { Accounts = s.Accounts.Select(a => a.Id == account.Id ? updatedAccount : a).ToList() };
         }, ct);
+        if (importFailure is not null) return importFailure;
 
         // Re-fetch and calculate updated status
         var (recheckSuccess, recheckPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(

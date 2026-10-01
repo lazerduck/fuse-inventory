@@ -1,57 +1,29 @@
-# Playwright Tests for Fuse Inventory
+# Fuse UI regression tests
 
-This directory contains end-to-end tests for the Fuse Inventory application using Playwright.
-
-## Setup
-
-Dependencies are already installed. If you need to reinstall:
+Requires Node 22, Docker Compose v2 and the Playwright Chromium browser.
 
 ```bash
-npm install
-```
-
-## Running Tests
-
-### Standard test run
-Playwright will automatically start the app using docker-compose, run the tests, and clean up:
-
-```bash
+cd Tests/Playwright
+npm ci
+npx playwright install chromium
 npm test
 ```
 
-### Other test modes
+`npm test` builds the application, starts a unique Compose project with a new named data volume on loopback port 5099, waits for the setup API, runs Chromium, captures server logs, and removes that project's containers, volume and image. No ordinary Fuse data directory is mounted. Set `FUSE_TEST_PORT=5100` when another checkout is running a suite on this machine. Report paths are shared within a checkout, so run one suite at a time in each checkout. The default worker count is one because security posture and settings are server-wide.
 
-- **Headed mode** (see browser): `npm run test:headed`
-- **UI mode** (interactive): `npm run test:ui`
-- **Debug mode**: `npm run test:debug`
-- **View report**: `npm run report`
-
-### Manual Docker Control
-
-If you need to manually control the Docker containers:
-
-- **Start app**: `npm run docker:up`
-- **Stop app**: `npm run docker:down`
-- **Stop and clean**: `npm run docker:clean`
-
-### CI/CD
-
-For CI environments, use:
+The bootstrap project tests initial administrator creation and environment onboarding through the UI. All other tests depend on bootstrap, run in fresh browser contexts, and use unique records. API fixtures seed prerequisites and verify persistence; the tested action runs through the UI. Authentication tests use the login dialog, while ordinary authenticated journeys seed the application's token storage from a real API login.
 
 ```bash
-npm run pretest:ci  # Start docker containers
-npm test           # Run tests
-npm run posttest:ci # Clean up containers
+npm test -- --grep 'tags:'
+npm run test:headed
+npm run typecheck
+npm run report
 ```
 
-## Configuration
+`npm run test:existing` is an advanced option for a **fresh disposable** server; set `PLAYWRIGHT_BASE_URL`. Bootstrap refuses initialised data. This command does not own or clean up the external server. Do not point it at a normal installation.
 
-The Playwright configuration is in `playwright.config.ts`. It's set up to:
-- Automatically start the app via docker-compose before tests
-- Run tests against `http://localhost:8080`
-- Test on Chromium, Firefox, and WebKit browsers
-- Generate HTML reports
+Retries are disabled. Failed tests retain screenshots, video and traces in `test-results/`; the HTML report is in `playwright-report/` and server output in `artifacts/server.log`. Reports may contain disposable credentials/tokens from the local test instance; CI retains them for 14 days. SIGKILL or host shutdown cannot run cleanup; remove only the `fuse-e2e-*` project shown in that run's startup log if interrupted.
 
-## Writing Tests
+Component tests live in `UI/Fuse.Web/tests` and run with `npm test` from that directory. They mount real Vue/Quasar controls with isolated Pinia and query caches. Tags dialog teleporting is stubbed; data-service boundaries are mocked. Browser tests separately exercise the real persistence and permission endpoints.
 
-Add new test files in the `tests/` directory with the `.spec.ts` extension. See `tests/example.spec.ts` for a basic example.
+See [the coverage plan](../UI_TEST_PLAN.md) and [product findings](../UI_TEST_FINDINGS.md). Explicit expected failures reference a finding and must fail on their intended behavioural assertion; unexpected success fails CI. Mocked integration states do not establish connectivity to live SQL, Azure or Kuma services.

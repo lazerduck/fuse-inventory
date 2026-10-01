@@ -33,6 +33,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
       >
         <template #top-right>
@@ -55,7 +56,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="View role"
               flat 
               dense 
               round 
@@ -65,7 +66,7 @@
             >
               <q-tooltip>View permissions</q-tooltip>
             </q-btn>
-            <q-btn 
+            <q-btn aria-label="Edit role"
               flat 
               dense 
               round 
@@ -76,7 +77,7 @@
             >
               <q-tooltip v-if="isDefaultRole(props.row.id)">Default roles cannot be edited</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Delete role"
               flat
               dense
               round

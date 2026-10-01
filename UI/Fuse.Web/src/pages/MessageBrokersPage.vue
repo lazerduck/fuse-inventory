@@ -66,7 +66,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit message broker"
               flat
               dense
               round
@@ -75,7 +75,7 @@
               :disable="!fuseStore.hasPermission(Permission.MessageBrokersUpdate)"
               @click="openEditDialog(props.row)"
             />
-            <q-btn
+            <q-btn aria-label="Delete message broker"
               flat
               dense
               round

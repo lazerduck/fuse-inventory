@@ -53,7 +53,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="View SQL permissions"
               flat 
               dense 
               round 
@@ -63,7 +63,7 @@
             >
               <q-tooltip>Permissions Overview</q-tooltip>
             </q-btn>
-            <q-btn 
+            <q-btn aria-label="Edit SQL integration"
               flat 
               dense 
               round 
@@ -75,7 +75,7 @@
             >
               <q-tooltip>Edit Integration</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Delete SQL integration"
               flat
               dense
               round

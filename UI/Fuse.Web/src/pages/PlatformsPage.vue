@@ -31,6 +31,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
       >
         <template #top-right>
@@ -71,7 +72,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="Edit platform"
               flat 
               dense 
               round 
@@ -80,7 +81,7 @@
               :disable="!fuseStore.hasPermission(Permission.PlatformsRead)"
               @click="openEditDialog(props.row)" 
             />
-            <q-btn
+            <q-btn aria-label="Delete platform"
               flat
               dense
               round

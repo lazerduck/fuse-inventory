@@ -52,6 +52,24 @@ public class InMemoryScrumPokerStoreTests
         Assert.True(store.Reset(first.Room.RoomCode, second.Participant.Token, now.AddSeconds(6)).IsSuccess);
     }
 
+    [Theory]
+    [InlineData(60)]
+    [InlineData(899)]
+    public void GetRoom_KeepsBackgroundParticipantAndVoteBeforeFifteenMinutes(int inactiveSeconds)
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var active = store.CreateRoom("Damian", now).Value!;
+        var background = store.JoinRoom(active.Room.RoomCode, "Sarah", now).Value!;
+        store.SelectCard(active.Room.RoomCode, background.Participant.Token, ScrumPokerCard.Eight, now);
+
+        var room = store.GetRoom(active.Room.RoomCode, active.Participant.Token,
+            now.AddSeconds(inactiveSeconds)).Value!;
+
+        var participant = Assert.Single(room.Participants, p => p.Id == background.Participant.Id);
+        Assert.Equal(ScrumPokerCard.Eight, participant.SelectedCard);
+    }
+
     [Fact]
     public void GetRoom_EvictsParticipantWhoStoppedPolling()
     {
@@ -61,7 +79,7 @@ public class InMemoryScrumPokerStoreTests
         var stale = store.JoinRoom(active.Room.RoomCode, "Sarah", now.AddSeconds(1)).Value!;
 
         var room = store.GetRoom(active.Room.RoomCode, active.Participant.Token,
-            now.AddSeconds(1) + InMemoryScrumPokerStore.ParticipantTimeout).Value!;
+            now.AddSeconds(1).AddMinutes(15)).Value!;
 
         Assert.DoesNotContain(room.Participants, participant => participant.Id == stale.Participant.Id);
     }

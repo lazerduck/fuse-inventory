@@ -31,6 +31,7 @@
         row-key="id"
         :loading="risksLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
       >
         <template #top-left>
@@ -101,7 +102,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit risk"
               flat
               dense
               round
@@ -110,7 +111,7 @@
               :disable="!fuseStore.hasPermission(Permission.RisksRead)"
               @click="navigateToEdit(props.row)"
             />
-            <q-btn
+            <q-btn aria-label="Delete risk"
               flat
               dense
               round

@@ -71,13 +71,21 @@ public class FuseAPIKeyService(IFuseStore fuseStore, IFuseUserService userServic
         var hash = HashPassword(rawKey, salt);
         var now = DateTime.UtcNow;
 
-        var updated = existing with { KeyPrefix = ExtractPrefix(rawKey), KeyHash = hash, KeySalt = salt, UpdatedAt = now };
-
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
-                ApiKeys = s.SecurityContext.ApiKeys.Select(k => k.Id == id ? updated : k).ToList()
+                ApiKeys = s.SecurityContext.ApiKeys.Select(k =>
+                {
+                    if (k.Id != id) return k;
+                    return k with
+                    {
+                        KeyPrefix = ExtractPrefix(rawKey),
+                        KeyHash = hash,
+                        KeySalt = salt,
+                        UpdatedAt = now
+                    };
+                }).ToList()
             }
         });
 
@@ -123,17 +131,20 @@ public class FuseAPIKeyService(IFuseStore fuseStore, IFuseUserService userServic
             return Result.Failure("Failed to verify roles exist.", rolesResult);
         
 
-        var updated = existing with { 
-            RoleIds = [.. rolesResult.Value!.Select(m => m.Id)],
-            UpdatedAt = DateTime.UtcNow,
-            UserId = userResult.Value!.Id
-        };
-
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
-                ApiKeys = s.SecurityContext.ApiKeys.Select(k => k.Id == Id ? updated : k).ToList()
+                ApiKeys = s.SecurityContext.ApiKeys.Select(k =>
+                {
+                    if (k.Id != Id) return k;
+                    return k with
+                    {
+                        RoleIds = [.. rolesResult.Value!.Select(m => m.Id)],
+                        UpdatedAt = DateTime.UtcNow,
+                        UserId = userResult.Value!.Id
+                    };
+                }).ToList()
             }
         });
 
@@ -159,7 +170,7 @@ public class FuseAPIKeyService(IFuseStore fuseStore, IFuseUserService userServic
     {
         var snapshot = await fuseStore.GetAsync();
         var apiKey = snapshot.SecurityContext.ApiKeys.FirstOrDefault(m => m.Id == id);
-        if(apiKey is not null)
+        if (apiKey is not null)
             return Result<FuseApiKey>.Success(apiKey);
 
         return Result<FuseApiKey>.Failure("Unable to find the API key with Id" + id, ErrorType.NotFound);

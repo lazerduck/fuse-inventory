@@ -1,5 +1,5 @@
 <template>
-  <q-btn
+  <q-btn aria-label="Application documentation completeness"
     flat
     dense
     round

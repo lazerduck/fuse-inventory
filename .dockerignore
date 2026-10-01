@@ -37,3 +37,8 @@ docker-compose*.yml
 *.md
 LICENSE
 .editorconfig
+
+# UI regression sources and artifacts are not application build inputs
+Tests/Playwright/
+UI/Fuse.Web/tests/
+UI/Fuse.Web/vitest.config.ts

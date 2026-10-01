@@ -15,7 +15,7 @@
         <q-icon name="search" />
       </template>
       <template #append>
-        <q-btn
+        <q-btn aria-label="Search"
           v-if="showSearchButton"
           flat
           dense

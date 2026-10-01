@@ -81,7 +81,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit responsibility assignment"
               flat
               dense
               round
@@ -90,7 +90,7 @@
               :disable="!fuseStore.hasPermission(Permission.ResponsibilitiesRead)"
               @click="openEditDialog(props.row)"
             />
-            <q-btn
+            <q-btn aria-label="Delete responsibility assignment"
               flat
               dense
               round

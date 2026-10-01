@@ -91,26 +91,34 @@ public class RiskService : IRiskService
         var validation = await ValidateRiskCommand(command.OwnerPositionId, command.ApproverPositionId, command.TargetType, command.TargetId, tagIds);
         if (validation is not null) return validation;
 
-        var updated = existing with
-        {
-            Title = command.Title,
-            Description = command.Description,
-            Impact = command.Impact,
-            Likelihood = command.Likelihood,
-            Status = command.Status,
-            OwnerPositionId = command.OwnerPositionId,
-            ApproverPositionId = command.ApproverPositionId,
-            TargetType = command.TargetType,
-            TargetId = command.TargetId,
-            Mitigation = command.Mitigation,
-            ReviewDate = command.ReviewDate,
-            ApprovalDate = command.ApprovalDate,
-            TagIds = tagIds,
-            Notes = command.Notes,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { Risks = s.Risks.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Risks = s.Risks.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                updated = x with
+                {
+                    Title = command.Title,
+                    Description = command.Description,
+                    Impact = command.Impact,
+                    Likelihood = command.Likelihood,
+                    Status = command.Status,
+                    OwnerPositionId = command.OwnerPositionId,
+                    ApproverPositionId = command.ApproverPositionId,
+                    TargetType = command.TargetType,
+                    TargetId = command.TargetId,
+                    Mitigation = command.Mitigation,
+                    ReviewDate = command.ReviewDate,
+                    ApprovalDate = command.ApprovalDate,
+                    TagIds = tagIds,
+                    Notes = command.Notes,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
 
         // Log audit
         var auditLog = AuditHelper.CreateLog(

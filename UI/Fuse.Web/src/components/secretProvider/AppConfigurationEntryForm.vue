@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ isCreate ? 'New App Configuration Entry' : 'Edit App Configuration Entry' }}</div>
-      <q-btn flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
     </q-card-section>
     <q-separator />
 

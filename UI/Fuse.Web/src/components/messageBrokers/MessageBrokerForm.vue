@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
     </q-card-section>
     <q-separator />
     <q-form ref="formRef" @submit.prevent="handleSubmit" novalidate>
@@ -64,7 +64,7 @@
         <div v-for="(queue, index) in form.queues" :key="index" class="channel-row q-mt-sm">
           <q-input v-model="queue.name" label="Queue name*" dense outlined class="channel-name" :rules="[val => !!val || 'Required']" />
           <q-input v-model="queue.description" label="Description" dense outlined class="channel-desc" />
-          <q-btn flat round dense icon="delete" color="negative" @click="removeQueue(index)" />
+          <q-btn aria-label="Delete queue" flat round dense icon="delete" color="negative" @click="removeQueue(index)" />
         </div>
       </q-card-section>
 
@@ -81,7 +81,7 @@
           <div class="topic-main">
             <q-input v-model="topic.name" label="Topic name*" dense outlined class="channel-name" :rules="[val => !!val || 'Required']" />
             <q-input v-model="topic.description" label="Description" dense outlined class="channel-desc" />
-            <q-btn flat round dense icon="delete" color="negative" @click="removeTopic(index)" />
+            <q-btn aria-label="Delete topic" flat round dense icon="delete" color="negative" @click="removeTopic(index)" />
           </div>
           <q-input
             v-model="topic.subscribersText"

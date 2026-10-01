@@ -75,26 +75,30 @@ public class AccountService : IAccountService
 
         var normalizedGrants = grantValidation.Value!;
 
-        var updated = existing with
-        {
-            TargetId = command.TargetId,
-            TargetKind = command.TargetKind,
-            AuthKind = command.AuthKind,
-            SecretBinding = command.SecretBinding,
-            UserName = command.UserName,
-            Parameters = command.Parameters,
-            Grants = normalizedGrants,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        // Check if the account's target changed
-        var targetChanged = existing.TargetId != command.TargetId || existing.TargetKind != command.TargetKind;
+        var updated = existing;
 
         await _fuseStore.UpdateAsync(s =>
         {
-            var updatedAccounts = s.Accounts.Select(x => x.Id == command.Id ? updated : x).ToList();
-            
+            var targetChanged = false;
+            var updatedAccounts = s.Accounts.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                targetChanged = x.TargetId != command.TargetId || x.TargetKind != command.TargetKind;
+                updated = x with
+                {
+                    TargetId = command.TargetId,
+                    TargetKind = command.TargetKind,
+                    AuthKind = command.AuthKind,
+                    SecretBinding = command.SecretBinding,
+                    UserName = command.UserName,
+                    Parameters = command.Parameters,
+                    Grants = normalizedGrants,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList();
+
             // If target changed, clear account references from dependencies that use this account
             if (targetChanged)
             {
@@ -132,7 +136,7 @@ public class AccountService : IAccountService
 
                 return s with { Accounts = updatedAccounts, Applications = updatedApps };
             }
-            
+
             return s with { Accounts = updatedAccounts };
         });
         return Result<Models.Account>.Success(updated);
@@ -224,21 +228,21 @@ public class AccountService : IAccountService
         {
             if (secretBinding.Kind == SecretBindingKind.PlainReference && string.IsNullOrWhiteSpace(secretBinding.PlainReference))
                 return Result<Models.Account>.Failure("Plain reference value is required.", ErrorType.Validation);
-            
+
             if (secretBinding.Kind == SecretBindingKind.AzureKeyVault)
             {
                 if (secretBinding.AzureKeyVault is null)
                     return Result<Models.Account>.Failure("Azure Key Vault binding is required.", ErrorType.Validation);
-                
+
                 if (string.IsNullOrWhiteSpace(secretBinding.AzureKeyVault.SecretName))
                     return Result<Models.Account>.Failure("Secret name is required for Azure Key Vault binding.", ErrorType.Validation);
-                
+
                 // Validate provider exists
                 if (!store.SecretProviders.Any(p => p.Id == secretBinding.AzureKeyVault.ProviderId))
                     return Result<Models.Account>.Failure($"Secret provider with ID '{secretBinding.AzureKeyVault.ProviderId}' not found.", ErrorType.Validation);
             }
         }
-        
+
         if (authKind == AuthKind.UserPassword && string.IsNullOrWhiteSpace(userName))
             return Result<Models.Account>.Failure("UserName is required for UserPassword.", ErrorType.Validation);
 
@@ -351,12 +355,7 @@ public class AccountService : IAccountService
             );
         }
 
-        var updatedGrant = existingGrant with
-        {
-            Database = command.Database,
-            Schema = command.Schema,
-            Privileges = privileges
-        };
+        var updatedGrant = existingGrant;
 
         await _fuseStore.UpdateAsync(s =>
         {
@@ -364,7 +363,17 @@ public class AccountService : IAccountService
             {
                 if (a.Id == command.AccountId)
                 {
-                    var updatedGrants = a.Grants.Select(g => g.Id == command.GrantId ? updatedGrant : g).ToList();
+                    var updatedGrants = a.Grants.Select(g =>
+                    {
+                        if (g.Id != command.GrantId) return g;
+                        updatedGrant = g with
+                        {
+                            Database = command.Database,
+                            Schema = command.Schema,
+                            Privileges = privileges
+                        };
+                        return updatedGrant;
+                    }).ToList();
                     return a with { Grants = updatedGrants, UpdatedAt = DateTime.UtcNow };
                 }
                 return a;
@@ -497,7 +506,7 @@ public class AccountService : IAccountService
         // Determine sync status
         var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
         var principalMissing = !actualPermissions.Exists;
-        
+
         SyncStatus status;
         if (principalMissing)
         {

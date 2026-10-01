@@ -48,7 +48,7 @@
       </template>
       <template #body-cell-actions="cellProps">
         <q-td :props="cellProps" class="text-right">
-          <q-btn 
+          <q-btn aria-label="Edit account"
             flat 
             dense 
             round 
@@ -57,14 +57,14 @@
             :disable="!props.canModify"
             @click="emit('edit', cellProps.row)" 
           />
-          <q-btn
+          <q-btn aria-label="Delete account"
             flat
             dense
             round
             icon="delete"
             color="negative"
             class="q-ml-xs"
-            :disable="!(props.canDelete ?? props.canModify)"
+            :disable="!props.canDelete"
             @click="emit('delete', cellProps.row)"
           />
         </q-td>
@@ -90,7 +90,7 @@ interface Props {
   tagInfoLookup: Record<string, TagInfo>
   targetResolver: (account: Account) => string
   canModify: boolean
-  canDelete?: boolean
+  canDelete: boolean
 }
 
 const props = defineProps<Props>()

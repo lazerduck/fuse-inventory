@@ -2,14 +2,14 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <q-btn flat round dense icon="arrow_back" @click="navigateBack" class="q-mr-md" />
+        <q-btn aria-label="Go back" flat round dense icon="arrow_back" @click="navigateBack" class="q-mr-md" />
         <div style="display: inline-block">
           <h1>{{ applicationName }}</h1>
           <p class="subtitle">Edit application details, instances, and pipelines.</p>
         </div>
       </div>
       <div class="application-nav-buttons">
-        <q-btn
+        <q-btn aria-label="Previous application"
           flat
           round
           dense
@@ -19,7 +19,7 @@
         >
           <q-tooltip v-if="previousApplication">{{ previousApplication.name }}</q-tooltip>
         </q-btn>
-        <q-btn
+        <q-btn aria-label="Next application"
           flat
           round
           dense
@@ -112,7 +112,7 @@
             </template>
             <template #body-cell-actions="props">
               <q-td :props="props" class="text-right">
-                <q-btn
+                <q-btn aria-label="Edit instance"
                   dense
                   flat
                   round
@@ -121,7 +121,7 @@
                   :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
                   @click="navigateToInstance(props.row)"
                 />
-                <q-btn
+                <q-btn aria-label="Delete instance"
                   dense
                   flat
                   round
@@ -173,7 +173,7 @@
           >
             <template #body-cell-actions="props">
               <q-td :props="props" class="text-right">
-                <q-btn
+                <q-btn aria-label="Edit pipeline"
                   dense
                   flat
                   round
@@ -182,7 +182,7 @@
                   :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
                   @click="openPipelineDialog(props.row)"
                 />
-                <q-btn
+                <q-btn aria-label="Delete pipeline"
                   dense
                   flat
                   round

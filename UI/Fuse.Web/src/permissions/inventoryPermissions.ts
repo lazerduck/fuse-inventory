@@ -1,4 +1,8 @@
 export const InventoryPermissions = {
+  TagsRead: 'tags:read',
+  TagsCreate: 'tags:create',
+  TagsUpdate: 'tags:update',
+  TagsDelete: 'tags:delete',
   ApplicationsRead: 'application:read',
   ApplicationsCreate: 'application:create',
   ApplicationsUpdate: 'application:update',

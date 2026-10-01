@@ -95,15 +95,23 @@ public class PositionService : IPositionService
         if (store.Positions.Any(p => p.Id != command.Id && string.Equals(p.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.Position>.Failure($"Position with name '{command.Name}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Description = command.Description,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { Positions = s.Positions.Select(p => p.Id == command.Id ? updated : p).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Positions = s.Positions.Select(p =>
+            {
+                if (p.Id != command.Id) return p;
+                updated = p with
+                {
+                    Name = command.Name,
+                    Description = command.Description,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
 
         // Audit log
         var auditLog = AuditHelper.CreateLog(

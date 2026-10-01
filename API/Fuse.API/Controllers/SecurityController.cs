@@ -15,7 +15,8 @@ namespace Fuse.API.Controllers
     public class SecurityController(
         IFuseSecurityService fuseSecurityService,
         IFuseUserService fuseUserService,
-        IFuseUserSessionService fuseUserSessionService
+        IFuseUserSessionService fuseUserSessionService,
+        IFuseRoleService fuseRoleService
         ) : ControllerBase
     {
 
@@ -27,6 +28,7 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<SecurityStateResponse>> GetState()
         {
             SecurityUserInfo? userInfo = null;
+            IReadOnlyList<string> permissions = Array.Empty<string>();
             var userId = User.GetPrincipalId();
             if (User.IsLoggedIn() && userId is not null)
             {
@@ -35,6 +37,15 @@ namespace Fuse.API.Controllers
                 {
                     var user = userResult.Value;
                     userInfo = new SecurityUserInfo(user);
+                    if (user.RoleIds.Count > 0)
+                    {
+                        var roles = await fuseRoleService.GetRolesByIds(user.RoleIds);
+                        if (roles.IsSuccess && roles.Value is not null)
+                        {
+                            permissions = roles.Value.SelectMany(role => role.Permissions)
+                                .Distinct(StringComparer.Ordinal).ToArray();
+                        }
+                    }
                 }
             }
 
@@ -42,7 +53,8 @@ namespace Fuse.API.Controllers
             {
                 Posture = await fuseSecurityService.GetSecurityPosture(),
                 RequiresSetup = await fuseSecurityService.RequiresSetup(),
-                CurrentUser = userInfo
+                CurrentUser = userInfo,
+                Permissions = permissions
             };
 
             return Ok(response);
@@ -256,6 +268,7 @@ namespace Fuse.API.Controllers
             public SecurityPosture Posture { get; set; }
             public bool RequiresSetup { get; set; }
             public SecurityUserInfo? CurrentUser { get; set; }
+            public IReadOnlyList<string> Permissions { get; set; } = Array.Empty<string>();
         }
 
         public class ResetPasswordRequest

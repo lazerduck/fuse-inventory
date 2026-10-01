@@ -113,17 +113,19 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
                 return Result.Failure("Failed to verify roles.", rolesResult);
         }
 
-        var updatedUser = existingUser with
-        {
-            RoleIds = distinctRoleIds,
-            UpdatedAt = DateTime.UtcNow
-        };
-
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
-                Users = s.SecurityContext.Users.Select(u => u.Id == id ? updatedUser : u).ToList()
+                Users = s.SecurityContext.Users.Select(u =>
+                {
+                    if (u.Id != id) return u;
+                    return u with
+                    {
+                        RoleIds = distinctRoleIds,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                }).ToList()
             }
         });
 
@@ -146,18 +148,20 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         var salt = GenerateSalt();
         var hash = HashPassword(newPassword, salt);
 
-        var updatedUser = existingUser with
-        {
-            PasswordHash = hash,
-            PasswordSalt = salt,
-            UpdatedAt = DateTime.UtcNow
-        };
-
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
             {
-                Users = s.SecurityContext.Users.Select(u => u.Id == id ? updatedUser : u).ToList()
+                Users = s.SecurityContext.Users.Select(u =>
+                {
+                    if (u.Id != id) return u;
+                    return u with
+                    {
+                        PasswordHash = hash,
+                        PasswordSalt = salt,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                }).ToList()
             }
         });
 

@@ -103,20 +103,28 @@ public class PlatformService : IPlatformService
         if (store.Platforms.Any(s => s.Id != command.Id && string.Equals(s.DisplayName, command.DisplayName, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.Platform>.Failure($"Platform with display name '{command.DisplayName}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            DisplayName = command.DisplayName,
-            DnsName = command.DnsName,
-            Os = command.Os,
-            Kind = command.Kind,
-            IpAddresses = NormalizeAddresses(command.IpAddresses),
-            Notes = command.Notes,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow,
-            Nodes = MapNodes(command.Nodes, existing.Nodes)
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { Platforms = s.Platforms.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Platforms = s.Platforms.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                updated = x with
+                {
+                    DisplayName = command.DisplayName,
+                    DnsName = command.DnsName,
+                    Os = command.Os,
+                    Kind = command.Kind,
+                    IpAddresses = NormalizeAddresses(command.IpAddresses),
+                    Notes = command.Notes,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow,
+                    Nodes = MapNodes(command.Nodes, x.Nodes)
+                };
+                return updated;
+            }).ToList()
+        });
         return Result<Models.Platform>.Success(updated);
     }
 

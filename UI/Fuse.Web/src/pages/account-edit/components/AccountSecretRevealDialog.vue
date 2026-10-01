@@ -3,7 +3,7 @@
     <q-card style="min-width: 500px">
       <q-card-section class="dialog-header">
         <div class="text-h6">Reveal Secret</div>
-        <q-btn flat round dense icon="close" @click="handleClose" />
+        <q-btn aria-label="Close dialog" flat round dense icon="close" @click="handleClose" />
       </q-card-section>
       <q-separator />
       <q-card-section>

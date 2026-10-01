@@ -9,7 +9,7 @@
         <div class="text-h6">Fuse guides</div>
         <div class="text-caption guide-muted">Instructions that stay with you while you work</div>
       </div>
-      <q-btn flat dense round icon="close" @click="emit('update:modelValue', false)" />
+      <q-btn aria-label="Close dialog" flat dense round icon="close" @click="emit('update:modelValue', false)" />
     </div>
     <q-separator />
 

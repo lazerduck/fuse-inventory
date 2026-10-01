@@ -57,7 +57,7 @@
       </template>
       <template #body-cell-actions="props">
         <q-td :props="props" class="text-right">
-          <q-btn
+          <q-btn aria-label="Edit risk"
             dense
             flat
             round
@@ -66,7 +66,7 @@
             :disable="disableActions"
             @click="openRiskDialog(props.row)"
           />
-          <q-btn
+          <q-btn aria-label="Delete risk"
             dense
             flat
             round

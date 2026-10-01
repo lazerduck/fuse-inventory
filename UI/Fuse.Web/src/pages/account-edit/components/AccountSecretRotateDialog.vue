@@ -3,7 +3,7 @@
     <q-card style="min-width: 400px">
       <q-card-section class="dialog-header">
         <div class="text-h6">Rotate Secret</div>
-        <q-btn flat round dense icon="close" @click="handleCancel" />
+        <q-btn aria-label="Close dialog" flat round dense icon="close" @click="handleCancel" />
       </q-card-section>
       <q-separator />
       <q-form @submit.prevent="$emit('submit')">
@@ -23,7 +23,7 @@
             required
           >
             <template #append>
-              <q-btn flat dense round :icon="showValue ? 'visibility_off' : 'visibility'" @click="showValue = !showValue" />
+              <q-btn :aria-label="showValue ? 'Hide secret' : 'Show secret'" flat dense round :icon="showValue ? 'visibility_off' : 'visibility'" @click="showValue = !showValue" />
             </template>
           </q-input>
           <div class="q-mt-sm">

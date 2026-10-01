@@ -112,21 +112,28 @@ public class ApplicationService : IApplicationService
         if (store.Applications.Any(a => a.Id != command.Id && string.Equals(a.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<ApplicationModel>.Failure($"Application with name '{command.Name}' already exists.", ErrorType.Conflict);
 
-        var updated = existing with
+        var updated = existing;
+        await _fuseStore.UpdateAsync(s => s with
         {
-            Name = command.Name,
-            Version = command.Version,
-            Description = command.Description,
-            Owner = command.Owner,
-            Notes = command.Notes,
-            Framework = command.Framework,
-            RepositoryUri = command.RepositoryUri,
-            Icon = command.Icon,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == command.Id ? updated : x).ToList() });
+            Applications = s.Applications.Select(current =>
+            {
+                if (current.Id != command.Id) return current;
+                updated = current with
+                {
+                    Name = command.Name,
+                    Version = command.Version,
+                    Description = command.Description,
+                    Owner = command.Owner,
+                    Notes = command.Notes,
+                    Framework = command.Framework,
+                    RepositoryUri = command.RepositoryUri,
+                    Icon = command.Icon,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
         
         // Audit log
         var auditLog = AuditHelper.CreateLog(
@@ -149,11 +156,11 @@ public class ApplicationService : IApplicationService
         if (appToDelete is null)
             return Result.Failure($"Application with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        // Collect instance IDs for dependency scrubbing
-        var deletedInstanceIds = appToDelete.Instances.Select(i => i.Id).ToHashSet();
-
         await _fuseStore.UpdateAsync(s =>
         {
+            // Include instances added since the initial lookup when scrubbing dependencies.
+            var deletedInstanceIds = s.Applications.Where(a => a.Id == command.Id)
+                .SelectMany(a => a.Instances).Select(i => i.Id).ToHashSet();
             var apps = new List<ApplicationModel>();
             foreach (var a in s.Applications)
             {
@@ -242,8 +249,12 @@ public class ApplicationService : IApplicationService
             AppConfigurationKeySuffix: command.AppConfigurationKeySuffix
         );
 
-        var updated = app with { Instances = app.Instances.Append(inst).ToList(), UpdatedAt = now };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with { Instances = current.Instances.Append(inst).ToList(), UpdatedAt = now }
+                : current).ToList()
+        });
         
         // Audit log
         var auditLog = AuditHelper.CreateLog(
@@ -290,23 +301,35 @@ public class ApplicationService : IApplicationService
         if (!appConfigurationValidation.IsSuccess)
             return Result<ApplicationInstance>.Failure(appConfigurationValidation.Error!, appConfigurationValidation);
 
-        var updatedInst = inst with
+        var updatedInst = inst;
+        await _fuseStore.UpdateAsync(s => s with
         {
-            EnvironmentId = command.EnvironmentId,
-            PlatformId = command.PlatformId,
-            BaseUri = command.BaseUri,
-            HealthUri = command.HealthUri,
-            OpenApiUri = command.OpenApiUri,
-            Version = command.Version,
-            TagIds = tagIds,
-            ApiKey = command.ApiKey,
-            AppConfigurationProviderId = command.AppConfigurationProviderId,
-            AppConfigurationKeySuffix = command.AppConfigurationKeySuffix,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with
+                {
+                    Instances = current.Instances.Select(currentInstance =>
+                    {
+                        if (currentInstance.Id != inst.Id) return currentInstance;
+                        updatedInst = currentInstance with
+                        {
+                            EnvironmentId = command.EnvironmentId,
+                            PlatformId = command.PlatformId,
+                            BaseUri = command.BaseUri,
+                            HealthUri = command.HealthUri,
+                            OpenApiUri = command.OpenApiUri,
+                            Version = command.Version,
+                            TagIds = tagIds,
+                            ApiKey = command.ApiKey,
+                            AppConfigurationProviderId = command.AppConfigurationProviderId,
+                            AppConfigurationKeySuffix = command.AppConfigurationKeySuffix,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        return updatedInst;
+                    }).ToList(),
+                    UpdatedAt = DateTime.UtcNow
+                }
+                : current).ToList()
+        });
         
         // Audit log
         var auditLog = AuditHelper.CreateLog(
@@ -424,8 +447,12 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationPipeline>.Failure($"Pipeline with name '{command.Name}' already exists for the application.", ErrorType.Conflict);
 
         var pipe = new ApplicationPipeline(Guid.NewGuid(), command.Name, command.PipelineUri);
-        var updatedApp = app with { Pipelines = app.Pipelines.Append(pipe).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with { Pipelines = current.Pipelines.Append(pipe).ToList(), UpdatedAt = DateTime.UtcNow }
+                : current).ToList()
+        });
         return Result<ApplicationPipeline>.Success(pipe);
     }
 
@@ -446,8 +473,12 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationPipeline>.Failure($"Pipeline with name '{command.Name}' already exists for the application.", ErrorType.Conflict);
 
         var updatedPipe = new ApplicationPipeline(command.PipelineId, command.Name, command.PipelineUri);
-        var updatedApp = app with { Pipelines = app.Pipelines.Select(p => p.Id == pipe.Id ? updatedPipe : p).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with { Pipelines = current.Pipelines.Select(p => p.Id == pipe.Id ? updatedPipe : p).ToList(), UpdatedAt = DateTime.UtcNow }
+                : current).ToList()
+        });
         return Result<ApplicationPipeline>.Success(updatedPipe);
     }
 
@@ -460,8 +491,12 @@ public class ApplicationService : IApplicationService
         if (!app.Pipelines.Any(p => p.Id == command.PipelineId))
             return Result.Failure($"Pipeline with ID '{command.PipelineId}' not found.", ErrorType.NotFound);
 
-        var updatedApp = app with { Pipelines = app.Pipelines.Where(p => p.Id != command.PipelineId).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with { Pipelines = current.Pipelines.Where(p => p.Id != command.PipelineId).ToList(), UpdatedAt = DateTime.UtcNow }
+                : current).ToList()
+        });
         return Result.Success();
     }
 
@@ -487,9 +522,18 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
         var dep = new ApplicationInstanceDependency(Guid.NewGuid(), command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId, command.Severity);
-        var updatedInst = inst with { Dependencies = inst.Dependencies.Append(dep).ToList(), UpdatedAt = DateTime.UtcNow };
-        var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with
+                {
+                    Instances = current.Instances.Select(currentInstance => currentInstance.Id == inst.Id
+                        ? currentInstance with { Dependencies = currentInstance.Dependencies.Append(dep).ToList(), UpdatedAt = DateTime.UtcNow }
+                        : currentInstance).ToList(),
+                    UpdatedAt = DateTime.UtcNow
+                }
+                : current).ToList()
+        });
         return Result<ApplicationInstanceDependency>.Success(dep);
     }
 
@@ -518,9 +562,18 @@ public class ApplicationService : IApplicationService
             return Result<ApplicationInstanceDependency>.Failure("Port must be between 1 and 65535.", ErrorType.Validation);
 
         var updatedDep = new ApplicationInstanceDependency(command.DependencyId, command.TargetId, command.TargetKind, command.Port, command.AuthKind, command.AccountId, command.IdentityId, command.Severity);
-        var updatedInst = inst with { Dependencies = inst.Dependencies.Select(d => d.Id == dep.Id ? updatedDep : d).ToList(), UpdatedAt = DateTime.UtcNow };
-        var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with
+                {
+                    Instances = current.Instances.Select(currentInstance => currentInstance.Id == inst.Id
+                        ? currentInstance with { Dependencies = currentInstance.Dependencies.Select(d => d.Id == dep.Id ? updatedDep : d).ToList(), UpdatedAt = DateTime.UtcNow }
+                        : currentInstance).ToList(),
+                    UpdatedAt = DateTime.UtcNow
+                }
+                : current).ToList()
+        });
         return Result<ApplicationInstanceDependency>.Success(updatedDep);
     }
 
@@ -536,9 +589,18 @@ public class ApplicationService : IApplicationService
         if (!inst.Dependencies.Any(d => d.Id == command.DependencyId))
             return Result.Failure($"Dependency with ID '{command.DependencyId}' not found.", ErrorType.NotFound);
 
-        var updatedInst = inst with { Dependencies = inst.Dependencies.Where(d => d.Id != command.DependencyId).ToList(), UpdatedAt = DateTime.UtcNow };
-        var updatedApp = app with { Instances = app.Instances.Select(i => i.Id == inst.Id ? updatedInst : i).ToList(), UpdatedAt = DateTime.UtcNow };
-        await _fuseStore.UpdateAsync(s => s with { Applications = s.Applications.Select(x => x.Id == app.Id ? updatedApp : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            Applications = s.Applications.Select(current => current.Id == app.Id
+                ? current with
+                {
+                    Instances = current.Instances.Select(currentInstance => currentInstance.Id == inst.Id
+                        ? currentInstance with { Dependencies = currentInstance.Dependencies.Where(d => d.Id != command.DependencyId).ToList(), UpdatedAt = DateTime.UtcNow }
+                        : currentInstance).ToList(),
+                    UpdatedAt = DateTime.UtcNow
+                }
+                : current).ToList()
+        });
         return Result.Success();
     }
 

@@ -43,6 +43,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
         data-tour-id="environments-table"
       >
@@ -74,7 +75,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn 
+            <q-btn aria-label="Edit environment"
               flat 
               dense 
               round 
@@ -83,7 +84,7 @@
               :disable="!fuseStore.hasPermission(Permission.EnvironmentsRead)"
               @click="openEditDialog(props.row)" 
             />
-            <q-btn
+            <q-btn aria-label="Delete environment"
               flat
               dense
               round

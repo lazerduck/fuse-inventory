@@ -101,18 +101,26 @@ public class DataStoreService : IDataStoreService
         if (store.DataStores.Any(d => d.Id != command.Id && d.EnvironmentId == command.EnvironmentId && string.Equals(d.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.DataStore>.Failure($"Data store with name '{command.Name}' already exists in this environment.", ErrorType.Conflict);
 
-        var updated = existing with
-        {
-            Name = command.Name,
-            Kind = command.Kind,
-            EnvironmentId = command.EnvironmentId,
-            PlatformId = command.PlatformId,
-            ConnectionUri = command.ConnectionUri,
-            TagIds = tagIds,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var updated = existing;
 
-        await _fuseStore.UpdateAsync(s => s with { DataStores = s.DataStores.Select(x => x.Id == command.Id ? updated : x).ToList() });
+        await _fuseStore.UpdateAsync(s => s with
+        {
+            DataStores = s.DataStores.Select(x =>
+            {
+                if (x.Id != command.Id) return x;
+                updated = x with
+                {
+                    Name = command.Name,
+                    Kind = command.Kind,
+                    EnvironmentId = command.EnvironmentId,
+                    PlatformId = command.PlatformId,
+                    ConnectionUri = command.ConnectionUri,
+                    TagIds = tagIds,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                return updated;
+            }).ToList()
+        });
         return Result<Models.DataStore>.Success(updated);
     }
 

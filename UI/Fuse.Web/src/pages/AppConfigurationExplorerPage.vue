@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <q-btn flat round dense icon="arrow_back" @click="router.push({ name: 'secretProviders' })" />
+        <q-btn aria-label="Go back" flat round dense icon="arrow_back" @click="router.push({ name: 'secretProviders' })" />
         <div>
           <h1>App Configuration Explorer</h1>
           <p class="subtitle">
@@ -85,7 +85,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Reveal secret"
               v-if="props.row.isKeyVaultReference && canRevealReferencedSecret"
               flat
               dense
@@ -97,7 +97,7 @@
             >
               <q-tooltip>Reveal referenced secret value</q-tooltip>
             </q-btn>
-            <q-btn
+            <q-btn aria-label="Edit configuration entry"
               flat
               dense
               round
@@ -133,7 +133,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Referenced Secret Value</div>
-          <q-btn flat round dense icon="close" @click="closeRevealDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeRevealDialog" />
         </q-card-section>
         <q-separator />
         <q-card-section>
@@ -159,7 +159,7 @@
               :type="showRevealedValue ? 'text' : 'password'"
             >
               <template #append>
-                <q-btn
+                <q-btn :aria-label="showRevealedValue ? 'Hide secret' : 'Show secret'"
                   flat
                   round
                   dense

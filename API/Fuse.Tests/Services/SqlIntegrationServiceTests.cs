@@ -1528,6 +1528,65 @@ public class SqlIntegrationServiceTests
         Assert.Equal(2, updatedAccount.Grants.Count);
     }
 
+    [Theory]
+    [InlineData("secret")]
+    [InlineData("principal")]
+    [InlineData("target")]
+    [InlineData("deleted")]
+    public async Task ImportPermissionsAsync_HandlesAccountChangesDuringInspection(string change)
+    {
+        var now = DateTime.UtcNow;
+        var ds = new DataStore(Guid.NewGuid(), "DS", null, "sql", Guid.NewGuid(), null, null, [], now, now);
+        var integration = new SqlIntegration(Guid.NewGuid(), "SQL", ds.Id, "Server=test;", null, SqlPermissions.Read, now, now);
+        var account = new Account(Guid.NewGuid(), ds.Id, TargetKind.DataStore, AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "old-secret", null), "testuser", null, [], [], now, now);
+        var store = NewStore(integrations: [integration], dataStores: [ds], accounts: [account]);
+        var edited = account with
+        {
+            UserName = change == "principal" ? "different-user" : account.UserName,
+            TargetId = change == "target" ? Guid.NewGuid() : account.TargetId,
+            SecretBinding = new SecretBinding(SecretBindingKind.PlainReference, "new-secret", null)
+        };
+        var inspector = new Mock<IAccountSqlInspector>();
+        var firstCall = true;
+        inspector.Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), "testuser", It.IsAny<CancellationToken>()))
+            .Returns(async () =>
+            {
+                if (firstCall)
+                {
+                    firstCall = false;
+                    await store.UpdateAsync(s => s with { Accounts = change == "deleted" ? [] : [edited] });
+                }
+                return (true, new SqlPrincipalPermissions("testuser", true,
+                    [new SqlActualGrant("DB", null, [Privilege.Select])]), (string?)null);
+            });
+        var service = CreateService(store, inspector: inspector.Object);
+
+        var result = await service.ImportPermissionsAsync(new ImportPermissions(integration.Id, account.Id), "testUser", null);
+
+        if (change == "deleted")
+        {
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorType.NotFound, result.ErrorType);
+            Assert.Empty(store.Current!.Accounts);
+            return;
+        }
+        var current = Assert.Single(store.Current!.Accounts);
+        Assert.Equal(edited.SecretBinding, current.SecretBinding);
+        Assert.Equal(edited.UserName, current.UserName);
+        if (change is "principal" or "target")
+        {
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ErrorType.Conflict, result.ErrorType);
+            Assert.Empty(current.Grants);
+        }
+        else
+        {
+            Assert.True(result.IsSuccess, result.Error);
+            Assert.Equal("DB", Assert.Single(current.Grants).Database);
+        }
+    }
+
     [Fact]
     public async Task ImportOrphanPrincipalAsync_ReturnsNotFoundForMissingIntegration()
     {

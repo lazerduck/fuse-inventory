@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useFuseClient } from './useFuseClient'
 import type { TagColor } from 'api/client'
@@ -8,11 +8,12 @@ export interface TagInfo {
   color: TagColor | undefined
 }
 
-export function useTags() {
+export function useTags(enabled: MaybeRefOrGetter<boolean> = true) {
   const client = useFuseClient()
 
   const query = useQuery({
     queryKey: ['tags'],
+    enabled: computed(() => toValue(enabled)),
     queryFn: () => client.tagAll()
   })
 

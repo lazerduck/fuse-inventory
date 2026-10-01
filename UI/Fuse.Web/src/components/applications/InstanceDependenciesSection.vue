@@ -44,7 +44,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn
+            <q-btn aria-label="Edit dependency"
               dense
               flat
               round
@@ -53,7 +53,7 @@
               :disable="disableActions"
               @click="emit('edit', { dependency: props.row.__source, index: props.row.__index })"
             />
-            <q-btn
+            <q-btn aria-label="Delete dependency"
               dense
               flat
               round

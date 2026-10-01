@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <q-btn flat round dense icon="arrow_back" @click="navigateBack" class="q-mr-md" />
+        <q-btn aria-label="Go back" flat round dense icon="arrow_back" @click="navigateBack" class="q-mr-md" />
         <div style="display: inline-block">
           <h1>{{ pageTitle }}</h1>
           <p class="subtitle">Manage instance details and dependencies.</p>
@@ -85,7 +85,7 @@
               :type="showApiKey ? 'text' : 'password'"
             >
               <template #append>
-                <q-btn
+                <q-btn :aria-label="showApiKey ? 'Hide API key' : 'Show API key'"
                   flat
                   round
                   dense
