@@ -8,7 +8,8 @@ public sealed class InMemoryScrumPokerStore : IScrumPokerStore
 {
     public const int MaxParticipantsPerRoom = 20;
     public const int MaxDisplayNameLength = 50;
-    public static readonly TimeSpan ParticipantTimeout = TimeSpan.FromSeconds(10);
+    // Background tabs can pause polling while participants read or work elsewhere.
+    public static readonly TimeSpan ParticipantTimeout = TimeSpan.FromMinutes(15);
 
     private const int RoomCodeLength = 8;
     private const int ParticipantTokenLength = 32;
