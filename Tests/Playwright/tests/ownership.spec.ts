@@ -21,7 +21,7 @@ test('application ownership assignment can be created, updated and deleted', asy
   await expect(row).toBeVisible();
   await row.getByRole('button', { name: /^Edit / }).click();
   await dialog.getByLabel('Notes', { exact: true }).fill('Ownership regression');
-  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Save and close', exact: true }).click();
   await expect(dialog).toBeHidden();
   await page.reload();
   await page.getByRole('tab', { name: 'Ownership', exact: true }).click();
