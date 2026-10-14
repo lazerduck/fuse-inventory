@@ -220,6 +220,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges, confirmDiscardChanges } from '../../composables/useUnsavedChanges'
 import { computed, ref, reactive } from 'vue'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -287,6 +288,15 @@ const messageBrokersQuery = useMessageBrokers()
 const environmentLocked = ref(true)
 const editingRowForms = reactive<Record<string, DependencyRowForm>>({})
 const draftRows = ref<DependencyRowForm[]>([])
+const originalRows: Record<string, string> = {}
+function rowSnapshot(form: DependencyRowForm) {
+  const { saving: _saving, ...values } = form
+  return JSON.stringify(values)
+}
+useUnsavedChanges(() => ({
+  edited: Object.entries(editingRowForms).filter(([id, form]) => rowSnapshot(form) !== originalRows[id]).map(([id, form]) => [id, rowSnapshot(form)]),
+  drafts: draftRows.value.map(rowSnapshot)
+}))
 
 const environmentLookup = environmentsStore.lookup
 
@@ -399,9 +409,13 @@ function startEdit(dep: ApplicationInstanceDependency) {
     severity: dep.severity ?? DependencySeverity.Full,
     saving: false
   }
+  originalRows[dep.id] = rowSnapshot(editingRowForms[dep.id]!)
 }
 
-function cancelRow(row: TableRow) {
+async function cancelRow(row: TableRow) {
+  if (row.form?.saving) return
+  const changed = row.isDraft || (row.form && rowSnapshot(row.form) !== originalRows[row.id])
+  if (changed && !await confirmDiscardChanges()) return
   if (row.isDraft) {
     draftRows.value = draftRows.value.filter((f) => f.draftId !== row.id)
   } else {
@@ -614,7 +628,7 @@ const deleteDependencyMutation = useMutation({
 })
 
 async function saveRow(row: TableRow) {
-  if (!row.form || !row.form.targetId) return
+  if (!row.form || !row.form.targetId || row.form.saving) return
   const form = row.form
   form.saving = true
 

@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="cancelEdit" />
     </q-card-section>
     <q-separator />
     <q-form ref="formRef" @submit.prevent="handleSubmit" novalidate>
@@ -96,7 +96,7 @@
 
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import type { MessageBroker } from 'api/client'
@@ -191,7 +192,7 @@ const form = reactive<MessageBrokerFormModel>({
 
 const isCreate = computed(() => props.mode === 'create')
 const title = computed(() => (isCreate.value ? 'Create Message Broker' : 'Edit Message Broker'))
-const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
+const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save and close'))
 const loading = computed(() => props.loading)
 
 function addQueue() {
@@ -208,6 +209,12 @@ function addTopic() {
 
 function removeTopic(index: number) {
   form.topics.splice(index, 1)
+}
+
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
 }
 
 function applyInitialValue(value?: Partial<MessageBroker> | null) {
@@ -236,10 +243,11 @@ function applyInitialValue(value?: Partial<MessageBroker> | null) {
   }))
 }
 
-onMounted(() => applyInitialValue(props.initialValue))
-watch(() => props.initialValue, (v) => applyInitialValue(v))
+onMounted(() => { applyInitialValue(props.initialValue); draft.markClean() })
+watch(() => props.initialValue, (v) => { if (!draft.isDirty.value) { applyInitialValue(v); draft.markClean() } })
 
 async function handleSubmit() {
+  if (props.loading) return
   const valid = await formRef.value?.validate?.()
   if (valid === false) {
     return

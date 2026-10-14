@@ -179,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
@@ -208,8 +209,11 @@ const provider = computed(() => providers.value?.find(p => p.id === providerId.v
 const isAppConfigurationProvider = computed(() => isAppConfigurationEndpoint(provider.value?.vaultUri))
 
 const keySearch = ref('')
+usePersistedFilter('AppConfigurationExplorerPage_keySearch', keySearch)
 const keyPrefix = ref('')
+usePersistedFilter('AppConfigurationExplorerPage_keyPrefix', keyPrefix)
 const label = ref('')
+usePersistedFilter('AppConfigurationExplorerPage_label', label)
 
 const { data: entries, isLoading, error, refetch } = useAppConfigurationEntries(providerId, {
   keySearch,

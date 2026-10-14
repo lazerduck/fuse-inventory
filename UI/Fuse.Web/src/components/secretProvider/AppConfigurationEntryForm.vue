@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ isCreate ? 'New App Configuration Entry' : 'Edit App Configuration Entry' }}</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="cancelEdit" />
     </q-card-section>
     <q-separator />
 
@@ -60,11 +60,11 @@
 
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn
           color="primary"
           type="submit"
-          :label="isCreate ? 'Create' : 'Save'"
+          :label="isCreate ? 'Create' : 'Save and close'"
           :loading="loading"
           :disable="loading"
         />
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch } from 'vue'
 import type { AppConfigurationEntry } from '../../composables/useAppConfigurationEntries'
 
@@ -107,6 +108,12 @@ const form = reactive<FormModel>({
   value: ''
 })
 
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
+
 function applyInitialEntry(entry?: AppConfigurationEntry | null) {
   if (!entry) {
     form.key = ''
@@ -119,9 +126,10 @@ function applyInitialEntry(entry?: AppConfigurationEntry | null) {
   form.value = entry.value ?? ''
 }
 
-watch(() => props.initialEntry, (val) => applyInitialEntry(val), { immediate: true })
+watch(() => props.initialEntry, (val) => { if (!draft.isDirty.value) { applyInitialEntry(val); draft.markClean() } }, { immediate: true })
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
 </script>

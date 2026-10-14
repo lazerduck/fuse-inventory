@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="cancelEdit" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
@@ -14,7 +14,7 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, onMounted, reactive, watch } from 'vue'
 import type { ApplicationPipeline } from 'api/client'
 
@@ -59,8 +60,14 @@ const form = reactive<ApplicationPipelineFormModel>({
 
 const isCreate = computed(() => props.mode === 'create')
 const title = computed(() => (isCreate.value ? 'Add Pipeline' : 'Edit Pipeline'))
-const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
+const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save and close'))
 const loading = computed(() => props.loading)
+
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
 
 function applyInitial(value?: Partial<ApplicationPipeline> | null) {
   if (!value) {
@@ -72,10 +79,11 @@ function applyInitial(value?: Partial<ApplicationPipeline> | null) {
   form.pipelineUri = value.pipelineUri ?? ''
 }
 
-onMounted(() => applyInitial(props.initialValue))
-watch(() => props.initialValue, (v) => applyInitial(v))
+onMounted(() => { applyInitial(props.initialValue); draft.markClean() })
+watch(() => props.initialValue, (v) => { if (!draft.isDirty.value) { applyInitial(v); draft.markClean() } })
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
 </script>

@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import * as components from 'quasar'
-import { Quasar, QInput } from 'quasar'
+import { Quasar, QInput, Dialog } from 'quasar'
 import EnvironmentForm from '../src/components/environments/EnvironmentForm.vue'
 import ExternalResourceForm from '../src/components/externalResources/ExternalResourceForm.vue'
 import PlatformForm from '../src/components/platforms/PlatformForm.vue'
+Object.assign(Dialog, { create: vi.fn() })
 let wrapper: VueWrapper
 const global = { plugins: [[Quasar, { components }] as [typeof Quasar, { components: typeof components }]], stubs: { TagSelect: true } }
 afterEach(() => { wrapper?.unmount(); document.body.innerHTML = '' })
@@ -31,7 +32,16 @@ for (const [name, component, field] of [
       wrapper = mount(component, { props: { mode: 'edit', initialValue: original }, attachTo: document.body, global })
       await flushPromises()
       await wrapper.findAllComponents(QInput).find(i => i.props('label') === 'Name*')!.setValue('Unsaved')
+      let discard!: () => void
+      const spy = vi.spyOn(Dialog, 'create').mockImplementation(() => {
+        const chain = { onOk(fn: () => void) { discard = fn; return chain }, onCancel() { return chain }, onDismiss() { return chain }, hide() { return chain }, update() { return chain } }
+        return chain
+      })
       await wrapper.findAll('button').find(b => b.text() === 'Cancel')!.trigger('click')
+      expect(wrapper.emitted('cancel')).toBeUndefined()
+      discard()
+      await flushPromises()
+      spy.mockRestore()
       expect(original[field]).toBe('Original')
       expect(original.tagIds).toEqual(['existing-tag'])
       expect(wrapper.emitted('cancel')).toHaveLength(1)

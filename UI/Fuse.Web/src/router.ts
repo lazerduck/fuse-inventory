@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { confirmNavigation } from './composables/useUnsavedChanges'
 import { useFuseStore } from './stores/FuseStore'
 
 const router = createRouter({
@@ -282,6 +283,8 @@ const router = createRouter({
     }
   ]
 })
+
+router.beforeEach((to, from) => to.fullPath === from.fullPath || confirmNavigation())
 
 router.beforeEach(async (to, from, next) => {
   const fuseStore = useFuseStore()

@@ -58,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../../../composables/useDialogDraft'
 import { computed, ref } from 'vue'
 import { Notify } from 'quasar'
 import { useFuseClient } from '../../../composables/useFuseClient'
@@ -91,9 +92,13 @@ const secretValue = computed({
   set: (value: string) => emit('update:newSecretValue', value)
 })
 
+const draft = useDialogDraft(secretValue, () => props.modelValue)
 function handleCancel() {
-  emit('cancel')
-  dialogVisible.value = false
+  if (props.loading) return
+  void draft.discard(() => {
+    emit('cancel')
+    dialogVisible.value = false
+  })
 }
 
 async function handleGenerate() {

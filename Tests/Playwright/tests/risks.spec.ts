@@ -20,12 +20,12 @@ test('risk creation, mitigation edit and persistence', async ({ authenticatedPag
   await page.getByLabel('Owner Position *', { exact: true }).click();
   await page.getByRole('option', { name: `${name}-owner`, exact: true }).click();
   await page.getByRole('button', { name: 'Create Risk', exact: true }).click();
-  await expect(page).toHaveURL('/risks');
+  await expect(page).toHaveURL(/\/risks\/[0-9a-f-]+\/edit$/);
   const created = (await (await adminApi.get('/api/risk')).json()).find((risk: any) => risk.title === name);
   expect(created).toBeTruthy();
-  await page.goto(`/risks/${created.id}/edit`);
+  await expect(page).toHaveURL(`/risks/${created.id}/edit`);
   await page.getByLabel('Mitigation Strategy', { exact: true }).fill('Add redundancy');
-  await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+  await page.getByRole('button', { name: 'Save and close', exact: true }).click();
   await expect(page).toHaveURL('/risks');
   await page.goto(`/risks/${created.id}/edit`);
   await expect(page.getByLabel('Mitigation Strategy', { exact: true })).toHaveValue('Add redundancy');

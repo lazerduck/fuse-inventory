@@ -91,7 +91,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Tag</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCreateDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="createDraft.discard(() => isCreateDialogOpen = false)" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitCreate">
@@ -120,7 +120,7 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="isCreateDialogOpen = false" />
+            <q-btn flat label="Cancel" @click="createDraft.discard(() => isCreateDialogOpen = false)" />
             <q-btn color="primary" type="submit" label="Create" :disable="!canCreate" :loading="createMutation.isPending.value" />
           </q-card-actions>
         </q-form>
@@ -131,7 +131,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Edit Tag</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeEditDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="editDraft.discard(() => closeEditDialog())" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitEdit">
@@ -160,8 +160,8 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeEditDialog" />
-            <q-btn color="primary" type="submit" label="Save" :disable="!canUpdate" :loading="updateMutation.isPending.value" />
+            <q-btn flat label="Cancel" @click="editDraft.discard(() => closeEditDialog())" />
+            <q-btn color="primary" type="submit" label="Save and close" :disable="!canUpdate" :loading="updateMutation.isPending.value" />
           </q-card-actions>
         </q-form>
       </q-card>
@@ -170,6 +170,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../composables/useDialogDraft'
 import { computed, reactive, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
@@ -342,6 +343,9 @@ function badgeColor(color: TagColor) {
       return 'grey-7'
   }
 }
+
+const createDraft = useDialogDraft(createForm, isCreateDialogOpen)
+const editDraft = useDialogDraft(editForm, isEditDialogOpen)
 </script>
 
 <style scoped>

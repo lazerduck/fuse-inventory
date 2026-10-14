@@ -28,7 +28,7 @@
         <div class="text-h6">Instance Details</div>
       </q-card-section>
       <q-separator />
-      <q-form @submit.prevent="handleSubmitInstance">
+      <q-form ref="instanceDetailsForm" @submit.prevent="handleSubmitInstance(false)">
         <q-card-section>
           <div class="form-grid">
             <q-select
@@ -184,6 +184,7 @@
             :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
             @click="confirmInstanceDelete"
           />
+          <q-btn outline color="primary" label="Save and close" :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)" :loading="updateInstanceMutation.isPending.value" @click="saveAndClose" />
           <q-btn
             color="primary"
             type="submit"
@@ -207,6 +208,8 @@
 </template>
 
 <script setup lang="ts">
+import type { QForm } from 'quasar'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
@@ -346,8 +349,12 @@ const appConfigurationEntriesError = computed(() =>
     : null
 )
 
+const draft = useUnsavedChanges(form)
+const closeAfterSave = ref(false)
+const instanceDetailsForm = ref<QForm | null>(null)
+
 watch(instance, (inst) => {
-  if (inst) {
+  if (inst && !draft.isDirty.value) {
     form.environmentId = inst.environmentId ?? null
     form.platformId = inst.platformId ?? null
     form.baseUri = inst.baseUri ?? ''
@@ -378,6 +385,7 @@ watch(instance, (inst) => {
     }
     form.appConfigurationProviderId = inst.appConfigurationProviderId ?? null
     form.appConfigurationKeySuffix = inst.appConfigurationKeySuffix ?? ''
+    draft.markClean()
   }
 }, { immediate: true })
 
@@ -420,7 +428,9 @@ const updateInstanceMutation = useMutation({
     client.instancesPUT(appId, instanceId, payload),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
+    draft.markSaved()
     Notify.create({ type: 'positive', message: 'Instance updated' })
+    if (closeAfterSave.value) navigateBack()
   },
   onError: (error) => {
     Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to update instance') })
@@ -439,7 +449,14 @@ const deleteInstanceMutation = useMutation({
   }
 })
 
-function handleSubmitInstance() {
+async function saveAndClose() {
+  if (await instanceDetailsForm.value?.validate()) handleSubmitInstance(true)
+}
+
+function handleSubmitInstance(close = false) {
+  if (updateInstanceMutation.isPending.value) return
+  closeAfterSave.value = close
+  draft.captureSave()
   if (!applicationId.value || !instanceId.value) return
   const payload = Object.assign(new UpdateApplicationInstance(), {
     environmentId: form.environmentId ?? undefined,

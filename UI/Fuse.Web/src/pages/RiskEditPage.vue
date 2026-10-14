@@ -12,8 +12,16 @@
           @click="handleCancel"
         />
         <q-btn
+          outline color="primary"
+          label="Save and close"
+          v-if="isEditMode"
+          :loading="isSaving"
+          :disable="isEditMode ? !fuseStore.hasPermission(Permission.RisksUpdate) : !fuseStore.hasPermission(Permission.RisksCreate)"
+          @click="handleSave(true)"
+        />
+        <q-btn
           color="primary"
-          :label="isEditMode ? 'Save Changes' : 'Create Risk'"
+          :label="isEditMode ? 'Save' : 'Create Risk'"
           :loading="isSaving"
           :disable="isEditMode ? !fuseStore.hasPermission(Permission.RisksUpdate) : !fuseStore.hasPermission(Permission.RisksCreate)"
           @click="handleSave"
@@ -178,6 +186,9 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { useEditorNavigation } from '../composables/useEditorNavigation'
+
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -260,9 +271,13 @@ const { data: existingRisk, isLoading } = useQuery({
   retry: false
 })
 
+const draft = useUnsavedChanges(form)
+const closeAfterSave = ref(false)
+const returnToList = useEditorNavigation({ name: 'risks' })
+
 // Watch for loaded risk data and populate form
 watch(existingRisk, (risk) => {
-  if (risk) {
+  if (risk && !draft.isDirty.value) {
     form.value = {
       title: risk.title ?? '',
       description: risk.description ?? null,
@@ -279,8 +294,9 @@ watch(existingRisk, (risk) => {
       tagIds: risk.tagIds ? Array.from(risk.tagIds) : null,
       notes: risk.notes ?? null
     }
+    draft.markClean()
   }
-})
+}, { immediate: true })
 
 // Options
 const targetTypeOptions = [
@@ -380,13 +396,15 @@ function handleTargetTypeChange() {
 // Create mutation
 const createMutation = useMutation({
   mutationFn: (command: CreateRisk) => client.riskPOST(command),
-  onSuccess: () => {
+  onSuccess: (saved) => {
+    draft.markSaved()
     queryClient.invalidateQueries({ queryKey: ['risks'] })
     $q.notify({
       type: 'positive',
       message: 'Risk created successfully'
     })
-    router.push({ name: 'risks' })
+    if (closeAfterSave.value) returnToList()
+    else if (saved.id) router.replace({ name: 'riskEdit', params: { id: saved.id } })
   },
   onError: (error: any) => {
     $q.notify({
@@ -401,13 +419,14 @@ const updateMutation = useMutation({
   mutationFn: ({ id, command }: { id: string; command: UpdateRisk }) =>
     client.riskPUT(id, command),
   onSuccess: () => {
+    draft.markSaved()
     queryClient.invalidateQueries({ queryKey: ['risks'] })
     queryClient.invalidateQueries({ queryKey: ['risk', riskId.value] })
     $q.notify({
       type: 'positive',
       message: 'Risk updated successfully'
     })
-    router.push({ name: 'risks' })
+    if (closeAfterSave.value) returnToList()
   },
   onError: (error: any) => {
     $q.notify({
@@ -419,7 +438,10 @@ const updateMutation = useMutation({
 
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
-async function handleSave() {
+async function handleSave(close: boolean | Event = false) {
+  if (isSaving.value) return
+  closeAfterSave.value = close === true
+  draft.captureSave()
   // Validate required fields
   if (!form.value.title || !form.value.impact || !form.value.likelihood ||
       !form.value.status || !form.value.ownerPositionId ||
@@ -474,7 +496,7 @@ async function handleSave() {
 }
 
 function handleCancel() {
-  router.push({ name: 'risks' })
+  returnToList()
 }
 </script>
 

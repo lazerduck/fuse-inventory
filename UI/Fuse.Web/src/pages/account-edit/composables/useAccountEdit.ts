@@ -1,3 +1,5 @@
+import { useUnsavedChanges } from '../../../composables/useUnsavedChanges'
+import { useEditorNavigation } from '../../../composables/useEditorNavigation'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
@@ -185,10 +187,14 @@ export function useAccountEdit() {
     () => isEditMode.value && !!accountId.value && form.value.targetKind === TargetKind.DataStore
   )
 
+  const draft = useUnsavedChanges(form)
+  const closeAfterSave = ref(false)
+  const returnToList = useEditorNavigation({ name: 'accounts' })
+
   watch(
     [account, isLoadingInitialData],
     ([acc, loading]) => {
-      if (acc && !loading) {
+      if (acc && !loading && !draft.isDirty.value) {
         Object.assign(form.value, {
           targetKind: acc.targetKind ?? TargetKind.Application,
           targetId: acc.targetId ?? null,
@@ -200,6 +206,7 @@ export function useAccountEdit() {
           grants: (acc.grants ?? []).map(cloneGrant)
         })
         ensureTarget()
+        draft.markClean()
       }
     },
     { immediate: true }
@@ -218,7 +225,10 @@ export function useAccountEdit() {
       messageBrokersQuery.data.value,
       environmentsQuery.data.value
     ],
-    () => ensureTarget()
+    () => {
+      const wasClean = !draft.isDirty.value
+      if (wasClean) { ensureTarget(); draft.markClean() }
+    }
   )
 
   function ensureTarget() {
@@ -315,10 +325,12 @@ export function useAccountEdit() {
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateAccount) => client.accountPOST(payload),
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      draft.markSaved()
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       Notify.create({ type: 'positive', message: 'Account created' })
-      router.push('/accounts')
+      if (closeAfterSave.value) returnToList()
+      else if (saved.id) router.replace({ name: 'accountEdit', params: { id: saved.id } })
     },
     onError: (err) => {
       Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create account') })
@@ -328,10 +340,11 @@ export function useAccountEdit() {
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateAccount }) => client.accountPUT(id, payload),
     onSuccess: () => {
+      draft.markSaved()
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['account', accountId.value] })
       Notify.create({ type: 'positive', message: 'Account updated' })
-      router.push('/accounts')
+      if (closeAfterSave.value) returnToList()
     },
     onError: (err) => {
       Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update account') })
@@ -341,7 +354,7 @@ export function useAccountEdit() {
   const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
   function handleCancel() {
-    router.push('/accounts')
+    returnToList()
   }
 
   function getAffectedDependencyCount(): number {
@@ -370,6 +383,8 @@ export function useAccountEdit() {
   }
 
   function performSave() {
+    if (isSaving.value) return
+    draft.captureSave()
     if (isEditMode.value && accountId.value) {
       const payload = Object.assign(new UpdateAccount(), {
         targetKind: form.value.targetKind,
@@ -397,7 +412,9 @@ export function useAccountEdit() {
     }
   }
 
-  function handleSave() {
+  function handleSave(close: boolean | Event = false) {
+    if (isSaving.value) return
+    closeAfterSave.value = close === true
     if (form.value.secret.providerId && !form.value.secret.secretName) {
       Notify.create({ type: 'warning', message: 'Select a secret name before saving.' })
       return

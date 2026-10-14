@@ -14,6 +14,7 @@
         label="Clone across environments"
         @click="$emit('clone')"
       />
+      <q-btn v-if="primaryLabel === 'Save'" outline color="primary" label="Save and close" :loading="isSaving" :disable="!canModify" @click="$emit('save-close')" />
       <q-btn
         color="primary"
         :label="primaryLabel"
@@ -40,6 +41,7 @@ defineProps<Props>()
 defineEmits<{
   (e: 'cancel'): void
   (e: 'save'): void
+  (e: 'save-close'): void
   (e: 'clone'): void
 }>()
 </script>

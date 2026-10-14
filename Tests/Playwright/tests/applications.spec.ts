@@ -72,6 +72,8 @@ test('application, instance and pipeline persist independently of details edits'
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();
   await expect(page.getByText('Change reverted successfully', { exact: true })).toBeVisible();
   await page.reload();
+  await expect(page.getByRole('tab', { name: 'History', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: 'Details', exact: true }).click();
   await expect(page.getByLabel('Version', { exact: true })).toHaveValue('1.0');
   await page.getByRole('button', { name: 'Delete Application', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();

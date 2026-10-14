@@ -112,7 +112,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Application</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="isCreateDialogOpen = false" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="createDraft.discard(() => isCreateDialogOpen = false)" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitCreate">
@@ -180,7 +180,7 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="isCreateDialogOpen = false" />
+            <q-btn flat label="Cancel" @click="createDraft.discard(() => isCreateDialogOpen = false)" />
             <q-btn color="primary" type="submit" label="Create" :loading="createApplicationMutation.isPending.value" />
           </q-card-actions>
         </q-form>
@@ -190,6 +190,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../composables/useDialogDraft'
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
@@ -389,6 +390,8 @@ function confirmApplicationDelete(app: Application) {
     deleteApplicationMutation.mutate(app.id!)
   })
 }
+
+const createDraft = useDialogDraft(createForm, isCreateDialogOpen)
 </script>
 
 <style scoped>

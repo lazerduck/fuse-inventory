@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="cancelEdit" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
@@ -103,7 +103,7 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn 
           color="primary" 
           type="submit" 
@@ -117,6 +117,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch, onMounted } from 'vue'
 import { SecretProviderResponse, SecretProviderAuthMode } from 'api/client'
 
@@ -185,7 +186,7 @@ const form = reactive<SecretProviderFormModel>({
 
 const isCreate = computed(() => props.mode === 'create')
 const title = computed(() => (isCreate.value ? 'Create Azure Integration' : 'Edit Azure Integration'))
-const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
+const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save and close'))
 const loading = computed(() => props.loading)
 
 const hasAnyCapability = computed(() => 
@@ -241,6 +242,12 @@ function parseCapabilities(capabilities?: string | number): { check: boolean; cr
   return { check: false, create: false, rotate: false, read: false }
 }
 
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
+
 function applyInitialValue(value?: Partial<SecretProviderResponse> | null) {
   if (!value) {
     form.name = ''
@@ -260,10 +267,11 @@ function applyInitialValue(value?: Partial<SecretProviderResponse> | null) {
   // They remain empty when editing
 }
 
-onMounted(() => applyInitialValue(props.initialValue))
-watch(() => props.initialValue, (val) => applyInitialValue(val))
+onMounted(() => { applyInitialValue(props.initialValue); draft.markClean() })
+watch(() => props.initialValue, (val) => { if (!draft.isDirty.value) { applyInitialValue(val); draft.markClean() } })
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
 </script>

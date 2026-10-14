@@ -19,7 +19,8 @@
 
     <q-card v-if="fuseStore.canRead" class="content-card">
       <q-table flat bordered :rows="integrations" :columns="columns" row-key="id" :loading="isLoading"
-        :pagination="pagination">
+        :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)">
         <template #body-cell-environments="props">
           <q-td :props="props">
             <div v-if="props.row.environmentIds?.length">
@@ -63,7 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
+import { computed, ref, reactive } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -94,7 +96,9 @@ const environmentsStore = useEnvironments()
 const platformsStore = usePlatforms()
 const accountsStore = useAccounts()
 
-const pagination = { rowsPerPage: 10 }
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
+const filter = ref('')
+usePersistedTableState({ filter, pagination, filterStorageKey: 'KumaIntegrationsPage_filter', pageStorageKey: 'KumaIntegrationsPage_page' })
 
 const { data, isLoading, error } = useKumaIntegrations()
 

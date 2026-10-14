@@ -13,8 +13,8 @@
         <q-select v-model="form.platformId" :options="platformOptions" label="Platform" :disable="loading" clearable />
         <q-select v-model="form.accountId" :options="accountOptions" label="Account" :disable="loading" clearable />
         <div class="q-mt-md flex justify-end">
-          <q-btn label="Cancel" flat @click="$emit('cancel')" :disable="loading" />
-          <q-btn label="Save" color="primary" type="submit" :loading="loading" class="q-ml-sm" :disable="disabled" />
+          <q-btn label="Cancel" flat @click="cancelEdit" :disable="loading" />
+          <q-btn label="Save and close" color="primary" type="submit" :loading="loading" class="q-ml-sm" :disable="disabled" />
         </div>
       </q-form>
     </q-card-section>
@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { ref, watch, computed } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
@@ -60,7 +61,14 @@ const form = ref<{
   accountId: null
 })
 
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
+
 watch(() => props.initialValue, (val) => {
+  if (draft.isDirty.value) return
   if (val) {
     // Convert GUID arrays back to option format for q-select
     const environmentIds = (val.environmentIds ?? [])
@@ -91,6 +99,7 @@ watch(() => props.initialValue, (val) => {
       accountId: null
     }
   }
+  draft.markClean()
 }, { immediate: true })
 
 function submitForm() {

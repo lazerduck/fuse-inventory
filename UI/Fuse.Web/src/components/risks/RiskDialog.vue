@@ -122,7 +122,7 @@
           <q-btn
             color="primary"
             type="submit"
-            :label="isEditing ? 'Save' : 'Create'"
+            :label="isEditing ? 'Save and close' : 'Create'"
           />
         </q-card-actions>
       </q-form>
@@ -131,6 +131,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch } from 'vue'
 import type { Risk, Position, RiskImpact, RiskLikelihood, RiskStatus } from 'api/client'
 
@@ -205,6 +206,8 @@ const positionOptions = computed(() =>
   }))
 )
 
+const draft = useUnsavedChanges(form)
+
 watch(() => props.risk, (risk) => {
   if (risk) {
     form.title = risk.title ?? ''
@@ -234,10 +237,11 @@ watch(() => props.risk, (risk) => {
     form.reviewDate = ''
     form.approvalDate = ''
   }
+  draft.markClean()
 }, { immediate: true })
 
 function handleClose() {
-  emit('close')
+  void draft.discard(() => emit('close'))
 }
 
 function handleSubmit() {
