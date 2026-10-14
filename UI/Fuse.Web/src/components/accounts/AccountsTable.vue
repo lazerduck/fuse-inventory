@@ -8,6 +8,7 @@
       row-key="id"
       :loading="loading"
       :pagination="pagination"
+      @update:pagination="Object.assign(pagination, $event)"
       :filter="filter"
     >
       <template #top-right>
@@ -77,7 +78,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { usePersistedTableState } from '../../composables/usePersistedTableState'
+import { computed, reactive, ref } from 'vue'
 import type { QTableColumn } from 'quasar'
 import type { Account } from 'api/client'
 import type { TagInfo } from '../../composables/useTags'
@@ -97,6 +99,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{ (event: 'edit', account: Account): void; (event: 'delete', account: Account): void }>()
 
 const filter = ref('')
+const pagination = reactive({ page: 1, rowsPerPage: props.pagination.rowsPerPage })
+usePersistedTableState({ filter, pagination, filterStorageKey: 'AccountsTable_filter', pageStorageKey: 'AccountsTable_page' })
 const rows = computed(() => props.accounts ?? [])
 
 const columns: QTableColumn<Account>[] = [

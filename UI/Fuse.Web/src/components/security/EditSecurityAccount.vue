@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">Edit User Account</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="draft.discard(() => emit('cancel'))" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
@@ -56,14 +56,15 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
-        <q-btn color="primary" type="submit" label="Save Changes" :loading="loading" />
+        <q-btn flat label="Cancel" @click="draft.discard(() => emit('cancel'))" />
+        <q-btn color="primary" type="submit" label="Save and close" :loading="loading" />
       </q-card-actions>
     </q-form>
   </q-card>
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { reactive, ref } from 'vue'
 import { RoleInfo } from 'api/client'
 import type { SecurityUserInfo } from 'api/client'
@@ -99,8 +100,10 @@ const form = reactive<EditAccountForm>({
 const displayUserName = ref(props.user.userName || '')
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
+const draft = useUnsavedChanges(form)
 </script>
 
 <style scoped>

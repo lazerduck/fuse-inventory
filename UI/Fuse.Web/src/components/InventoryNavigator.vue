@@ -146,7 +146,7 @@ const applicationOptions = computed(() => {
 
 const accountOptions = computed(() => {
   const accounts = accountsData.value ?? []
-  return accounts
+  return [...accounts]
     .sort((a, b) => (a.userName ?? '').localeCompare(b.userName ?? ''))
     .map((acc) => ({
       label: acc.userName ?? acc.id ?? 'Unknown',

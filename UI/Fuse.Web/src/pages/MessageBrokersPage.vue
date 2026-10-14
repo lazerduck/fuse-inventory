@@ -31,6 +31,7 @@
         row-key="id"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
         :filter="filter"
       >
         <template #top-right>
@@ -107,7 +108,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
+import { computed, ref, reactive } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -127,8 +129,9 @@ const fuseStore = useFuseStore()
 const tagsStore = useTags()
 const environmentsStore = useEnvironments()
 
-const pagination = { rowsPerPage: 10 }
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
 const filter = ref('')
+usePersistedTableState({ filter, pagination, filterStorageKey: 'MessageBrokersPage_filter', pageStorageKey: 'MessageBrokersPage_page' })
 
 const { data, isLoading, error } = useQuery({
   queryKey: ['messageBrokers'],

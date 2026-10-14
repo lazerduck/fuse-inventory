@@ -134,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar, type QTableColumn } from 'quasar'
@@ -175,6 +176,7 @@ const STORAGE_KEY_FILTER = 'RisksPage_filter'
 const STORAGE_KEY_PAGE = 'RisksPage_page'
 
 const targetTypeFilter = ref<string | null>(null)
+usePersistedFilter('RisksPage_targetType', targetTypeFilter)
 
 const pagination = reactive({ rowsPerPage: 20, page: 1 })
 const filter = ref('')

@@ -130,6 +130,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
@@ -184,6 +185,7 @@ const {
 } = useSqlPermissionsActions(integrationId)
 
 const statusFilter = ref('all')
+usePersistedFilter('SqlPermissions_status', statusFilter)
 
 const showResolveDialog = ref(false)
 const showResolveResultDialog = ref(false)

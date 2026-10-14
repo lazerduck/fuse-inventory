@@ -3,12 +3,13 @@
     <AccountEditHeader
       :title="pageTitle"
       :subtitle="pageSubtitle"
-      :primary-label="isEditMode ? 'Save Changes' : 'Create Account'"
+      :primary-label="isEditMode ? 'Save' : 'Create Account'"
       :is-saving="isSaving"
       :can-modify="canModify"
       :show-clone="isEditMode && account?.targetKind !== TargetKind.External"
       @cancel="handleCancel"
       @save="handleSave"
+      @save-close="handleSave(true)"
       @clone="openCloneDialog"
     />
 

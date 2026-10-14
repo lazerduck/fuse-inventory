@@ -228,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { computed, ref, watch } from 'vue'
 import { HealthCheckProvider, LogLevel, LoggingSettings } from 'api/client'
 import { useFuseStore } from '../stores/FuseStore'
@@ -279,7 +280,19 @@ const loggingExcludeAreasText = ref('')
 const lastFiniteVersionCount = ref(100)
 const lastFiniteAuditDays = ref(365)
 const lastFiniteLoggingDays = ref(30)
-watch(() => fuseStore.appSettings, settings => {
+function hasPendingSettings(settings = fuseStore.appSettings) {
+  if (!settings) return false
+  const logging = settings.logging
+  return versionHistoryKeepCount.value !== (settings.versionHistoryKeepCount ?? 0) ||
+    auditLogDaysToKeep.value !== (settings.auditLogDaysToKeep ?? 0) ||
+    loggingEnabled.value !== (logging?.enabled ?? true) ||
+    loggingMinLevel.value !== (logging?.minLevel ?? LogLevel.Info) ||
+    loggingDaysToKeep.value !== (logging?.daysToKeep ?? 0) ||
+    loggingExcludeAreasText.value !== (logging?.excludeAreas ?? []).join(', ')
+}
+let settingsInitialized = false
+watch(() => fuseStore.appSettings, (settings, previous) => {
+  if (settingsInitialized && previous && hasPendingSettings(previous)) return
   if (!settings) return
   versionHistoryKeepCount.value = settings.versionHistoryKeepCount ?? 0
   auditLogDaysToKeep.value = settings.auditLogDaysToKeep ?? 0
@@ -291,7 +304,9 @@ watch(() => fuseStore.appSettings, settings => {
   if ((settings.versionHistoryKeepCount ?? 0) > 0) lastFiniteVersionCount.value = settings.versionHistoryKeepCount!
   if ((settings.auditLogDaysToKeep ?? 0) > 0) lastFiniteAuditDays.value = settings.auditLogDaysToKeep!
   if ((logging.daysToKeep ?? 0) > 0) lastFiniteLoggingDays.value = logging.daysToKeep!
+  settingsInitialized = true
 }, { immediate: true })
+useUnsavedChanges(hasPendingSettings)
 
 const versionHistoryValid = computed(() => Number.isInteger(versionHistoryKeepCount.value) && versionHistoryKeepCount.value! >= 1 && versionHistoryKeepCount.value! <= 10000)
 const auditLogRetentionValid = computed(() => Number.isInteger(auditLogDaysToKeep.value) && auditLogDaysToKeep.value! >= 1 && auditLogDaysToKeep.value! <= 36500)

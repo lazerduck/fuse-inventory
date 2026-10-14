@@ -45,9 +45,10 @@
       <q-tab name="history" label="History" />
     </q-tabs>
 
-    <q-tab-panels v-model="activeTab" animated class="application-tab-panels">
+    <q-tab-panels keep-alive v-model="activeTab" animated class="application-tab-panels">
       <q-tab-panel name="details" class="q-pa-none">
         <ApplicationDetailsForm
+          ref="detailsForm"
           :initial-value="application"
           :loading="updateApplicationMutation.isPending.value"
           :disabled="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
@@ -221,7 +222,7 @@
     </q-tab-panels>
 
     <q-dialog v-model="isInstanceDialogOpen" persistent>
-      <ApplicationInstanceForm
+      <ApplicationInstanceForm ref="instanceForm"
         mode="create"
         :loading="createInstanceMutation.isPending.value"
         :disabled="!fuseStore.hasPermission(Permission.ApplicationsCreate)"
@@ -244,6 +245,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
@@ -292,7 +294,9 @@ const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 
-const activeTab = ref(typeof route.query.tab === 'string' ? route.query.tab : 'details')
+const activeTab = ref('details')
+usePersistedFilter(`application_${route.params.id}_tab`, activeTab)
+if (typeof route.query.tab === 'string') activeTab.value = route.query.tab
 
 watch(
   () => route.query.tab,
@@ -402,11 +406,16 @@ function navigateToNextApplication() {
   }
 }
 
+const detailsForm = ref<InstanceType<typeof ApplicationDetailsForm> | null>(null)
+const closeAfterSave = ref(false)
+
 const updateApplicationMutation = useMutation({
   mutationFn: ({ id, payload }: { id: string; payload: UpdateApplication }) => client.applicationPUT(id, payload),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['applications'] })
+    detailsForm.value?.markSaved()
     Notify.create({ type: 'positive', message: 'Application updated' })
+    if (closeAfterSave.value) navigateBack()
   },
   onError: (error) => {
     Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to update application') })
@@ -435,7 +444,9 @@ function handleSubmitApplication(model: {
   repositoryUri: string
   icon: string
   tagIds: string[]
-}) {
+}, close = false) {
+  if (updateApplicationMutation.isPending.value) return
+  closeAfterSave.value = close
   if (!application.value?.id) return
   const payload = Object.assign(new UpdateApplication(), {
     name: model.name || undefined,
@@ -489,10 +500,12 @@ function closeInstanceDialog() {
   isInstanceDialogOpen.value = false
 }
 
+const instanceForm = ref<InstanceType<typeof ApplicationInstanceForm> | null>(null)
 const createInstanceMutation = useMutation({
   mutationFn: ({ appId, payload }: { appId: string; payload: CreateApplicationInstance }) =>
     client.instancesPOST(appId, payload),
   onSuccess: (createdInstance) => {
+    instanceForm.value?.markClean()
     queryClient.invalidateQueries({ queryKey: ['applications'] })
     Notify.create({ type: 'positive', message: 'Instance created' })
     closeInstanceDialog()

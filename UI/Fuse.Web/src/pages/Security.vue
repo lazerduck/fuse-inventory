@@ -148,6 +148,7 @@
             row-key="id"
             :loading="isLoading"
             :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
             data-tour-id="data-stores-table"
           >
           <template #body-cell-roleIds="props">
@@ -331,10 +332,10 @@
           </q-card-section>
 
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" color="grey" @click="closeEditSecurityLevelDialog" />
+            <q-btn flat label="Cancel" color="grey" @click="securityLevelDraft.discard(() => closeEditSecurityLevelDialog())" />
             <q-btn 
               flat 
-              label="Save" 
+              label="Save and close"
               color="primary" 
               :loading="updateSecurityLevelMutation.isPending.value"
               @click="handleUpdateSecurityLevel" 
@@ -372,7 +373,7 @@
             />
           </q-card-section>
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" color="grey" @click="closeCreateApiKeyDialog" />
+            <q-btn flat label="Cancel" color="grey" @click="apiKeyDraft.discard(() => closeCreateApiKeyDialog())" />
             <q-btn
               flat
               label="Create"
@@ -423,7 +424,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { useDialogDraft } from '../composables/useDialogDraft'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
+import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quasar'
@@ -444,7 +447,9 @@ const client = useFuseClient()
 const router = useRouter()
 const isInitialSetupSubmission = ref(false)
 
-const pagination = { rowsPerPage: 10 }
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
+const filter = ref('')
+usePersistedTableState({ filter, pagination, filterStorageKey: 'Security_filter', pageStorageKey: 'Security_page' })
 
 // API Key state
 const isCreateApiKeyDialogOpen = ref(false)
@@ -856,6 +861,9 @@ function confirmDeleteApiKey(key: ApiKeyInfo) {
     if (key.id) deleteApiKeyMutation.mutate(key.id)
   })
 }
+
+const apiKeyDraft = useDialogDraft(apiKeyForm, isCreateApiKeyDialogOpen)
+const securityLevelDraft = useDialogDraft(selectedSecurityLevel, isEditSecurityLevelDialogOpen)
 </script>
 
 <style scoped>
