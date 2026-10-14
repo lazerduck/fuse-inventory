@@ -7,7 +7,7 @@ using Fuse.Core.Areas.Tag;
 
 namespace Fuse.Core.Areas.Account;
 
-public class AccountService : IAccountService
+public partial class AccountService : IAccountService
 {
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
