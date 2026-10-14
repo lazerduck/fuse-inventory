@@ -6,8 +6,9 @@
     text-color="white"
     :icon="status?.isValid ? 'verified' : 'key_off'"
     class="license-chip q-mr-sm"
+    :aria-label="status?.isValid ? 'Licensed' : 'Unlicensed'"
   >
-    {{ status?.isValid ? 'Licensed' : 'Unlicensed' }}
+    <span class="license-status-label">{{ status?.isValid ? 'Licensed' : 'Unlicensed' }}</span>
     <q-menu anchor="bottom right" self="top right" :offset="[0, 10]" @hide="resetPopup">
       <q-card class="license-card">
         <template v-if="status?.isValid && !enteringNewKey">

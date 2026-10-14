@@ -5,16 +5,18 @@
 */
 
 :root {
+  --fuse-text: #242c30;
+  --fuse-accent-soft: #eaf0ff;
   /* Typography */
-  --fuse-text-muted: rgba(0, 0, 0, 0.6);
-  --fuse-text-subtle: rgba(0, 0, 0, 0.5);
+  --fuse-text-muted: #606b73;
+  --fuse-text-subtle: #68747b;
 
   /* Surfaces */
-  --fuse-page-bg: #f6f8fa;
+  --fuse-page-bg: #f6f5f0;
   --fuse-card-bg: #ffffff;
-  --fuse-panel-bg: #f8fafc;
-  --fuse-panel-border: #d9e1e8;
-  --fuse-hover-bg: #eef3f7;
+  --fuse-panel-bg: #f0f1ed;
+  --fuse-panel-border: #d8ddda;
+  --fuse-hover-bg: #edf0eb;
 
   /* Elevation */
   --fuse-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -32,11 +34,18 @@
 }
 
 body.body--dark {
-  --fuse-text-muted: rgba(255, 255, 255, 0.72);
-  --fuse-text-subtle: rgba(255, 255, 255, 0.64);
+  --q-primary: #80aaff !important;
+  --q-positive: #71c69c !important;
+  --q-negative: #ff8993 !important;
+  --q-warning: #e5b85b !important;
+  --q-info: #80aaff !important;
+  --fuse-text: #f5f3eb;
+  --fuse-accent-soft: #283951;
+  --fuse-text-muted: #b5bec2;
+  --fuse-text-subtle: #a1aeb4;
 
-  --fuse-page-bg: var(--q-dark-page, #121212);
-  --fuse-card-bg: var(--q-dark, #1d1d1d);
+  --fuse-page-bg: #171d20;
+  --fuse-card-bg: #242c30;
   --fuse-panel-bg: rgba(255, 255, 255, 0.06);
   --fuse-panel-border: rgba(255, 255, 255, 0.12);
   --fuse-hover-bg: rgba(255, 255, 255, 0.1);
@@ -88,4 +97,33 @@ body.body--dark {
 ::-moz-selection {
   background: var(--fuse-selection-bg);
   color: var(--fuse-selection-color);
+}
+
+/* Shared working surfaces: compact, quiet, and consistent across entity pages. */
+body { color: var(--fuse-text); }
+.q-card, .q-table__container { border-radius: 5px; box-shadow: none; border: 1px solid var(--fuse-panel-border); }
+.q-table__container { background: var(--fuse-card-bg); }
+.q-card > .q-table__container { border: 0; }
+.q-table thead { background: var(--fuse-panel-bg); }
+.q-table th { color: var(--fuse-text-muted); font-weight: 600; }
+.q-table th, .q-table td { border-color: var(--fuse-panel-border); }
+.q-table tbody td { height: 48px; }
+.q-field--outlined .q-field__control:before { border-color: var(--fuse-panel-border); }
+.q-field--outlined .q-field__control { border-radius: 4px; }
+.q-btn:not(.q-btn--round) { border-radius: 4px; text-transform: none; letter-spacing: 0; }
+.q-btn--standard:before { box-shadow: none; }
+/* Dark-theme accents are lighter for readable text and icons. Solid fills
+   use dark text so badges and primary actions retain their contrast. */
+.body--dark .q-btn.bg-primary,
+.body--dark .bg-primary.text-white,
+.body--dark .bg-positive.text-white,
+.body--dark .bg-negative.text-white,
+.body--dark .bg-warning.text-white,
+.body--dark .bg-info.text-white { color: #171d20 !important; }
+.q-tab { text-transform: none; letter-spacing: 0; }
+.q-tab-panels { background: var(--fuse-card-bg); }
+.q-menu { background: var(--fuse-card-bg); border: 1px solid var(--fuse-panel-border); }
+a:focus-visible, button:focus-visible, [tabindex="0"]:focus-visible { outline: 2px solid var(--q-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .q-layout, .q-page-container { transition: none; }
 }

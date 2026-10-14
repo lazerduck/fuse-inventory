@@ -11,6 +11,7 @@
 
     <section class="page-header">
       <div>
+        <div class="dashboard-eyebrow">Your inventory</div>
         <h1>Estate overview</h1>
         <p class="subtitle">Operational health, documentation gaps, risks, and recent inventory changes.</p>
       </div>
@@ -25,16 +26,16 @@
     </q-banner>
 
     <section class="summary-grid" aria-label="Estate summary">
-      <q-card v-for="summary in summaries" :key="summary.label" flat bordered class="summary-card" clickable @click="$router.push(summary.to)">
-        <q-card-section class="summary-content">
-          <q-avatar :color="summary.color" text-color="white" rounded size="42px"><q-icon :name="summary.icon" /></q-avatar>
+      <q-card v-for="summary in summaries" :key="summary.label" flat bordered class="summary-card">
+        <router-link :to="summary.to" class="summary-content">
+          <q-avatar :text-color="summary.color" rounded size="42px"><q-icon :name="summary.icon" /></q-avatar>
           <div class="summary-copy">
             <div class="summary-value">{{ summary.value }}</div>
             <div class="summary-label">{{ summary.label }}</div>
             <div class="summary-detail">{{ summary.detail }}</div>
           </div>
           <q-icon name="chevron_right" color="grey-6" />
-        </q-card-section>
+        </router-link>
       </q-card>
     </section>
 
@@ -328,22 +329,24 @@ onMounted(() => { if (canReadActivity.value) queryActivity({ page: 1, pageSize: 
 </script>
 
 <style scoped>
+.dashboard-eyebrow { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--fuse-text-muted); margin-bottom: .6rem; }
 .dashboard-page { padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.5rem; max-width: 1440px; margin: 0 auto; }
 .page-header, .section-header, .card-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-h1 { font-size: 1.75rem; margin: 0 0 .375rem; font-weight: 600; }
+h1 { font-size: 2rem; line-height: 1.25; letter-spacing: -.035em; margin: 0 0 .375rem; font-weight: 600; }
 h2 { font-size: 1.15rem; margin: 0; font-weight: 600; }
 .subtitle, .section-header p, .card-heading p { margin: .25rem 0 0; color: var(--fuse-text-muted); }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .875rem; }
-.summary-card { cursor: pointer; border-radius: 12px; transition: box-shadow .2s ease, transform .2s ease; }
-.summary-card:hover { box-shadow: var(--fuse-shadow-2); transform: translateY(-2px); }
-.summary-content { display: flex; align-items: center; gap: .75rem; }
+.summary-card { cursor: pointer; border-radius: 5px; transition: border-color .2s ease; }
+.summary-card:hover { border-color: var(--q-primary); }
+.summary-content { padding: 18px 14px; color: inherit; text-decoration: none; display: flex; align-items: center; gap: .75rem; }
 .summary-copy { flex: 1; min-width: 0; }
-.summary-value { font-size: 1.5rem; font-weight: 600; line-height: 1.1; }
+.summary-value { font-size: 2rem; font-weight: 650; line-height: 1.1; }
 .summary-label { font-weight: 500; }
-.summary-detail { color: var(--fuse-text-muted); font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.summary-detail { color: var(--fuse-text-muted); font-size: .75rem; line-height: 1.5; margin-top: 4px; }
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); gap: 1rem; align-items: start; }
-.attention-card, .activity-card, .explore-section { border-radius: 12px; }
+.attention-card, .activity-card, .explore-section { border-radius: 5px; }
 .card-heading { padding: 1rem; }
+.card-heading > .q-btn, .card-heading > .q-chip { flex-shrink: 0; }
 .empty-panel { min-height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: .6rem; color: var(--fuse-text-muted); }
 .explore-section { border: 1px solid var(--fuse-panel-border); padding: 1rem; }
 .explorer-content { padding-top: 1rem; }

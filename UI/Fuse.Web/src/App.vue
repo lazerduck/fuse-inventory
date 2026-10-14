@@ -1,13 +1,13 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header elevated class="bg-primary text-white">
+    <q-header class="app-header">
       <q-toolbar>
         <q-btn aria-label="Toggle navigation" :aria-expanded="leftDrawerOpen" dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
-        <q-toolbar-title>
-          Fuse Inventory
-        </q-toolbar-title>
+        <router-link :to="{ name: 'home' }" class="app-brand" aria-label="Fuse Inventory home">
+          <img :src="$q.dark.isActive ? '/brand/fuse-inventory-logo-reverse.svg' : '/brand/fuse-inventory-logo-colour.svg'" alt="Fuse Inventory" width="142" height="60" />
+        </router-link>
 
-        <q-spacer />
+        <q-space />
 
         <InventoryNavigator
           v-if="showInventoryNavigator"
@@ -16,7 +16,7 @@
           :application-id="route.params.applicationId as string"
           :instance-id="route.params.instanceId as string"
           :account-id="route.params.id as string"
-          class="q-mr-md"
+          class="app-inventory-nav q-mr-md"
         />
 
         <q-btn :aria-label="$q.dark.isActive ? 'Switch to light theme' : 'Switch to dark theme'" dense flat round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleTheme" />
@@ -68,10 +68,10 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="500" bordered class="app-nav">
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="250" :breakpoint="900" bordered class="app-nav">
       <q-scroll-area class="fit">
         <q-list padding class="nav-list">
-          <q-item clickable v-ripple :to="{ name: 'home' }" exact-active-class="bg-primary text-white"
+          <q-item clickable v-ripple :to="{ name: 'home' }" exact-active-class="nav-active"
             data-tour-id="nav-home" class="nav-home">
             <q-item-section avatar>
               <q-icon name="home" />
@@ -83,8 +83,8 @@
 
           <q-separator class="q-my-md" />
 
-          <q-expansion-item label="Inventory" icon="inventory_2" dense expand-separator class="nav-group nav-group--inventory">
-            <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="bg-primary text-white"
+          <q-expansion-item label="Inventory" icon="inventory_2" default-opened dense expand-separator class="nav-group nav-group--inventory">
+            <q-item clickable v-ripple :to="{ name: 'applications' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
               data-tour-id="nav-applications">
               <q-item-section avatar>
@@ -95,7 +95,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'accounts' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.AccountsRead)"
               data-tour-id="nav-accounts">
               <q-item-section avatar>
@@ -106,7 +106,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'identities' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.IdentitiesRead)"
               data-tour-id="nav-identities">
               <q-item-section avatar>
@@ -117,7 +117,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'dataStores' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.DataStoresRead)"
               data-tour-id="nav-data-stores">
               <q-item-section avatar>
@@ -128,7 +128,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'platforms' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.PlatformsRead)"
               data-tour-id="nav-platforms">
               <q-item-section avatar>
@@ -139,7 +139,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.EnvironmentsRead)"
               data-tour-id="nav-environments">
               <q-item-section avatar>
@@ -150,7 +150,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'externalResources' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ExternalResourcesRead)"
               data-tour-id="nav-external-resources">
               <q-item-section avatar>
@@ -161,7 +161,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'messageBrokers' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'messageBrokers' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.MessageBrokersRead)"
               data-tour-id="nav-message-brokers">
               <q-item-section avatar>
@@ -174,7 +174,7 @@
           </q-expansion-item>
 
           <q-expansion-item label="Classification" icon="category" dense expand-separator class="nav-group nav-group--classification">
-            <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'tags' }" active-class="nav-active"
               data-tour-id="nav-tags">
               <q-item-section avatar>
                 <q-icon name="label" />
@@ -184,7 +184,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'positions' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.PositionsRead)">
               <q-item-section avatar>
                 <q-icon name="people" />
@@ -192,7 +192,7 @@
               <q-item-section>Positions</q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'responsibilityTypes' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ResponsibilitiesRead)">
               <q-item-section avatar>
                 <q-icon name="assignment_ind" />
@@ -202,12 +202,12 @@
           </q-expansion-item>
 
           <q-expansion-item label="Insights" icon="insights" dense expand-separator class="nav-group nav-group--insights">
-            <q-item clickable v-ripple :to="{ name: 'healthOverview' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'healthOverview' }" active-class="nav-active"
               v-if="healthMonitoringEnabled && fuseStore.hasPermission(Permission.ApplicationsRead)">
               <q-item-section avatar><q-icon name="monitor_heart" /></q-item-section>
               <q-item-section>Service Health</q-item-section>
             </q-item>
-            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'risks' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.RisksRead)">
               <q-item-section avatar>
                 <q-icon name="warning" />
@@ -217,7 +217,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'activities' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'activities' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ActivityRead)">
               <q-item-section avatar>
                 <q-icon name="timeline" />
@@ -227,7 +227,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'documentationCompleteness' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'documentationCompleteness' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead) && isIncompleteDataWarningEnabled">
               <q-item-section avatar>
                 <q-icon name="fact_check" />
@@ -237,7 +237,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'viewHome' }" active-class="nav-active"
               data-tour-id="nav-view">
               <q-item-section avatar>
                 <q-icon name="menu_book" />
@@ -247,7 +247,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'graph' }" active-class="nav-active"
               data-tour-id="nav-tags">
               <q-item-section avatar>
                 <q-icon name="insights" />
@@ -257,7 +257,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'blastRadius' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'blastRadius' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.ApplicationsRead)"
               data-tour-id="nav-blast-radius">
               <q-item-section avatar>
@@ -270,11 +270,11 @@
           </q-expansion-item>
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator class="nav-group nav-group--integrations">
-            <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="bg-primary text-white">
+            <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="nav-active">
               <q-item-section avatar><q-icon name="style" /></q-item-section>
               <q-item-section>Scrum Poker</q-item-section>
             </q-item>
-            <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'kumaIntegrations' }" active-class="nav-active"
               v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
               <q-item-section avatar>
@@ -285,7 +285,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'secretProviders' }" active-class="nav-active"
               v-if="fuseStore.canRead"
               data-tour-id="nav-secret-providers">
               <q-item-section avatar>
@@ -296,7 +296,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'sqlIntegrations' }" active-class="nav-active"
               v-if="fuseStore.canRead"
               data-tour-id="nav-sql-integrations">
               <q-item-section avatar>
@@ -309,7 +309,7 @@
           </q-expansion-item>
 
           <q-expansion-item label="Administration" icon="settings" dense expand-separator class="nav-group nav-group--administration">
-            <q-item clickable v-ripple :to="{ name: 'appSettings' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'appSettings' }" active-class="nav-active"
               data-tour-id="nav-app-settings">
               <q-item-section avatar>
                 <q-icon name="settings" />
@@ -319,7 +319,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'config' }" active-class="nav-active"
               data-tour-id="nav-config">
               <q-item-section avatar>
                 <q-icon name="notes" />
@@ -329,7 +329,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'passwordGenerator' }" active-class="bg-primary text-white">
+            <q-item clickable v-ripple :to="{ name: 'passwordGenerator' }" active-class="nav-active">
               <q-item-section avatar>
                 <q-icon name="password" />
               </q-item-section>
@@ -338,7 +338,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'security' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'security' }" active-class="nav-active"
               data-tour-id="nav-security">
               <q-item-section avatar>
                 <q-icon name="security" />
@@ -348,7 +348,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'roles' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'roles' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.RolesRead)"
               data-tour-id="nav-roles">
               <q-item-section avatar>
@@ -359,7 +359,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'auditLogs' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.AuditLogsView)"
               data-tour-id="nav-audit-logs">
               <q-item-section avatar>
@@ -370,7 +370,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item clickable v-ripple :to="{ name: 'systemLogs' }" active-class="bg-primary text-white"
+            <q-item clickable v-ripple :to="{ name: 'systemLogs' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.LoggingRead)">
               <q-item-section avatar>
                 <q-icon name="receipt_long" />
@@ -807,74 +807,26 @@ h1 {
   overflow-wrap: anywhere;
 }
 
-.nav-list {
-  --nav-accent: var(--q-primary);
-  --nav-accent-soft: rgba(25, 118, 210, 0.11);
+/* Navigation shares a single accent; status colours belong to the content. */
+.app-header { background: var(--fuse-card-bg); color: var(--fuse-text); border-bottom: 1px solid var(--fuse-panel-border); }
+.app-header .q-toolbar { min-height: 68px; gap: 8px; padding: 0 20px; }
+.app-brand { display: flex; align-items: center; flex-shrink: 0; }
+.app-brand img { display: block; object-fit: contain; }
+.nav-list { padding: 16px 12px; }
+.nav-list .q-item { border-radius: 4px; min-height: 42px; }
+.nav-list .q-item__section--avatar { min-width: 34px; color: var(--fuse-text-muted); }
+.nav-group { margin-bottom: 8px; }
+.nav-group > .q-expansion-item__container > .q-item { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.nav-group .q-expansion-item__content .q-item { margin-top: 2px; font-size: 13px; padding-left: 20px; }
+.nav-list .nav-active { color: var(--q-primary); background: var(--fuse-accent-soft); box-shadow: inset 3px 0 var(--q-primary); font-weight: 600; }
+.nav-list .nav-active .q-item__section--avatar { color: inherit; }
+@media (max-width: 600px) {
+  .app-header .q-toolbar { padding: 0 8px; gap: 2px; }
+  .app-brand img { width: 104px; height: 52px; }
+  .app-header .q-toolbar { flex-wrap: wrap; }
+  .app-header .license-status-label { display: none; }
+  .app-header .license-chip { padding: 0 6px; margin: 0 2px; }
+  .app-header .license-chip .q-chip__icon { margin: 0; }
+  .app-inventory-nav { order: 2; flex-basis: 100%; margin: 0 0 8px; }
 }
-
-.nav-list > .q-item,
-.nav-group > .q-expansion-item__container > .q-item,
-.nav-group .q-expansion-item__content .q-item {
-  border-radius: 9px;
-}
-
-.nav-home .q-item__section--avatar .q-icon,
-.nav-group > .q-expansion-item__container > .q-item .q-item__section--avatar .q-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--nav-accent-soft);
-  color: var(--nav-accent);
-}
-
-.nav-home {
-  --nav-accent: #1976d2;
-  --nav-accent-soft: rgba(25, 118, 210, 0.11);
-}
-
-.nav-group--inventory {
-  --nav-accent: #1976d2;
-  --nav-accent-soft: rgba(25, 118, 210, 0.11);
-}
-
-.nav-group--classification {
-  --nav-accent: #7e57c2;
-  --nav-accent-soft: rgba(126, 87, 194, 0.12);
-}
-
-.nav-group--insights {
-  --nav-accent: #00897b;
-  --nav-accent-soft: rgba(0, 137, 123, 0.11);
-}
-
-.nav-group--integrations {
-  --nav-accent: #ef6c00;
-  --nav-accent-soft: rgba(239, 108, 0, 0.12);
-}
-
-.nav-group--administration {
-  --nav-accent: #546e7a;
-  --nav-accent-soft: rgba(84, 110, 122, 0.12);
-}
-
-.nav-group .q-expansion-item__content .q-item__section--avatar .q-icon {
-  color: var(--nav-accent);
-}
-
-.nav-list .q-item.q-router-link--active .q-icon {
-  color: inherit;
-  background: transparent;
-}
-
-.body--dark .nav-home,
-.body--dark .nav-group {
-  --nav-accent-soft: rgba(255, 255, 255, 0.1);
-}
-
-.body--dark .nav-group--inventory,
-.body--dark .nav-home { --nav-accent: #64b5f6; }
-.body--dark .nav-group--classification { --nav-accent: #b39ddb; }
-.body--dark .nav-group--insights { --nav-accent: #4db6ac; }
-.body--dark .nav-group--integrations { --nav-accent: #ffb74d; }
-.body--dark .nav-group--administration { --nav-accent: #b0bec5; }
 </style>
