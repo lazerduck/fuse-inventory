@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Position } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
@@ -78,9 +79,11 @@ const form = reactive<PositionFormModel>({
   tagIds: []
 })
 
+const draft = useUnsavedChanges(form, model)
+
 const isEdit = computed(() => !!props.position?.id)
 const title = computed(() => (isEdit.value ? 'Edit Position' : 'Create Position'))
-const submitLabel = computed(() => (isEdit.value ? 'Save' : 'Create'))
+const submitLabel = computed(() => (isEdit.value ? 'Save and close' : 'Create'))
 const loading = computed(() => props.loading)
 
 function applyInitialValue(value?: Position | null) {
@@ -100,6 +103,7 @@ watch(
   (value) => {
     if (model.value) {
       applyInitialValue(value)
+    draft.markClean()
     }
   },
   { immediate: true }
@@ -108,14 +112,17 @@ watch(
 watch(model, (value) => {
   if (value) {
     applyInitialValue(props.position)
+    draft.markClean()
   }
 })
 
 function closeDialog() {
-  emit('update:modelValue', false)
+  if (props.loading) return
+  void draft.discard(() => emit('update:modelValue', false))
 }
 
 async function handleSubmit() {
+  if (props.loading) return
   const valid = await formRef.value?.validate?.()
   if (valid === false) return
   emit('save', { ...form })

@@ -15,9 +15,17 @@
           label="Clone across environments"
           @click="openCloneDialog"
         />
-        <q-btn 
+        <q-btn
+          outline color="primary"
+          label="Save and close"
+          v-if="isEditMode"
+          :loading="isSaving"
+          :disable="isEditMode ? !fuseStore.hasPermission(Permission.IdentitiesUpdate) : !fuseStore.hasPermission(Permission.IdentitiesCreate)"
+          @click="handleSave(true)"
+        />
+        <q-btn
           color="primary" 
-          :label="isEditMode ? 'Save Changes' : 'Create Identity'" 
+          :label="isEditMode ? 'Save' : 'Create Identity'"
           :loading="isSaving"
           :disable="isEditMode ? !fuseStore.hasPermission(Permission.IdentitiesUpdate) : !fuseStore.hasPermission(Permission.IdentitiesCreate)"
           @click="handleSave"
@@ -78,7 +86,7 @@
     <q-dialog v-model="isAssignmentDialogOpen" persistent>      <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">{{ assignmentDialogTitle }}</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeAssignmentDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="assignmentDraft.discard(() => closeAssignmentDialog())" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="submitAssignment">
@@ -115,11 +123,11 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeAssignmentDialog" />
+            <q-btn flat label="Cancel" @click="assignmentDraft.discard(() => closeAssignmentDialog())" />
             <q-btn
               color="primary"
               type="submit"
-              :label="editingAssignment ? 'Save' : 'Create'"
+              :label="editingAssignment ? 'Save and close' : 'Create'"
               :loading="assignmentDialogLoading"
             />
           </q-card-actions>
@@ -174,6 +182,10 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../composables/useDialogDraft'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { useEditorNavigation } from '../composables/useEditorNavigation'
+
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
@@ -335,11 +347,15 @@ const assignmentForm = reactive<AssignmentForm>({
 
 const assignmentDialogTitle = computed(() => (editingAssignment.value ? 'Edit Assignment' : 'Add Assignment'))
 
+const draft = useUnsavedChanges(form)
+const closeAfterSave = ref(false)
+const returnToList = useEditorNavigation({ name: 'identities' })
+
 // Initialize form from identity data
 watch(
   identity,
   (ident) => {
-    if (ident) {
+    if (ident && !draft.isDirty.value) {
       Object.assign(form.value, {
         name: ident.name ?? '',
         kind: ident.kind ?? IdentityKind.AzureManagedIdentity,
@@ -348,6 +364,7 @@ watch(
         assignments: cloneAssignments(ident.assignments),
         tagIds: [...(ident.tagIds ?? [])]
       })
+      draft.markClean()
     }
   },
   { immediate: true }
@@ -380,10 +397,12 @@ function cloneAssignments(assignments?: IdentityAssignment[]): IdentityAssignmen
 // Mutations
 const createMutation = useMutation({
   mutationFn: (payload: CreateIdentity) => client.identityPOST(payload),
-  onSuccess: () => {
+  onSuccess: (saved) => {
+    draft.markSaved()
     queryClient.invalidateQueries({ queryKey: ['identities'] })
     Notify.create({ type: 'positive', message: 'Identity created' })
-    router.push('/identities')
+    if (closeAfterSave.value) returnToList()
+    else if (saved.id) router.replace({ name: 'identityEdit', params: { id: saved.id } })
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to create identity') })
@@ -393,10 +412,11 @@ const createMutation = useMutation({
 const updateMutation = useMutation({
   mutationFn: ({ id, payload }: { id: string; payload: UpdateIdentity }) => client.identityPUT(id, payload),
   onSuccess: () => {
+    draft.markSaved()
     queryClient.invalidateQueries({ queryKey: ['identities'] })
     queryClient.invalidateQueries({ queryKey: ['identity', identityId.value] })
     Notify.create({ type: 'positive', message: 'Identity updated' })
-    router.push('/identities')
+    if (closeAfterSave.value) returnToList()
   },
   onError: (err) => {
     Notify.create({ type: 'negative', message: getErrorMessage(err, 'Unable to update identity') })
@@ -641,10 +661,13 @@ function handleClone() {
 }
 
 function handleCancel() {
-  router.push('/identities')
+  returnToList()
 }
 
-function handleSave() {
+function handleSave(close: boolean | Event = false) {
+  if (isSaving.value) return
+  closeAfterSave.value = close === true
+  draft.captureSave()
   if (!form.value.name.trim()) {
     Notify.create({ type: 'warning', message: 'Name is required.' })
     return
@@ -778,6 +801,8 @@ function formatTargetKindLabel(kind: TargetKind): string {
       return String(kind)
   }
 }
+
+const assignmentDraft = useDialogDraft(assignmentForm, isAssignmentDialogOpen)
 </script>
 
 <style scoped>

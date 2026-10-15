@@ -127,7 +127,7 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" @click="closeCreateDialog" />
+          <q-btn flat label="Cancel" color="grey" @click="createDraft.discard(() => closeCreateDialog())" />
           <q-btn 
             flat 
             label="Create" 
@@ -170,10 +170,10 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" @click="closeEditDialog" />
+          <q-btn flat label="Cancel" color="grey" @click="editDraft.discard(() => closeEditDialog())" />
           <q-btn 
             flat 
-            label="Save" 
+            label="Save and close"
             color="primary" 
             :loading="updateRoleMutation.isPending.value"
             :disable="!roleForm.name"
@@ -216,6 +216,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../composables/useDialogDraft'
 import { computed, reactive, ref } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Dialog, Notify, type QTableColumn } from 'quasar'
@@ -402,6 +403,9 @@ function handleUpdateRole() {
   })
   updateRoleMutation.mutate({ id: roleForm.value.id, payload })
 }
+
+const createDraft = useDialogDraft(roleForm, isCreateDialogOpen)
+const editDraft = useDialogDraft(roleForm, isEditDialogOpen)
 </script>
 
 <style scoped>

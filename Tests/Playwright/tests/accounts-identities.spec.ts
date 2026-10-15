@@ -8,10 +8,10 @@ test('identity assignments survive editing identity details', async ({ authentic
   await page.goto('/identities/create');
   await page.getByLabel('Name', { exact: true }).fill(name);
   await page.getByRole('button', { name: 'Create Identity', exact: true }).click();
-  await expect(page).toHaveURL('/identities');
+  await expect(page).toHaveURL(/\/identities\/[0-9a-f-]+\/edit$/);
   const created = (await (await adminApi.get('/api/identity')).json()).find((item: any) => item.name === name);
   expect(created).toBeTruthy();
-  await page.goto(`/identities/${created.id}/edit`);
+  await expect(page).toHaveURL(`/identities/${created.id}/edit`);
   await page.getByRole('button', { name: 'Add Assignment', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Target Kind', { exact: true }).click();
@@ -23,7 +23,7 @@ test('identity assignments survive editing identity details', async ({ authentic
   await expect(dialog).toBeHidden();
   await expect(page.getByText('Role: Reader', { exact: true })).toBeVisible();
   await page.getByLabel('Notes', { exact: true }).fill('Updated identity details');
-  await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+  await page.getByRole('button', { name: 'Save and close', exact: true }).click();
   await expect(page).toHaveURL('/identities');
   await page.goto(`/identities/${created.id}/edit`);
   await expect(page.getByLabel('Notes', { exact: true })).toHaveValue('Updated identity details');
@@ -49,10 +49,10 @@ test('account grants survive saving account details', async ({ authenticatedPage
   await page.getByRole('option', { name: `${name}-target`, exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(name);
   await page.getByRole('button', { name: 'Create Account', exact: true }).click();
-  await expect(page).toHaveURL('/accounts');
+  await expect(page).toHaveURL(/\/accounts\/[0-9a-f-]+\/edit$/);
   const created = (await (await adminApi.get('/api/account')).json()).find((item: any) => item.userName === name);
   expect(created).toBeTruthy();
-  await page.goto(`/accounts/${created.id}/edit`);
+  await expect(page).toHaveURL(`/accounts/${created.id}/edit`);
   await page.getByRole('button', { name: 'Expand "Grants"', exact: true }).click();
   await page.getByRole('button', { name: 'Add Grant', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -65,7 +65,7 @@ test('account grants survive saving account details', async ({ authenticatedPage
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('row').filter({ hasText: 'Inventory' })).toBeVisible();
   await page.getByLabel('Username', { exact: true }).fill(`${name}-saved`);
-  await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
+  await page.getByRole('button', { name: 'Save and close', exact: true }).click();
   await expect(page).toHaveURL('/accounts');
   await page.goto(`/accounts/${created.id}/edit`);
   await expect(page.getByLabel('Username', { exact: true })).toHaveValue(`${name}-saved`);

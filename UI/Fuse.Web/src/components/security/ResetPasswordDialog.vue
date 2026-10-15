@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">Reset Password</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="draft.discard(() => emit('cancel'))" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
@@ -54,7 +54,7 @@
         </div>
       </q-card-section>
       <q-card-actions align="right" class="q-pa-md">
-        <q-btn flat label="Cancel" color="grey" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" color="grey" @click="draft.discard(() => emit('cancel'))" />
         <q-btn color="primary" type="submit" label="Reset Password" :loading="loading" />
       </q-card-actions>
     </q-form>
@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { reactive, ref } from 'vue'
 
 interface ResetPasswordForm {
@@ -94,8 +95,10 @@ const form = reactive<ResetPasswordForm>({
 const confirmPassword = ref('')
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
+const draft = useUnsavedChanges(() => ({ ...form, confirmPassword: confirmPassword.value }))
 </script>
 
 <style scoped>

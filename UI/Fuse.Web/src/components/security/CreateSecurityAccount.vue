@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn aria-label="Close dialog" v-if="!requireSetup" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" v-if="!requireSetup" flat round dense icon="close" @click="draft.discard(() => emit('cancel'))" />
     </q-card-section>
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
@@ -98,7 +98,7 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn v-if="!requireSetup" flat label="Cancel" @click="emit('cancel')" />
+        <q-btn v-if="!requireSetup" flat label="Cancel" @click="draft.discard(() => emit('cancel'))" />
         <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" />
       </q-card-actions>
     </q-form>
@@ -106,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { reactive, ref, computed } from 'vue'
 import { RoleInfo } from 'api/client'
 
@@ -155,8 +156,10 @@ const title = computed(() => props.requireSetup ? 'Create Administrator Account'
 const submitLabel = computed(() => props.requireSetup ? 'Create Account & Continue' : 'Create Account')
 
 function handleSubmit() {
+  if (props.loading) return
   emit('submit', { ...form })
 }
+const draft = useUnsavedChanges(() => ({ ...form, confirmPassword: confirmPassword.value }))
 </script>
 
 <style scoped>

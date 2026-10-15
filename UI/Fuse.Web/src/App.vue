@@ -396,7 +396,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view :key="['applicationEdit', 'instanceEdit', 'accountEdit', 'accountCreate', 'identityEdit', 'identityCreate', 'riskEdit', 'riskCreate'].includes(String(route.name)) ? route.path : undefined" />
     </q-page-container>
 
     <LoginDialog v-model="showLoginDialog" :loading="loginLoading" :error="loginError" @submit="handleLogin" />

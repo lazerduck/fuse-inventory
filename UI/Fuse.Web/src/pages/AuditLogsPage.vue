@@ -113,6 +113,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useAuditLogs } from '../composables/useAuditLogs'
 import type { QTableProps } from 'quasar'
@@ -147,6 +148,7 @@ const filters = ref({
   userName: '',
   searchText: ''
 })
+usePersistedFilter('AuditLogsPage_filters', filters)
 
 onMounted(async () => {
   if (!isAdmin.value) return

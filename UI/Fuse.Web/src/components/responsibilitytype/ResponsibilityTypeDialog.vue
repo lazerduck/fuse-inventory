@@ -38,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, ref, watch } from 'vue'
 import type { ResponsibilityType } from 'api/client'
 
@@ -74,9 +75,11 @@ const form = reactive<ResponsibilityTypeFormModel>({
   description: ''
 })
 
+const draft = useUnsavedChanges(form, model)
+
 const isEdit = computed(() => !!props.responsibilityType?.id)
 const title = computed(() => (isEdit.value ? 'Edit Responsibility Type' : 'Create Responsibility Type'))
-const submitLabel = computed(() => (isEdit.value ? 'Save' : 'Create'))
+const submitLabel = computed(() => (isEdit.value ? 'Save and close' : 'Create'))
 const loading = computed(() => props.loading)
 
 function applyInitialValue(value?: ResponsibilityType | null) {
@@ -94,6 +97,7 @@ watch(
   (value) => {
     if (model.value) {
       applyInitialValue(value)
+    draft.markClean()
     }
   },
   { immediate: true }
@@ -102,14 +106,17 @@ watch(
 watch(model, (value) => {
   if (value) {
     applyInitialValue(props.responsibilityType)
+    draft.markClean()
   }
 })
 
 function closeDialog() {
-  emit('update:modelValue', false)
+  if (props.loading) return
+  void draft.discard(() => emit('update:modelValue', false))
 }
 
 async function handleSubmit() {
+  if (props.loading) return
   const valid = await formRef.value?.validate?.()
   if (valid === false) return
   emit('save', { ...form })

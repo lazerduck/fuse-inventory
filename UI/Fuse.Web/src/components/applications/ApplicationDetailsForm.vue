@@ -4,7 +4,7 @@
       <div class="text-h6">Application Details</div>
     </q-card-section>
     <q-separator />
-    <q-form @submit.prevent="handleSubmit">
+    <q-form ref="formRef" @submit.prevent="handleSubmit(false)">
       <q-card-section>
         <div class="form-grid">
           <q-input v-model="form.name" label="Name" dense outlined />
@@ -59,8 +59,9 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn v-if="showDelete" flat label="Delete Application" color="negative" class="q-mr-auto" @click="emit('delete')" />
+        <q-btn outline color="primary" label="Save and close" :loading="loading" :disable="disabled" @click="saveAndClose" />
         <q-btn color="primary" type="submit" label="Save" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
@@ -68,7 +69,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, watch } from 'vue'
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import type { QForm } from 'quasar'
 import type { Application } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
 import { APPLICATION_ICON_OPTIONS, DEFAULT_APPLICATION_ICON } from '../../constants/applicationIcons'
@@ -93,7 +96,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'submit', value: ApplicationFormModel): void
+  (e: 'submit', value: ApplicationFormModel, close: boolean): void
   (e: 'cancel'): void
   (e: 'delete'): void
 }
@@ -120,7 +123,17 @@ const form = reactive<ApplicationFormModel>({
   tagIds: []
 })
 
+const formRef = ref<QForm | null>(null)
+defineExpose({ markSaved: draftMarkSaved })
+function draftMarkSaved() { draft.markSaved() }
+
 const loading = computed(() => props.loading)
+
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
 
 function applyInitial(value?: Partial<Application> | null) {
   if (!value) {
@@ -146,11 +159,17 @@ function applyInitial(value?: Partial<Application> | null) {
   form.tagIds = [...(value.tagIds ?? [])]
 }
 
-onMounted(() => applyInitial(props.initialValue))
-watch(() => props.initialValue, (v) => applyInitial(v))
+onMounted(() => { applyInitial(props.initialValue); draft.markClean() })
+watch(() => props.initialValue, (v) => { if (!draft.isDirty.value) { applyInitial(v); draft.markClean() } })
 
-function handleSubmit() {
-  emit('submit', { ...form })
+async function saveAndClose() {
+  if (await formRef.value?.validate()) handleSubmit(true)
+}
+
+function handleSubmit(close = false) {
+  if (props.loading) return
+  draft.captureSave()
+  emit('submit', { ...form }, close)
 }
 </script>
 

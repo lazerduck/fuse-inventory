@@ -201,9 +201,9 @@
             :disable="!canTestConnection || loading"
           />
           <div class="q-gutter-sm">
-            <q-btn label="Cancel" flat @click="$emit('cancel')" :disable="loading || testLoading" />
+            <q-btn label="Cancel" flat @click="cancelEdit" :disable="loading || testLoading" />
             <q-btn 
-              label="Save" 
+              label="Save and close"
               color="primary" 
               type="submit" 
               :loading="loading" 
@@ -217,6 +217,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { ref, watch, computed } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
@@ -311,7 +312,14 @@ const form = ref<{
 const testResult = ref<SqlConnectionTestResult | null>(null)
 const testLoading = ref(false)
 
+const draft = useUnsavedChanges(() => ({ ...form.value, authMode: authMode.value }))
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
+
 watch(() => props.initialValue, (val) => {
+  if (draft.isDirty.value) return
   if (val) {
     form.value = {
       name: val.name ?? '',
@@ -334,6 +342,7 @@ watch(() => props.initialValue, (val) => {
     authMode.value = 'connectionString'
     testResult.value = null
   }
+  draft.markClean()
 }, { immediate: true })
 
 function onDataStoreChange() {

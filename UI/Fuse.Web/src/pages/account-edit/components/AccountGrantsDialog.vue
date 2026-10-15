@@ -64,7 +64,7 @@
           <q-btn
             color="primary"
             type="submit"
-            :label="isEditing ? 'Save' : 'Create'"
+            :label="isEditing ? 'Save and close' : 'Create'"
             :loading="loading"
           />
         </q-card-actions>
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDialogDraft } from '../../../composables/useDialogDraft'
 import { computed, reactive, ref, watch } from 'vue'
 import type { Privilege } from 'api/client'
 import type { SelectOption } from '../../../components/accounts/types'
@@ -154,8 +155,10 @@ function handleDatabaseInput(value: string) {
   grantForm.database = value
 }
 
+const draft = useDialogDraft(grantForm, () => props.modelValue)
+
 function handleCancel() {
-  dialogVisible.value = false
+  void draft.discard(() => { dialogVisible.value = false })
 }
 
 function handleSubmit() {

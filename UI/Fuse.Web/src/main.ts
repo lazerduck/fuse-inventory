@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import { Quasar, Notify, Dialog } from 'quasar'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import router from './router'
+import { warnBeforeUnload } from './composables/useUnsavedChanges'
+window.addEventListener('beforeunload', warnBeforeUnload)
 import { getInitialTheme } from './utils/themePreference'
 
 // Import icon libraries

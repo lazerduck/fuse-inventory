@@ -78,6 +78,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { ResponsibilityAssignment, ResponsibilityScope } from 'api/client'
@@ -140,9 +141,11 @@ const form = reactive<ResponsibilityAssignmentFormModel>({
   primary: false
 })
 
+const draft = useUnsavedChanges(form, model)
+
 const isEdit = computed(() => !!props.assignment?.id)
 const title = computed(() => (isEdit.value ? 'Edit Responsibility Assignment' : 'Add Responsibility Assignment'))
-const submitLabel = computed(() => (isEdit.value ? 'Save' : 'Add'))
+const submitLabel = computed(() => (isEdit.value ? 'Save and close' : 'Add'))
 const loading = computed(() => props.loading)
 
 const isLoading = computed(
@@ -207,6 +210,7 @@ watch(
   (value) => {
     if (model.value) {
       applyInitialValue(value)
+    draft.markClean()
     }
   },
   { immediate: true }
@@ -215,6 +219,7 @@ watch(
 watch(model, (value) => {
   if (value) {
     applyInitialValue(props.assignment)
+    draft.markClean()
   }
 })
 
@@ -228,10 +233,12 @@ watch(
 )
 
 function closeDialog() {
-  emit('update:modelValue', false)
+  if (props.loading) return
+  void draft.discard(() => emit('update:modelValue', false))
 }
 
 async function handleSubmit() {
+  if (props.loading) return
   const valid = await formRef.value?.validate?.()
   if (valid === false) return
   emit('save', { ...form })

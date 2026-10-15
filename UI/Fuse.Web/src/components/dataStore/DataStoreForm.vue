@@ -2,7 +2,7 @@
   <q-card class="form-dialog">
     <q-card-section class="dialog-header">
       <div class="text-h6">{{ title }}</div>
-      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="emit('cancel')" />
+      <q-btn aria-label="Close dialog" flat round dense icon="close" @click="cancelEdit" />
     </q-card-section>
     <q-separator />
     <q-form ref="formRef" @submit.prevent="handleSubmit" novalidate>
@@ -54,7 +54,7 @@
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="emit('cancel')" />
+        <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn color="primary" type="submit" :label="submitLabel" :loading="loading" :disable="disabled" />
       </q-card-actions>
     </q-form>
@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch, onMounted, ref } from 'vue'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
@@ -135,8 +136,14 @@ const formRef = ref<any>(null)
 
 const isCreate = computed(() => props.mode === 'create')
 const title = computed(() => (isCreate.value ? 'Create Data Store' : 'Edit Data Store'))
-const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save'))
+const submitLabel = computed(() => (isCreate.value ? 'Create' : 'Save and close'))
 const loading = computed(() => props.loading)
+
+const draft = useUnsavedChanges(form)
+function cancelEdit() {
+  if (props.loading) return
+  void draft.discard(() => emit('cancel'))
+}
 
 function applyInitialValue(value?: Partial<DataStore> | null) {
   if (!value) {
@@ -160,8 +167,8 @@ function applyInitialValue(value?: Partial<DataStore> | null) {
   }
 }
 
-onMounted(() => applyInitialValue(props.initialValue))
-watch(() => props.initialValue, (val) => applyInitialValue(val))
+onMounted(() => { applyInitialValue(props.initialValue); draft.markClean() })
+watch(() => props.initialValue, (val) => { if (!draft.isDirty.value) { applyInitialValue(val); draft.markClean() } })
 
 function onNewKind(val: string, done: (item?: any, mode?: 'add' | 'add-unique' | 'toggle') => void) {
   const trimmed = val.trim()
@@ -176,6 +183,7 @@ function onNewKind(val: string, done: (item?: any, mode?: 'add' | 'add-unique' |
 }
 
 function handleSubmit() {
+  if (props.loading) return
   if (formRef.value && typeof formRef.value.validate === 'function') {
     const valid = formRef.value.validate()
     if (!valid) return

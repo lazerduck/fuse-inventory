@@ -118,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, onMounted, ref, watch } from 'vue'
 import type { QTableProps } from 'quasar'
 import { useQuasar } from 'quasar'
@@ -138,6 +139,7 @@ const filters = ref({
   area: null as string | null,
   searchText: ''
 })
+usePersistedFilter('SystemLogsPage_filters', filters)
 
 const summaryCards = computed(() => [
   { label: 'Debug', value: counts.value.debug },

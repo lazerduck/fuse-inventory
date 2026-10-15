@@ -115,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Dialog, Notify, type QTableColumn, type QTableProps } from 'quasar'
 import { EntityType, SecurityPosture } from 'api/client'
@@ -137,6 +138,7 @@ const filters = ref({
   entityType: undefined as EntityType | undefined,
   userName: ''
 })
+usePersistedFilter('ActivitiesPage_filters', filters)
 
 const pollingOptions = [
   { label: '10s', value: 10 },

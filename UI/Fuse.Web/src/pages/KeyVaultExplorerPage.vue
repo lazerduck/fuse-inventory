@@ -65,6 +65,7 @@
         row-key="name"
         :loading="isLoading"
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
       >
         <template #body-cell-enabled="props">
           <q-td :props="props">
@@ -183,7 +184,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Create Secret</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeCreateDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="createDraft.discard(() => closeCreateDialog())" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="handleCreateSubmit">
@@ -208,7 +209,7 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeCreateDialog" />
+            <q-btn flat label="Cancel" @click="createDraft.discard(() => closeCreateDialog())" />
             <q-btn
               color="primary"
               type="submit"
@@ -225,7 +226,7 @@
       <q-card class="form-dialog">
         <q-card-section class="dialog-header">
           <div class="text-h6">Update Secret — {{ selectedSecret?.name }}</div>
-          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="closeUpdateDialog" />
+          <q-btn aria-label="Close dialog" flat round dense icon="close" @click="updateDraft.discard(() => closeUpdateDialog())" />
         </q-card-section>
         <q-separator />
         <q-form @submit.prevent="handleUpdateSubmit">
@@ -246,7 +247,7 @@
           </q-card-section>
           <q-separator />
           <q-card-actions align="right">
-            <q-btn flat label="Cancel" @click="closeUpdateDialog" />
+            <q-btn flat label="Cancel" @click="updateDraft.discard(() => closeUpdateDialog())" />
             <q-btn
               color="primary"
               type="submit"
@@ -261,7 +262,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { useDialogDraft } from '../composables/useDialogDraft'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
+import { computed, ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { Notify, copyToClipboard as quasarCopy } from 'quasar'
@@ -321,7 +324,9 @@ const filteredSecrets = computed(() => {
   return all.filter(s => s.name?.toLowerCase().includes(query))
 })
 
-const pagination = { rowsPerPage: 15 }
+const pagination = reactive({ rowsPerPage: 15, page: 1 })
+const filter = searchQuery
+usePersistedTableState({ filter, pagination, filterStorageKey: 'KeyVaultExplorerPage_filter', pageStorageKey: 'KeyVaultExplorerPage_page' })
 
 const columns: QTableColumn<SecretMetadataResponse>[] = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
@@ -442,6 +447,9 @@ async function handleUpdateSubmit() {
     updateLoading.value = false
   }
 }
+
+const createDraft = useDialogDraft(createForm, isCreateDialogOpen)
+const updateDraft = useDialogDraft(updateForm, isUpdateDialogOpen)
 </script>
 
 <style scoped>

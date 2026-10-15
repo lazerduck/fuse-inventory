@@ -64,7 +64,7 @@ describe('Tags action permissions on the mounted page', () => {
     await render([], SecurityPosture.FullyRestricted, true)
     for (const b of [button('Create Tag'), action('edit'), action('delete')]) expect(b.props('disable')).toBe(false)
   })
-  it.each([['create', 'Create Tag', 'Create', 'tagPOST'], ['update', 'edit', 'Save', 'tagPUT']])('revoked %s blocks an already opened form', async (permission, opener, submit, method) => {
+  it.each([['create', 'Create Tag', 'Create', 'tagPOST'], ['update', 'edit', 'Save and close', 'tagPUT']])('revoked %s blocks an already opened form', async (permission, opener, submit, method) => {
     const store = await render(['tags:read', `tags:${permission}`])
     await (permission === 'create' ? button(opener) : action(opener)).trigger('click')
     store.userPermissions = ['tags:read']
@@ -88,7 +88,14 @@ describe('Tags action permissions on the mounted page', () => {
     await render(['tags:read', 'tags:update'])
     await action('edit').trigger('click')
     await wrapper!.findAllComponents(QInput).find(i => i.props('label') === 'Name')!.setValue('Unsaved')
+    let discard!: () => void
+    vi.spyOn(Dialog, 'create').mockImplementation(() => {
+      const chain = { onOk(fn: () => void) { discard = fn; return chain }, onCancel() { return chain }, onDismiss() { return chain }, hide() { return chain }, update() { return chain } }
+      return chain
+    })
     await button('Cancel').trigger('click')
+    discard()
+    await flushPromises()
     expect(wrapper!.text()).toContain('Existing tag')
     expect(wrapper!.text()).not.toContain('Unsaved')
     expect(api.tagPUT).not.toHaveBeenCalled()

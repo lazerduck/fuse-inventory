@@ -89,6 +89,7 @@
         row-key="id" 
         :loading="isLoading" 
         :pagination="pagination"
+        @update:pagination="Object.assign(pagination, $event)"
       >
         <template #body-cell-capabilities="props">
           <q-td :props="props">
@@ -212,7 +213,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { usePersistedTableState } from '../composables/usePersistedTableState'
+import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
@@ -256,7 +258,9 @@ const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
 const router = useRouter()
 
-const pagination = { rowsPerPage: 10 }
+const pagination = reactive({ rowsPerPage: 10, page: 1 })
+const filter = ref('')
+usePersistedTableState({ filter, pagination, filterStorageKey: 'SecretProvidersPage_filter', pageStorageKey: 'SecretProvidersPage_page' })
 
 const { data, isLoading, error } = useSecretProviders()
 const {
