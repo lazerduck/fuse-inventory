@@ -1,54 +1,61 @@
-# 🧩 Fuse-Inventory
+<a href="https://fuse-inventory.dev/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="UI/Fuse.Web/public/brand/fuse-inventory-logo-reverse.svg">
+    <source media="(prefers-color-scheme: light)" srcset="UI/Fuse.Web/public/brand/fuse-inventory-logo-colour.svg">
+    <img src="UI/Fuse.Web/public/brand/fuse-inventory-logo-colour.svg" alt="Fuse Inventory" width="340" height="144">
+  </picture>
+</a>
+
+# Fuse Inventory
 
 [![CI Pipeline](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/lazerduck/fuse-inventory/actions/workflows/ci.yml)
 [![Docker Image](https://ghcr-badge.egpl.dev/lazerduck/fuse-inventory/latest_tag?trim=major\&label=latest)](https://github.com/lazerduck/fuse-inventory/pkgs/container/fuse-inventory)
 
-<img width="512" height="512" alt="ChatGPT Image Nov 20, 2025, 09_34_32 PM" src="https://github.com/user-attachments/assets/f21dc1c0-1211-4473-8984-188e69d6a8fe" />
+[Website](https://fuse-inventory.dev/) · [Features](https://fuse-inventory.dev/features) · [Screenshots](https://fuse-inventory.dev/screenshots) · [Support & licensing](https://fuse-inventory.dev/licensing)
 
-
-**Fuse-Inventory** is a self-hosted application inventory and environment tracker designed for teams that want visibility without overhead.
+**Fuse Inventory** is a self-hosted application inventory and environment tracker designed for teams that want visibility without overhead.
 It helps you describe what you have deployed, where it is deployed, and what dependencies, permissions, and accounts each system needs.
+
+Part of [Fuse Industries](https://fuse-industries.dev/), a family of software and hardware projects built around your control. Explore our sibling project, [Fuse Vault](https://fuse-vault.dev/), a dedicated security device currently in development.
 
 ---
 
 ## ✨ Overview
 
-Fuse-Inventory lets development and DevOps teams:
+Fuse Inventory lets development and DevOps teams:
 
 * Map applications, environments, and platforms (servers, clusters, ACA, etc.)
 * Record dependencies, databases, and accounts with linked grants and roles
 * Capture how systems actually work — not just where they run
 * Import/export everything as simple YAML or JSON
 * Visualise applications and dependencies in a graph view with highlightable nodes
+* Explore the blast radius of a change across connected systems
+* Track risks, responsibilities, and documentation completeness
+* Browse inventory in read-only documentation mode
 * Track changes with comprehensive audits
 * Detect account and permissions drift with SQL integration
 * Optionally resolve account drift by creating accounts and applying permissions
 
-Fuse-Inventory can also integrate with:
+Fuse Inventory can also integrate with:
 
 * **Uptime-Kuma** to display health information
 * **Azure Key Vault** so you can assign, create, update, and view secrets based on your permissions
+* **Azure App Configuration** to explore configuration alongside your inventory
 
-Fuse-Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
+Fuse Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
 
 It aims to bridge the gap between documentation, DevOps, and runtime state — keeping human knowledge aligned with live systems.
 
 ---
 ## Screenshots
-Overview Screen
-<img width="2877" height="1658" alt="Home" src="https://github.com/user-attachments/assets/27313b21-b623-4f7b-b802-bbccc802443b" />
 
-SQL integration
-<img width="2879" height="1640" alt="SQLIntegration" src="https://github.com/user-attachments/assets/dca56aba-0c30-474f-a3d9-1761939a131e" />
-
-Graph
-<img width="2879" height="1624" alt="Graph" src="https://github.com/user-attachments/assets/2c4d3baa-0d70-463a-a54f-07b2b20d6296" />
+See the [screenshot gallery on the Fuse Inventory website](https://fuse-inventory.dev/screenshots) for a tour of the interface and features.
 
 ---
 
 ## 🧠 Philosophy
 
-Fuse-Inventory is built to enable you to work the way *you* want.
+Fuse Inventory is built to enable you to work the way *you* want.
 It doesn’t enforce “best practices” or block actions — even if they might be risky.
 
 Plain-text secret references are intended for URLs or pointers to secrets stored elsewhere, but Fuse won’t stop you from storing whatever you choose.
@@ -80,26 +87,20 @@ The application will be available at:
 
 ---
 
-### 📦 Using Docker Compose
+### 📦 Using Docker Compose with demo data
+
+The included `docker-compose.yml` builds the application from source and mounts `test-data/` as its persistent data directory. From a checkout of this repository, run:
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
-### 🧪 Demo / Testing
+Open **[http://localhost:8080](http://localhost:8080)** and sign in with the demo account:
 
-The `test-data/` directory contains a complete mock environment pre-configured for demonstration and testing purposes:
-
-```bash
-# Start with demo data already loaded
-docker-compose up -d
-```
-
-**Demo Account:**
 - **Username**: Admin
 - **Password**: Password
 
-The demo environment includes sample configurations for accounts, applications, environments, datastores, and more.
+The demo environment includes sample configurations for accounts, applications, environments, datastores, and more. Changes made in the app are saved back into `test-data/`. For a fresh inventory, use the Docker command above with a separate data directory.
 
 ---
 
@@ -122,7 +123,7 @@ Some privileged actions (such as retrieving values from Azure Key Vault) **alway
 
 ## 🧬 Core Model
 
-Fuse-Inventory’s model reflects how real systems are structured:
+Fuse Inventory’s model reflects how real systems are structured:
 
 * **Environments** — top-level groupings (e.g., `dev`, `test`, `live`)
 * **Applications** — codebases or hosted products
@@ -138,7 +139,7 @@ Fuse-Inventory’s model reflects how real systems are structured:
 
 ## 🛠️ Tech Stack
 
-Fuse-Inventory is built with:
+Fuse Inventory is built with:
 
 * **.NET 10** for the API
 * **Vue 3 + Quasar** for the UI
@@ -166,7 +167,7 @@ Integration tests currently include API auth middleware end-to-end tests and SQL
 
 ## 📌 Current Status
 
-Fuse-Inventory is under active development, but the core data model is stable and backward-compatible across minor versions.
+Fuse Inventory is under active development, but the core data model is stable and backward-compatible across minor versions.
 
 ---
 
