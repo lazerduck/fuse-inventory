@@ -6,6 +6,9 @@
       :rows="rows"
       :columns="columns"
       row-key="id"
+      :selection="selected ? 'multiple' : 'none'"
+      :selected="selected ?? []"
+      @update:selected="emit('update:selected', [...$event])"
       :loading="loading"
       :pagination="pagination"
       @update:pagination="Object.assign(pagination, $event)"
@@ -86,6 +89,7 @@ import type { TagInfo } from '../../composables/useTags'
 import TagChip from '../tags/TagChip.vue'
 
 interface Props {
+  selected?: Account[]
   accounts: Account[]
   loading: boolean
   pagination: { rowsPerPage: number }
@@ -96,7 +100,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ (event: 'edit', account: Account): void; (event: 'delete', account: Account): void }>()
+const emit = defineEmits<{ (event: 'update:selected', accounts: Account[]): void; (event: 'edit', account: Account): void; (event: 'delete', account: Account): void }>()
 
 const filter = ref('')
 const pagination = reactive({ page: 1, rowsPerPage: props.pagination.rowsPerPage })

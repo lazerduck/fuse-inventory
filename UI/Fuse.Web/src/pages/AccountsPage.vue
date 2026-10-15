@@ -22,9 +22,15 @@
       You do not have permission to view accounts. Please log in with appropriate credentials.
     </q-banner>
 
+    <q-btn class="q-mb-md" label="Create multiple accounts" color="primary" :disable="!fuseStore.hasPermission(Permission.AccountsCreate)" @click="bulkOpen = true" />
+    <q-btn class="q-mb-md q-ml-sm" label="Assign grants" :disable="!selected.length || !fuseStore.hasPermission(Permission.AccountsUpdate)" @click="grantsOpen = true" />
+    <BulkAccountsDialog v-model="bulkOpen" :can-submit="fuseStore.hasPermission(Permission.AccountsCreate)" />
+    <BulkAccountsDialog v-model="grantsOpen" grants-only :selected="selected" :can-submit="fuseStore.hasPermission(Permission.AccountsUpdate)" />
     <AccountsTable
       v-if="fuseStore.hasPermission(Permission.AccountsRead)"
       :accounts="accounts"
+      :selected="selected"
+      @update:selected="selected = $event"
       :loading="isLoading"
       :pagination="pagination"
       :tag-info-lookup="tagInfoLookup"
@@ -39,12 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import { Account, TargetKind } from 'api/client'
 import { Permission } from 'permissions'
+import BulkAccountsDialog from '../components/accounts/BulkAccountsDialog.vue'
 import AccountsTable from '../components/accounts/AccountsTable.vue'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
@@ -67,6 +74,7 @@ const dataStoresQuery = useDataStores()
 const externalResourcesQuery = useExternalResources()
 const messageBrokersQuery = useMessageBrokers()
 
+const bulkOpen = ref(false), grantsOpen = ref(false), selected = ref<Account[]>([])
 const pagination = { rowsPerPage: 10 }
 
 const { data, isLoading, error } = useQuery({

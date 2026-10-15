@@ -13,6 +13,9 @@ public interface IAccountService
     Task<Result<Models.Account>> UpdateAccountAsync(UpdateAccount command);
     Task<Result> DeleteAccountAsync(DeleteAccount command);
 
+    Task<BulkAccountResponse> BulkCreateAsync(BulkCreateAccounts command);
+    Task<BulkAccountResponse> BulkGrantsAsync(BulkAssignGrants command);
+
     // Grants
     Task<Result<Grant>> CreateGrant(CreateAccountGrant command);
     Task<Result<Grant>> UpdateGrant(UpdateAccountGrant command);
