@@ -36,6 +36,17 @@ public class ControllerPermissionMetadataTests
         Assert.NotNull(action!.GetCustomAttributes(typeof(RequireUndoPermissionAttribute), inherit: true).SingleOrDefault());
     }
 
+    [Theory]
+    [InlineData(nameof(SecretProviderController.TestConnection))]
+    [InlineData(nameof(SecretProviderController.TestSavedConnection))]
+    public void AzureAccessChecks_AllowIntegrationCreatorsOrEditors(string actionName)
+    {
+        var action = typeof(SecretProviderController).GetMethod(actionName)!;
+        var permission = Assert.Single(action.GetCustomAttributes(typeof(RequirePermissionKeyAttribute), true).Cast<RequirePermissionKeyAttribute>());
+        Assert.Contains(SecretProviderPermissions.CreateKey, permission.PermissionKeys);
+        Assert.Contains(SecretProviderPermissions.UpdateKey, permission.PermissionKeys);
+    }
+
     private static bool HasAuthorizationMetadata(Type controller, System.Reflection.MethodInfo action)
     {
         return action.IsDefined(typeof(RequirePermissionKeyAttribute), inherit: true)

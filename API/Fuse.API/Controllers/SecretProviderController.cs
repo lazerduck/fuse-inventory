@@ -76,15 +76,7 @@ public class SecretProviderController : ControllerBase
     public async Task<ActionResult<IEnumerable<SecretProviderResponse>>> GetSecretProviders()
     {
         var providers = await _secretProviderService.GetSecretProvidersAsync();
-        var responses = providers.Select(p => new SecretProviderResponse(
-            p.Id,
-            p.Name,
-            p.VaultUri,
-            p.AuthMode,
-            p.Capabilities,
-            p.CreatedAt,
-            p.UpdatedAt
-        ));
+        var responses = providers.Select(SecretProviderResponse.From);
         return Ok(responses);
     }
 
@@ -99,15 +91,7 @@ public class SecretProviderController : ControllerBase
         if (provider is null)
             return NotFound(new { error = $"Secret provider with ID '{id}' not found." });
 
-        var response = new SecretProviderResponse(
-            provider.Id,
-            provider.Name,
-            provider.VaultUri,
-            provider.AuthMode,
-            provider.Capabilities,
-            provider.CreatedAt,
-            provider.UpdatedAt
-        );
+        var response = SecretProviderResponse.From(provider);
         return Ok(response);
     }
 
@@ -125,15 +109,7 @@ public class SecretProviderController : ControllerBase
         }
 
         var provider = result.Value!;
-        var response = new SecretProviderResponse(
-            provider.Id,
-            provider.Name,
-            provider.VaultUri,
-            provider.AuthMode,
-            provider.Capabilities,
-            provider.CreatedAt,
-            provider.UpdatedAt
-        );
+        var response = SecretProviderResponse.From(provider);
         return CreatedAtAction(nameof(GetSecretProviderById), new { id = provider.Id }, response);
     }
 
@@ -157,15 +133,7 @@ public class SecretProviderController : ControllerBase
         }
 
         var provider = result.Value!;
-        var response = new SecretProviderResponse(
-            provider.Id,
-            provider.Name,
-            provider.VaultUri,
-            provider.AuthMode,
-            provider.Capabilities,
-            provider.CreatedAt,
-            provider.UpdatedAt
-        );
+        var response = SecretProviderResponse.From(provider);
         return Ok(response);
     }
 
@@ -189,9 +157,20 @@ public class SecretProviderController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/test-connection")]
+    [SwaggerOperation(OperationId = "testSavedSecretProviderConnection")]
+    [RequirePermissionKey(SecretProviderPermissions.CreateKey, SecretProviderPermissions.UpdateKey)]
+    [ProducesResponseType(200, Type = typeof(SecretProviderAccessCheckResponse))]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> TestSavedConnection([FromRoute] Guid id)
+    {
+        var result = await _secretProviderService.TestSavedConnectionAsync(id);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
     [HttpPost("test-connection")]
     [SwaggerOperation(OperationId = "testConnection")]
-    [RequirePermissionKey(SecretProviderPermissions.CreateKey)]
+    [RequirePermissionKey(SecretProviderPermissions.CreateKey, SecretProviderPermissions.UpdateKey)]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> TestConnection([FromBody] TestSecretProviderConnection command)

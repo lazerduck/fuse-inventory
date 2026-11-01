@@ -43,11 +43,14 @@ describe('unsaved changes', () => {
   })
   it('retains a failed save and any edits made after a successful save started', () => {
     const { form, draft } = mountDraft()
+    expect(draft.hasSaved.value).toBe(false)
     form.value.name = 'Submitted'
     draft.captureSave()
+    expect(draft.hasSaved.value).toBe(false)
     expect(hasUnsavedChanges()).toBe(true) // a failure never acknowledges the snapshot
     form.value.name = 'Newer draft'
     draft.markSaved()
+    expect(draft.hasSaved.value).toBe(true)
     expect(hasUnsavedChanges()).toBe(true)
     form.value.name = 'Submitted'
     expect(hasUnsavedChanges()).toBe(false)

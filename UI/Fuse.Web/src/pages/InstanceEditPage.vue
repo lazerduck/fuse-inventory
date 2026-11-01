@@ -184,11 +184,14 @@
             :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
             @click="confirmInstanceDelete"
           />
+          <SaveStatus :dirty="draft.isDirty.value" :saving="updateInstanceMutation.isPending.value" :saved="draft.hasSaved.value" />
           <q-btn outline color="primary" label="Save and close" :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)" :loading="updateInstanceMutation.isPending.value" @click="saveAndClose" />
           <q-btn
             color="primary"
             type="submit"
             label="Save"
+            aria-keyshortcuts="Control+s Meta+s"
+            title="Save (Ctrl/Cmd+S)"
             :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
             :loading="updateInstanceMutation.isPending.value"
           />
@@ -210,6 +213,8 @@
 <script setup lang="ts">
 import type { QForm } from 'quasar'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { useSaveShortcut } from '../composables/useSaveShortcut'
+import SaveStatus from '../components/shared/SaveStatus.vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
@@ -453,8 +458,12 @@ async function saveAndClose() {
   if (await instanceDetailsForm.value?.validate()) handleSubmitInstance(true)
 }
 
+useSaveShortcut(instanceDetailsForm, async () => {
+  if (await instanceDetailsForm.value?.validate()) handleSubmitInstance(false)
+}, () => !!instance.value && !updateInstanceMutation.isPending.value && fuseStore.hasPermission(Permission.ApplicationsUpdate))
+
 function handleSubmitInstance(close = false) {
-  if (updateInstanceMutation.isPending.value) return
+  if (updateInstanceMutation.isPending.value || !fuseStore.hasPermission(Permission.ApplicationsUpdate)) return
   closeAfterSave.value = close
   draft.captureSave()
   if (!applicationId.value || !instanceId.value) return

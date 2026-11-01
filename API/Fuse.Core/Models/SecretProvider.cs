@@ -9,7 +9,11 @@ public record SecretProvider
     SecretProviderCredentials? Credentials,
     SecretProviderCapabilities Capabilities,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    string? AzureResourceId = null,
+    DateTime? LastCheckedAt = null,
+    bool? LastCheckSucceeded = null,
+    string? LastCheckMessage = null
 );
 
 public enum SecretProviderAuthMode

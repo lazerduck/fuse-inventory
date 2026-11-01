@@ -1,4 +1,3 @@
-using Fuse.Core.Interfaces;
 using Fuse.Core.Services.Retention;
 using Fuse.Core.Services.Worker;
 using Microsoft.Extensions.Logging;
@@ -15,24 +14,29 @@ public class VersionHistoryRetentionServiceTests
         // Arrange
         var retentionPolicyServiceMock = new Mock<IVersionHistoryRetentionPolicyService>();
         var loggerMock = new Mock<ILogger<VersionHistoryRetentionService>>();
+        var initialRun = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         
         // Setup: Return a completed task
         retentionPolicyServiceMock.Setup(x => x.ApplyRetentionPolicyAsync(It.IsAny<CancellationToken>()))
+                                  .Callback(() => initialRun.TrySetResult())
                                   .Returns(Task.CompletedTask)
                                   .Verifiable();
         
-        var service = new VersionHistoryRetentionService(
+        using var service = new VersionHistoryRetentionService(
             retentionPolicyServiceMock.Object,
             loggerMock.Object);
 
-        // Act - Start the service and wait briefly
+        // Wait for the actual startup invocation, not a scheduler-dependent delay.
         await service.StartAsync(CancellationToken.None);
-        
-        // Wait a bit for the initial execution
-        await Task.Delay(100);
-        
-        // Stop the service
-        await service.StopAsync(CancellationToken.None);
+        try
+        {
+            await initialRun.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await service.StopAsync(stopTimeout.Token);
+        }
 
         // Assert
         // Should have called ApplyRetentionPolicyAsync at least once (on startup)
@@ -46,24 +50,29 @@ public class VersionHistoryRetentionServiceTests
         // Arrange
         var retentionPolicyServiceMock = new Mock<IVersionHistoryRetentionPolicyService>();
         var loggerMock = new Mock<ILogger<VersionHistoryRetentionService>>();
+        var initialRun = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         
         // Setup: Throw exception on call
         retentionPolicyServiceMock.Setup(x => x.ApplyRetentionPolicyAsync(It.IsAny<CancellationToken>()))
+                                  .Callback(() => initialRun.TrySetResult())
                                   .ThrowsAsync(new InvalidOperationException("Test exception"))
                                   .Verifiable();
         
-        var service = new VersionHistoryRetentionService(
+        using var service = new VersionHistoryRetentionService(
             retentionPolicyServiceMock.Object,
             loggerMock.Object);
 
-        // Act - Start the service and wait briefly
+        // Wait for the invocation, then let shutdown finish exception handling before asserting.
         await service.StartAsync(CancellationToken.None);
-        
-        // Wait a bit for the execution to occur
-        await Task.Delay(100);
-        
-        // Stop the service
-        await service.StopAsync(CancellationToken.None);
+        try
+        {
+            await initialRun.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await service.StopAsync(stopTimeout.Token);
+        }
 
         // Assert
         // Should have called ApplyRetentionPolicyAsync at least once

@@ -6,6 +6,7 @@ export const InventoryPermissions = {
   ApplicationsRead: 'application:read',
   ApplicationsCreate: 'application:create',
   ApplicationsUpdate: 'application:update',
+  ApplicationInstancesUpdate: 'application:instance:update',
   ApplicationsDelete: 'application:delete',
   ApplicationsUndo: 'applications:undo',
   AccountsRead: 'accounts:read',

@@ -65,7 +65,7 @@ test('graph renders inventory and supports environment and risk filters', async 
   await page.getByLabel('Filter environments', { exact: true }).click();
   await page.getByRole('option', { name: 'UI test environment', exact: true }).click();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Full Chain', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Depends on', exact: true })).toBeDisabled();
   await page.getByRole('switch', { name: 'Risk Overlay', exact: true }).setChecked(true);
   await expect(page.getByText('Critical', { exact: true })).toBeVisible();
   await expect(page.locator('canvas').first()).toBeVisible();

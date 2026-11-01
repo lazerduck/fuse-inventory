@@ -54,4 +54,23 @@ public class AzureIntegrationManagerServiceTests
         Assert.False(result.IsSuccess);
         Assert.Contains("Client secret credentials require", result.Error);
     }
+
+    [Fact]
+    public async Task ChangingSharedCredentials_InvalidatesOnlyChecksForSharedProviders()
+    {
+        var store = NewStore();
+        var checkedAt = DateTime.UtcNow;
+        var shared = new SecretProvider(Guid.NewGuid(), "Shared", new Uri("https://shared.vault.azure.net/"),
+            SecretProviderAuthMode.ClientSecret, null, SecretProviderCapabilities.Check, checkedAt, checkedAt,
+            LastCheckedAt: checkedAt, LastCheckSucceeded: true, LastCheckMessage: "Access verified");
+        var custom = shared with { Id = Guid.NewGuid(), Credentials = new("tenant", "custom", "secret") };
+        var managed = shared with { Id = Guid.NewGuid(), AuthMode = SecretProviderAuthMode.ManagedIdentity };
+        await store.UpdateAsync(s => s with { SecretProviders = [shared, custom, managed] });
+        await new AzureIntegrationManagerService(store).UpdateClientSecretCredentialsAsync(new("tenant", "shared", "new-secret"));
+        var providers = (await store.GetAsync()).SecretProviders;
+        Assert.Null(providers.Single(p => p.Id == shared.Id).LastCheckedAt);
+        Assert.Null(providers.Single(p => p.Id == shared.Id).LastCheckSucceeded);
+        Assert.Equal(checkedAt, providers.Single(p => p.Id == custom.Id).LastCheckedAt);
+        Assert.Equal(checkedAt, providers.Single(p => p.Id == managed.Id).LastCheckedAt);
+    }
 }

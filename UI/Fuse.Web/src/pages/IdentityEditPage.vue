@@ -1,11 +1,12 @@
 <template>
-  <div class="page-container">
+  <div ref="editorRoot" class="page-container">
     <div class="page-header">
       <div>
         <h1>{{ pageTitle }}</h1>
         <p class="subtitle">{{ pageSubtitle }}</p>
       </div>
       <div class="flex q-gutter-sm">
+        <SaveStatus :dirty="draft.isDirty.value" :saving="isSaving" :saved="draft.hasSaved.value" />
         <q-btn flat label="Cancel" @click="handleCancel" />
         <q-btn
           v-if="isEditMode && identity?.ownerInstanceId"
@@ -26,6 +27,8 @@
         <q-btn
           color="primary" 
           :label="isEditMode ? 'Save' : 'Create Identity'"
+          aria-keyshortcuts="Control+s Meta+s"
+          title="Save (Ctrl/Cmd+S)"
           :loading="isSaving"
           :disable="isEditMode ? !fuseStore.hasPermission(Permission.IdentitiesUpdate) : !fuseStore.hasPermission(Permission.IdentitiesCreate)"
           @click="handleSave"
@@ -184,6 +187,8 @@
 <script setup lang="ts">
 import { useDialogDraft } from '../composables/useDialogDraft'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { useSaveShortcut } from '../composables/useSaveShortcut'
+import SaveStatus from '../components/shared/SaveStatus.vue'
 import { useEditorNavigation } from '../composables/useEditorNavigation'
 
 import { computed, reactive, ref, watch } from 'vue'
@@ -616,6 +621,10 @@ function confirmReplaceDependency(
 }
 
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+const editorRoot = ref<HTMLElement | null>(null)
+const canSave = computed(() => !isSaving.value && !isLoading.value && !loadError.value &&
+  fuseStore.hasPermission(isEditMode.value ? Permission.IdentitiesUpdate : Permission.IdentitiesCreate))
+useSaveShortcut(editorRoot, () => handleSave(false), canSave)
 
 // Clone across environments
 const isCloneDialogOpen = ref(false)
@@ -665,7 +674,7 @@ function handleCancel() {
 }
 
 function handleSave(close: boolean | Event = false) {
-  if (isSaving.value) return
+  if (!canSave.value) return
   closeAfterSave.value = close === true
   draft.captureSave()
   if (!form.value.name.trim()) {

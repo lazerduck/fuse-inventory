@@ -10,6 +10,13 @@
       <p>Loading instance...</p>
     </div>
 
+    <div v-else-if="applicationsError" class="instance-error" role="alert">
+      <q-icon name="error_outline" size="48px" color="negative" />
+      <h2>Unable to load instance</h2>
+      <p>{{ getErrorMessage(applicationsError, 'The application inventory could not be loaded.') }}</p>
+      <q-btn flat label="Retry" icon="refresh" @click="retryApplications()" />
+    </div>
+
     <!-- Error state: Instance not found -->
     <div v-else-if="!instance" class="instance-error">
       <q-icon name="error_outline" size="48px" color="negative" />
@@ -94,7 +101,11 @@
           <q-icon name="badge" size="20px" />
           Identities
         </h3>
-        <div v-if="ownedIdentities.length === 0" class="empty-value">
+        <div v-if="!canReadIdentities || identitiesError" class="empty-value" role="status">
+          Identity information is unavailable.
+        </div>
+        <div v-else-if="identitiesLoading" class="empty-value" role="status">Loading identities…</div>
+        <div v-else-if="ownedIdentities.length === 0" class="empty-value">
           No identities configured
         </div>
         <q-list v-else separator class="identity-list">
@@ -187,7 +198,9 @@
             <span class="url-value">{{ appConfigurationKeySuffixDisplay }}</span>
           </div>
 
+          <p v-if="!canReadAppConfiguration" class="empty-value q-mb-none">App Configuration values are unavailable with your permissions.</p>
           <q-btn
+            v-else
             flat
             dense
             color="primary"
@@ -196,7 +209,7 @@
             @click="isAppConfigurationExpanded = !isAppConfigurationExpanded"
           />
 
-          <div v-if="isAppConfigurationExpanded" class="q-mt-sm">
+          <div v-if="isAppConfigurationExpanded && canReadAppConfiguration" class="q-mt-sm">
             <div v-if="isAppConfigurationLoading" class="empty-value">Loading configuration…</div>
             <div v-else-if="appConfigurationError" class="empty-value text-negative">{{ appConfigurationError }}</div>
             <div v-else-if="filteredAppConfigurationEntries.length === 0" class="empty-value">
@@ -255,7 +268,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'
 import type { HigherItem, LowerItem } from '../../types/readonly'
 import { useApplications } from '../../composables/useApplications'
@@ -265,33 +278,36 @@ import { useIdentities } from '../../composables/useIdentities'
 import { useAccounts } from '../../composables/useAccounts'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
+import { useMessageBrokers } from '../../composables/useMessageBrokers'
 import { useSecretProviders } from '../../composables/useSecretProviders'
 import { useAppConfigurationEntries } from '../../composables/useAppConfigurationEntries'
 import { useTags } from '../../composables/useTags'
+import { useFuseStore } from '../../stores/FuseStore'
 import { DependencyAuthKind, DependencySeverity, TargetKind, type TagColor } from 'api/client'
 import { getErrorMessage } from '../../utils/error'
+import { resolveReadonlyDependencyTarget } from '../../utils/readonlyDependencyTarget'
 
 const route = useRoute()
 const router = useRouter()
+const store = useFuseStore()
 const id = computed(() => route.params.id as string)
+const canReadIdentities = computed(() => store.hasPermission('identities:read'))
+const canReadAccounts = computed(() => store.hasPermission('accounts:read'))
+const canReadAppConfiguration = computed(() => store.hasPermission('secretproviders:appconfig:read'))
 
 // Data queries
-const { data: applicationsData, isLoading: appsLoading } = useApplications()
-const { data: environmentsData, lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
-const { lookup: platformLookup, isLoading: platformsLoading } = usePlatforms()
-const { data: identitiesData, isLoading: identitiesLoading } = useIdentities()
-const { lookup: accountLookup, isLoading: accountsLoading } = useAccounts()
-const { data: dataStoresData, isLoading: dataStoresLoading } = useDataStores()
-const { data: externalResourcesData, isLoading: externalLoading } = useExternalResources()
-const { data: secretProvidersData, isLoading: secretProvidersLoading } = useSecretProviders()
-const { tagInfoLookup, isLoading: tagsLoading } = useTags()
+const { data: applicationsData, isLoading, error: applicationsError, refetch: retryApplications } = useApplications()
+const { data: environmentsData, lookup: environmentLookup } = useEnvironments()
+const { lookup: platformLookup } = usePlatforms()
+const { data: identitiesData, isLoading: identitiesLoading, error: identitiesError } = useIdentities()
+const { data: accountsData } = useAccounts()
+const { data: dataStoresData } = useDataStores()
+const { data: externalResourcesData } = useExternalResources()
+const { data: messageBrokersData } = useMessageBrokers()
+const { data: secretProvidersData } = useSecretProviders()
+const { tagInfoLookup } = useTags()
 const isAppConfigurationExpanded = ref(false)
-
-const isLoading = computed(() => 
-  appsLoading.value || envsLoading.value || platformsLoading.value || 
-  identitiesLoading.value || accountsLoading.value || dataStoresLoading.value || 
-  externalLoading.value || secretProvidersLoading.value || tagsLoading.value
-)
+watch(id, () => { isAppConfigurationExpanded.value = false }, { flush: 'sync' })
 
 // Find the application and instance by instance ID
 const applicationAndInstance = computed(() => {
@@ -317,6 +333,9 @@ const appConfigurationProviderName = computed(() =>
   appConfigurationProvider.value?.name ?? appConfigurationProvider.value?.id ?? 'Unknown integration'
 )
 const appConfigurationKeySuffixDisplay = computed(() => appConfigurationKeySuffix.value || 'None')
+const requestedAppConfigurationProviderId = computed(() =>
+  isAppConfigurationExpanded.value && canReadAppConfiguration.value ? appConfigurationProviderId.value : null
+)
 
 const appConfigurationFilters = {
   keySearch: ref(''),
@@ -328,7 +347,7 @@ const {
   data: appConfigurationEntries,
   isLoading: isAppConfigurationLoading,
   error: appConfigurationErrorRef
-} = useAppConfigurationEntries(appConfigurationProviderId, appConfigurationFilters)
+} = useAppConfigurationEntries(requestedAppConfigurationProviderId, appConfigurationFilters)
 
 const filteredAppConfigurationEntries = computed(() => {
   const entries = appConfigurationEntries.value ?? []
@@ -486,33 +505,11 @@ const lowerContext = computed<LowerItem[]>(() => {
 
 // Resolve target name from targetKind and targetId
 function resolveTargetName(targetKind: TargetKind | undefined, targetId: string | undefined): string {
-  if (!targetId) return 'Unknown'
-  
-  switch (targetKind) {
-    case TargetKind.Application: {
-      // Find the instance from all applications
-      if (!applicationsData.value) return targetId
-      for (const app of applicationsData.value) {
-        const inst = app.instances?.find((i) => i.id === targetId)
-        if (inst) {
-          const appName = app.name ?? 'App'
-          const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
-          return `${appName} — ${envName}`
-        }
-      }
-      return targetId
-    }
-    case TargetKind.DataStore: {
-      const store = dataStoresData.value?.find((ds) => ds.id === targetId)
-      return store?.name ?? targetId
-    }
-    case TargetKind.External: {
-      const ext = externalResourcesData.value?.find((er) => er.id === targetId)
-      return ext?.name ?? targetId
-    }
-    default:
-      return targetId
-  }
+  return resolveReadonlyDependencyTarget(targetKind, targetId, {
+    applications: applicationsData.value ?? [], dataStores: dataStoresData.value ?? [],
+    externalResources: externalResourcesData.value ?? [], messageBrokers: messageBrokersData.value ?? [],
+    environmentNames: environmentLookup.value, sourceEnvironmentId: instance.value?.environmentId
+  }).name
 }
 
 // Resolve auth info string
@@ -526,19 +523,21 @@ function resolveAuthInfo(
       return 'auth: none'
     case DependencyAuthKind.Account:
       if (accountId) {
-        const accountName = accountLookup.value[accountId] ?? accountId
+        if (!canReadAccounts.value) return 'auth: account (details unavailable)'
+        const accountName = accountsData.value?.find(account => account.id === accountId)?.userName || accountId
         return `account: ${accountName}`
       }
       return 'auth: account'
     case DependencyAuthKind.Identity:
       if (identityId) {
+        if (!canReadIdentities.value || identitiesError.value) return 'auth: identity (details unavailable)'
         const identity = identitiesData.value?.find((i) => i.id === identityId)
         const identityName = identity?.name ?? identityId
         return `identity: ${identityName}`
       }
       return 'auth: identity'
     case DependencyAuthKind.ApiKey:
-      return 'auth: api key'
+      return 'auth: target API key'
     default:
       return ''
   }

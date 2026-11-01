@@ -383,7 +383,7 @@ export function useAccountEdit() {
   }
 
   function performSave() {
-    if (isSaving.value) return
+    if (isSaving.value || !canModify.value) return
     draft.captureSave()
     if (isEditMode.value && accountId.value) {
       const payload = Object.assign(new UpdateAccount(), {
@@ -413,7 +413,7 @@ export function useAccountEdit() {
   }
 
   function handleSave(close: boolean | Event = false) {
-    if (isSaving.value) return
+    if (isSaving.value || !canModify.value) return
     closeAfterSave.value = close === true
     if (form.value.secret.providerId && !form.value.secret.secretName) {
       Notify.create({ type: 'warning', message: 'Select a secret name before saving.' })
@@ -442,6 +442,7 @@ export function useAccountEdit() {
   )
 
   return {
+    draft,
     accountId,
     isEditMode,
     pageTitle,

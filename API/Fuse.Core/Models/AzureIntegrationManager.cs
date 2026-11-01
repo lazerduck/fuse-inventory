@@ -2,5 +2,6 @@ namespace Fuse.Core.Models;
 
 public record AzureIntegrationManager(
     SecretProviderCredentials? ClientSecretCredentials,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    IReadOnlyList<string>? ExcludedResourceIds = null
 );

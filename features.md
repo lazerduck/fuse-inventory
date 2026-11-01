@@ -146,6 +146,11 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Clickable dependency rows link directly to the target resource edit page
 - Quick-access URL links open base, health, and OpenAPI URLs from the instance page
 
+### Save Feedback
+- Application, instance, account, identity, risk, and Azure integration editors show unsaved, saving, and saved states
+- Ctrl/Cmd+S validates and saves the active editor without closing it; open dialogs prevent saves to an editor behind them
+- Edits made during a save remain marked as unsaved until saved separately
+
 ### Grid / Table Views
 - Paginated, sortable tables for all major entity types:
   - Applications, Accounts, Identities, Data Stores, External Resources, Message Brokers, Platforms, Environments, Tags, Positions, Risks, Responsibility Types, and more
@@ -154,17 +159,27 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 
 ### Read-Only / Documentation Mode
 - Public-facing documentation pages requiring no login (when security allows)
-- Shareable URLs for each entity
-- Global search across all entity types from a single search bar
-- Safe display that excludes sensitive credential values
-- Entity types covered: Applications, Instances, Data Stores, Accounts, Identities, External Resources, Message Brokers, Platforms, Dependencies
+- Browse a category catalogue with record counts, grouped results, and pagination
+- Search names and metadata including owners, environments, tags, dependency targets, and broker queues/topics
+- Shareable search/category/page URLs and return links that preserve context through related records
+- Read permissions apply to both catalogue requests and cached results; failed loads have a retry action
+- Entity types covered: Applications, Instances, Dependencies, Data Stores, Accounts, Identities, External Resources, Message Brokers, Platforms, Risks, Positions, and Tags
+- Detail pages put the resource first on narrow screens, with linked context and related records
+- Instances, data stores, external resources, and brokers link to their graph node when relationship access is available
+- App Configuration values on instance documentation load on expansion with the required permission
 
 ### Graph Visualisation
 - Interactive dependency graph powered by Cytoscape
 - Force-directed layout (fcose algorithm)
-- Click nodes to highlight an application and all its relationships
-- Pan and zoom controls
-- Real-time updates as inventory changes
+- Search instances, data stores, message brokers, and external resources
+- Inspect resources and relationships, open their documentation, and jump to blast-radius analysis
+- Add, edit, and remove instance dependencies in place, using existing permissions and validation
+- Follow dependencies, dependants, or both at one hop, two hops, or full depth
+- Risk overlays and paths to high/critical risks, with explicit empty results
+- Environment filters retain connected outside resources as labelled boundary nodes
+- Pan, zoom, drag, fit, and explicit re-layout controls; updates preserve positions and viewport
+- Share selected resources, relationships, and filters through the URL; export the current canvas as PNG
+- Relationship changes refresh the graph and use the same inventory records as the existing forms
 
 ---
 
@@ -209,6 +224,16 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Display real-time health status on the home dashboard
 - Dedicated Kuma Dashboard page for an at-a-glance health overview
 - Health data is cached and refreshed on demand
+
+### Azure Integration Setup and Discovery
+- Separate Key Vault and App Configuration tabs with counts, search, and service-specific setup labels
+- Shared client secret credentials, per-integration credentials, or managed identity; custom credentials do not replace shared credentials
+- Discover Azure public-cloud Key Vaults and App Configuration stores by subscription, optional resource groups, and resource type
+- Discovery uses the configured Azure identity's management-plane read permissions. Secret or configuration data access alone may not grant resource visibility; Reader access on the intended resource group or subscription enables discovery
+- Review selected resources before adding, skip existing integrations, and remember exclusions across scans; ignored resources can be included on a later scan
+- Discovery imports resource metadata with browsing enabled. Secret reveal, create, and update/rotate capabilities must be enabled separately
+- Test browse access and view its last result/time. Discovery and successful read checks do not prove write access or network reachability for every operation
+- Partial discovery/import failures are reported per scope/resource; existing integrations are retained
 
 ### Azure Key Vault
 - Integrate with one or more Azure Key Vault instances
@@ -304,6 +329,16 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Default demo login: **Admin / Password**
 
 ---
+
+## Scrum Poker
+
+- Enable the default-off Scrum Poker feature in App Settings, then open it from Integrations.
+- Create or enter a room and share its URL/code; participants can join without Fuse accounts.
+- Choose a display name and avatar. Duplicate names are allowed; a private token identifies each participant.
+- Select or clear a card, reveal or hide votes, and reset for a new round. Other participants’ card values stay hidden until reveal.
+- Any participant can change auto-reveal and vote-locking settings; revealed numeric votes have an average.
+- Rooms support up to 20 participants and expire after four hours of inactivity. Inactive participants are removed after 15 minutes during room operations.
+- Rooms live in memory and are lost on restart. Entering a missing/expired room URL can create a new room with the same code.
 
 ## 🛠️ Tech Stack Summary
 

@@ -2,6 +2,7 @@ using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
 
 namespace Fuse.Core.Areas.SecretProvider;
 
@@ -45,26 +46,28 @@ public class SecretProviderService : ISecretProviderService
         if (!testResult.IsSuccess)
             return Result<Models.SecretProvider>.Failure($"Connection test failed: {testResult.Error}", ErrorType.Validation);
 
-        if (command.AuthMode == SecretProviderAuthMode.ClientSecret && HasCompleteClientSecretCredentials(command.Credentials))
-        {
-            var updateManagerResult = await _azureIntegrationManagerService.UpdateClientSecretCredentialsAsync(command.Credentials!);
-            if (!updateManagerResult.IsSuccess)
-                return Result<Models.SecretProvider>.Failure(updateManagerResult.Error!, updateManagerResult.ErrorType ?? ErrorType.Validation);
-        }
-
         var now = DateTime.UtcNow;
         var provider = new Models.SecretProvider(
             Id: Guid.NewGuid(),
             Name: command.Name,
             VaultUri: command.VaultUri,
             AuthMode: command.AuthMode,
-            Credentials: command.AuthMode == SecretProviderAuthMode.ClientSecret ? null : command.Credentials,
+            Credentials: command.AuthMode == SecretProviderAuthMode.ClientSecret ? command.Credentials : null,
             Capabilities: command.Capabilities,
             CreatedAt: now,
-            UpdatedAt: now
+            UpdatedAt: now,
+            LastCheckedAt: now,
+            LastCheckSucceeded: true,
+            LastCheckMessage: "Access verified. Write operations were not tested."
         );
 
-        await _fuseStore.UpdateAsync(s => s with { SecretProviders = s.SecretProviders.Append(provider).ToList() });
+        await _fuseStore.UpdateAsync(s =>
+        {
+            if (command.AuthMode == SecretProviderAuthMode.ClientSecret && !HasCompleteClientSecretCredentials(command.Credentials) &&
+                !CredentialsEqual(s.AzureIntegrationManager?.ClientSecretCredentials, resolvedCredentialsResult.Value))
+                provider = provider with { LastCheckedAt = null, LastCheckSucceeded = null, LastCheckMessage = null };
+            return s with { SecretProviders = s.SecretProviders.Append(provider).ToList() };
+        });
         return Result<Models.SecretProvider>.Success(provider);
     }
 
@@ -75,7 +78,10 @@ public class SecretProviderService : ISecretProviderService
         if (existing is null)
             return Result<Models.SecretProvider>.Failure($"Secret provider with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        var resolvedCredentialsResult = await ResolveClientSecretCredentialsAsync(command.AuthMode, command.Credentials);
+        var retainedCredentials = command.AuthMode == SecretProviderAuthMode.ClientSecret
+            ? command.Credentials ?? (existing.AuthMode == command.AuthMode ? existing.Credentials : null)
+            : null;
+        var resolvedCredentialsResult = await ResolveClientSecretCredentialsAsync(command.AuthMode, retainedCredentials);
         if (!resolvedCredentialsResult.IsSuccess)
             return Result<Models.SecretProvider>.Failure(resolvedCredentialsResult.Error!, resolvedCredentialsResult.ErrorType ?? ErrorType.Validation);
 
@@ -97,13 +103,6 @@ public class SecretProviderService : ISecretProviderService
                 return Result<Models.SecretProvider>.Failure($"Connection test failed: {testResult.Error}", ErrorType.Validation);
         }
 
-        if (command.AuthMode == SecretProviderAuthMode.ClientSecret && HasCompleteClientSecretCredentials(command.Credentials))
-        {
-            var updateManagerResult = await _azureIntegrationManagerService.UpdateClientSecretCredentialsAsync(command.Credentials!);
-            if (!updateManagerResult.IsSuccess)
-                return Result<Models.SecretProvider>.Failure(updateManagerResult.Error!, updateManagerResult.ErrorType ?? ErrorType.Validation);
-        }
-
         var updated = existing;
 
         await _fuseStore.UpdateAsync(s => s with 
@@ -111,14 +110,20 @@ public class SecretProviderService : ISecretProviderService
             SecretProviders = s.SecretProviders.Select(p =>
             {
                 if (p.Id != command.Id) return p;
+                var checkStillCurrent = command.AuthMode != SecretProviderAuthMode.ClientSecret || HasCompleteClientSecretCredentials(retainedCredentials) ||
+                    CredentialsEqual(s.AzureIntegrationManager?.ClientSecretCredentials, resolvedCredentialsResult.Value);
                 updated = p with
                 {
                     Name = command.Name,
                     VaultUri = command.VaultUri,
                     AuthMode = command.AuthMode,
-                    Credentials = command.AuthMode == SecretProviderAuthMode.ClientSecret ? null : command.Credentials,
+                    Credentials = retainedCredentials,
                     Capabilities = command.Capabilities,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    AzureResourceId = existing.VaultUri == command.VaultUri ? p.AzureResourceId : null,
+                    LastCheckedAt = needsTest ? (checkStillCurrent ? DateTime.UtcNow : null) : p.LastCheckedAt,
+                    LastCheckSucceeded = needsTest ? (checkStillCurrent ? true : null) : p.LastCheckSucceeded,
+                    LastCheckMessage = needsTest ? (checkStillCurrent ? "Access verified. Write operations were not tested." : null) : p.LastCheckMessage
                 };
                 return updated;
             }).ToList()
@@ -155,7 +160,19 @@ public class SecretProviderService : ISecretProviderService
 
     public async Task<Result> TestConnectionAsync(TestSecretProviderConnection command)
     {
-        var resolvedCredentialsResult = await ResolveClientSecretCredentialsAsync(command.AuthMode, command.Credentials);
+        var credentials = command.Credentials;
+        if (command.ProviderId is { } providerId && credentials is null)
+        {
+            var existing = await GetSecretProviderByIdAsync(providerId);
+            if (existing is null) return Result.Failure("Integration not found.", ErrorType.NotFound);
+            var targetEndpoint = command.VaultUri is { IsAbsoluteUri: true } ? command.VaultUri.AbsoluteUri : null;
+            if (command.VaultUri != existing.VaultUri &&
+                !AzureDiscoveryService.IsEndpoint(targetEndpoint, "KeyVault") &&
+                !AzureDiscoveryService.IsEndpoint(targetEndpoint, "AppConfiguration"))
+                return Result.Failure("Stored credentials can only be tested against an Azure Key Vault or App Configuration endpoint.");
+            if (existing.AuthMode == command.AuthMode) credentials = existing.Credentials;
+        }
+        var resolvedCredentialsResult = await ResolveClientSecretCredentialsAsync(command.AuthMode, credentials);
         if (!resolvedCredentialsResult.IsSuccess)
             return Result.Failure(resolvedCredentialsResult.Error!, resolvedCredentialsResult.ErrorType ?? ErrorType.Validation);
 
@@ -164,6 +181,26 @@ public class SecretProviderService : ISecretProviderService
             return validation;
 
         return await TestConnectionInternalAsync(command.VaultUri, command.AuthMode, resolvedCredentialsResult.Value);
+    }
+
+    public async Task<Result<SecretProviderAccessCheckResponse>> TestSavedConnectionAsync(Guid id)
+    {
+        var snapshot = await _fuseStore.GetAsync();
+        var provider = snapshot.SecretProviders.FirstOrDefault(p => p.Id == id);
+        if (provider is null)
+            return Result<SecretProviderAccessCheckResponse>.Failure("Integration not found.", ErrorType.NotFound);
+        var result = await TestConnectionAsync(new(provider.VaultUri, provider.AuthMode, provider.Credentials, id));
+        var checkedAt = DateTime.UtcNow;
+        var message = result.IsSuccess ? "Access verified. Write operations were not tested." : result.Error ?? "Access could not be verified.";
+        await _fuseStore.UpdateAsync(current => current with
+        {
+            SecretProviders = current.SecretProviders.Select(p => p.Id == id &&
+                p.VaultUri == provider.VaultUri && p.AuthMode == provider.AuthMode && CredentialsEqual(p.Credentials, provider.Credentials) &&
+                (p.AuthMode != SecretProviderAuthMode.ClientSecret || HasCompleteClientSecretCredentials(p.Credentials) ||
+                    CredentialsEqual(current.AzureIntegrationManager?.ClientSecretCredentials, snapshot.AzureIntegrationManager?.ClientSecretCredentials))
+                ? p with { LastCheckedAt = checkedAt, LastCheckSucceeded = result.IsSuccess, LastCheckMessage = message } : p).ToList()
+        });
+        return Result<SecretProviderAccessCheckResponse>.Success(new(result.IsSuccess, checkedAt, message));
     }
 
     private Task<Result> TestConnectionInternalAsync(
@@ -210,6 +247,9 @@ public class SecretProviderService : ISecretProviderService
 
         if (HasCompleteClientSecretCredentials(credentials))
             return Result<SecretProviderCredentials?>.Success(credentials);
+        if (credentials is not null && (!string.IsNullOrWhiteSpace(credentials.TenantId) ||
+            !string.IsNullOrWhiteSpace(credentials.ClientId) || !string.IsNullOrWhiteSpace(credentials.ClientSecret)))
+            return Result<SecretProviderCredentials?>.Failure("Provide all three custom credential fields, or leave them all empty.");
 
         var sharedCredentials = await _azureIntegrationManagerService.GetClientSecretCredentialsAsync();
         if (HasCompleteClientSecretCredentials(sharedCredentials))
