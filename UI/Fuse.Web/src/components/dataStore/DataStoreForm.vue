@@ -16,16 +16,19 @@
             :rules="[val => !!val || 'Data store name is required']"
           />
           <q-select
+            ref="kindSelect"
             v-model="form.kind"
             label="Kind*"
             dense
             outlined
             use-input
+            :input-debounce="0"
             hide-dropdown-icon
             new-value-mode="add"
             clearable
             :options="kindOptions"
             :rules="[val => !!val || 'Data store kind is required']"
+            @input-value="resetKindHighlight"
             @new-value="onNewKind"
           />
           <q-select
@@ -64,6 +67,7 @@
 <script setup lang="ts">
 import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch, onMounted, ref } from 'vue'
+import type { QSelect } from 'quasar'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
 import type { DataStore } from 'api/client'
@@ -122,6 +126,12 @@ const defaultKindOptions = [
 ]
 
 const kindOptions = ref<string[]>([...defaultKindOptions])
+const kindSelect = ref<QSelect | null>(null)
+
+function resetKindHighlight() {
+  // New text must not select a preset that was highlighted before typing.
+  kindSelect.value?.setOptionIndex(-1)
+}
 
 const form = reactive<DataStoreFormModel>({
   name: '',

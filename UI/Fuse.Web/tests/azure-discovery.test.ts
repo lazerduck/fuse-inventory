@@ -31,6 +31,33 @@ beforeEach(() => {
 afterEach(() => { wrapper?.unmount(); document.body.innerHTML = ''; vi.resetAllMocks() })
 
 describe('Azure discovery review', () => {
+  it('keeps existing subscriptions when typing a manual ID after an option was highlighted', async () => {
+    const manualId = '88888888-8888-8888-8888-888888888888'
+    api.discoverAzureResources.mockResolvedValue({ resources: [], warnings: [] })
+    wrapper = mount(AzureDiscoveryDialog, { attachTo: document.body, props: { hasSharedCredentials: true }, global })
+    await flushPromises()
+    const subscriptions = wrapper.findAllComponents(QSelect).find(select => select.props('label') === 'Subscriptions')!
+    const input = subscriptions.find('input[role="combobox"]')
+    expect(subscriptions.props('modelValue')).toEqual(['sub'])
+
+    // A previous pointer/keyboard choice remains highlighted while the user starts typing.
+    subscriptions.vm.setOptionIndex(0)
+    await input.setValue(manualId)
+    await input.trigger('keydown', { key: 'Enter', keyCode: 13 })
+    await flushPromises()
+    expect(subscriptions.props('modelValue')).toEqual(['sub', manualId])
+    expect((input.element as HTMLInputElement).value).toBe('')
+
+    subscriptions.vm.setOptionIndex(0)
+    await input.setValue(manualId)
+    await input.trigger('keydown', { key: 'Enter', keyCode: 13 })
+    await flushPromises()
+    expect(subscriptions.props('modelValue')).toEqual(['sub', manualId])
+    await button('Discover resources').trigger('click')
+    await flushPromises()
+    expect(api.discoverAzureResources).toHaveBeenCalledWith(expect.objectContaining({ subscriptionIds: ['sub', manualId] }), expect.any(AbortSignal))
+  })
+
   it('selects new resources but excludes existing and ignored resources from the initial selection', async () => {
     await renderAndScan([resource('new-vault'), resource('already-added', { alreadyAdded: true }), resource('ignored', { ignored: true })])
     expect(selectedNames()).toEqual(['new-vault'])
