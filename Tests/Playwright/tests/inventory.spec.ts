@@ -26,6 +26,7 @@ for (const resource of resources) {
     await dialog.getByRole('button', { name: 'Create', exact: true }).click();
     await expect(dialog).toBeHidden();
     await page.getByPlaceholder('Search...').fill(name);
+    await expect(page.locator('tbody tr')).toHaveCount(1);
     let row = page.getByRole('row').filter({ hasText: name });
     await expect(row).toBeVisible();
     await row.getByRole('button', { name: /^Edit / }).click();
