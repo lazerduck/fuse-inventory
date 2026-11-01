@@ -1,5 +1,5 @@
-# Stage 1: Build Vue Frontend
-FROM node:20-alpine AS frontend-build
+# Static frontend assets are shared by every target architecture. Build once natively.
+FROM --platform=$BUILDPLATFORM node:20-alpine AS frontend-build
 
 WORKDIR /app/frontend
 
@@ -13,31 +13,33 @@ COPY UI/Fuse.Web/ ./
 # Build the Vue app
 RUN npm run build
 
-# Stage 2: Build .NET API
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+# Run the SDK natively and cross-publish the API for the requested runtime.
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+ARG TARGETARCH
 
 WORKDIR /app
 
-# Copy solution and project files
-COPY fuse-inventory.sln ./
+# Restore only the application and its referenced projects.
 COPY API/Fuse.API/*.csproj ./API/Fuse.API/
 COPY API/Fuse.Core/*.csproj ./API/Fuse.Core/
 COPY API/Fuse.MCP/*.csproj ./API/Fuse.MCP/
 COPY API/Fuse.Data/*.csproj ./API/Fuse.Data/
-COPY API/Fuse.Tests/*.csproj ./API/Fuse.Tests/
 
 # Restore dependencies
-RUN dotnet restore
+RUN dotnet restore API/Fuse.API/Fuse.API.csproj -a "$TARGETARCH" -p:UseAppHost=false
 
 # Copy the rest of the source code
-COPY API/ ./API/
+COPY API/Fuse.API/ ./API/Fuse.API/
+COPY API/Fuse.Core/ ./API/Fuse.Core/
+COPY API/Fuse.MCP/ ./API/Fuse.MCP/
+COPY API/Fuse.Data/ ./API/Fuse.Data/
 
 # Copy the already-built frontend to satisfy the SpaRoot reference
 COPY --from=frontend-build /app/frontend/dist /app/UI/Fuse.Web/dist
 
 # Build and publish the API (skip the npm build since we already have dist)
 WORKDIR /app/API/Fuse.API
-RUN dotnet publish -c Release -o /app/publish --no-restore /p:BuildSpa=false
+RUN dotnet publish -c Release -a "$TARGETARCH" --self-contained false -p:UseAppHost=false -o /app/publish --no-restore /p:BuildSpa=false
 
 # Stage 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

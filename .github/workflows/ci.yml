@@ -130,6 +130,7 @@ jobs:
   build-and-push-pre-release-image:
     name: Build and Push Pre-release Image
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [test, frontend, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
@@ -162,11 +163,6 @@ jobs:
           echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -198,6 +194,7 @@ jobs:
   build-and-push-release-image:
     name: Build and Push Release Image
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [test, frontend, browser]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -223,11 +220,6 @@ jobs:
           echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
