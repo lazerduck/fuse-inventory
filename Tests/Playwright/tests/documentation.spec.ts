@@ -68,12 +68,21 @@ test('documentation catalogue supports browsing, metadata search and returning t
 test('documentation distinguishes unavailable categories from empty results and retries failed loads', async ({ authenticatedPage: page, adminApi }) => {
   const suffix = randomUUID().slice(0, 8);
   const app = await create(adminApi, 'application', { name: `Docs retry-${suffix}` });
-  let failed = true;
-  await page.route(/\/api\/application(?:\?|$)/i, route => failed ? route.fulfill({ status: 503, json: { error: 'Temporarily unavailable' } }) : route.continue());
+  await page.route(/\/api\/application(?:\?|$)/i, async route => {
+    const retryClicked = await page.evaluate(() => document.documentElement.dataset.documentationRetryClicked === 'true');
+    return retryClicked ? route.continue() : route.fulfill({ status: 503, json: { error: 'Temporarily unavailable' } });
+  });
   await page.goto('/view?type=app');
   await expect(page.getByRole('alert')).toContainText('Some documentation could not be loaded.', { timeout: 15_000 });
   await expect(page.getByRole('heading', { name: 'Documentation is partly unavailable', exact: true })).toBeVisible();
-  failed = false;
+  // Onboarding can refetch after the error appears. Only recover once the user
+  // actually clicks Retry; delegation survives the banner being rerendered.
+  await page.evaluate(() => {
+    document.addEventListener('click', event => {
+      const button = event.target instanceof Element ? event.target.closest('button') : null;
+      if (button?.textContent?.trim() === 'Retry loading') document.documentElement.dataset.documentationRetryClicked = 'true';
+    }, { capture: true });
+  });
   await page.getByRole('button', { name: 'Retry loading', exact: true }).click();
   await expect(page.locator('.search-results').getByRole('link').filter({ hasText: app.name })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
