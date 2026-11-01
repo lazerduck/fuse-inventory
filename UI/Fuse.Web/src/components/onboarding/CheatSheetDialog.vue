@@ -114,17 +114,23 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
-import { useApplications } from '../../composables/useApplications'
-import { useAccounts } from '../../composables/useAccounts'
+import { useFuseClient } from '../../composables/useFuseClient'
+import { useFuseStore } from '../../stores/FuseStore'
 import { useOnboardingStore } from '../../stores/OnboardingStore'
+import { isAuthOrPermissionError } from '../../utils/error'
 
-defineProps<{ modelValue: boolean }>()
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ (event: 'update:modelValue', value: boolean): void }>()
 const router = useRouter()
 const onboardingStore = useOnboardingStore()
-const applicationsQuery = useApplications()
-const accountsQuery = useAccounts()
+const client = useFuseClient()
+const store = useFuseStore()
+const canReadApplications = computed(() => props.modelValue && store.hasPermission('application:read'))
+const canReadAccounts = computed(() => props.modelValue && store.hasPermission('accounts:read'))
+const applicationsQuery = useQuery({ queryKey: ['applications'], queryFn: () => client.applicationAll(), enabled: canReadApplications })
+const accountsQuery = useQuery({ queryKey: ['accounts'], queryFn: () => client.accountAll(), enabled: canReadAccounts })
 
 interface GuideStep {
   id: string
@@ -144,7 +150,7 @@ interface Guide {
   steps: GuideStep[]
 }
 
-const applications = computed(() => applicationsQuery.data.value ?? [])
+const applications = computed(() => canReadApplications.value && !isAuthOrPermissionError(applicationsQuery.error.value) ? applicationsQuery.data.value ?? [] : [])
 const firstApplication = computed(() =>
   applications.value.find(application => application.id && (application.instances?.length ?? 0) === 0)
   ?? applications.value.find(application => application.id)
@@ -159,7 +165,7 @@ const firstInstance = computed(() => {
   }
   return null
 })
-const accounts = computed(() => accountsQuery.data.value ?? [])
+const accounts = computed(() => canReadAccounts.value && !isAuthOrPermissionError(accountsQuery.error.value) ? accountsQuery.data.value ?? [] : [])
 const firstAccount = computed(() => accounts.value.find(account => account.id))
 
 const guides = computed<Guide[]>(() => [

@@ -17,6 +17,7 @@ test('failed tag save retains input and recovers without a phantom record', asyn
   await page.unroute('**/api/Tag');
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(dialog).toBeHidden();
+  await page.getByPlaceholder('Search...').fill(name);
   await expect(page.getByRole('row').filter({ hasText: name })).toBeVisible();
 });
 test('tag search persists across reload and can recover from no matches', async ({ authenticatedPage: page, adminApi }) => {

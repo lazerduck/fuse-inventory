@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { confirmNavigation } from './composables/useUnsavedChanges'
 import { useFuseStore } from './stores/FuseStore'
+import { validateDocumentationOrigin } from './utils/documentationNavigation'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -282,6 +283,13 @@ const router = createRouter({
       component: () => import('./pages/AppSettingsPage.vue')
     }
   ]
+})
+
+// Preserve catalogue filters through links inside documentation records.
+router.beforeEach((to, from) => {
+  if (!to.path.startsWith('/view/') || !from.path.startsWith('/view/') || to.query.from !== undefined) return
+  const origin = validateDocumentationOrigin(from.query.from)
+  if (origin) return { path: to.path, query: { ...to.query, from: origin }, hash: to.hash }
 })
 
 router.beforeEach((to, from) => to.fullPath === from.fullPath || confirmNavigation())

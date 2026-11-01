@@ -43,7 +43,8 @@ jobs:
 
   browser:
     name: Chromium UI Regression
-    runs-on: ubuntu-latest
+    # Keep the browser runner compatible with the locked Playwright version.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read

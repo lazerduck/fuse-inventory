@@ -1,6 +1,8 @@
 # Scrum Poker Plan
 
-Status: Phase 2 in progress — backend room API implemented, frontend room experience not started
+Status: Backend and frontend implemented; remaining verification and follow-up work listed below.
+
+Last reviewed: 2026-10-31. Source and existing test coverage reviewed; tests were not rerun during this documentation review.
 
 This document is the working plan for the Scrum Poker feature. Update the checkboxes and decisions here as implementation progresses.
 
@@ -22,12 +24,13 @@ The feature is deliberately separate from inventory data. Rooms are temporary co
 - [x] Rooms are stored in memory, separately from the inventory `Snapshot`.
 - [x] Room state is synchronised initially by approximately one-second polling.
 
-## Proposed defaults
+## Current defaults
 
 - Maximum participants per room: 20
 - Room inactivity expiry: 4 hours
-- Username uniqueness: case-insensitive within a room
-- Room access: random opaque room code
+- Duplicate display names are allowed; private participant tokens establish identity.
+- Inactive participants are removed after 15 minutes when room operations prune stale participants.
+- Room access: generated room code or a user-selected code through the enter endpoint
 - Participant access: random private participant token
 - Reveal/reset permissions: any participant in the room
 
@@ -42,18 +45,24 @@ These defaults can be adjusted during implementation if testing exposes a better
 - Create a separate Scrum Poker domain area in `Fuse.Core`.
 - Add an in-memory singleton store in `Fuse.Data` or the appropriate persistence layer.
 - Use per-room synchronisation so joining, voting, revealing, and resetting are atomic.
-- Add automatic cleanup of inactive rooms.
+- Expired rooms are removed on lookup/re-entry; a periodic sweep of untouched expired rooms is not implemented.
 - Do not add rooms to `Snapshot`, inventory exports, audit history, or version history.
 
 ### API surface
 
-The exact route names may be refined to match generated client conventions, but the intended operations are:
+Implemented routes (participant tokens are supplied in request bodies, or the state query):
 
 ```text
 POST /api/scrum-poker/rooms
 POST /api/scrum-poker/rooms/{roomCode}/join
 GET  /api/scrum-poker/rooms/{roomCode}/state
-PUT  /api/scrum-poker/rooms/{roomCode}/participants/{participantToken}/card
+PUT  /api/scrum-poker/rooms/{roomCode}/card
+POST /api/scrum-poker/rooms/{roomCode}/enter
+GET  /api/scrum-poker/rooms/{roomCode}/availability
+POST /api/scrum-poker/rooms/{roomCode}/hide
+POST /api/scrum-poker/rooms/{roomCode}/leave
+POST /api/scrum-poker/rooms/{roomCode}/settings/auto-reveal
+POST /api/scrum-poker/rooms/{roomCode}/settings/lock-votes-after-reveal
 POST /api/scrum-poker/rooms/{roomCode}/reveal
 POST /api/scrum-poker/rooms/{roomCode}/reset
 ```
@@ -63,7 +72,7 @@ The API must:
 - Reject room operations when Scrum Poker is disabled.
 - Validate room codes and participant tokens without exposing sensitive state.
 - Enforce non-empty, length-limited usernames.
-- Reject duplicate usernames within a room, ignoring case.
+- Allow duplicate display names; identify participants by private tokens.
 - Only allow a participant to change their own card.
 - Accept only cards from the standard deck.
 - Hide card values until the room is revealed.
@@ -79,7 +88,7 @@ A room should contain:
 - Revision number
 - Participants with IDs, display names, private tokens, selected cards, and last-seen timestamps
 
-While voting, the public state should expose whether each participant has voted, but not the card value. After reveal, all selected cards become visible to every participant. Reset clears all selections, returns the room to `Voting`, increments the round, and increments the revision.
+While voting, the public state should expose whether each participant has voted, but not other participants’ card values. A participant can see their own selected card. After reveal, all selected cards become visible to every participant. Reset clears all selections, returns the room to `Voting`, increments the round, and increments the revision.
 
 ### Frontend
 
@@ -99,7 +108,7 @@ While voting, the public state should expose whether each participant has voted,
 - [x] Validate and round-trip the new setting through the existing settings API.
 - [x] Add the Settings page toggle and generated frontend client typing.
 - [x] Define room, participant, card, and public-state contracts.
-- [ ] Define feature-disabled, room-not-found, room-expired, duplicate-name, and invalid-token errors.
+- [x] Define disabled/missing/expired responses (404), invalid-token responses (401), validation errors (400), and conflicts (409). Duplicate display names are allowed.
 
 ### Phase 2 — Backend room service
 
@@ -109,16 +118,17 @@ While voting, the public state should expose whether each participant has voted,
 - [x] Implement card selection.
 - [x] Implement reveal and reset.
 - [x] Implement room revision and round handling.
-- [x] Implement inactivity expiry and cleanup.
+- [x] Implement inactivity expiry and cleanup on room access.
+- [ ] Add periodic cleanup if expired rooms must be reclaimed without another lookup; current cleanup is lazy.
 - [x] Enforce the feature toggle at the service/API boundary.
 
 ### Phase 3 — Backend tests
 
 - [x] Test room creation and joining.
-- [x] Test duplicate-name rejection.
+- [x] Test duplicate display names are allowed.
 - [x] Test participant-token ownership.
 - [x] Test valid and invalid card selections.
-- [x] Test card state before reveal (public redaction remains part of the API slice).
+- [x] Test card state before reveal, including controller projection/redaction.
 - [x] Test shared reveal state.
 - [x] Test hiding revealed cards while retaining selections.
 - [x] Test reset behaviour.
@@ -139,6 +149,10 @@ While voting, the public state should expose whether each participant has voted,
 
 ### Phase 5 — End-to-end verification
 
+Historical build/unit/frontend successes are recorded in the progress log. The unchecked execution items below require a current verification pass; they do not imply the implementation is missing. `Tests/Playwright/tests/scrum-poker.spec.ts` now covers two contexts joining, voting, reveal propagation, reset, and reload/rejoin. It does not explicitly assert hidden card values before reveal, restart behavior, or disabling an active room.
+
+- [x] Add a two-context Playwright journey for joining, voting, reveal, reset, and rejoin.
+
 - [ ] Build the backend and frontend.
 - [ ] Run the existing unit test suite.
 - [ ] Run the existing frontend checks.
@@ -148,7 +162,7 @@ While voting, the public state should expose whether each participant has voted,
 - [ ] Verify reset starts a new round in both sessions.
 - [ ] Verify restart loses rooms as intended.
 - [ ] Verify disabling the feature blocks new and existing room operations.
-- [ ] Update user-facing documentation.
+- [x] Update user-facing feature documentation (see `features.md`).
 
 ## Acceptance criteria
 
@@ -156,7 +170,7 @@ The feature is ready when:
 
 1. An authorised Fuse administrator can enable Scrum Poker from Settings.
 2. A user can create a room and receive a shareable room code.
-3. Multiple users can join with unique display names without Fuse accounts.
+3. Multiple users can join with display names (duplicates allowed) without Fuse accounts.
 4. Each user can select and change their own card before reveal.
 5. Participants can see who has voted without seeing hidden card values.
 6. Any participant can reveal the room and everyone sees the same revealed state.
@@ -167,7 +181,8 @@ The feature is ready when:
 
 ## Open questions to resolve during implementation
 
-- [ ] Confirm exact maximum room size and expiry duration through UI/testing feedback.
+- [x] Current limits are 20 participants and four hours of room inactivity; participant inactivity timeout is 15 minutes.
+- [ ] Add boundary coverage for empty-room expiry: `EmptyRoom_IsRetainedIndefinitely` currently checks only 32 seconds, despite its name; the implementation expires empty rooms after the room lifetime.
 - [ ] Decide whether the room creator needs a visible host indicator; no special host permissions are currently planned.
 - [x] Participants can leave explicitly; the server removes them immediately while retaining an empty room until normal expiry.
 - [ ] Decide whether cards should be configurable in a later version; the first version uses the fixed standard deck.
@@ -183,3 +198,5 @@ The feature is ready when:
 | 2026-08-06 | Added the checked-in frontend API client methods, create/join and room routes, polling room UI, standard card controls, reveal/reset actions, room-code copying, and feature-gated navigation. Vue type-check and production build pass. |
 | 2026-08-06 | Added card deselection, reversible reveal/hide behaviour, and moved the Scrum Poker navigation item into Integrations. Backend suite passes 571 tests; frontend production build passes. |
 | 2026-08-06 | Added a real leave-room API operation so participants are removed server-side and can rejoin with the same display name. Backend suite passes 572 tests; frontend production build passes. |
+
+| 2026-10-31 | Reconciled plan with source and existing tests: duplicate names, custom room entry, avatars, auto-reveal, vote locking, participant expiry, and two-context browser coverage now exist. Recorded remaining verification gaps and lazy room cleanup; no tests rerun during this review. |
