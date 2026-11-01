@@ -20,9 +20,11 @@ for (const [name, permissions, canCreate, canUpdate, canDelete] of [
     const tag = await tagResponse.json();
     const session = await signIn(page, request, user);
     await page.goto('/tags');
+    await page.getByPlaceholder('Search...').fill(`Role tag-${suffix}`);
     const create = page.getByRole('button', { name: 'Create Tag', exact: true });
     if (canCreate) await expect(create).toBeEnabled(); else await expect(create).toBeDisabled();
     const row = page.getByRole('row').filter({ hasText: `Role tag-${suffix}` });
+    await expect(row).toBeVisible();
     if (canUpdate) await expect(row.getByRole('button', { name: /^Edit / })).toBeEnabled(); else await expect(row.getByRole('button', { name: /^Edit / })).toBeDisabled();
     if (canDelete) await expect(row.getByRole('button', { name: /^Delete / })).toBeEnabled(); else await expect(row.getByRole('button', { name: /^Delete / })).toBeDisabled();
     const headers = { Authorization: `Bearer ${session.token}` };
