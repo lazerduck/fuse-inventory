@@ -330,6 +330,16 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 
 ---
 
+## Scrum Poker
+
+- Enable the default-off Scrum Poker feature in App Settings, then open it from Integrations.
+- Create or enter a room and share its URL/code; participants can join without Fuse accounts.
+- Choose a display name and avatar. Duplicate names are allowed; a private token identifies each participant.
+- Select or clear a card, reveal or hide votes, and reset for a new round. Other participants’ card values stay hidden until reveal.
+- Any participant can change auto-reveal and vote-locking settings; revealed numeric votes have an average.
+- Rooms support up to 20 participants and expire after four hours of inactivity. Inactive participants are removed after 15 minutes during room operations.
+- Rooms live in memory and are lost on restart. Entering a missing/expired room URL can create a new room with the same code.
+
 ## 🛠️ Tech Stack Summary
 
 | Layer | Technology |

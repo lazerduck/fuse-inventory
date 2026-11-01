@@ -173,8 +173,7 @@ Fuse Inventory is under active development, but the core data model is stable an
 
 ## 🛣️ Roadmap
 
-* Additional Azure Key Vault tooling
-* Usability improvements and guided setup flows
+See [the feature backlog](IMPROVEMENTS.md) for pending work and completed improvements, and [the Scrum Poker plan](SCRUM_POKER_PLAN.md) for its remaining verification tasks.
 
 Check out the [Project Board](https://github.com/lazerduck/fuse-inventory/projects?query=is%3Aopen).
 
