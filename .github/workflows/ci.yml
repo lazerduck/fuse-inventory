@@ -74,6 +74,21 @@ jobs:
             Tests/Playwright/artifacts/
           retention-days: 14
 
+  arm64-container:
+    name: Native ARM64 Container Smoke
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build final image natively on ARM64
+        run: |
+          test "$(uname -m)" = aarch64
+          docker build --platform linux/arm64 --tag fuse-container-smoke:arm64 .
+      - name: Verify ARM64 runtime and native dependencies with disposable data
+        run: python3 Tests/Containers/runtime-smoke.py --image fuse-container-smoke:arm64 --architecture arm64
+
   test:
     name: Run Tests with Coverage
     runs-on: ubuntu-latest
@@ -131,7 +146,7 @@ jobs:
     name: Build and Push Pre-release Image
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [test, frontend, browser]
+    needs: [test, frontend, browser, arm64-container]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -195,7 +210,7 @@ jobs:
     name: Build and Push Release Image
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [test, frontend, browser]
+    needs: [test, frontend, browser, arm64-container]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
