@@ -10,6 +10,13 @@
       <p>Loading dependency...</p>
     </div>
 
+    <div v-else-if="applicationsError" class="dependency-error" role="alert">
+      <q-icon name="error_outline" size="48px" color="negative" />
+      <h2>Unable to load dependency</h2>
+      <p>{{ getErrorMessage(applicationsError, 'The application inventory could not be loaded.') }}</p>
+      <q-btn flat label="Retry" icon="refresh" @click="retryApplications()" />
+    </div>
+
     <!-- Error state: Dependency not found -->
     <div v-else-if="!dependency" class="dependency-error">
       <q-icon name="error_outline" size="48px" color="negative" />
@@ -74,6 +81,7 @@
             <q-icon name="chevron_right" size="16px" />
           </router-link>
         </div>
+        <p v-if="authLookupUnavailable" class="section-description" role="status">{{ authLookupUnavailable }}</p>
       </section>
 
       <!-- Port (if specified) -->
@@ -111,26 +119,27 @@ import { useApplications } from '../../composables/useApplications'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { useDataStores } from '../../composables/useDataStores'
 import { useExternalResources } from '../../composables/useExternalResources'
+import { useMessageBrokers } from '../../composables/useMessageBrokers'
 import { useAccounts } from '../../composables/useAccounts'
 import { useIdentities } from '../../composables/useIdentities'
-import { DependencyAuthKind, DependencySeverity, TargetKind } from 'api/client'
+import { useFuseStore } from '../../stores/FuseStore'
+import { DependencyAuthKind, DependencySeverity } from 'api/client'
+import { readonlyDependencyAuthLabel, resolveReadonlyDependencyTarget } from '../../utils/readonlyDependencyTarget'
+import { getErrorMessage } from '../../utils/error'
 
 const route = useRoute()
 const router = useRouter()
+const store = useFuseStore()
 const id = computed(() => route.params.id as string)
 
 // Data queries
-const { data: applicationsData, isLoading: appsLoading } = useApplications()
-const { lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
-const { data: dataStoresData, isLoading: dataStoresLoading } = useDataStores()
-const { data: externalResourcesData, isLoading: externalLoading } = useExternalResources()
-const { data: accountsData, isLoading: accountsLoading } = useAccounts()
-const { data: identitiesData, isLoading: identitiesLoading } = useIdentities()
-
-const isLoading = computed(() =>
-  appsLoading.value || envsLoading.value || dataStoresLoading.value ||
-  externalLoading.value || accountsLoading.value || identitiesLoading.value
-)
+const { data: applicationsData, isLoading, error: applicationsError, refetch: retryApplications } = useApplications()
+const { lookup: environmentLookup } = useEnvironments()
+const { data: dataStoresData } = useDataStores()
+const { data: externalResourcesData } = useExternalResources()
+const { data: messageBrokersData } = useMessageBrokers()
+const { data: accountsData, error: accountsError } = useAccounts()
+const { data: identitiesData, error: identitiesError } = useIdentities()
 
 // Find the dependency by ID and its owning context
 const dependencyContext = computed(() => {
@@ -168,91 +177,22 @@ const dependencyDisplayName = computed(() => {
 const pageTitle = computed(() => `Dependency: ${dependencyDisplayName.value}`)
 
 // Target resolution
-const targetTypeLabel = computed(() => {
-  switch (dependency.value?.targetKind) {
-    case TargetKind.DataStore:
-      return 'Data Store'
-    case TargetKind.External:
-      return 'External Resource'
-    case TargetKind.Application:
-      return 'Instance'
-    default:
-      return 'Unknown'
-  }
-})
-
-const targetIcon = computed(() => {
-  switch (dependency.value?.targetKind) {
-    case TargetKind.DataStore:
-      return 'storage'
-    case TargetKind.External:
-      return 'hub'
-    case TargetKind.Application:
-      return 'layers'
-    default:
-      return 'help'
-  }
-})
-
-const targetName = computed(() => {
-  const targetId = dependency.value?.targetId
-  if (!targetId) return 'Unknown'
-
-  switch (dependency.value?.targetKind) {
-    case TargetKind.DataStore: {
-      const store = dataStoresData.value?.find((ds) => ds.id === targetId)
-      return store?.name ?? targetId
-    }
-    case TargetKind.External: {
-      const ext = externalResourcesData.value?.find((er) => er.id === targetId)
-      return ext?.name ?? targetId
-    }
-    case TargetKind.Application: {
-      // Find the instance from all applications
-      if (!applicationsData.value) return targetId
-      for (const app of applicationsData.value) {
-        const inst = app.instances?.find((i) => i.id === targetId)
-        if (inst) {
-          const appName = app.name ?? 'App'
-          const envName = environmentLookup.value[inst.environmentId ?? ''] ?? '—'
-          return `${appName} — ${envName}`
-        }
-      }
-      return targetId
-    }
-    default:
-      return targetId
-  }
-})
-
-const targetRoute = computed(() => {
-  const targetId = dependency.value?.targetId
-  if (!targetId) return null
-
-  switch (dependency.value?.targetKind) {
-    case TargetKind.DataStore:
-      return `/view/datastore/${targetId}`
-    case TargetKind.External:
-      return `/view/external/${targetId}`
-    case TargetKind.Application:
-      return `/view/instance/${targetId}`
-    default:
-      return null
-  }
-})
+const target = computed(() => resolveReadonlyDependencyTarget(dependency.value?.targetKind, dependency.value?.targetId, {
+  applications: applicationsData.value ?? [], dataStores: dataStoresData.value ?? [],
+  externalResources: externalResourcesData.value ?? [], messageBrokers: messageBrokersData.value ?? [],
+  environmentNames: environmentLookup.value, sourceEnvironmentId: instance.value?.environmentId
+}))
+const targetTypeLabel = computed(() => target.value.typeLabel)
+const targetIcon = computed(() => target.value.icon)
+const targetName = computed(() => target.value.name)
+const targetRoute = computed(() => target.value.route)
 
 // Auth resolution
-const authKindLabel = computed(() => {
-  switch (dependency.value?.authKind) {
-    case DependencyAuthKind.None:
-      return 'No Authentication'
-    case DependencyAuthKind.Account:
-      return 'Account'
-    case DependencyAuthKind.Identity:
-      return 'Identity'
-    default:
-      return 'Unknown'
-  }
+const authKindLabel = computed(() => readonlyDependencyAuthLabel(dependency.value?.authKind))
+const authLookupUnavailable = computed(() => {
+  if (dependency.value?.authKind === DependencyAuthKind.Account && (!store.hasPermission('accounts:read') || accountsError.value)) return 'Account details are unavailable.'
+  if (dependency.value?.authKind === DependencyAuthKind.Identity && (!store.hasPermission('identities:read') || identitiesError.value)) return 'Identity details are unavailable.'
+  return ''
 })
 
 const authKindColor = computed(() => {
@@ -263,12 +203,15 @@ const authKindColor = computed(() => {
       return 'orange'
     case DependencyAuthKind.Identity:
       return 'purple'
+    case DependencyAuthKind.ApiKey:
+      return 'blue'
     default:
       return 'grey'
   }
 })
 
 const authEntityName = computed(() => {
+  if (authLookupUnavailable.value) return null
   if (dependency.value?.authKind === DependencyAuthKind.Account && dependency.value.accountId) {
     const account = accountsData.value?.find((acc) => acc.id === dependency.value?.accountId)
     return account?.userName ?? account?.id ?? dependency.value.accountId
@@ -281,6 +224,7 @@ const authEntityName = computed(() => {
 })
 
 const authEntityRoute = computed(() => {
+  if (authLookupUnavailable.value) return null
   if (dependency.value?.authKind === DependencyAuthKind.Account && dependency.value.accountId) {
     return `/view/account/${dependency.value.accountId}`
   }
@@ -346,27 +290,12 @@ const lowerContext = computed<LowerItem[]>(() => {
   const items: LowerItem[] = []
 
   // Target
-  const targetId = dependency.value?.targetId
+  const targetId = target.value.id
   const route = targetRoute.value
   if (targetId && route) {
-    let targetType: 'datastore' | 'external' | 'instance'
-    switch (dependency.value?.targetKind) {
-      case TargetKind.DataStore:
-        targetType = 'datastore'
-        break
-      case TargetKind.External:
-        targetType = 'external'
-        break
-      case TargetKind.Application:
-        targetType = 'instance'
-        break
-      default:
-        targetType = 'datastore'
-    }
-
     items.push({
       id: targetId,
-      type: targetType,
+      type: target.value.type,
       name: targetName.value,
       route,
       subtitle: targetTypeLabel.value
@@ -374,7 +303,7 @@ const lowerContext = computed<LowerItem[]>(() => {
   }
 
   // Auth entity
-  if (dependency.value?.authKind === DependencyAuthKind.Account && dependency.value.accountId) {
+  if (!authLookupUnavailable.value && dependency.value?.authKind === DependencyAuthKind.Account && dependency.value.accountId) {
     items.push({
       id: dependency.value.accountId,
       type: 'account',
@@ -384,7 +313,7 @@ const lowerContext = computed<LowerItem[]>(() => {
     })
   }
 
-  if (dependency.value?.authKind === DependencyAuthKind.Identity && dependency.value.identityId) {
+  if (!authLookupUnavailable.value && dependency.value?.authKind === DependencyAuthKind.Identity && dependency.value.identityId) {
     items.push({
       id: dependency.value.identityId,
       type: 'identity',

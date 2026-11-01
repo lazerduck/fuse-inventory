@@ -1,0 +1,142 @@
+import { test, expect } from '../fixtures/auth';
+import { randomUUID } from 'node:crypto';
+import type { APIRequestContext, Page } from '@playwright/test';
+
+async function create(api: APIRequestContext, path: string, data: object) {
+  const response = await api.post(`/api/${path}`, { data });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return response.json();
+}
+async function findResource(page: Page, name: string) {
+  const search = page.getByRole('combobox', { name: 'Find a resource', exact: true });
+  await search.fill(name);
+  await page.getByRole('option').filter({ hasText: name }).first().click();
+  await expect(page.getByRole('complementary', { name: 'Graph inspector' }).getByRole('heading', { name, exact: true })).toBeVisible();
+}
+
+test('graph creates, edits and removes a dependency without leaving the graph', async ({ authenticatedPage: page, adminApi }) => {
+  const suffix = randomUUID().slice(0, 8);
+  const env = await create(adminApi, 'environment', { name: `Graph-${suffix}` });
+  const app = await create(adminApi, 'application', { name: `Graph app-${suffix}` });
+  const instance = await create(adminApi, `application/${app.id}/instances`, { environmentId: env.id, version: '1.2.3' });
+  const target = await create(adminApi, 'externalResource', { name: `Graph service-${suffix}` });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/graph');
+  await findResource(page, app.name);
+  const inspector = page.getByRole('complementary', { name: 'Graph inspector' });
+  await expect(inspector).toContainText('1.2.3');
+  await page.getByRole('button', { name: 'Add dependency', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox', { name: 'Target kind', exact: true }).click();
+  await page.getByRole('option', { name: 'External resource', exact: true }).click();
+  await dialog.getByRole('combobox', { name: 'Target resource', exact: true }).click();
+  await page.getByRole('option', { name: target.name, exact: true }).click();
+  await dialog.getByRole('spinbutton', { name: 'Port (optional)', exact: true }).fill('443');
+  await dialog.getByRole('button', { name: 'Add dependency', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(inspector.getByRole('heading', { name: 'Dependency details' })).toBeVisible();
+  await expect(inspector).toContainText('443');
+  const savedApp = await (await adminApi.get(`/api/application/${app.id}`)).json();
+  const dependency = savedApp.instances[0].dependencies[0];
+  expect(dependency.targetId).toBe(target.id);
+  await expect(page).toHaveURL(new RegExp(`edge=edge-${instance.id}-${dependency.id}`));
+  await page.reload();
+  await expect(inspector.getByRole('heading', { name: 'Dependency details' })).toBeVisible();
+  await inspector.getByRole('button', { name: 'Edit relationship', exact: true }).click();
+  await dialog.getByRole('spinbutton', { name: 'Port (optional)', exact: true }).fill('8443');
+  await dialog.getByRole('combobox', { name: 'Dependency severity', exact: true }).click();
+  await page.getByRole('option', { name: /Partial/ }).click();
+  await dialog.getByRole('button', { name: 'Save and close', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(inspector).toContainText('8443');
+  await expect(inspector).toContainText('Partial');
+  const edited = await (await adminApi.get(`/api/application/${app.id}`)).json();
+  expect(edited.instances[0].dependencies[0]).toMatchObject({ port: 8443, severity: 'Partial' });
+  await inspector.getByRole('button', { name: `Inspect source ${app.name}`, exact: true }).click();
+  await inspector.getByLabel(`Inspect relationship ${target.name}`, { exact: true }).click();
+  await inspector.getByRole('button', { name: 'Remove relationship', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Remove dependency', exact: true }).click();
+  await expect(page.getByText('Dependency removed', { exact: true })).toBeVisible();
+  const removed = await (await adminApi.get(`/api/application/${app.id}`)).json();
+  expect(removed.instances[0].dependencies).toHaveLength(0);
+  await findResource(page, app.name);
+  const graph = page.locator('.graph');
+  // Read rendered coordinates from Cytoscape, then exercise real pointer events.
+  const nodePosition = () => graph.evaluate((element, id) => {
+    const cy = (element as HTMLElement & { _cyreg: { cy: { getElementById(id: string): { renderedPosition(): { x: number; y: number } } } } })._cyreg.cy;
+    return cy.getElementById(id).renderedPosition();
+  }, `appi-${instance.id}`);
+  const position = await nodePosition();
+  await page.getByRole('button', { name: 'Clear selection', exact: true }).click();
+  await graph.click({ position });
+  await expect(inspector.getByRole('heading', { name: app.name, exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Risk Overlay', exact: true }).setChecked(false);
+  await page.getByRole('switch', { name: 'Risk Overlay', exact: true }).setChecked(true);
+  expect(await nodePosition()).toEqual(position);
+  await graph.dblclick({ position });
+  await expect(page).toHaveURL(`/view/instance/${instance.id}`);
+  expect(errors).toEqual([]);
+});
+
+test('graph retains cross-environment endpoints, restores views and exports the canvas', async ({ authenticatedPage: page, adminApi }, testInfo) => {
+  const suffix = randomUUID().slice(0, 8);
+  const sourceEnv = await create(adminApi, 'environment', { name: `Graph Prod-${suffix}` });
+  const targetEnv = await create(adminApi, 'environment', { name: `Graph Shared-${suffix}` });
+  const sourceApp = await create(adminApi, 'application', { name: `Graph checkout-${suffix}` });
+  const targetApp = await create(adminApi, 'application', { name: `Graph payments-${suffix}` });
+  const source = await create(adminApi, `application/${sourceApp.id}/instances`, { environmentId: sourceEnv.id });
+  const target = await create(adminApi, `application/${targetApp.id}/instances`, { environmentId: targetEnv.id });
+  await create(adminApi, `application/${sourceApp.id}/instances/${source.id}/dependencies`, { targetKind: 'Application', targetId: target.id, authKind: 'None', severity: 'Full' });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`/graph?environments=${sourceEnv.id}&node=appi-${source.id}&direction=dependencies&depth=full`);
+  const inspector = page.getByRole('complementary', { name: 'Graph inspector' });
+  await expect(inspector.getByRole('heading', { name: sourceApp.name })).toBeVisible();
+  await expect(page.getByText('1 outside the environment filter', { exact: false })).toBeVisible();
+  await expect(page.locator('.depth-select')).toContainText('Full chain');
+  await inspector.getByLabel(`Inspect relationship ${targetApp.name}`, { exact: true }).click();
+  await inspector.getByRole('button', { name: `Inspect target ${targetApp.name}`, exact: true }).click();
+  await expect(inspector.getByText('Outside selected environments', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(inspector.getByRole('heading', { name: targetApp.name })).toBeVisible();
+  await expect(inspector.getByText('Outside selected environments', { exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Risk paths', exact: true }).setChecked(true);
+  await expect(page.getByText('No connected high or critical risks within this direction and depth.')).toBeVisible();
+  await page.getByRole('switch', { name: 'Risk paths', exact: true }).setChecked(false);
+  await page.getByRole('button', { name: 'Fit all', exact: true }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('fuse-inventory-graph.png');
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  expect(Buffer.concat(chunks).subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  await page.screenshot({ path: testInfo.outputPath('graph-desktop.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Switch to dark theme', exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath('graph-dark.png'), fullPage: true });
+  await page.setViewportSize({ width: 600, height: 900 });
+  await expect(inspector.getByRole('link', { name: 'Open details', exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('graph-narrow.png'), fullPage: true });
+  await inspector.getByRole('button', { name: 'Show impact', exact: true }).click();
+  await expect(page).toHaveURL(`/blast-radius?kind=Application&id=${target.id}`);
+  expect(errors).toEqual([]);
+});
+
+test('graph restores an out-of-filter selection and reports unavailable risk data honestly', async ({ authenticatedPage: page, adminApi }) => {
+  const suffix = randomUUID().slice(0, 8);
+  const filteredEnv = await create(adminApi, 'environment', { name: `Graph filter-${suffix}` });
+  const actualEnv = await create(adminApi, 'environment', { name: `Graph moved-${suffix}` });
+  const app = await create(adminApi, 'application', { name: `Graph isolated-${suffix}` });
+  const instance = await create(adminApi, `application/${app.id}/instances`, { environmentId: actualEnv.id });
+  await page.route('**/api/Risk', route => route.fulfill({ status: 403, json: { error: 'Risk information unavailable' } }));
+  await page.goto(`/graph?environments=${filteredEnv.id}&node=appi-${instance.id}&risks=off`);
+  const inspector = page.getByRole('complementary', { name: 'Graph inspector' });
+  await expect(inspector.getByRole('heading', { name: app.name })).toBeVisible();
+  await expect(page.locator('.search-controls .q-select').first()).toContainText(actualEnv.name);
+  await expect(inspector.getByText('Risk information is unavailable for this resource.', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(inspector.getByText('No active risks recorded for this resource.', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Fit selection', exact: true }).click();
+  await expect(page.locator('canvas').first()).toBeVisible();
+});

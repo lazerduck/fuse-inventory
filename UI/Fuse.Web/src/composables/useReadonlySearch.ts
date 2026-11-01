@@ -1,29 +1,12 @@
-import { ref, computed } from 'vue'
-import { useApplications } from './useApplications'
-import { useAccounts } from './useAccounts'
-import { useIdentities } from './useIdentities'
-import { useDataStores } from './useDataStores'
-import { useExternalResources } from './useExternalResources'
-import { useEnvironments } from './useEnvironments'
-import { usePlatforms } from './usePlatforms'
-import { useRisks } from './useRisks'
-import { useMessageBrokers } from './useMessageBrokers'
-import { usePositions } from './usePositions'
-import { useTags } from './useTags'
+import { computed, ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { useFuseClient } from './useFuseClient'
+import { useFuseStore } from '../stores/FuseStore'
+import { isAuthOrPermissionError } from '../utils/error'
 
-export type SearchResultType = 
-  | 'app' 
-  | 'instance' 
-  | 'dependency' 
-  | 'account' 
-  | 'identity' 
-  | 'datastore' 
-  | 'external'
-  | 'platform'
-  | 'risk'
-  | 'messagebroker'
-  | 'position'
-  | 'tag'
+export type SearchResultType =
+  | 'app' | 'instance' | 'dependency' | 'account' | 'identity' | 'datastore'
+  | 'external' | 'platform' | 'risk' | 'messagebroker' | 'position' | 'tag'
 
 export interface SearchResult {
   id: string
@@ -31,6 +14,8 @@ export interface SearchResult {
   name: string
   subtitle?: string
   route: string
+  environmentName?: string
+  tags?: string[]
 }
 
 export interface SearchResultGroup {
@@ -38,6 +23,23 @@ export interface SearchResultGroup {
   label: string
   icon: string
   results: SearchResult[]
+}
+
+export interface SearchTypeOption {
+  type: SearchResultType
+  label: string
+  icon: string
+  /** All readable records, independent of the current search and category selection. */
+  count: number
+  /** Text matches, independent of the current category selection. */
+  matchCount: number
+  status: 'ready' | 'loading' | 'error' | 'unavailable'
+}
+
+export interface SearchSourceError {
+  key: string
+  label: string
+  message: string
 }
 
 const typeConfig: Record<SearchResultType, { label: string; icon: string }> = {
@@ -55,375 +57,240 @@ const typeConfig: Record<SearchResultType, { label: string; icon: string }> = {
   tag: { label: 'Tags', icon: 'label' }
 }
 
-function fuzzyMatch(text: string, query: string): boolean {
-  const normalizedText = (text ?? '').toLowerCase()
-  const normalizedQuery = query.toLowerCase().trim()
-  
-  if (!normalizedQuery) return false
-  
-  // Simple substring match for fuzzy search
-  return normalizedText.includes(normalizedQuery)
+const typeOrder: SearchResultType[] = [
+  'app', 'instance', 'platform', 'datastore', 'messagebroker', 'external',
+  'risk', 'account', 'identity', 'position', 'tag', 'dependency'
+]
+
+function normalize(text: string): string {
+  return text.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+}
+
+/** Catalogue summaries never include URL credentials, query values or fragments. */
+function publicAddress(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return undefined
+    return `${url.origin}${url.pathname === '/' ? '' : url.pathname}`
+  } catch {
+    return undefined
+  }
 }
 
 export function useReadonlySearch() {
+  const client = useFuseClient()
+  const store = useFuseStore()
   const searchQuery = ref('')
-  const isSearching = ref(false)
+  // An empty selection means all categories, including for a blank search.
+  const selectedTypes = ref<SearchResultType[]>([])
 
-  const applicationsQuery = useApplications()
-  const accountsQuery = useAccounts()
-  const identitiesQuery = useIdentities()
-  const dataStoresQuery = useDataStores()
-  const externalResourcesQuery = useExternalResources()
-  const environmentsQuery = useEnvironments()
-  const platformsQuery = usePlatforms()
-  const risksQuery = useRisks()
-  const messageBrokersQuery = useMessageBrokers()
-  const positionsQuery = usePositions()
-  const tagsQuery = useTags()
-
-  const isLoading = computed(() => 
-    applicationsQuery.isLoading.value ||
-    accountsQuery.isLoading.value ||
-    identitiesQuery.isLoading.value ||
-    dataStoresQuery.isLoading.value ||
-    externalResourcesQuery.isLoading.value ||
-    environmentsQuery.isLoading.value ||
-    platformsQuery.isLoading.value ||
-    risksQuery.risksLoading.value ||
-    messageBrokersQuery.isLoading.value ||
-    positionsQuery.isLoading.value ||
-    tagsQuery.isLoading.value
-  )
-
-  const environmentLookup = computed<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const env of environmentsQuery.data.value ?? []) {
-      if (env.id) {
-        map[env.id] = env.name ?? 'Unknown'
-      }
-    }
-    return map
-  })
-
-  // Lookup maps for resolving dependency target names
-  const dataStoreLookup = computed<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const store of dataStoresQuery.data.value ?? []) {
-      if (store.id) {
-        map[store.id] = store.name ?? 'Unknown Data Store'
-      }
-    }
-    return map
-  })
-
-  const externalResourceLookup = computed<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const resource of externalResourcesQuery.data.value ?? []) {
-      if (resource.id) {
-        map[resource.id] = resource.name ?? 'Unknown External Resource'
-      }
-    }
-    return map
-  })
-
-  const instanceLookup = computed<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const app of applicationsQuery.data.value ?? []) {
-      for (const instance of app.instances ?? []) {
-        if (instance.id) {
-          const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
-          map[instance.id] = `${app.name ?? 'App'} — ${envName}`
-        }
-      }
-    }
-    return map
-  })
-
-  // Helper function to resolve dependency target name based on targetKind
-  function resolveDependencyTargetName(targetId: string | undefined, targetKind: string | undefined): string {
-    if (!targetId) return 'Unknown'
-    
-    switch (targetKind) {
-      case 'Application':
-        // Note: When targetKind is 'Application', targetId actually refers to an instance ID
-        return instanceLookup.value[targetId] ?? 'Unknown Instance'
-      case 'DataStore':
-        return dataStoreLookup.value[targetId] ?? 'Unknown Data Store'
-      case 'External':
-        return externalResourceLookup.value[targetId] ?? 'Unknown External Resource'
-      default:
-        return 'Unknown'
-    }
+  function source<T>(key: string, label: string, permission: string, fetch: () => Promise<T[]>) {
+    const enabled = computed(() => store.hasPermission(permission))
+    const query = useQuery<T[]>({ queryKey: [key], queryFn: fetch, enabled, retry: false })
+    const available = computed(() => enabled.value && !isAuthOrPermissionError(query.error.value))
+    // Disabled queries can retain cached data. Gate reads as well as requests when access changes.
+    const data = computed(() => available.value ? query.data.value ?? [] : [])
+    const status = computed<SearchTypeOption['status']>(() => {
+      if (!available.value) return 'unavailable'
+      if (query.isLoading.value) return 'loading'
+      if (query.isError.value) return 'error'
+      return 'ready'
+    })
+    return { key, label, enabled, available, data, status, query }
   }
 
-  const searchResults = computed<SearchResult[]>(() => {
-    const query = searchQuery.value.trim()
-    if (!query) return []
+  const applications = source('applications', 'Applications', 'application:read', () => client.applicationAll())
+  const accounts = source('accounts', 'Accounts', 'accounts:read', () => client.accountAll())
+  const identities = source('identities', 'Identities', 'identities:read', () => client.identityAll())
+  const dataStores = source('dataStores', 'Data Stores', 'datastores:read', () => client.dataStoreAll())
+  const externals = source('externalResources', 'External Resources', 'externalresources:read', () => client.externalResourceAll())
+  const environments = source('environments', 'Environments', 'environments:read', () => client.environmentAll())
+  const platforms = source('platforms', 'Platforms', 'platforms:read', () => client.platformAll())
+  const risks = source('risks', 'Risks', 'risks:read', () => client.riskAll())
+  const brokers = source('messageBrokers', 'Message Brokers', 'messagebrokers:read', () => client.messageBrokerAll())
+  const positions = source('positions', 'Positions', 'positions:read', () => client.positionAll())
+  const tags = source('tags', 'Tags', 'tags:read', () => client.tagAll())
+  const sources = [applications, accounts, identities, dataStores, externals, environments, platforms, risks, brokers, positions, tags]
+  const sourceByType = {
+    app: applications, instance: applications, dependency: applications,
+    account: accounts, identity: identities, datastore: dataStores, external: externals,
+    platform: platforms, risk: risks, messagebroker: brokers, position: positions, tag: tags
+  }
 
-    const results: SearchResult[] = []
+  const isLoading = computed(() => sources.some(item => item.enabled.value && item.query.isLoading.value))
+  const isSearching = computed(() => sources.some(item => item.enabled.value && item.query.isFetching.value))
+  const hasAccess = computed(() => typeOrder.some(type => sourceByType[type].available.value))
+  const errors = computed<SearchSourceError[]>(() => sources
+    .filter(item => item.enabled.value && item.query.isError.value)
+    .map(item => ({
+      key: item.key,
+      label: item.label,
+      message: isAuthOrPermissionError(item.query.error.value)
+        ? 'Access is unavailable. Check your session or permissions, then retry.'
+        : 'Could not load these records. Retry to refresh this part of the catalogue.'
+    })))
 
-    // Search applications
-    const applications = applicationsQuery.data.value ?? []
-    for (const app of applications) {
-      if (!app.id) continue
-      
-      if (fuzzyMatch(app.name ?? '', query) || fuzzyMatch(app.description ?? '', query)) {
-        results.push({
-          id: app.id,
-          type: 'app',
-          name: app.name ?? 'Unnamed Application',
-          subtitle: app.description ?? undefined,
-          route: `/view/app/${app.id}`
-        })
+  async function retry(): Promise<void> {
+    await Promise.all(sources
+      .filter(item => item.enabled.value && item.query.isError.value)
+      .map(item => item.query.refetch()))
+  }
+
+  const index = computed(() => {
+    const environmentNames = new Map(environments.data.value.map(item => [item.id, item.name]))
+    const tagNames = new Map(tags.data.value.map(item => [item.id, item.name]))
+    const platformNames = new Map(platforms.data.value.map(item => [item.id, item.displayName || item.dnsName]))
+    const instanceNames = new Map<string, string>()
+    const applicationNames = new Map(applications.data.value.map(item => [item.id, item.name]))
+    const dataStoreNames = new Map(dataStores.data.value.map(item => [item.id, item.name]))
+    const externalNames = new Map(externals.data.value.map(item => [item.id, item.name]))
+    const brokerNames = new Map(brokers.data.value.map(item => [item.id, item.name]))
+    const accountNames = new Map(accounts.data.value.map(item => [item.id, item.userName]))
+    const identityNames = new Map(identities.data.value.map(item => [item.id, item.name]))
+    const positionNames = new Map(positions.data.value.map(item => [item.id, item.name]))
+    const envName = (id: string | undefined) => environmentNames.get(id) || undefined
+    const labels = (ids: string[] | undefined) => [...new Set((ids ?? [])
+      .map(id => tagNames.get(id)).filter((name): name is string => !!name))]
+    for (const app of applications.data.value) {
+      for (const instance of app.instances ?? []) {
+        if (instance.id) instanceNames.set(instance.id, `${app.name || 'Unnamed Application'} — ${envName(instance.environmentId) || 'Environment unavailable'}`)
       }
+    }
+    function targetName(id: string | undefined, kind: string | undefined): string {
+      if (!id) return 'Target unavailable'
+      switch (kind?.toLowerCase()) {
+        // Older records can refer to an application rather than an instance.
+        case 'application': return instanceNames.get(id) || applicationNames.get(id) || 'Application unavailable'
+        case 'applicationinstance':
+        case 'instance': return instanceNames.get(id) || 'Instance unavailable'
+        case 'datastore': return dataStoreNames.get(id) || 'Data Store unavailable'
+        case 'externalresource':
+        case 'external': return externalNames.get(id) || 'External Resource unavailable'
+        case 'messagebroker': return brokerNames.get(id) || 'Message Broker unavailable'
+        case 'platform': return platformNames.get(id) || 'Platform unavailable'
+        default: return 'Target unavailable'
+      }
+    }
 
-      // Search instances within applications
+    const entries: { result: SearchResult; text: string }[] = []
+    function add(result: SearchResult, ...terms: (string | number | undefined)[]) {
+      entries.push({ result, text: normalize([
+        result.name, result.subtitle, result.environmentName, ...(result.tags ?? []), ...terms
+      ].filter(value => value !== undefined).join(' ')) })
+    }
+
+    for (const app of applications.data.value) {
+      if (!app.id) continue
+      const appTags = labels(app.tagIds)
+      add({ id: app.id, type: 'app', name: app.name || 'Unnamed Application', subtitle: app.description,
+        route: `/view/app/${app.id}`, tags: appTags }, app.owner, app.version, app.framework)
       for (const instance of app.instances ?? []) {
         if (!instance.id) continue
-        
-        const envName = environmentLookup.value[instance.environmentId ?? ''] ?? 'Unknown'
-        const instanceName = `${app.name ?? 'App'} — ${envName}`
-        
-        if (fuzzyMatch(app.name ?? '', query) || fuzzyMatch(envName, query)) {
-          results.push({
-            id: instance.id,
-            type: 'instance',
-            name: instanceName,
-            subtitle: instance.baseUri ?? undefined,
-            route: `/view/instance/${instance.id}`
-          })
-        }
-
-        // Search dependencies within instances
-        for (const dep of instance.dependencies ?? []) {
-          if (!dep.id) continue
-          
-          const targetName = resolveDependencyTargetName(dep.targetId, dep.targetKind)
-          const depName = `${app.name ?? 'App'} → ${targetName}`
-          const depSubtitle = `${dep.targetKind ?? 'Dependency'} in ${envName}`
-          if (fuzzyMatch(app.name ?? '', query) || fuzzyMatch(envName, query) || fuzzyMatch(targetName, query)) {
-            results.push({
-              id: dep.id,
-              type: 'dependency',
-              name: depName,
-              subtitle: depSubtitle,
-              route: `/view/dependency/${dep.id}`
-            })
-          }
+        const environmentName = envName(instance.environmentId)
+        const instanceTags = [...new Set([...appTags, ...labels(instance.tagIds)])]
+        add({ id: instance.id, type: 'instance', name: instanceNames.get(instance.id)!,
+          subtitle: publicAddress(instance.baseUri), environmentName, tags: instanceTags,
+          route: `/view/instance/${instance.id}` }, instance.version, platformNames.get(instance.platformId))
+        for (const dependency of instance.dependencies ?? []) {
+          if (!dependency.id) continue
+          add({ id: dependency.id, type: 'dependency', name: `${app.name || 'Unnamed Application'} → ${targetName(dependency.targetId, dependency.targetKind)}`,
+            subtitle: `${dependency.targetKind || 'Dependency'} in ${environmentName || 'an unavailable environment'}`,
+            environmentName, tags: instanceTags, route: `/view/dependency/${dependency.id}` },
+          dependency.authKind, dependency.severity, dependency.port,
+          accountNames.get(dependency.accountId), identityNames.get(dependency.identityId))
         }
       }
     }
-
-    // Search accounts
-    const accounts = accountsQuery.data.value ?? []
-    for (const account of accounts) {
+    for (const account of accounts.data.value) {
       if (!account.id) continue
-      
-      const accountName = account.userName || account.targetId || account.id
-      if (fuzzyMatch(accountName, query)) {
-        results.push({
-          id: account.id,
-          type: 'account',
-          name: accountName,
-          subtitle: account.authKind ?? undefined,
-          route: `/view/account/${account.id}`
-        })
-      }
+      const target = targetName(account.targetId, account.targetKind)
+      add({ id: account.id, type: 'account', name: account.userName || `Account for ${target}`,
+        subtitle: [target, account.authKind].filter(Boolean).join(' · '), tags: labels(account.tagIds),
+        route: `/view/account/${account.id}` })
     }
-
-    // Search identities
-    const identities = identitiesQuery.data.value ?? []
-    for (const identity of identities) {
+    for (const identity of identities.data.value) {
       if (!identity.id) continue
-      
-      if (fuzzyMatch(identity.name ?? '', query)) {
-        results.push({
-          id: identity.id,
-          type: 'identity',
-          name: identity.name ?? 'Unnamed Identity',
-          subtitle: identity.kind ?? undefined,
-          route: `/view/identity/${identity.id}`
-        })
-      }
+      add({ id: identity.id, type: 'identity', name: identity.name || 'Unnamed Identity', subtitle: identity.kind,
+        route: `/view/identity/${identity.id}`, tags: labels(identity.tagIds) },
+      identity.notes, instanceNames.get(identity.ownerInstanceId ?? ''),
+      ...(identity.assignments ?? []).flatMap(item => [targetName(item.targetId, item.targetKind), item.role]))
     }
-
-    // Search data stores
-    const dataStores = dataStoresQuery.data.value ?? []
-    for (const store of dataStores) {
-      if (!store.id) continue
-      
-      const envName = environmentLookup.value[store.environmentId ?? ''] ?? undefined
-      if (fuzzyMatch(store.name ?? '', query) || fuzzyMatch(store.description ?? '', query)) {
-        results.push({
-          id: store.id,
-          type: 'datastore',
-          name: store.name ?? 'Unnamed Data Store',
-          subtitle: envName ? `${store.kind ?? 'Data Store'} in ${envName}` : store.kind ?? undefined,
-          route: `/view/datastore/${store.id}`
-        })
-      }
+    for (const dataStore of dataStores.data.value) {
+      if (!dataStore.id) continue
+      const environmentName = envName(dataStore.environmentId)
+      add({ id: dataStore.id, type: 'datastore', name: dataStore.name || 'Unnamed Data Store',
+        subtitle: [dataStore.kind, environmentName].filter(Boolean).join(' · '), environmentName,
+        tags: labels(dataStore.tagIds), route: `/view/datastore/${dataStore.id}` },
+      dataStore.description, platformNames.get(dataStore.platformId))
     }
-
-    // Search external resources
-    const externalResources = externalResourcesQuery.data.value ?? []
-    for (const resource of externalResources) {
-      if (!resource.id) continue
-      
-      if (fuzzyMatch(resource.name ?? '', query) || fuzzyMatch(resource.description ?? '', query)) {
-        results.push({
-          id: resource.id,
-          type: 'external',
-          name: resource.name ?? 'Unnamed External Resource',
-          subtitle: resource.description ?? undefined,
-          route: `/view/external/${resource.id}`
-        })
-      }
+    for (const external of externals.data.value) {
+      if (!external.id) continue
+      add({ id: external.id, type: 'external', name: external.name || 'Unnamed External Resource',
+        subtitle: external.description, tags: labels(external.tagIds), route: `/view/external/${external.id}` })
     }
-
-    // Search platforms
-    const platforms = platformsQuery.data.value ?? []
-    for (const platform of platforms) {
+    for (const platform of platforms.data.value) {
       if (!platform.id) continue
-      
-      const platformName = platform.displayName ?? platform.dnsName ?? ''
-      if (fuzzyMatch(platformName, query) || fuzzyMatch(platform.notes ?? '', query)) {
-        results.push({
-          id: platform.id,
-          type: 'platform',
-          name: platformName || 'Unnamed Platform',
-          subtitle: platform.kind ?? undefined,
-          route: `/view/platform/${platform.id}`
-        })
-      }
+      add({ id: platform.id, type: 'platform', name: platform.displayName || platform.dnsName || 'Unnamed Platform',
+        subtitle: [platform.kind, platform.dnsName].filter(Boolean).join(' · '), tags: labels(platform.tagIds),
+        route: `/view/platform/${platform.id}` }, platform.os, platform.notes, ...(platform.ipAddresses ?? []),
+      ...(platform.nodes ?? []).flatMap(node => [node.displayName, node.dnsName, node.os, ...(node.ipAddresses ?? [])]))
     }
-
-    // Search risks
-    const risks = risksQuery.risks.value ?? []
-    for (const risk of risks) {
+    for (const risk of risks.data.value) {
       if (!risk.id) continue
-      
-      if (fuzzyMatch(risk.title ?? '', query) || fuzzyMatch(risk.description ?? '', query)) {
-        const impactBadge = risk.impact ? `${risk.impact} Impact` : undefined
-        results.push({
-          id: risk.id,
-          type: 'risk',
-          name: risk.title ?? 'Unnamed Risk',
-          subtitle: impactBadge,
-          route: `/view/risk/${risk.id}`
-        })
-      }
+      add({ id: risk.id, type: 'risk', name: risk.title || 'Unnamed Risk',
+        subtitle: [risk.status, risk.impact ? `${risk.impact} Impact` : undefined].filter(Boolean).join(' · '),
+        tags: labels(risk.tagIds), route: `/view/risk/${risk.id}` },
+      risk.description, risk.likelihood, targetName(risk.targetId, risk.targetType), positionNames.get(risk.ownerPositionId))
     }
-
-    // Search message brokers
-    const messageBrokers = messageBrokersQuery.data.value ?? []
-    for (const broker of messageBrokers) {
+    for (const broker of brokers.data.value) {
       if (!broker.id) continue
-      
-      const envName = environmentLookup.value[broker.environmentId ?? ''] ?? undefined
-      if (fuzzyMatch(broker.name ?? '', query) || fuzzyMatch(broker.description ?? '', query)) {
-        results.push({
-          id: broker.id,
-          type: 'messagebroker',
-          name: broker.name ?? 'Unnamed Message Broker',
-          subtitle: envName ? `${broker.kind ?? 'Message Broker'} in ${envName}` : broker.kind ?? undefined,
-          route: `/view/message-broker/${broker.id}`
-        })
-      }
+      const environmentName = envName(broker.environmentId)
+      add({ id: broker.id, type: 'messagebroker', name: broker.name || 'Unnamed Message Broker',
+        subtitle: [broker.kind, environmentName].filter(Boolean).join(' · '), environmentName,
+        tags: labels(broker.tagIds), route: `/view/message-broker/${broker.id}` }, broker.description,
+      ...(broker.queues ?? []).flatMap(item => [item.name, item.description]),
+      ...(broker.topics ?? []).flatMap(item => [item.name, item.description]))
     }
-
-    // Search positions
-    const positions = positionsQuery.data.value ?? []
-    for (const position of positions) {
+    for (const position of positions.data.value) {
       if (!position.id) continue
-      
-      if (fuzzyMatch(position.name ?? '', query) || fuzzyMatch(position.description ?? '', query)) {
-        results.push({
-          id: position.id,
-          type: 'position',
-          name: position.name ?? 'Unnamed Position',
-          subtitle: position.description ?? undefined,
-          route: `/view/position/${position.id}`
-        })
-      }
+      add({ id: position.id, type: 'position', name: position.name || 'Unnamed Position',
+        subtitle: position.description, tags: labels(position.tagIds), route: `/view/position/${position.id}` })
     }
-
-    // Search tags
-    const tags = tagsQuery.data.value ?? []
-    for (const tag of tags) {
+    for (const tag of tags.data.value) {
       if (!tag.id) continue
-      
-      if (fuzzyMatch(tag.name ?? '', query) || fuzzyMatch(tag.description ?? '', query)) {
-        results.push({
-          id: tag.id,
-          type: 'tag',
-          name: tag.name ?? 'Unnamed Tag',
-          subtitle: tag.description ?? undefined,
-          route: `/view/tag/${tag.id}`
-        })
-      }
+      add({ id: tag.id, type: 'tag', name: tag.name || 'Unnamed Tag', subtitle: tag.description, route: `/view/tag/${tag.id}` })
     }
-
-    return results
+    return entries.sort((left, right) => typeOrder.indexOf(left.result.type) - typeOrder.indexOf(right.result.type)
+      || left.result.name.localeCompare(right.result.name, undefined, { sensitivity: 'base', numeric: true })
+      || left.result.id.localeCompare(right.result.id))
   })
 
-  const groupedResults = computed<SearchResultGroup[]>(() => {
-    const groups: SearchResultGroup[] = []
-    const resultsByType = new Map<SearchResultType, SearchResult[]>()
-
-    for (const result of searchResults.value) {
-      if (!resultsByType.has(result.type)) {
-        resultsByType.set(result.type, [])
-      }
-      resultsByType.get(result.type)!.push(result)
-    }
-
-    // Order by type
-    const typeOrder: SearchResultType[] = ['app', 'instance', 'platform', 'datastore', 'messagebroker', 'external', 'risk', 'account', 'identity', 'position', 'tag', 'dependency']
-    
-    for (const type of typeOrder) {
-      const results = resultsByType.get(type)
-      if (results && results.length > 0) {
-        const config = typeConfig[type]
-        groups.push({
-          type,
-          label: config.label,
-          icon: config.icon,
-          results
-        })
-      }
-    }
-
-    return groups
+  const allResults = computed(() => index.value.map(entry => entry.result))
+  const textResults = computed(() => {
+    const tokens = normalize(searchQuery.value).trim().split(/\s+/).filter(Boolean)
+    return index.value.filter(entry => tokens.every(token => entry.text.includes(token))).map(entry => entry.result)
   })
-
+  const searchResults = computed(() => textResults.value.filter(result =>
+    selectedTypes.value.length === 0 || selectedTypes.value.includes(result.type)))
+  const totalCount = computed(() => allResults.value.length)
+  const typeOptions = computed<SearchTypeOption[]>(() => typeOrder.map(type => ({
+    type, ...typeConfig[type], status: sourceByType[type].status.value,
+    count: allResults.value.filter(result => result.type === type).length,
+    matchCount: textResults.value.filter(result => result.type === type).length
+  })))
+  const unavailableTypes = computed(() => typeOptions.value.filter(option => option.status === 'unavailable'))
+  const groupedResults = computed<SearchResultGroup[]>(() => typeOrder.map(type => ({
+    type, ...typeConfig[type], results: searchResults.value.filter(result => result.type === type)
+  })).filter(group => group.results.length > 0))
   const hasResults = computed(() => searchResults.value.length > 0)
 
-  function setSearchQuery(query: string) {
-    searchQuery.value = query
-  }
-
-  function clearSearch() {
-    searchQuery.value = ''
-  }
-
-  function getIconForType(type: SearchResultType): string {
-    return typeConfig[type]?.icon ?? 'help'
-  }
-
-  function getLabelForType(type: SearchResultType): string {
-    return typeConfig[type]?.label ?? 'Unknown'
-  }
-
   return {
-    searchQuery,
-    searchResults,
-    groupedResults,
-    isLoading,
-    isSearching,
-    hasResults,
-    setSearchQuery,
-    clearSearch,
-    getIconForType,
-    getLabelForType
+    searchQuery, selectedTypes, allResults, searchResults, groupedResults, typeOptions,
+    totalCount, unavailableTypes, errors, retry, hasAccess, isLoading, isSearching, hasResults,
+    setSearchQuery(query: string) { searchQuery.value = query },
+    clearSearch() { searchQuery.value = '' },
+    getIconForType(type: SearchResultType) { return typeConfig[type]?.icon ?? 'help' },
+    getLabelForType(type: SearchResultType) { return typeConfig[type]?.label ?? 'Unknown' }
   }
 }

@@ -10,6 +10,11 @@
       <p>Loading application...</p>
     </div>
 
+    <q-banner v-else-if="appsError" class="bg-red-1 text-negative" role="alert">
+      {{ getErrorMessage(appsError, 'Unable to load this application.') }}
+      <template #action><q-btn flat no-caps label="Retry loading" @click="refetchApplications()" /></template>
+    </q-banner>
+
     <!-- Error state: App not found -->
     <div v-else-if="!application" class="app-error">
       <q-icon name="error_outline" size="48px" color="negative" />
@@ -162,6 +167,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
+import { getErrorMessage } from '../../utils/error'
 import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'
 import type { HigherItem, LowerItem } from '../../types/readonly'
 import { useApplications } from '../../composables/useApplications'
@@ -175,7 +181,7 @@ const router = useRouter()
 const id = computed(() => route.params.id as string)
 
 // Data queries
-const { data: applicationsData, isLoading: appsLoading } = useApplications()
+const { data: applicationsData, isLoading: appsLoading, error: appsError, refetch: refetchApplications } = useApplications()
 const { data: environmentsData, lookup: environmentLookup, isLoading: envsLoading } = useEnvironments()
 const { tagInfoLookup, isLoading: tagsLoading } = useTags()
 

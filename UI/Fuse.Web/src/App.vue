@@ -466,9 +466,6 @@ import { Permission } from 'permissions'
 import { getErrorMessage } from './utils/error'
 import { useOnboardingStore } from './stores/OnboardingStore'
 import { useOnboardingTour } from './composables/useOnboardingTour'
-import { useEnvironments } from './composables/useEnvironments'
-import { useDataStores } from './composables/useDataStores'
-import { useApplications } from './composables/useApplications'
 import CheatSheetDialog from './components/onboarding/CheatSheetDialog.vue'
 import InitialSetupWizard from './components/onboarding/InitialSetupWizard.vue'
 import InventoryNavigator from './components/InventoryNavigator.vue'
@@ -485,9 +482,21 @@ const onboardingStore = useOnboardingStore()
 const { startTour } = useOnboardingTour()
 const client = useFuseClient()
 
-const environmentsQuery = useEnvironments()
-const dataStoresQuery = useDataStores()
-const applicationsQuery = useApplications()
+// Onboarding evaluates these only after authentication and its permissions are known.
+const environmentsQuery = useQuery({ queryKey: ['environments'], queryFn: () => client.environmentAll(), enabled: false, retry: false })
+const dataStoresQuery = useQuery({ queryKey: ['dataStores'], queryFn: () => client.dataStoreAll(), enabled: false, retry: false })
+const applicationsQuery = useQuery({ queryKey: ['applications'], queryFn: () => client.applicationAll(), enabled: false, retry: false })
+const canCheckInitialSetup = computed(() =>
+  fuseStore.hasPermission(Permission.EnvironmentsCreate) &&
+  fuseStore.hasPermission(Permission.EnvironmentsRead) &&
+  fuseStore.hasPermission(Permission.DataStoresRead) &&
+  fuseStore.hasPermission(Permission.ApplicationsRead)
+)
+const canSuggestFirstApplication = computed(() =>
+  fuseStore.hasPermission(Permission.ApplicationsCreate) &&
+  fuseStore.hasPermission(Permission.ApplicationsRead) &&
+  !onboardingStore.hasCompletedTour && !onboardingStore.lastCompletedAt && !onboardingStore.dismissedBanner
+)
 const aboutQuery = useQuery({ queryKey: ['about'], queryFn: () => client.aboutGet(), enabled: false, staleTime: Infinity })
 const aboutDialogOpen = ref(false)
 const aboutDetails = computed(() => {
@@ -619,29 +628,26 @@ onBeforeUnmount(() => {
 })
 
 async function evaluateOnboardingPrompt() {
-  if (fuseStore.requireSetup) {
-    showSetupWizard.value = false
-    showOnboardingPrompt.value = false
-    return
-  }
+  showSetupWizard.value = false
+  showOnboardingPrompt.value = false
+  if (fuseStore.requireSetup || (!canCheckInitialSetup.value && !canSuggestFirstApplication.value)) return
 
-  await Promise.allSettled([
-    environmentsQuery.refetch(),
-    dataStoresQuery.refetch(),
-    applicationsQuery.refetch()
-  ])
+  const requests = [applicationsQuery.refetch()]
+  if (canCheckInitialSetup.value) {
+    requests.push(environmentsQuery.refetch(), dataStoresQuery.refetch())
+  }
+  await Promise.allSettled(requests)
 
   const environmentCount = environmentsQuery.data.value?.length ?? 0
   const dataStoreCount = dataStoresQuery.data.value?.length ?? 0
   const applicationCount = applicationsQuery.data.value?.length ?? 0
   const totalResources = environmentCount + dataStoreCount + applicationCount
 
-  const hasTourRecord = onboardingStore.hasCompletedTour || !!onboardingStore.lastCompletedAt
-
   if (
+    canCheckInitialSetup.value &&
+    environmentsQuery.isSuccess.value && dataStoresQuery.isSuccess.value && applicationsQuery.isSuccess.value &&
     environmentCount === 0 &&
-    totalResources === 0 &&
-    fuseStore.hasPermission(Permission.EnvironmentsCreate)
+    totalResources === 0
   ) {
     showSetupWizard.value = true
     showOnboardingPrompt.value = false
@@ -650,10 +656,7 @@ async function evaluateOnboardingPrompt() {
 
   showSetupWizard.value = false
   if (
-    !hasTourRecord &&
-    !onboardingStore.dismissedBanner &&
-    applicationCount === 0 &&
-    fuseStore.hasPermission(Permission.ApplicationsCreate)
+    canSuggestFirstApplication.value && applicationsQuery.isSuccess.value && applicationCount === 0
   ) {
     showOnboardingPrompt.value = true
   }
