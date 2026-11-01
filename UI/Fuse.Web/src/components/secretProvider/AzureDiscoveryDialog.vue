@@ -19,7 +19,8 @@
           <q-select v-model="authMode" :options="authOptions" emit-value map-options outlined dense label="Discover using" :disable="busy" />
         </div>
         <div class="col-12 col-sm-6">
-          <q-select v-model="subscriptionIds" :options="subscriptionOptions" multiple use-chips use-input new-value-mode="add-unique"
+          <q-select ref="subscriptionSelect" v-model="subscriptionIds" :options="subscriptionOptions" multiple use-chips use-input new-value-mode="add-unique"
+            :input-debounce="0" @input-value="resetSubscriptionHighlight"
             emit-value map-options outlined dense label="Subscriptions" :loading="loadingSubscriptions" :disable="busy"
             hint="Select subscriptions or enter a subscription ID and press Enter." />
           <q-btn flat dense size="sm" label="Reload subscriptions" icon="refresh" :disable="busy || loadingSubscriptions" @click="loadSubscriptions" />
@@ -91,7 +92,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { QTableColumn } from 'quasar'
+import type { QSelect, QTableColumn } from 'quasar'
 import { SecretProviderAuthMode } from '../../api/client'
 import {
   discoverAzureResources, importAzureResources, listAzureSubscriptions, setAzureDiscoveryExclusions,
@@ -111,6 +112,11 @@ const kinds = ref<AzureIntegrationKind[]>(['KeyVault', 'AppConfiguration'])
 const subscriptions = ref<AzureSubscription[]>([])
 const subscriptionOptions = computed(() => subscriptions.value.map(s => ({ label: `${s.name} (${s.id})`, value: s.id })))
 const subscriptionIds = ref<string[]>([])
+const subscriptionSelect = ref<QSelect | null>(null)
+function resetSubscriptionHighlight() {
+  // Typed IDs must use add-unique instead of toggling a previously hovered option.
+  subscriptionSelect.value?.setOptionIndex(-1)
+}
 const resourceGroups = ref('')
 const loadingSubscriptions = ref(false)
 const scanning = ref(false)

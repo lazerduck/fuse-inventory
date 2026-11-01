@@ -16,16 +16,19 @@
             :rules="[val => !!val || 'Name is required']"
           />
           <q-select
+            ref="kindSelect"
             v-model="form.kind"
             label="Kind*"
             dense
             outlined
             use-input
+            :input-debounce="0"
             hide-dropdown-icon
             new-value-mode="add"
             clearable
             :options="kindOptions"
             :rules="[val => !!val || 'Kind is required']"
+            @input-value="resetKindHighlight"
             @new-value="onNewKind"
           />
           <q-select
@@ -106,6 +109,7 @@
 <script setup lang="ts">
 import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { computed, reactive, watch, onMounted, ref } from 'vue'
+import type { QSelect } from 'quasar'
 import { useEnvironments } from '../../composables/useEnvironments'
 import type { MessageBroker } from 'api/client'
 import TagSelect from '../tags/TagSelect.vue'
@@ -156,6 +160,12 @@ const emit = defineEmits<Emits>()
 
 const environmentsStore = useEnvironments()
 const environmentOptions = environmentsStore.options
+const kindSelect = ref<QSelect | null>(null)
+
+function resetKindHighlight() {
+  // New text must not select a preset that was highlighted before typing.
+  kindSelect.value?.setOptionIndex(-1)
+}
 
 const kindOptions = ref([
   'RabbitMQ',

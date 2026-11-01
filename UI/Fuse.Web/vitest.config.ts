@@ -9,5 +9,5 @@ export default defineConfig({
     api: fileURLToPath(new URL('./src/api', import.meta.url)),
     permissions: fileURLToPath(new URL('./src/permissions', import.meta.url)),
   } },
-  test: { environment: 'jsdom', include: ['tests/**/*.test.ts'], clearMocks: true },
+  test: { environment: 'jsdom', setupFiles: ['./tests/setup.ts'], include: ['tests/**/*.test.ts'], clearMocks: true },
 })

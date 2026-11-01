@@ -19,10 +19,10 @@ steps:
     command: dotnet --version
 
   - name: Install Node.js and npm
-    description: Install Node.js (LTS version recommended) for the frontend UI
+    description: Install the current Node.js 22 release for the frontend UI
     command: |
-      # Node.js 18+ is recommended for Vue 3 and Quasar
-      node --version || echo "Node.js not found. Please install Node.js 18 or higher."
+      # Use the current Node.js 22 release, matching Docker and CI.
+      node --version || echo "Node.js not found. Please install the current Node.js 22 release."
       npm --version || echo "npm not found. Please install npm."
 
   - name: Restore .NET dependencies
@@ -58,7 +58,7 @@ steps:
 # Additional notes for the setup process
 notes:
   - The project requires .NET 10 SDK. If unavailable, check GitHub Actions setup for alternative SDK versions.
-  - Node.js 18+ and npm are required for the frontend development.
+  - Use the current Node.js 22 release and npm for frontend development, matching Docker and CI.
   - The UI can be developed independently by running 'npm run dev' in the UI/Fuse.Web directory.
   - For full integration testing, Docker and Docker Compose are recommended.
   - Tests should always pass before committing changes.

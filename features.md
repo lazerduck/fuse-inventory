@@ -313,7 +313,7 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 
 ### Single-Container Deployment
 - The API and the Vue 3 frontend are bundled into a single Docker image
-- Multi-stage Dockerfile: Node 20 Alpine builds the frontend, .NET 10 SDK compiles the API, .NET 10 AspNet serves both
+- Multi-stage Dockerfile: Node 22 Alpine builds the frontend, .NET 10 SDK compiles the API, .NET 10 AspNet serves both
 - Frontend is served as a static SPA from the API process — no separate web server needed
 - Published to GitHub Container Registry (`ghcr.io/lazerduck/fuse-inventory`)
 

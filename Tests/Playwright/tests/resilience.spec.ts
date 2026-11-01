@@ -75,7 +75,7 @@ test('pending save is visibly busy and saves once when the response arrives', as
     expect(posts).toBe(1);
   } finally { release(); }
 });
-test('tag pagination changes page and preserves the selected page on reload', async ({ authenticatedPage: page, adminApi }) => {
+test('tag pagination preserves page, page size and search across reload', async ({ authenticatedPage: page, adminApi }) => {
   const prefix = `Paged-${randomUUID().slice(0, 8)}`;
   for (let index = 0; index < 12; index++) {
     expect((await adminApi.post('/api/tag', { data: { name: `${prefix}-${String(index).padStart(2, '0')}` } })).ok()).toBeTruthy();
@@ -92,4 +92,22 @@ test('tag pagination changes page and preserves the selected page on reload', as
   await expect(page.getByText('11–12 of 12', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByText('11–12 of 12', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Previous page', exact: true }).click();
+  await expect(page.getByText('1–10 of 12', { exact: true })).toBeVisible();
+  const pageSize = page.locator('.q-table__bottom').getByRole('combobox');
+  await pageSize.click();
+  await page.getByRole('option', { name: '5', exact: true }).click();
+  await expect(page.getByText('1–5 of 12', { exact: true })).toBeVisible();
+  await expect(page.locator('tbody tr')).toHaveCount(5);
+  await page.getByRole('button', { name: 'Next page', exact: true }).click();
+  await expect(page.getByText('6–10 of 12', { exact: true })).toBeVisible();
+  const filteredRows = await page.locator('tbody tr').allTextContents();
+  expect(filteredRows.every(row => row.includes(prefix))).toBe(true);
+
+  await page.reload();
+  await expect(page.getByPlaceholder('Search...')).toHaveValue(prefix);
+  await expect(page.getByText('6–10 of 12', { exact: true })).toBeVisible();
+  await expect(page.locator('tbody tr')).toHaveCount(5);
+  await expect(page.locator('tbody tr')).toHaveText(filteredRows);
 });

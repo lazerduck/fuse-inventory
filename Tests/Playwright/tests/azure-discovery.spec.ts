@@ -76,3 +76,52 @@ test('Azure discovery remembers exclusions, avoids existing resources and retrie
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
   await expect(dialog).toBeHidden();
 });
+
+test('Azure discovery keeps selected subscriptions when adding a manual ID and ignores duplicates', async ({ authenticatedPage: page }) => {
+  const selectedId = '77777777-7777-7777-7777-777777777777';
+  const manualId = '88888888-8888-8888-8888-888888888888';
+  const selectedLabel = `Production subscription (${selectedId})`;
+  const discoveryScopes: string[][] = [];
+  await page.route('**/api/SecretProvider', route => route.fulfill({ json: [] }));
+  await page.route('**/api/SecretProvider/azure-manager', route => route.fulfill({ json: { hasClientSecretCredentials: true } }));
+  await page.route('**/api/azure-discovery/subscriptions', route => route.fulfill({ json: {
+    subscriptions: [
+      { id: selectedId, name: 'Production subscription' },
+      { id: '99999999-9999-9999-9999-999999999999', name: 'Unselected subscription' },
+    ], warnings: [],
+  } }));
+  await page.route('**/api/azure-discovery/resources', route => {
+    discoveryScopes.push(route.request().postDataJSON().subscriptionIds);
+    return route.fulfill({ json: { resources: [], warnings: [] } });
+  });
+
+  await page.goto('/secret-providers');
+  await page.getByRole('button', { name: 'Discover Azure resources', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const subscriptions = dialog.getByRole('combobox', { name: 'Subscriptions', exact: true });
+  const chips = dialog.locator('.q-chip');
+  await subscriptions.click();
+  await page.getByRole('option', { name: selectedLabel, exact: true }).click();
+  await expect(chips).toHaveCount(1);
+  await expect(chips.filter({ hasText: selectedLabel })).toHaveCount(1);
+
+  await subscriptions.fill(manualId);
+  await subscriptions.press('Enter');
+  await expect(subscriptions).toHaveValue('');
+  await expect(chips).toHaveCount(2);
+  await expect(chips.filter({ hasText: selectedLabel })).toHaveCount(1);
+  await expect(chips.filter({ hasText: manualId })).toHaveCount(1);
+
+  for (const duplicate of [manualId, selectedId]) {
+    await subscriptions.fill(duplicate);
+    await subscriptions.press('Enter');
+    await expect(subscriptions).toHaveValue('');
+    await expect(chips).toHaveCount(2);
+    await expect(chips.filter({ hasText: selectedLabel })).toHaveCount(1);
+    await expect(chips.filter({ hasText: manualId })).toHaveCount(1);
+  }
+  await subscriptions.press('Tab');
+  await dialog.getByRole('button', { name: 'Discover resources', exact: true }).click();
+  await expect.poll(() => discoveryScopes.length).toBe(1);
+  expect([...discoveryScopes[0]!].sort()).toEqual([selectedId, manualId].sort());
+});
