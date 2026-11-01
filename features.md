@@ -146,6 +146,11 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Clickable dependency rows link directly to the target resource edit page
 - Quick-access URL links open base, health, and OpenAPI URLs from the instance page
 
+### Save Feedback
+- Application, instance, account, identity, risk, and Azure integration editors show unsaved, saving, and saved states
+- Ctrl/Cmd+S validates and saves the active editor without closing it; open dialogs prevent saves to an editor behind them
+- Edits made during a save remain marked as unsaved until saved separately
+
 ### Grid / Table Views
 - Paginated, sortable tables for all major entity types:
   - Applications, Accounts, Identities, Data Stores, External Resources, Message Brokers, Platforms, Environments, Tags, Positions, Risks, Responsibility Types, and more
@@ -209,6 +214,16 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - Display real-time health status on the home dashboard
 - Dedicated Kuma Dashboard page for an at-a-glance health overview
 - Health data is cached and refreshed on demand
+
+### Azure Integration Setup and Discovery
+- Separate Key Vault and App Configuration tabs with counts, search, and service-specific setup labels
+- Shared client secret credentials, per-integration credentials, or managed identity; custom credentials do not replace shared credentials
+- Discover Azure public-cloud Key Vaults and App Configuration stores by subscription, optional resource groups, and resource type
+- Discovery uses the configured Azure identity's management-plane read permissions. Secret or configuration data access alone may not grant resource visibility; Reader access on the intended resource group or subscription enables discovery
+- Review selected resources before adding, skip existing integrations, and remember exclusions across scans; ignored resources can be included on a later scan
+- Discovery imports resource metadata with browsing enabled. Secret reveal, create, and update/rotate capabilities must be enabled separately
+- Test browse access and view its last result/time. Discovery and successful read checks do not prove write access or network reachability for every operation
+- Partial discovery/import failures are reported per scope/resource; existing integrations are retained
 
 ### Azure Key Vault
 - Integrate with one or more Azure Key Vault instances

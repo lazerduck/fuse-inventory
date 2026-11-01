@@ -22148,6 +22148,12 @@ export class SecretProviderResponse implements ISecretProviderResponse {
   capabilities?: SecretProviderCapabilities;
   createdAt?: Date;
   updatedAt?: Date;
+  integrationKind?: "KeyVault" | "AppConfiguration";
+  credentialSource?: "SharedCredentials" | "CustomCredentials" | "ManagedIdentity";
+  azureResourceId?: string;
+  lastCheckedAt?: Date;
+  lastCheckSucceeded?: boolean;
+  lastCheckMessage?: string;
 
   constructor(data?: ISecretProviderResponse) {
     if (data) {
@@ -22160,6 +22166,12 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
   init(_data?: any) {
     if (_data) {
+      this.integrationKind = _data["integrationKind"];
+      this.credentialSource = _data["credentialSource"];
+      this.azureResourceId = _data["azureResourceId"];
+      this.lastCheckedAt = _data["lastCheckedAt"] ? new Date(_data["lastCheckedAt"].toString()) : undefined;
+      this.lastCheckSucceeded = _data["lastCheckSucceeded"];
+      this.lastCheckMessage = _data["lastCheckMessage"];
       this.id = _data["id"];
       this.name = _data["name"];
       this.vaultUri = _data["vaultUri"];
@@ -22183,6 +22195,12 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
+    data["integrationKind"] = this.integrationKind;
+    data["credentialSource"] = this.credentialSource;
+    data["azureResourceId"] = this.azureResourceId;
+    data["lastCheckedAt"] = this.lastCheckedAt?.toISOString();
+    data["lastCheckSucceeded"] = this.lastCheckSucceeded;
+    data["lastCheckMessage"] = this.lastCheckMessage;
     data["id"] = this.id;
     data["name"] = this.name;
     data["vaultUri"] = this.vaultUri;
@@ -22206,6 +22224,12 @@ export interface ISecretProviderResponse {
   capabilities?: SecretProviderCapabilities;
   createdAt?: Date;
   updatedAt?: Date;
+  integrationKind?: "KeyVault" | "AppConfiguration";
+  credentialSource?: "SharedCredentials" | "CustomCredentials" | "ManagedIdentity";
+  azureResourceId?: string;
+  lastCheckedAt?: Date;
+  lastCheckSucceeded?: boolean;
+  lastCheckMessage?: string;
 }
 
 export class SecretValueResponse implements ISecretValueResponse {
@@ -23310,6 +23334,7 @@ export class TestSecretProviderConnection implements ITestSecretProviderConnecti
   vaultUri?: string | undefined;
   authMode?: SecretProviderAuthMode;
   credentials?: SecretProviderCredentials;
+  providerId?: string | undefined;
 
   constructor(data?: ITestSecretProviderConnection) {
     if (data) {
@@ -23327,6 +23352,7 @@ export class TestSecretProviderConnection implements ITestSecretProviderConnecti
       this.credentials = _data["credentials"]
         ? SecretProviderCredentials.fromJS(_data["credentials"])
         : (undefined as any);
+      this.providerId = _data["providerId"];
     }
   }
 
@@ -23344,6 +23370,7 @@ export class TestSecretProviderConnection implements ITestSecretProviderConnecti
     data["credentials"] = this.credentials
       ? this.credentials.toJSON()
       : (undefined as any);
+    data["providerId"] = this.providerId;
     return data;
   }
 }
@@ -23352,6 +23379,7 @@ export interface ITestSecretProviderConnection {
   vaultUri?: string | undefined;
   authMode?: SecretProviderAuthMode;
   credentials?: SecretProviderCredentials;
+  providerId?: string | undefined;
 }
 
 export class TestSqlConnection implements ITestSqlConnection {

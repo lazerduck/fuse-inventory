@@ -12,4 +12,5 @@ public interface ISecretProviderService
     Task<Result<Models.SecretProvider>> UpdateSecretProviderAsync(UpdateSecretProvider command);
     Task<Result> DeleteSecretProviderAsync(DeleteSecretProvider command);
     Task<Result> TestConnectionAsync(TestSecretProviderConnection command);
+    Task<Result<Responses.SecretProviderAccessCheckResponse>> TestSavedConnectionAsync(Guid id);
 }

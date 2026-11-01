@@ -6,6 +6,8 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
 import { useAccountEdit } from '../src/pages/account-edit/composables/useAccountEdit'
+import { useFuseStore } from '../src/stores/FuseStore'
+import { SecurityPosture } from 'api/client'
 import { confirmNavigation, hasUnsavedChanges } from '../src/composables/useUnsavedChanges'
 const api = vi.hoisted(() => {
   const methods: Record<string, ReturnType<typeof vi.fn>> = {}
@@ -35,8 +37,10 @@ async function render(create = false) {
   await router.push(create ? '/accounts/create' : '/accounts/one/edit')
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   let editor!: ReturnType<typeof useAccountEdit>
+  const pinia = createPinia()
+  useFuseStore(pinia).securityPosture = SecurityPosture.Unrestricted
   wrapper = mount(defineComponent({ setup() { editor = useAccountEdit(); return () => null } }), {
-    global: { plugins: [createPinia(), router, [VueQueryPlugin, { queryClient: client }]] }
+    global: { plugins: [pinia, router, [VueQueryPlugin, { queryClient: client }]] }
   })
   await flushPromises()
   return { editor, router }
@@ -70,4 +74,13 @@ it('opens the created record without a false unsaved-change prompt', async () =>
   await flushPromises()
   expect(api.accountPOST).toHaveBeenCalledOnce()
   expect(router.currentRoute.value.name).toBe('accountEdit')
+})
+it('does not save when edit permissions are revoked', async () => {
+  const { editor } = await render()
+  editor.form.value.userName = 'Edited'
+  editor.fuseStore.securityPosture = SecurityPosture.RestrictedEditing
+  editor.handleSave()
+  await flushPromises()
+  expect(api.accountPUT).not.toHaveBeenCalled()
+  expect(hasUnsavedChanges()).toBe(true)
 })

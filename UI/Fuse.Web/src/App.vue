@@ -292,7 +292,7 @@
                 <q-icon name="cloud" />
               </q-item-section>
               <q-item-section>
-                Azure Config & Key Vault
+                Azure integrations
               </q-item-section>
             </q-item>
 

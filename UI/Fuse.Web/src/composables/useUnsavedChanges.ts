@@ -36,17 +36,23 @@ export function warnBeforeUnload(event: BeforeUnloadEvent) {
 export function useUnsavedChanges<T>(value: MaybeRefOrGetter<T>, enabled: MaybeRefOrGetter<boolean> = true) {
   const snapshot = () => JSON.stringify(toValue(value))
   const baseline = ref(snapshot())
+  const hasSaved = ref(false)
   let submitted: string | undefined
   const isDirty = computed(() => toValue(enabled) && snapshot() !== baseline.value)
   const check = () => isDirty.value
   onMounted(() => { drafts.add(check) })
   onBeforeUnmount(() => { drafts.delete(check) })
 
-  function markClean() { baseline.value = snapshot() }
+  function markClean() {
+    const current = snapshot()
+    if (current !== baseline.value) hasSaved.value = false
+    baseline.value = current
+  }
   function captureSave() { submitted = snapshot() }
   function markSaved() {
     baseline.value = submitted ?? snapshot()
     submitted = undefined
+    hasSaved.value = true
   }
   async function discard(action: () => void) {
     if (!isDirty.value || await confirmDiscardChanges()) {
@@ -54,5 +60,5 @@ export function useUnsavedChanges<T>(value: MaybeRefOrGetter<T>, enabled: MaybeR
       action()
     }
   }
-  return { isDirty, markClean, captureSave, markSaved, discard }
+  return { isDirty, hasSaved, markClean, captureSave, markSaved, discard }
 }

@@ -5,6 +5,7 @@
       <p class="subtitle">{{ subtitle }}</p>
     </div>
     <div class="flex q-gutter-sm">
+      <SaveStatus :dirty="dirty" :saving="isSaving" :saved="saved" />
       <q-btn flat label="Cancel" @click="$emit('cancel')" />
       <q-btn
         v-if="showClone"
@@ -18,6 +19,8 @@
       <q-btn
         color="primary"
         :label="primaryLabel"
+        aria-keyshortcuts="Control+s Meta+s"
+        title="Save (Ctrl/Cmd+S)"
         :loading="isSaving"
         :disable="!canModify"
         @click="$emit('save')"
@@ -27,12 +30,15 @@
 </template>
 
 <script setup lang="ts">
+import SaveStatus from '../../../components/shared/SaveStatus.vue'
 interface Props {
   title: string
   subtitle: string
   primaryLabel: string
   isSaving: boolean
   canModify: boolean
+  dirty: boolean
+  saved: boolean
   showClone?: boolean
 }
 

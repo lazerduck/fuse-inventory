@@ -26,7 +26,8 @@ public record DeleteSecretProvider(
 public record TestSecretProviderConnection(
     Uri VaultUri,
     SecretProviderAuthMode AuthMode,
-    SecretProviderCredentials? Credentials
+    SecretProviderCredentials? Credentials,
+    Guid? ProviderId = null
 );
 
 public record CreateSecret(

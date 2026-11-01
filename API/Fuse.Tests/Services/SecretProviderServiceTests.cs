@@ -212,7 +212,7 @@ public class SecretProviderServiceTests
     }
 
     [Fact]
-    public async Task CreateSecretProviderAsync_WithExplicitClientSecretCredentials_StoresCredentialsInManager()
+    public async Task CreateSecretProviderAsync_WithExplicitClientSecretCredentials_PreservesCustomCredentialsWithoutChangingSharedManager()
     {
         var credentials = new SecretProviderCredentials("tenant-id", "client-id", "client-secret");
         var store = NewStore();
@@ -230,8 +230,8 @@ public class SecretProviderServiceTests
         var result = await service.CreateSecretProviderAsync(command);
 
         Assert.True(result.IsSuccess);
-        mockManager.Verify(m => m.UpdateClientSecretCredentialsAsync(credentials), Times.Once);
-        Assert.Null(result.Value!.Credentials);
+        mockManager.Verify(m => m.UpdateClientSecretCredentialsAsync(It.IsAny<SecretProviderCredentials>()), Times.Never);
+        Assert.Equal(credentials, result.Value!.Credentials);
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public class SecretProviderServiceTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Contains("Client secret authentication requires", result.Error);
+        Assert.Contains("all three custom credential fields", result.Error);
     }
 
     [Fact]
@@ -604,4 +604,73 @@ public class SecretProviderServiceTests
         Assert.False(result.IsSuccess);
         Assert.Contains("Client secret authentication requires", result.Error);
     }
+    [Fact]
+    public async Task Update_WithOmittedCredentials_RetainsExistingCustomCredentials()
+    {
+        var credentials = new SecretProviderCredentials("tenant", "client", "secret");
+        var provider = new SecretProvider(Guid.NewGuid(), "Original", new Uri("https://demo.vault.azure.net/"),
+            SecretProviderAuthMode.ClientSecret, credentials, SecretProviderCapabilities.Check, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore([provider]);
+        var client = CreateMockClient();
+        var service = new SecretProviderService(store, client.Object);
+        var response = await service.UpdateSecretProviderAsync(new(provider.Id, "Renamed", provider.VaultUri,
+            provider.AuthMode, null, provider.Capabilities));
+        Assert.True(response.IsSuccess);
+        Assert.Equal(credentials, response.Value!.Credentials);
+        client.Verify(c => c.TestConnectionAsync(It.IsAny<Uri>(), It.IsAny<SecretProviderAuthMode>(), It.IsAny<SecretProviderCredentials?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SavedAccessCheck_UsesCustomCredentials_AndPersistsFailureWithoutThrowing()
+    {
+        var credentials = new SecretProviderCredentials("tenant", "client", "secret");
+        var provider = new SecretProvider(Guid.NewGuid(), "Demo", new Uri("https://demo.vault.azure.net/"),
+            SecretProviderAuthMode.ClientSecret, credentials, SecretProviderCapabilities.Check, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore([provider]);
+        var client = CreateMockClient(false);
+        var response = await new SecretProviderService(store, client.Object).TestSavedConnectionAsync(provider.Id);
+        Assert.True(response.IsSuccess);
+        Assert.False(response.Value!.Success);
+        Assert.Equal("Connection failed", response.Value.Message);
+        var saved = Assert.Single((await store.GetAsync()).SecretProviders);
+        Assert.Equal(response.Value.CheckedAt, saved.LastCheckedAt);
+        Assert.False(saved.LastCheckSucceeded);
+        client.Verify(c => c.TestConnectionAsync(provider.VaultUri, provider.AuthMode, credentials), Times.Once);
+    }
+
+    [Fact]
+    public async Task FormAccessCheck_CanReuseStoredCredentialsWithoutReturningThem()
+    {
+        var credentials = new SecretProviderCredentials("tenant", "client", "secret");
+        var provider = new SecretProvider(Guid.NewGuid(), "Demo", new Uri("https://demo.vault.azure.net/"),
+            SecretProviderAuthMode.ClientSecret, credentials, SecretProviderCapabilities.Check, DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore([provider]);
+        var client = CreateMockClient();
+        var endpoint = new Uri("https://another.vault.azure.net/");
+        var response = await new SecretProviderService(store, client.Object).TestConnectionAsync(new(endpoint, provider.AuthMode, null, provider.Id));
+        Assert.True(response.IsSuccess);
+        client.Verify(c => c.TestConnectionAsync(endpoint, provider.AuthMode, credentials), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_DoesNotSaveStaleSuccessfulCheck_WhenSharedCredentialsChangeDuringTest()
+    {
+        var store = NewStore();
+        var manager = new AzureIntegrationManagerService(store);
+        await manager.UpdateClientSecretCredentialsAsync(new("tenant", "old-client", "old-secret"));
+        var client = CreateMockClient();
+        client.Setup(c => c.TestConnectionAsync(It.IsAny<Uri>(), It.IsAny<SecretProviderAuthMode>(), It.IsAny<SecretProviderCredentials?>()))
+            .Returns(async () =>
+            {
+                await manager.UpdateClientSecretCredentialsAsync(new("tenant", "new-client", "new-secret"));
+                return Result.Success();
+            });
+        var service = new SecretProviderService(store, client.Object, manager);
+        var result = await service.CreateSecretProviderAsync(new("Demo", new Uri("https://demo.vault.azure.net/"),
+            SecretProviderAuthMode.ClientSecret, null, SecretProviderCapabilities.Check));
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value!.LastCheckedAt);
+        Assert.Null(result.Value.LastCheckSucceeded);
+    }
+
 }

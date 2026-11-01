@@ -1,11 +1,12 @@
 <template>
-  <div class="page-container">
+  <div ref="editorRoot" class="page-container">
     <div class="page-header">
       <div>
         <h1 class="page-title">{{ pageTitle }}</h1>
         <p class="subtitle">{{ pageSubtitle }}</p>
       </div>
       <div class="header-actions">
+        <SaveStatus :dirty="draft.isDirty.value" :saving="isSaving" :saved="draft.hasSaved.value" />
         <q-btn
           flat
           label="Cancel"
@@ -22,6 +23,8 @@
         <q-btn
           color="primary"
           :label="isEditMode ? 'Save' : 'Create Risk'"
+          aria-keyshortcuts="Control+s Meta+s"
+          title="Save (Ctrl/Cmd+S)"
           :loading="isSaving"
           :disable="isEditMode ? !fuseStore.hasPermission(Permission.RisksUpdate) : !fuseStore.hasPermission(Permission.RisksCreate)"
           @click="handleSave"
@@ -43,7 +46,7 @@
         <div v-if="isLoading" class="row items-center justify-center q-pa-lg">
           <q-spinner color="primary" size="3em" />
         </div>
-        <q-form v-else @submit.prevent="handleSave">
+        <q-form v-else ref="riskForm" @submit.prevent="handleSave">
           <div class="form-grid">
             <q-input
               v-model="form.title"
@@ -187,6 +190,9 @@
 
 <script setup lang="ts">
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { useSaveShortcut } from '../composables/useSaveShortcut'
+import SaveStatus from '../components/shared/SaveStatus.vue'
+import type { QForm } from 'quasar'
 import { useEditorNavigation } from '../composables/useEditorNavigation'
 
 import { ref, computed, watch } from 'vue'
@@ -437,9 +443,16 @@ const updateMutation = useMutation({
 })
 
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
+const editorRoot = ref<HTMLElement | null>(null)
+const riskForm = ref<QForm | null>(null)
+const canSave = computed(() => !isSaving.value && !isLoading.value && !loadError.value &&
+  fuseStore.hasPermission(isEditMode.value ? Permission.RisksUpdate : Permission.RisksCreate))
+useSaveShortcut(editorRoot, async () => {
+  if (await riskForm.value?.validate()) await handleSave(false)
+}, canSave)
 
 async function handleSave(close: boolean | Event = false) {
-  if (isSaving.value) return
+  if (!canSave.value) return
   closeAfterSave.value = close === true
   draft.captureSave()
   // Validate required fields

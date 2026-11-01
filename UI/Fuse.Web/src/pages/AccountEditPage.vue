@@ -1,10 +1,12 @@
 <template>
-  <div class="page-container">
+  <div ref="editorRoot" class="page-container">
     <AccountEditHeader
       :title="pageTitle"
       :subtitle="pageSubtitle"
       :primary-label="isEditMode ? 'Save' : 'Create Account'"
       :is-saving="isSaving"
+      :dirty="draft.isDirty.value"
+      :saved="draft.hasSaved.value"
       :can-modify="canModify"
       :show-clone="isEditMode && account?.targetKind !== TargetKind.External"
       @cancel="handleCancel"
@@ -151,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import { useSaveShortcut } from '../composables/useSaveShortcut'
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'
 import { Grant, CloneTarget, CloneAccount, TargetKind, EntityType } from 'api/client'
@@ -173,6 +176,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { getErrorMessage } from '../utils/error'
 
 const {
+  draft,
   accountId,
   isEditMode,
   pageTitle,
@@ -197,6 +201,9 @@ const {
   currentSqlIntegrationId,
   selectedProvider
 } = useAccountEdit()
+
+const editorRoot = ref<HTMLElement | null>(null)
+useSaveShortcut(editorRoot, () => handleSave(false), () => canModify.value && !isSaving.value && !isLoadingInitialData.value && !loadError.value)
 
 const fuseStore = useFuseStore()
 const canRead = computed(() => fuseStore.hasPermission(Permission.AccountsRead))

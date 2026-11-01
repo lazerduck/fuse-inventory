@@ -29,8 +29,22 @@ public class AzureIntegrationManagerService : IAzureIntegrationManagerService
             );
         }
 
-        var manager = new AzureIntegrationManager(credentials, DateTime.UtcNow);
-        await _fuseStore.UpdateAsync(snapshot => snapshot with { AzureIntegrationManager = manager });
+        AzureIntegrationManager manager = null!;
+        await _fuseStore.UpdateAsync(snapshot =>
+        {
+            manager = (snapshot.AzureIntegrationManager ?? new AzureIntegrationManager(null, DateTime.UtcNow)) with
+            {
+                ClientSecretCredentials = credentials,
+                UpdatedAt = DateTime.UtcNow
+            };
+            return snapshot with
+            {
+                AzureIntegrationManager = manager,
+                SecretProviders = snapshot.SecretProviders.Select(p => p.AuthMode == SecretProviderAuthMode.ClientSecret &&
+                    !HasCompleteClientSecretCredentials(p.Credentials)
+                    ? p with { LastCheckedAt = null, LastCheckSucceeded = null, LastCheckMessage = null } : p).ToList()
+            };
+        });
         return Result<AzureIntegrationManager>.Success(manager);
     }
 

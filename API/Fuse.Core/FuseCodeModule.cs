@@ -125,6 +125,9 @@ public static class FuseCodeModule
 
         // Register Secret Provider services
         services.AddScoped<IAzureIntegrationManagerService, AzureIntegrationManagerService>();
+        services.AddHttpClient<IAzureDiscoveryClient, AzureDiscoveryClient>(client => client.Timeout = TimeSpan.FromSeconds(30))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddScoped<IAzureDiscoveryService, AzureDiscoveryService>();
         services.AddScoped<ISecretProviderService, SecretProviderService>();
         services.AddScoped<IAzureKeyVaultClient, AzureKeyVaultClient>();
         services.AddScoped<IAzureAppConfigurationClient, AzureAppConfigurationClient>();

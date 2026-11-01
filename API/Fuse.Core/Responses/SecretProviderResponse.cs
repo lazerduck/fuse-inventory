@@ -10,8 +10,23 @@ public record SecretProviderResponse
     SecretProviderAuthMode AuthMode,
     SecretProviderCapabilities Capabilities,
     DateTime CreatedAt,
-    DateTime UpdatedAt
-);
+    DateTime UpdatedAt,
+    string CredentialSource = "ManagedIdentity",
+    string IntegrationKind = "KeyVault",
+    string? AzureResourceId = null,
+    DateTime? LastCheckedAt = null,
+    bool? LastCheckSucceeded = null,
+    string? LastCheckMessage = null
+)
+{
+    public static SecretProviderResponse From(SecretProvider provider) => new(
+        provider.Id, provider.Name, provider.VaultUri, provider.AuthMode, provider.Capabilities,
+        provider.CreatedAt, provider.UpdatedAt,
+        provider.AuthMode == SecretProviderAuthMode.ManagedIdentity ? "ManagedIdentity" :
+            provider.Credentials is { TenantId.Length: > 0, ClientId.Length: > 0, ClientSecret.Length: > 0 } ? "CustomCredentials" : "SharedCredentials",
+        Areas.SecretProvider.SecretProviderEndpointClassifier.IsAppConfigurationEndpoint(provider.VaultUri) ? "AppConfiguration" : "KeyVault",
+        provider.AzureResourceId, provider.LastCheckedAt, provider.LastCheckSucceeded, provider.LastCheckMessage);
+}
 
 public record SecretValueResponse
 (

@@ -7,8 +7,8 @@ for (const [path, text] of [
   test(`unconfigured integration state: ${path}`, async ({ authenticatedPage: page }) => {
     await page.goto(path);
     if (path === '/secret-providers') {
-      await expect(page.getByRole('heading', { name: 'Azure App Config & Key Vault', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Add Integration', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Azure integrations', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Add Key Vault', exact: true }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
       await expect(page.getByRole('dialog')).toBeHidden();

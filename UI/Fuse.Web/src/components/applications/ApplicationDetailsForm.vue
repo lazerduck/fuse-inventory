@@ -61,8 +61,9 @@
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancelEdit" />
         <q-btn v-if="showDelete" flat label="Delete Application" color="negative" class="q-mr-auto" @click="emit('delete')" />
+        <SaveStatus :dirty="draft.isDirty.value" :saving="loading" :saved="draft.hasSaved.value" />
         <q-btn outline color="primary" label="Save and close" :loading="loading" :disable="disabled" @click="saveAndClose" />
-        <q-btn color="primary" type="submit" label="Save" :loading="loading" :disable="disabled" />
+        <q-btn color="primary" type="submit" label="Save" :loading="loading" :disable="disabled" aria-keyshortcuts="Control+s Meta+s" title="Save (Ctrl/Cmd+S)" />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -70,6 +71,8 @@
 
 <script setup lang="ts">
 import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
+import { useSaveShortcut } from '../../composables/useSaveShortcut'
+import SaveStatus from '../shared/SaveStatus.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { QForm } from 'quasar'
 import type { Application } from 'api/client'
@@ -130,6 +133,9 @@ function draftMarkSaved() { draft.markSaved() }
 const loading = computed(() => props.loading)
 
 const draft = useUnsavedChanges(form)
+useSaveShortcut(formRef, async () => {
+  if (await formRef.value?.validate()) handleSubmit(false)
+}, () => !props.loading && !props.disabled)
 function cancelEdit() {
   if (props.loading) return
   void draft.discard(() => emit('cancel'))
@@ -167,7 +173,7 @@ async function saveAndClose() {
 }
 
 function handleSubmit(close = false) {
-  if (props.loading) return
+  if (props.loading || props.disabled) return
   draft.captureSave()
   emit('submit', { ...form }, close)
 }
