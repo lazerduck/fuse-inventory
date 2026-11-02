@@ -1,0 +1,75 @@
+version: 2
+
+# Group compatible version updates; leave majors as individual, reviewable PRs.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories:
+      - /UI/Fuse.Web
+      - /Tests/Playwright
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    ignore:
+      # Template inference regression: https://github.com/vuejs/language-tools/issues/6322
+      - dependency-name: vue-tsc
+        versions: ["3.3.14"]
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      nuget-minor-and-patch:
+        update-types: [minor, patch]
+      nuget-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      docker-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      compose-minor-and-patch:
+        update-types: [minor, patch]

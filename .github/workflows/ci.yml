@@ -1,8 +1,7 @@
 name: CI Pipeline
 
 permissions:
-  issues: write
-  pull-requests: write
+  contents: read
 
 on:
   push:
@@ -19,15 +18,15 @@ env:
 jobs:
   frontend:
     name: Frontend Tests, Type Check and Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     defaults:
       run:
         working-directory: UI/Fuse.Web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -43,8 +42,7 @@ jobs:
 
   browser:
     name: Chromium UI Regression
-    # Keep the browser runner compatible with the locked Playwright version.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -52,8 +50,8 @@ jobs:
       run:
         working-directory: Tests/Playwright
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -65,7 +63,7 @@ jobs:
         run: npm test
       - name: Upload browser report, traces and server logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chromium-ui-results
           path: |
@@ -76,12 +74,12 @@ jobs:
 
   arm64-container:
     name: Native ARM64 Container Smoke
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build final image natively on ARM64
         run: |
           test "$(uname -m)" = aarch64
@@ -91,19 +89,28 @@ jobs:
 
   test:
     name: Run Tests with Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      DOTNET_MULTILEVEL_LOOKUP: '0'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
+        env:
+          # Isolate the SDK so coverage cannot fall back to a preinstalled .NET 8 runtime.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet10
         with:
-          dotnet-version: |
-            10.0.x
-            8.0.x
+          dotnet-version: '10.0.x'
+
+      - name: Show isolated .NET runtimes
+        run: dotnet --list-runtimes
 
       - name: Restore dependencies
         run: dotnet restore
@@ -111,14 +118,14 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Install ReportGenerator
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      - name: Restore pinned coverage tools
+        run: dotnet tool restore
 
       - name: Run tests with coverage
         run: dotnet test --no-build --configuration Release --verbosity normal /p:AltCover=true /p:AltCoverAssemblyFilter="Fuse\.Tests"
 
       - name: Generate Cobertura Report
-        run: reportgenerator -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura "-assemblyfilters:+Fuse.*"
+        run: dotnet tool run reportgenerator -- -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura "-assemblyfilters:+Fuse.*"
 
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
@@ -134,9 +141,10 @@ jobs:
           thresholds: "60 80"
 
       - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         if: >-
           github.event_name == 'pull_request' &&
+          github.actor != 'dependabot[bot]' &&
           github.event.pull_request.head.repo.full_name == github.repository
         with:
           recreate: true
@@ -144,7 +152,7 @@ jobs:
 
   build-and-push-pre-release-image:
     name: Build and Push Pre-release Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     needs: [test, frontend, browser, arm64-container]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -154,7 +162,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -179,17 +187,17 @@ jobs:
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image (multi-arch)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -208,7 +216,7 @@ jobs:
 
   build-and-push-release-image:
     name: Build and Push Release Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     needs: [test, frontend, browser, arm64-container]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -218,7 +226,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -237,17 +245,17 @@ jobs:
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image (multi-arch)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true

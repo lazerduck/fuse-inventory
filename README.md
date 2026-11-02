@@ -151,7 +151,7 @@ Fuse Inventory is built with:
 
 ## 🧪 Test Commands
 
-Use test categories to split fast unit tests from Docker-backed integration tests.
+Use the current .NET 10 SDK. Use test categories to split fast unit tests from Docker-backed integration tests.
 
 ```bash
 # Fast unit tests (excludes integration tests that need Docker)
@@ -162,6 +162,18 @@ dotnet test API/Fuse.Tests/Fuse.Tests.csproj --filter "Category=Integration"
 ```
 
 Integration tests currently include API auth middleware end-to-end tests and SQL inspector tests that run against Testcontainers SQL Server.
+
+To generate the same coverage report as CI, run from the repository root with Docker running:
+
+```bash
+dotnet tool restore
+dotnet test --configuration Release /p:AltCover=true '/p:AltCoverAssemblyFilter=Fuse\.Tests'
+dotnet tool run reportgenerator -- -reports:API/Fuse.Tests/coverage.xml -targetdir:coverage -reporttypes:Cobertura '-assemblyfilters:+Fuse.*'
+```
+
+Coverage tools are pinned in `.config/dotnet-tools.json`. CI installs an isolated .NET 10 SDK and runs on Ubuntu 26.04, including a native ARM64 container smoke check. Browser test setup is documented in [Tests/Playwright](Tests/Playwright/README.md).
+
+Dependabot checks npm, NuGet, GitHub Actions and container image references weekly. Compatible minor and patch version updates are grouped; major version updates remain separate PRs for compatibility review. npm and NuGet security fixes are grouped separately.
 
 ---
 
