@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="altcover" Version="8.9.3" />
-    <PackageReference Include="List" Version="1.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="Moq" Version="4.21.0" />
     <!-- Required by the generated API test client. -->
