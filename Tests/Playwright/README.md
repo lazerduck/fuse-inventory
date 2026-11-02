@@ -1,6 +1,6 @@
 # Fuse UI regression tests
 
-Requires Node 22, Docker Compose v2 and the Playwright Chromium browser.
+Requires Node 26, Docker Compose v2 and the Playwright Chromium browser.
 
 CI uses Ubuntu 26.04 with the Playwright version in `package-lock.json`. Reinstall Chromium after updating Playwright so the browser revision matches the test runner.
 
