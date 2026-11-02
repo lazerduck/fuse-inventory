@@ -9,7 +9,7 @@ public record UpdateSecuritySettings(SecurityPosture Posture)
     public Guid? RequestedBy { get; init; }
 }
 
-public record CreateSecurityUser(string UserName, string Password, List<Guid> RoleIds, bool IsAdmin = false);
+public record CreateSecurityUser(string UserName, string Password, List<Guid> RoleIds, bool IsAdmin = false, SecurityPosture? InitialSecurityPosture = null);
 
 public record LoginSecurityUser(string UserName, string Password);
 

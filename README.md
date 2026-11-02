@@ -111,13 +111,15 @@ Fuse runs entirely inside your environment — so you are responsible for securi
 When given secrets or integration keys, Fuse stores them **on disk** so the system can use them when needed.
 (No local encryption is performed; encrypting locally would still require storing a reversible key on disk.)
 
-Fuse includes built-in authentication via JWT-based login:
+Creating the first administrator account signs you in. Access defaults to **Fully Restricted**; expand **Change access level** during setup if you want anonymous reading or editing instead. Your choice applies when the account is created. The setup wizard then creates your first environment and opens a four-step guide to documenting an application and its deployed instance. Existing installations keep their chosen security posture.
 
-* **Open mode** — anyone can view and edit
-* **Read-only mode** — only admins can make changes
-* **Locked-down mode** — login required to view anything
+You can change the access model in Security settings:
 
-Some privileged actions (such as retrieving values from Azure Key Vault) **always** require admin access.
+* **Unrestricted** — anonymous inventory reading and editing
+* **Restricted Editing** — anonymous reading; changes require sign-in and the appropriate permissions
+* **Fully Restricted** — sign-in required; roles control read and write permissions
+
+Use roles to limit inventory editing and access to secret values.
 
 ---
 

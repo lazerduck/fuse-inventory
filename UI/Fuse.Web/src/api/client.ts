@@ -19189,6 +19189,7 @@ export class CreateSecurityUser implements ICreateSecurityUser {
   password?: string | undefined;
   roleIds?: string[] | undefined;
   isAdmin?: boolean;
+  initialSecurityPosture?: SecurityPosture | undefined;
 
   constructor(data?: ICreateSecurityUser) {
     if (data) {
@@ -19208,6 +19209,7 @@ export class CreateSecurityUser implements ICreateSecurityUser {
         for (let item of _data["roleIds"]) this.roleIds!.push(item);
       }
       this.isAdmin = _data["isAdmin"];
+      this.initialSecurityPosture = _data["initialSecurityPosture"];
     }
   }
 
@@ -19227,6 +19229,7 @@ export class CreateSecurityUser implements ICreateSecurityUser {
       for (let item of this.roleIds) data["roleIds"].push(item);
     }
     data["isAdmin"] = this.isAdmin;
+    data["initialSecurityPosture"] = this.initialSecurityPosture;
     return data;
   }
 }
@@ -19236,6 +19239,7 @@ export interface ICreateSecurityUser {
   password?: string | undefined;
   roleIds?: string[] | undefined;
   isAdmin?: boolean;
+  initialSecurityPosture?: SecurityPosture | undefined;
 }
 
 export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
@@ -24146,6 +24150,7 @@ export interface IUpdateExternalResource {
 }
 
 export class UpdateGuideProgress implements IUpdateGuideProgress {
+  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
@@ -24162,6 +24167,7 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
 
   init(_data?: any) {
     if (_data) {
+      this.applicationId = _data["applicationId"];
       if (Array.isArray(_data["completedStepIds"])) {
         this.completedStepIds = [] as any;
         for (let item of _data["completedStepIds"])
@@ -24184,6 +24190,7 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
     if (Array.isArray(this.completedStepIds)) {
       data["completedStepIds"] = [];
       for (let item of this.completedStepIds)
@@ -24199,6 +24206,7 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
 }
 
 export interface IUpdateGuideProgress {
+  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
@@ -25151,6 +25159,7 @@ export interface IUpdateTag {
 }
 
 export class UserGuideProgress implements IUserGuideProgress {
+  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
@@ -25168,6 +25177,7 @@ export class UserGuideProgress implements IUserGuideProgress {
 
   init(_data?: any) {
     if (_data) {
+      this.applicationId = _data["applicationId"];
       if (Array.isArray(_data["completedStepIds"])) {
         this.completedStepIds = [] as any;
         for (let item of _data["completedStepIds"])
@@ -25193,6 +25203,7 @@ export class UserGuideProgress implements IUserGuideProgress {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
     if (Array.isArray(this.completedStepIds)) {
       data["completedStepIds"] = [];
       for (let item of this.completedStepIds)
@@ -25211,6 +25222,7 @@ export class UserGuideProgress implements IUserGuideProgress {
 }
 
 export interface IUserGuideProgress {
+  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;

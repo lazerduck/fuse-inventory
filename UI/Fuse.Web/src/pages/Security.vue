@@ -2,8 +2,8 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1>Security</h1>
-        <p class="subtitle">Manage security settings and user accounts.</p>
+        <h1>{{ fuseStore.requireSetup ? 'Welcome to Fuse Inventory' : 'Security' }}</h1>
+        <p class="subtitle">{{ fuseStore.requireSetup ? 'Create your administrator account to get started.' : 'Manage security settings and user accounts.' }}</p>
       </div>
     </div>
 
@@ -505,12 +505,12 @@ const securityLevelOptions = [
   { 
     label: 'Restricted Editing', 
     value: SecurityPosture.RestrictedEditing,
-    description: 'Everyone can see everything, only Admins can edit'
+    description: 'Anyone can read; changes require sign-in and the appropriate permissions'
   },
   { 
     label: 'Fully Restricted', 
     value: SecurityPosture.FullyRestricted,
-    description: 'Read account required to read, Admin to edit'
+    description: 'Sign-in required; roles control read and write permissions'
   }
 ]
 
@@ -533,9 +533,9 @@ function getSecurityLevelDescription(level: SecurityPosture): string {
     case SecurityPosture.Unrestricted:
       return "No Security, everyone has full access"
     case SecurityPosture.RestrictedEditing:
-      return "Everyone can see everything, only Admins can edit"
+      return "Anyone can read; changes require sign-in and the appropriate permissions"
     case SecurityPosture.FullyRestricted:
-      return "Read account required to read, Admin to edit"
+      return "Sign-in required; roles control read and write permissions"
     default:
       return ""
   }
@@ -594,14 +594,15 @@ const updateSecurityLevelMutation = useMutation({
   }
 })
 
-function handleCreateAccount(form: { userName: string; password: string; isAdmin: boolean; requestedBy: string; roleIds: string[] }) {
+function handleCreateAccount(form: { userName: string; password: string; isAdmin: boolean; requestedBy: string; roleIds: string[]; initialSecurityPosture?: SecurityPosture }) {
   securityError.value = null
   isInitialSetupSubmission.value = fuseStore.requireSetup
   const payload = Object.assign(new CreateSecurityUser(), {
     userName: form.userName || undefined,
     password: form.password || undefined,
     roleIds: form.roleIds || [],
-    isAdmin: form.isAdmin
+    isAdmin: form.isAdmin,
+    initialSecurityPosture: fuseStore.requireSetup ? form.initialSecurityPosture : undefined
   })
   createAccountMutation.mutate(payload, {
     onSuccess: (newUser) => {

@@ -17,7 +17,8 @@ public record UserGuideProgress(
     string? ActiveGuideId,
     bool HasCompletedGettingStarted,
     DateTime? LastCompletedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    Guid? ApplicationId = null);
 
 public record FuseRole(
     Guid Id,

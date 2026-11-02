@@ -49,7 +49,8 @@ public sealed class OnboardingController(IFuseStore fuseStore, ICurrentUser curr
             string.IsNullOrWhiteSpace(request.ActiveGuideId) ? null : request.ActiveGuideId.Trim(),
             request.HasCompletedGettingStarted,
             request.LastCompletedAt,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            request.ApplicationId);
 
         await fuseStore.UpdateAsync(snapshot => snapshot with
         {
@@ -73,4 +74,5 @@ public sealed record UpdateGuideProgress(
     IReadOnlyList<string>? CompletedStepIds,
     string? ActiveGuideId,
     bool HasCompletedGettingStarted,
-    DateTime? LastCompletedAt);
+    DateTime? LastCompletedAt,
+    Guid? ApplicationId = null);

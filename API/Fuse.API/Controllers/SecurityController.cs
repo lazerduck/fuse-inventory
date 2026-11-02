@@ -91,7 +91,7 @@ namespace Fuse.API.Controllers
                 return BadRequest(new { error = "The initial setup account must be an admin account." });
             }
 
-            var userResult = await fuseUserService.CreateUser(command.UserName, command.Password, command.IsAdmin, command.RoleIds);
+            var userResult = await fuseUserService.CreateUser(command.UserName, command.Password, command.IsAdmin, command.RoleIds, command.InitialSecurityPosture);
             if(userResult.IsSuccess && userResult.Value is not null)
             {
                 var user = userResult.Value;

@@ -664,7 +664,8 @@ async function evaluateOnboardingPrompt() {
 
 function handleEnvironmentCreated() {
   showSetupWizard.value = false
-  onboardingStore.setCheatSheetVisible(true)
+  onboardingStore.setGuideStepCompleted('first-app-environment', true)
+  onboardingStore.selectGuide('first-application')
 }
 
 function handleAuthClick() {
