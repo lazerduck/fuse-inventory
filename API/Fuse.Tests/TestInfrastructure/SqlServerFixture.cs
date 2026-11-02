@@ -42,8 +42,7 @@ public class SqlServerFixture : IAsyncLifetime
             ? "mcr.microsoft.com/azure-sql-edge:latest"
             : "mcr.microsoft.com/mssql/server:2022-latest";
 
-        var builder = new ContainerBuilder()
-            .WithImage(sqlImage)
+        var builder = new ContainerBuilder(sqlImage)
             .WithPortBinding(SqlPort, assignRandomHostPort: true)
             .WithEnvironment("ACCEPT_EULA", "Y")
             .WithEnvironment("MSSQL_SA_PASSWORD", SqlPassword)
