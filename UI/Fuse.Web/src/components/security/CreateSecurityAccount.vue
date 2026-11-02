@@ -7,16 +7,19 @@
     <q-separator />
     <q-form @submit.prevent="handleSubmit">
       <q-card-section>
-        <div class="form-grid">
+        <div class="form-grid" :class="{ 'setup-fields': requireSetup }">
           <q-input
             v-model="form.userName"
             label="Username"
+            autocomplete="username"
+            autofocus
             dense
             outlined
             required
             :rules="[val => !!val || 'Username is required']"
           />
           <q-select
+            v-if="!requireSetup"
             v-model="form.isAdmin"
             label="Administrator"
             dense
@@ -24,13 +27,14 @@
             :options="isAdminOptions"
             emit-value
             map-options
-            :disable="requireSetup"
             hint="Admins have full access. You can still assign additional roles below."
           />
           <q-input
             v-model="form.password"
             label="Password"
-            type="password"
+            hint="At least 8 characters"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             dense
             outlined
             required
@@ -42,7 +46,8 @@
           <q-input
             v-model="confirmPassword"
             label="Confirm Password"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             dense
             outlined
             required
@@ -89,12 +94,20 @@
             </q-select>
           </div>
         </div>
-        <q-banner v-if="requireSetup" class="bg-blue-1 text-info q-mt-md" dense rounded>
+        <q-checkbox v-model="showPassword" label="Show passwords" />
+        <q-banner v-if="requireSetup" class="q-mt-md" :class="$q.dark.isActive ? 'bg-blue-10 text-blue-1' : 'bg-blue-1 text-primary'" dense rounded>
           <template #avatar>
             <q-icon name="info" color="info" />
           </template>
-          Creating the first administrator account to secure this instance.
+          You will be signed in as the administrator. Fuse starts {{ selectedAccess.label }}:
+          {{ selectedAccess.description }} You can change access later in Security settings.
         </q-banner>
+        <q-expansion-item v-if="requireSetup" label="Change access level" :caption="selectedAccess.label" class="q-mt-sm">
+          <div v-for="option in accessOptions" :key="option.value" class="q-pb-sm">
+            <q-radio v-model="form.initialSecurityPosture" :val="option.value" :label="option.recommended ? `${option.label} — recommended` : option.label" />
+            <div class="text-body2 q-ml-xl q-mr-md">{{ option.description }}</div>
+          </div>
+        </q-expansion-item>
       </q-card-section>
       <q-separator />
       <q-card-actions align="right">
@@ -108,7 +121,7 @@
 <script setup lang="ts">
 import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { reactive, ref, computed } from 'vue'
-import { RoleInfo } from 'api/client'
+import { RoleInfo, SecurityPosture } from 'api/client'
 
 interface SecurityAccountForm {
   userName: string
@@ -116,6 +129,7 @@ interface SecurityAccountForm {
   isAdmin: boolean
   requestedBy: string
   roleIds: string[]
+  initialSecurityPosture?: SecurityPosture
 }
 
 interface Props {
@@ -142,10 +156,19 @@ const form = reactive<SecurityAccountForm>({
   password: '',
   isAdmin: props.requireSetup,
   requestedBy: '',
-  roleIds: []
+  roleIds: [],
+  initialSecurityPosture: props.requireSetup ? SecurityPosture.FullyRestricted : undefined
 })
 
 const confirmPassword = ref('')
+const showPassword = ref(false)
+
+const accessOptions = [
+  { value: SecurityPosture.FullyRestricted, label: 'Fully Restricted', recommended: true, description: 'Sign-in is required to read or edit inventory. Roles control permissions.' },
+  { value: SecurityPosture.RestrictedEditing, label: 'Restricted Editing', description: 'Anyone can read inventory. Editing requires sign-in and the appropriate permissions.' },
+  { value: SecurityPosture.Unrestricted, label: 'Unrestricted', description: 'Anyone can read and edit inventory without signing in.' }
+]
+const selectedAccess = computed(() => accessOptions.find(option => option.value === form.initialSecurityPosture) ?? accessOptions[0]!)
 
 const isAdminOptions = [
   { label: 'No', value: false },
@@ -166,6 +189,10 @@ const draft = useUnsavedChanges(() => ({ ...form, confirmPassword: confirmPasswo
 @import '../../styles/pages.css';
 
 .form-dialog {
-  min-width: 520px;
+  width: min(560px, 100%);
+  min-width: 0;
+}
+.setup-fields {
+  grid-template-columns: 1fr;
 }
 </style>

@@ -27,9 +27,11 @@ public class SecurityUserAndSessionServiceTests
         roles.Setup(x => x.GetRolesByIds(It.IsAny<IReadOnlyList<Guid>>())).ReturnsAsync(Result<IReadOnlyList<FuseRole>>.Failure("missing", ErrorType.NotFound));
         Assert.Equal(ErrorType.NotFound, (await service.CreateUser("user", "password", false, [role.Id])).ErrorType);
         roles.Setup(x => x.GetRolesByIds(It.IsAny<IReadOnlyList<Guid>>())).ReturnsAsync(Result<IReadOnlyList<FuseRole>>.Success([role]));
+        Assert.Equal(SecurityPosture.Unrestricted, store.Current!.SecurityContext.Posture);
 
         var created = await service.CreateUser(" user ", "password", true, [role.Id, role.Id]);
         Assert.True(created.IsSuccess);
+        Assert.Equal(SecurityPosture.FullyRestricted, store.Current!.SecurityContext.Posture);
         Assert.Equal("user", created.Value!.UserName);
         Assert.True(created.Value.IsAdmin);
         Assert.Equal([role.Id], created.Value.RoleIds);
@@ -39,6 +41,54 @@ public class SecurityUserAndSessionServiceTests
         Assert.Equal(ErrorType.Validation, (await service.VerifyUser(" ", "password")).ErrorType);
         Assert.Equal(ErrorType.Validation, (await service.VerifyUser("user", " ")).ErrorType);
         Assert.Equal(ErrorType.Conflict, (await service.CreateUser("USER", "password", false, [])).ErrorType);
+    }
+
+    [Theory]
+    [InlineData(SecurityPosture.Unrestricted)]
+    [InlineData(SecurityPosture.RestrictedEditing)]
+    [InlineData(SecurityPosture.FullyRestricted)]
+    public async Task AdditionalAccountsPreserveChosenPosture(SecurityPosture posture)
+    {
+        var store = new InMemoryFuseStore();
+        await store.UpdateAsync(s => s with
+        {
+            SecurityContext = s.SecurityContext with { Users = [User()], Posture = posture }
+        });
+        var service = new FuseUserService(store, Mock.Of<IFuseRoleService>());
+
+        var requestedPosture = posture == SecurityPosture.FullyRestricted
+            ? SecurityPosture.Unrestricted : SecurityPosture.FullyRestricted;
+        Assert.True((await service.CreateUser("another-user", "password", false, [], requestedPosture)).IsSuccess);
+        Assert.Equal(posture, store.Current!.SecurityContext.Posture);
+    }
+
+    [Theory]
+    [InlineData(SecurityPosture.FullyRestricted)]
+    [InlineData(SecurityPosture.RestrictedEditing)]
+    [InlineData(SecurityPosture.Unrestricted)]
+    public async Task FirstAccountAppliesChosenPostureInTheSameWrite(SecurityPosture posture)
+    {
+        var store = new InMemoryFuseStore();
+        var service = new FuseUserService(store, Mock.Of<IFuseRoleService>());
+        store.Changed += snapshot =>
+        {
+            Assert.Single(snapshot.SecurityContext.Users);
+            Assert.Equal(posture, snapshot.SecurityContext.Posture);
+        };
+
+        Assert.True((await service.CreateUser("admin", "password", true, [], posture)).IsSuccess);
+        Assert.Equal(posture, store.Current!.SecurityContext.Posture);
+    }
+
+    [Fact]
+    public async Task InvalidSetupPostureDoesNotCreateAnAccountOrChangeAccess()
+    {
+        var store = new InMemoryFuseStore();
+        var service = new FuseUserService(store, Mock.Of<IFuseRoleService>());
+        var result = await service.CreateUser("admin", "password", true, [], (SecurityPosture)999);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Empty(store.Current!.SecurityContext.Users);
+        Assert.Equal(SecurityPosture.Unrestricted, store.Current.SecurityContext.Posture);
     }
 
     [Fact]

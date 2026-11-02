@@ -43,7 +43,7 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         return Result<FuseUser>.Success(user);
     }
 
-    public async Task<Result<FuseUser>> CreateUser(string userName, string password, bool isAdmin, IReadOnlyList<Guid> roleIds)
+    public async Task<Result<FuseUser>> CreateUser(string userName, string password, bool isAdmin, IReadOnlyList<Guid> roleIds, SecurityPosture? initialSecurityPosture = null)
     {
         if (string.IsNullOrWhiteSpace(userName))
             return Result<FuseUser>.Failure("User name cannot be empty.", ErrorType.Validation);
@@ -53,6 +53,9 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
 
         if (roleIds is null)
             return Result<FuseUser>.Failure("Role IDs cannot be null.", ErrorType.Validation);
+
+        if (initialSecurityPosture is { } posture && !Enum.IsDefined(posture))
+            return Result<FuseUser>.Failure("Invalid initial security posture.", ErrorType.Validation);
 
         var snapshot = await fuseStore.GetAsync();
         if (snapshot.SecurityContext.Users.Any(u => string.Equals(u.UserName, userName, StringComparison.OrdinalIgnoreCase)))
@@ -85,6 +88,10 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         {
             SecurityContext = s.SecurityContext with
             {
+                // Apply the setup choice atomically; later account creation cannot change access.
+                Posture = s.SecurityContext.Users.Count == 0
+                    ? initialSecurityPosture ?? SecurityPosture.FullyRestricted
+                    : s.SecurityContext.Posture,
                 Users = s.SecurityContext.Users.Append(user).ToList()
             }
         });

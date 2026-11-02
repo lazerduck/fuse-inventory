@@ -18,11 +18,13 @@ vi.mock('../src/stores/FuseStore', () => ({ useFuseStore: () => ({
   get currentUser() { return access.currentUser }, appSettings: null, requireSetup: false, isLoggedIn: false
 }) }))
 const onboarding = reactive({ hasCompletedTour: false, lastCompletedAt: null, dismissedBanner: false,
+  applicationId: null as string | null,
   activeGuideId: null as string | null, completedGuideSteps: [] as string[], showCheatSheet: false })
 vi.mock('../src/stores/OnboardingStore', () => ({ useOnboardingStore: () => ({
   get hasCompletedTour() { return onboarding.hasCompletedTour }, get lastCompletedAt() { return onboarding.lastCompletedAt },
   get dismissedBanner() { return onboarding.dismissedBanner }, get activeGuideId() { return onboarding.activeGuideId },
   get completedGuideSteps() { return onboarding.completedGuideSteps }, get showCheatSheet() { return onboarding.showCheatSheet },
+  get applicationId() { return onboarding.applicationId },
   connectProgressUser: actions.connectProgressUser, markCompleted: vi.fn(), setCheatSheetVisible: vi.fn()
 }) }))
 vi.mock('../src/composables/useOnboardingTour', () => ({ useOnboardingTour: () => ({ startTour: vi.fn() }) }))
@@ -55,6 +57,7 @@ beforeEach(() => {
   onboarding.hasCompletedTour = false
   onboarding.dismissedBanner = false
   onboarding.activeGuideId = null
+  onboarding.applicationId = null
   for (const method of Object.values(api)) method.mockResolvedValue([])
   actions.initializeAuth.mockResolvedValue(undefined)
   actions.connectProgressUser.mockResolvedValue(undefined)
@@ -103,6 +106,30 @@ describe('Global onboarding requests', () => {
 })
 
 describe('Guides drawer inventory requests', () => {
+  it('uses the selected application and drops its links when read access is revoked', async () => {
+    onboarding.activeGuideId = 'first-application'
+    onboarding.applicationId = 'selected-app'
+    access.permissions = new Set(['application:read'])
+    api.applicationAll.mockResolvedValue([{ id: 'other-app' }, { id: 'selected-app' }])
+    await renderGuide(true)
+    const openDocumentation = () => wrapper.findAllComponents(QBtn).find(button => button.props('label') === 'View documentation')!.vm.$emit('click')
+    openDocumentation()
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'viewApp', params: { id: 'selected-app' } })
+    access.permissions.clear()
+    await nextTick()
+    openDocumentation()
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'viewHome' })
+  })
+
+  it('does not silently target the first application when none is selected', async () => {
+    onboarding.activeGuideId = 'first-application'
+    access.permissions = new Set(['application:read'])
+    api.applicationAll.mockResolvedValue([{ id: 'other-app' }])
+    await renderGuide(true)
+    wrapper.findAllComponents(QBtn).find(button => button.props('label') === 'Open Instances tab')!.vm.$emit('click')
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'applications' })
+  })
+
   it('only fetches permitted contextual records when the drawer is opened', async () => {
     access.permissions = new Set(['application:read'])
     await renderGuide(false)

@@ -330,7 +330,7 @@ onMounted(() => { if (canReadActivity.value) queryActivity({ page: 1, pageSize: 
 
 <style scoped>
 .dashboard-eyebrow { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--fuse-text-muted); margin-bottom: .6rem; }
-.dashboard-page { padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.5rem; max-width: 1440px; margin: 0 auto; }
+.dashboard-page { container-type: inline-size; padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem); display: flex; flex-direction: column; gap: 1.5rem; max-width: 1440px; margin: 0 auto; }
 .page-header, .section-header, .card-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 h1 { font-size: 2rem; line-height: 1.25; letter-spacing: -.035em; margin: 0 0 .375rem; font-weight: 600; }
 h2 { font-size: 1.15rem; margin: 0; font-weight: 600; }
@@ -353,7 +353,7 @@ h2 { font-size: 1.15rem; margin: 0; font-weight: 600; }
 .filters { display: grid; grid-template-columns: minmax(280px, 2fr) 1fr 1fr; gap: .625rem; margin-bottom: 1rem; }
 .inventory-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .pagination { justify-content: center; margin-top: 1rem; }
-@media (max-width: 1100px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } .filters { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .summary-grid, .inventory-grid { grid-template-columns: 1fr; } .dashboard-page { padding: 1rem; } }
+@container (max-width: 950px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } .filters { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .summary-grid, .inventory-grid { grid-template-columns: 1fr; } .dashboard-page { container-type: inline-size; padding: 1rem; } }
 </style>

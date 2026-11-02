@@ -191,8 +191,9 @@
 
 <script setup lang="ts">
 import { useDialogDraft } from '../composables/useDialogDraft'
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useOnboardingStore } from '../stores/OnboardingStore'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -224,6 +225,8 @@ interface ApplicationForm {
 }
 
 const router = useRouter()
+const route = useRoute()
+const onboardingStore = useOnboardingStore()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
@@ -331,6 +334,13 @@ function navigateToEdit(app: Application) {
   router.push({ name: 'applicationEdit', params: { id: app.id } })
 }
 
+watch(() => [route.query.create, fuseStore.hasPermission(Permission.ApplicationsCreate)], ([create, allowed]) => {
+  if (create !== '1' || !allowed) return
+  openCreateDialog()
+  const { create: _create, ...query } = route.query
+  void router.replace({ query })
+}, { immediate: true })
+
 const createApplicationMutation = useMutation({
   mutationFn: (payload: CreateApplication) => client.applicationPOST(payload),
   onSuccess: (createdApp) => {
@@ -345,6 +355,7 @@ const createApplicationMutation = useMutation({
     isCreateDialogOpen.value = false
     Notify.create({ type: 'positive', message: 'Application created' })
     if (createdApp?.id) {
+      if (route.query.guide === 'first-application') onboardingStore.trackApplication(createdApp.id)
       router.push({ name: 'applicationEdit', params: { id: createdApp.id } })
     }
   },
