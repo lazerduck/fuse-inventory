@@ -18609,6 +18609,13 @@ namespace Fuse.Tests.ApiClient
         [Newtonsoft.Json.JsonProperty("buildDate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string BuildDate { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("updateStatus", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public UpdateCheckStatus UpdateStatus { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("availableVersion", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string AvailableVersion { get; set; }
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -22452,6 +22459,27 @@ namespace Fuse.Tests.ApiClient
 
         [Newtonsoft.Json.JsonProperty("credentials", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public SecretProviderCredentials Credentials { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum UpdateCheckStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Unsupported")]
+        Unsupported = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Checking")]
+        Checking = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Current")]
+        Current = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Available")]
+        Available = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Unavailable")]
+        Unavailable = 4,
 
     }
 

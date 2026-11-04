@@ -85,6 +85,8 @@ docker run -d \
 The application will be available at:
 **[http://localhost:8080](http://localhost:8080)**
 
+Published containers check GitHub Container Registry at startup and every six hours for a newer image on their own channel (`:latest` for releases or `:pre-release` for pre-releases). When the **About Fuse Inventory** badge appears, open it to see the available version. Deploy the updated image using your usual process. Source builds without a release channel skip the check.
+
 ---
 
 ### 📦 Using Docker Compose with demo data
