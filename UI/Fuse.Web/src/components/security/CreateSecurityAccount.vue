@@ -103,7 +103,7 @@
           {{ selectedAccess.description }} You can change access later in Security settings.
         </q-banner>
         <q-expansion-item v-if="requireSetup" label="Change access level" :caption="selectedAccess.label" class="q-mt-sm">
-          <div v-for="option in accessOptions" :key="option.value" class="q-pb-sm">
+          <div v-for="option in securityLevelOptions" :key="option.value" class="q-pb-sm">
             <q-radio v-model="form.initialSecurityPosture" :val="option.value" :label="option.recommended ? `${option.label} — recommended` : option.label" />
             <div class="text-body2 q-ml-xl q-mr-md">{{ option.description }}</div>
           </div>
@@ -121,6 +121,7 @@
 <script setup lang="ts">
 import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { reactive, ref, computed } from 'vue'
+import { securityLevelOptions, securityLevelOption } from '../../constants/securityLevels'
 import { RoleInfo, SecurityPosture } from 'api/client'
 
 interface SecurityAccountForm {
@@ -163,12 +164,7 @@ const form = reactive<SecurityAccountForm>({
 const confirmPassword = ref('')
 const showPassword = ref(false)
 
-const accessOptions = [
-  { value: SecurityPosture.FullyRestricted, label: 'Fully Restricted', recommended: true, description: 'Sign-in is required to read or edit inventory. Roles control permissions.' },
-  { value: SecurityPosture.RestrictedEditing, label: 'Restricted Editing', description: 'Anyone can read inventory. Editing requires sign-in and the appropriate permissions.' },
-  { value: SecurityPosture.Unrestricted, label: 'Unrestricted', description: 'Anyone can read and edit inventory without signing in.' }
-]
-const selectedAccess = computed(() => accessOptions.find(option => option.value === form.initialSecurityPosture) ?? accessOptions[0]!)
+const selectedAccess = computed(() => securityLevelOption(form.initialSecurityPosture) ?? securityLevelOptions[0]!)
 
 const isAdminOptions = [
   { label: 'No', value: false },

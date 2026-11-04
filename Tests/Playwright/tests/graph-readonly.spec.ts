@@ -42,6 +42,17 @@ test('a real read-only user can inspect graph resources and relationships withou
   expect(userResponse.ok(), await userResponse.text()).toBeTruthy();
   const session = await signIn(page, request, user);
 
+  await page.goto('/applications');
+  const search = page.getByRole('textbox', { name: 'Search applications' });
+  await search.fill('no-such-application-' + suffix);
+  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await search.fill(applicationName);
+  const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: applicationName, exact: true }) });
+  await expect(row.getByRole('button', { name: 'Edit application' })).toHaveCount(0);
+  await row.getByRole('link', { name: applicationName }).click();
+  await expect(page).toHaveURL(`/view/app/${application.id}`);
+
   await page.goto('/graph');
   await expect(page.getByRole('heading', { name: 'Graph', exact: true })).toBeVisible();
   await page.getByRole('combobox', { name: 'Find a resource', exact: true }).fill(applicationName);

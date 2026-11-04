@@ -45,13 +45,21 @@
             v-model="filter"
             dense
             outlined
-            debounce="300"
-            placeholder="Search..."
+            aria-label="Search applications"
+            placeholder="Search applications"
           >
             <template #append>
               <q-icon name="search" />
             </template>
           </q-input>
+        </template>
+        <template #body-cell-name="props">
+          <q-td :props="props">
+            <router-link v-if="props.row.id" class="text-primary" :to="{ name: 'viewApp', params: { id: props.row.id } }">
+              {{ props.value }}
+            </router-link>
+            <span v-else>{{ props.value }}</span>
+          </q-td>
         </template>
         <template #body-cell-tags="props">
           <q-td :props="props">
@@ -78,13 +86,12 @@
 
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn aria-label="Edit application"
+            <q-btn v-if="fuseStore.hasPermission(Permission.ApplicationsUpdate)" aria-label="Edit application"
               flat
               dense
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
               @click="navigateToEdit(props.row)"
             />
             <q-btn aria-label="Delete application"
@@ -101,8 +108,15 @@
         </template>
 
         <template #no-data>
-          <div class="q-pa-md text-grey-7">
-            No applications found. Create one to get started.
+          <div v-if="!applicationsLoading && !applicationsError" class="q-pa-md">
+            <template v-if="filter">
+              No applications match your search.
+              <q-btn flat dense no-caps color="primary" label="Clear search" @click="filter = ''" />
+            </template>
+            <template v-else>
+              No applications yet.
+              <span v-if="fuseStore.hasPermission(Permission.ApplicationsCreate)">Create one to get started.</span>
+            </template>
           </div>
         </template>
       </q-table>

@@ -47,3 +47,9 @@ export function isAppConfigurationEndpoint(uri?: string | null): boolean {
     return false
   }
 }
+
+export function isAppConfiguration(provider: SecretProviderResponse): boolean {
+  return provider.integrationKind
+    ? provider.integrationKind === 'AppConfiguration'
+    : isAppConfigurationEndpoint(provider.vaultUri)
+}

@@ -24,7 +24,8 @@
           <div class="text-h6 q-mb-md">Security Settings</div>
           <div class="text-body2">
             <p>
-              <strong>Security Level:</strong> {{ fuseStore.securityPosture }} - {{ levelDescription }}
+              <strong>Security Level:</strong> {{ currentLevel?.label ?? 'Unknown' }}
+              <span v-if="currentLevel"> — {{ currentLevel.description }}</span>
               <q-btn aria-label="Edit security level"
                 v-if="isAdmin"
                 flat 
@@ -327,7 +328,7 @@
             </q-select>
 
             <div v-if="selectedSecurityLevel" class="q-mt-md text-body2 text-grey-7">
-              <strong>Description:</strong> {{ getSecurityLevelDescription(selectedSecurityLevel) }}
+              <strong>Description:</strong> {{ securityLevelOption(selectedSecurityLevel)?.description }}
             </div>
           </q-card-section>
 
@@ -433,6 +434,7 @@ import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quas
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
 import { CreateApiKey, CreateSecurityUser, LoginSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
+import { securityLevelOptions, securityLevelOption } from '../constants/securityLevels'
 import { Permission } from 'permissions'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
 import EditSecurityAccount from '../components/security/EditSecurityAccount.vue'
@@ -496,24 +498,6 @@ const columns: QTableColumn<SecurityUserInfo>[] = [
   { name: 'actions', label: 'Actions', field: (row) => row.id, align: 'right' }
 ]
 
-const securityLevelOptions = [
-  { 
-    label: 'None',
-    value: SecurityPosture.Unrestricted,
-    description: 'No Security, everyone has full access'
-  },
-  { 
-    label: 'Restricted Editing', 
-    value: SecurityPosture.RestrictedEditing,
-    description: 'Anyone can read; changes require sign-in and the appropriate permissions'
-  },
-  { 
-    label: 'Fully Restricted', 
-    value: SecurityPosture.FullyRestricted,
-    description: 'Sign-in required; roles control read and write permissions'
-  }
-]
-
 function openCreateDialog() {
   isCreateDialogOpen.value = true
 }
@@ -528,22 +512,7 @@ function closeEditSecurityLevelDialog() {
   selectedSecurityLevel.value = null
 }
 
-function getSecurityLevelDescription(level: SecurityPosture): string {
-  switch (level) {
-    case SecurityPosture.Unrestricted:
-      return "No Security, everyone has full access"
-    case SecurityPosture.RestrictedEditing:
-      return "Anyone can read; changes require sign-in and the appropriate permissions"
-    case SecurityPosture.FullyRestricted:
-      return "Sign-in required; roles control read and write permissions"
-    default:
-      return ""
-  }
-}
-
-const levelDescription = computed(() => {
-  return fuseStore.securityPosture ? getSecurityLevelDescription(fuseStore.securityPosture) : ""
-})
+const currentLevel = computed(() => securityLevelOption(fuseStore.securityPosture))
 
 const createAccountMutation = useMutation({
   mutationFn: (payload: CreateSecurityUser) => client.accountsPOST(payload),

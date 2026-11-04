@@ -8,211 +8,227 @@
           <p class="subtitle">Manage instance details and dependencies.</p>
         </div>
       </div>
-      <q-btn
-        flat
-        dense
-        icon="crisis_alert"
-        label="Blast Radius"
-        color="negative"
-        :to="{ name: 'blastRadius', query: { kind: 'Application', id: instanceId } }"
-        :disable="!instanceId"
-      />
+      <div class="row items-center q-gutter-xs">
+        <q-btn v-if="instance && fuseStore.hasPermission(Permission.ApplicationsRead)" flat dense
+          icon="account_tree" label="View in graph" color="primary"
+          :to="{ name: 'graph', query: { node: `appi-${instanceId}` } }"
+        />
+        <q-btn
+          flat
+          dense
+          icon="crisis_alert"
+          label="Blast Radius"
+          color="negative"
+          :to="{ name: 'blastRadius', query: { kind: 'Application', id: instanceId } }"
+          :disable="!instanceId"
+        />
+      </div>
     </div>
 
     <q-banner v-if="errorMessage" dense class="bg-red-1 text-negative q-mb-md">
       {{ errorMessage }}
     </q-banner>
 
-    <q-card class="content-card q-mb-md">
-      <q-card-section class="dialog-header">
-        <div class="text-h6">Instance Details</div>
-      </q-card-section>
-      <q-separator />
-      <q-form ref="instanceDetailsForm" @submit.prevent="handleSubmitInstance(false)">
-        <q-card-section>
-          <div class="form-grid">
-            <q-select
-              v-model="form.environmentId"
-              label="Environment*"
-              dense
-              outlined
-              emit-value
-              map-options
-              :options="environmentOptions"
-              :rules="[v => !!v || 'Environment is required']"
-              :disable="environmentOptions.length === 0"
-            />
-            <q-select
-              v-model="form.platformId"
-              label="Platform"
-              dense
-              outlined
-              emit-value
-              map-options
-              clearable
-              :options="platformOptions"
-              :disable="platformOptions.length === 0"
-            />
-            <q-input v-model="form.version" label="Version" dense outlined />
-            <q-input v-model="form.baseUri" label="Base URI" dense outlined />
-            <q-input v-model="form.healthUri" label="Health URI" dense outlined />
-            <q-input v-model="form.openApiUri" label="OpenAPI URI" dense outlined />
-            <TagSelect v-model="form.tagIds" label="Tags" />
-          </div>
-
-          <q-separator class="q-my-md" />
-          <div class="text-subtitle2 q-mb-sm">API Key</div>
-          <div class="text-caption text-grey-7 q-mb-md">
-            Optional API key to allow other services to authenticate with this instance.
-          </div>
-          <div class="form-grid">
-            <q-select
-              v-model="form.apiKeyKind"
-              label="API Key Type"
-              dense
-              outlined
-              emit-value
-              map-options
-              :options="apiKeyKindOptions"
-              @update:model-value="onApiKeyKindChange"
-            />
-            <q-input
-              v-if="form.apiKeyKind === 'PlainReference'"
-              v-model="form.apiKeyValue"
-              label="API Key Value"
-              dense
-              outlined
-              :type="showApiKey ? 'text' : 'password'"
-            >
-              <template #append>
-                <q-btn :aria-label="showApiKey ? 'Hide API key' : 'Show API key'"
-                  flat
-                  round
+    <q-tabs v-model="activeTab" align="left" narrow-indicator class="text-primary">
+      <q-tab name="details" label="Details" />
+      <q-tab name="dependencies" :label="`Dependencies (${instance?.dependencies?.length ?? 0})`" />
+    </q-tabs>
+    <q-tab-panels v-model="activeTab" keep-alive class="bg-transparent">
+      <q-tab-panel name="details" class="q-pa-none">
+        <q-card class="content-card q-mb-md">
+          <q-card-section class="dialog-header">
+            <div class="text-h6">Instance Details</div>
+          </q-card-section>
+          <q-separator />
+          <q-form ref="instanceDetailsForm" @submit.prevent="handleSubmitInstance(false)">
+            <q-card-section>
+              <div class="form-grid">
+                <q-select
+                  v-model="form.environmentId"
+                  label="Environment*"
                   dense
-                  :icon="showApiKey ? 'visibility_off' : 'visibility'"
-                  @click="showApiKey = !showApiKey"
+                  outlined
+                  emit-value
+                  map-options
+                  :options="environmentOptions"
+                  :rules="[v => !!v || 'Environment is required']"
+                  :disable="environmentOptions.length === 0"
                 />
-              </template>
-            </q-input>
-            <template v-if="form.apiKeyKind === 'AzureKeyVault'">
-              <q-select
-                v-model="form.apiKeyVaultProviderId"
-                label="Azure Integration"
-                dense
-                outlined
-                emit-value
-                map-options
-                clearable
-                :options="secretProviderOptions"
-                :disable="secretProviderOptions.length === 0"
-                :hint="secretProviderOptions.length === 0 ? 'No Azure integrations configured' : undefined"
-              />
-              <q-input v-model="form.apiKeyVaultSecretName" label="Secret Name" dense outlined />
-              <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />
-            </template>
-          </div>
-
-          <q-separator class="q-my-md" />
-          <div class="text-subtitle2 q-mb-sm">Azure App Configuration</div>
-          <div class="text-caption text-grey-7 q-mb-md">
-            Optional association to load this instance configuration from Azure App Configuration.
-          </div>
-          <div class="form-grid">
-            <q-select
-              v-model="form.appConfigurationProviderId"
-              label="App Configuration Integration"
-              dense
-              outlined
-              emit-value
-              map-options
-              clearable
-              :options="appConfigurationProviderOptions"
-              :disable="appConfigurationProviderOptions.length === 0"
-              :hint="appConfigurationProviderOptions.length === 0 ? 'No Azure App Configuration integrations configured' : undefined"
-            />
-            <q-input
-              v-model="form.appConfigurationKeySuffix"
-              label="Key Filter"
-              dense
-              outlined
-              clearable
-              hint="Type a key prefix, or enter a leading ':' to filter by suffix (e.g. :ConnectionString)"
-            />
-          </div>
-
-          <div class="q-mt-sm">
-            <q-btn
-              flat
-              dense
-              color="primary"
-              :disable="!form.appConfigurationProviderId"
-              :icon="isAppConfigurationExpanded ? 'expand_less' : 'expand_more'"
-              :label="isAppConfigurationExpanded ? 'Hide Configuration Preview' : 'Show Configuration Preview'"
-              @click="isAppConfigurationExpanded = !isAppConfigurationExpanded"
-            />
-            <div v-if="isAppConfigurationExpanded" class="q-mt-sm">
-              <div v-if="appConfigurationEntriesLoading" class="text-caption text-grey-7">Loading App Configuration…</div>
-              <div v-else-if="appConfigurationEntriesError" class="text-caption text-negative">{{ appConfigurationEntriesError }}</div>
-              <div v-else-if="filteredAppConfigurationEntries.length === 0" class="text-caption text-grey-7">
-                No matching App Configuration entries found.
+                <q-select
+                  v-model="form.platformId"
+                  label="Platform"
+                  dense
+                  outlined
+                  emit-value
+                  map-options
+                  clearable
+                  :options="platformOptions"
+                  :disable="platformOptions.length === 0"
+                />
+                <q-input v-model="form.version" label="Version" dense outlined />
+                <q-input v-model="form.baseUri" label="Base URI" dense outlined />
+                <q-input v-model="form.healthUri" label="Health URI" dense outlined />
+                <q-input v-model="form.openApiUri" label="OpenAPI URI" dense outlined />
+                <TagSelect v-model="form.tagIds" label="Tags" />
               </div>
-              <q-list v-else bordered separator>
-                <q-item v-for="entry in filteredAppConfigurationEntries" :key="`${entry.key}:${entry.label ?? ''}`">
-                  <q-item-section>
-                    <q-item-label>{{ entry.key }}</q-item-label>
-                    <q-item-label caption>
-                      {{ entry.label || 'No label' }}
-                      <span v-if="entry.isKeyVaultReference"> · Key Vault reference</span>
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side top>
-                    <q-item-label caption>{{ truncate(entry.value) }}</q-item-label>
-                    <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </div>
-          </div>
-        </q-card-section>
-        <q-separator />
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" @click="navigateBack" />
-          <q-btn
-            flat
-            label="Delete"
-            color="negative"
-            :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
-            @click="confirmInstanceDelete"
-          />
-          <SaveStatus :dirty="draft.isDirty.value" :saving="updateInstanceMutation.isPending.value" :saved="draft.hasSaved.value" />
-          <q-btn outline color="primary" label="Save and close" :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)" :loading="updateInstanceMutation.isPending.value" @click="saveAndClose" />
-          <q-btn
-            color="primary"
-            type="submit"
-            label="Save"
-            aria-keyshortcuts="Control+s Meta+s"
-            title="Save (Ctrl/Cmd+S)"
-            :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
-            :loading="updateInstanceMutation.isPending.value"
-          />
-        </q-card-actions>
-      </q-form>
-    </q-card>
 
-    <DependencyInlineTable
-      :application-id="applicationId"
-      :instance-id="instanceId"
-      :instance="instance"
-      :can-create="fuseStore.hasPermission(Permission.ApplicationsCreate)"
-      :can-update="fuseStore.hasPermission(Permission.ApplicationsUpdate)"
-      :can-delete="fuseStore.hasPermission(Permission.ApplicationsDelete)"
-    />
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle2 q-mb-sm">API Key</div>
+              <div class="text-caption text-grey-7 q-mb-md">
+                Optional API key to allow other services to authenticate with this instance.
+              </div>
+              <div class="form-grid">
+                <q-select
+                  v-model="form.apiKeyKind"
+                  label="API Key Type"
+                  dense
+                  outlined
+                  emit-value
+                  map-options
+                  :options="apiKeyKindOptions"
+                  @update:model-value="onApiKeyKindChange"
+                />
+                <q-input
+                  v-if="form.apiKeyKind === 'PlainReference'"
+                  v-model="form.apiKeyValue"
+                  label="API Key Value"
+                  dense
+                  outlined
+                  :type="showApiKey ? 'text' : 'password'"
+                >
+                  <template #append>
+                    <q-btn :aria-label="showApiKey ? 'Hide API key' : 'Show API key'"
+                      flat
+                      round
+                      dense
+                      :icon="showApiKey ? 'visibility_off' : 'visibility'"
+                      @click="showApiKey = !showApiKey"
+                    />
+                  </template>
+                </q-input>
+                <template v-if="form.apiKeyKind === 'AzureKeyVault'">
+                  <q-select
+                    v-model="form.apiKeyVaultProviderId"
+                    label="Key Vault"
+                    dense
+                    outlined
+                    emit-value
+                    map-options
+                    clearable
+                    :options="keyVaultOptions"
+                    :disable="keyVaultOptions.length === 0"
+                    :hint="keyVaultOptions.length === 0 ? 'No Key Vaults configured' : undefined"
+                  />
+                  <q-input v-model="form.apiKeyVaultSecretName" label="Secret Name" dense outlined />
+                  <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />
+                </template>
+              </div>
+
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle2 q-mb-sm">Azure App Configuration</div>
+              <div class="text-caption text-grey-7 q-mb-md">
+                Optional association to load this instance configuration from Azure App Configuration.
+              </div>
+              <div class="form-grid">
+                <q-select
+                  v-model="form.appConfigurationProviderId"
+                  label="App Configuration Integration"
+                  dense
+                  outlined
+                  emit-value
+                  map-options
+                  clearable
+                  :options="appConfigurationProviderOptions"
+                  :disable="appConfigurationProviderOptions.length === 0"
+                  :hint="appConfigurationProviderOptions.length === 0 ? 'No Azure App Configuration integrations configured' : undefined"
+                />
+                <q-input
+                  v-model="form.appConfigurationKeySuffix"
+                  label="Key Filter"
+                  dense
+                  outlined
+                  clearable
+                  hint="Type a key prefix, or enter a leading ':' to filter by suffix (e.g. :ConnectionString)"
+                />
+              </div>
+
+              <div class="q-mt-sm">
+                <q-btn
+                  flat
+                  dense
+                  color="primary"
+                  :disable="!form.appConfigurationProviderId"
+                  :icon="isAppConfigurationExpanded ? 'expand_less' : 'expand_more'"
+                  :label="isAppConfigurationExpanded ? 'Hide Configuration Preview' : 'Show Configuration Preview'"
+                  @click="isAppConfigurationExpanded = !isAppConfigurationExpanded"
+                />
+                <div v-if="isAppConfigurationExpanded" class="q-mt-sm">
+                  <div v-if="appConfigurationEntriesLoading" class="text-caption text-grey-7">Loading App Configuration…</div>
+                  <div v-else-if="appConfigurationEntriesError" class="text-caption text-negative">{{ appConfigurationEntriesError }}</div>
+                  <div v-else-if="filteredAppConfigurationEntries.length === 0" class="text-caption text-grey-7">
+                    No matching App Configuration entries found.
+                  </div>
+                  <q-list v-else bordered separator>
+                    <q-item v-for="entry in filteredAppConfigurationEntries" :key="`${entry.key}:${entry.label ?? ''}`">
+                      <q-item-section>
+                        <q-item-label>{{ entry.key }}</q-item-label>
+                        <q-item-label caption>
+                          {{ entry.label || 'No label' }}
+                          <span v-if="entry.isKeyVaultReference"> · Key Vault reference</span>
+                        </q-item-label>
+                      </q-item-section>
+                      <q-item-section side top>
+                        <q-item-label caption>{{ truncate(entry.value) }}</q-item-label>
+                        <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </div>
+            </q-card-section>
+            <q-separator />
+            <q-card-actions align="right">
+              <q-btn flat label="Cancel" @click="navigateBack" />
+              <q-btn
+                flat
+                label="Delete"
+                color="negative"
+                :disable="!fuseStore.hasPermission(Permission.ApplicationsDelete)"
+                @click="confirmInstanceDelete"
+              />
+              <SaveStatus :dirty="draft.isDirty.value" :saving="updateInstanceMutation.isPending.value" :saved="draft.hasSaved.value" />
+              <q-btn outline color="primary" label="Save and close" :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)" :loading="updateInstanceMutation.isPending.value" @click="saveAndClose" />
+              <q-btn
+                color="primary"
+                type="submit"
+                label="Save"
+                aria-keyshortcuts="Control+s Meta+s"
+                title="Save (Ctrl/Cmd+S)"
+                :disable="!fuseStore.hasPermission(Permission.ApplicationsUpdate)"
+                :loading="updateInstanceMutation.isPending.value"
+              />
+            </q-card-actions>
+          </q-form>
+        </q-card>
+      </q-tab-panel>
+      <q-tab-panel name="dependencies" class="q-pa-none">
+        <DependencyInlineTable
+          :application-id="applicationId"
+          :instance-id="instanceId"
+          :instance="instance"
+          :can-create="fuseStore.hasPermission(Permission.ApplicationsCreate)"
+          :can-update="fuseStore.hasPermission(Permission.ApplicationsUpdate)"
+          :can-delete="fuseStore.hasPermission(Permission.ApplicationsDelete)"
+        />
+      </q-tab-panel>
+    </q-tab-panels>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { QForm } from 'quasar'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { useSaveShortcut } from '../composables/useSaveShortcut'
 import SaveStatus from '../components/shared/SaveStatus.vue'
 import { computed, reactive, ref, watch } from 'vue'
@@ -220,6 +236,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import {
+  AzureKeyVaultBinding,
   UpdateApplicationInstance,
   SecretBinding,
   SecretBindingKind
@@ -233,7 +250,7 @@ import { usePlatforms } from '../composables/usePlatforms'
 import { getErrorMessage } from '../utils/error'
 import DependencyInlineTable from '../components/applications/DependencyInlineTable.vue'
 import { useSecretProviders } from '../composables/useSecretProviders'
-import { isAppConfigurationEndpoint } from '../utils/secretProviders'
+import { isAppConfiguration } from '../utils/secretProviders'
 import { useAppConfigurationEntries } from '../composables/useAppConfigurationEntries'
 
 const route = useRoute()
@@ -245,17 +262,23 @@ const fuseStore = useFuseStore()
 const applicationId = computed(() => route.params.applicationId as string)
 const instanceId = computed(() => route.params.instanceId as string)
 
+const activeTab = ref('details')
+usePersistedFilter(`instance_${instanceId.value}_tab`, activeTab)
+watch(() => route.query.tab, tab => {
+  if (tab === 'dependencies' || tab === 'details') activeTab.value = tab
+}, { immediate: true })
+
 const showApiKey = ref(false)
 const isAppConfigurationExpanded = ref(false)
 const secretProvidersQuery = useSecretProviders()
-const secretProviderOptions = computed(() =>
+const keyVaultOptions = computed(() =>
   (secretProvidersQuery.data.value ?? [])
-    .filter((p) => !!p.id)
+    .filter((p) => !!p.id && !isAppConfiguration(p))
     .map((p) => ({ label: p.name ?? p.id!, value: p.id! }))
 )
 const appConfigurationProviderOptions = computed(() =>
   (secretProvidersQuery.data.value ?? [])
-    .filter((p) => !!p.id && isAppConfigurationEndpoint(p.vaultUri))
+    .filter((p) => !!p.id && isAppConfiguration(p))
     .map((p) => ({ label: p.name ?? p.id!, value: p.id! }))
 )
 
@@ -414,11 +437,11 @@ function buildApiKeyBinding(): SecretBinding | undefined {
     if (!form.apiKeyVaultProviderId || !form.apiKeyVaultSecretName) return undefined
     return Object.assign(new SecretBinding(), {
       kind: SecretBindingKind.AzureKeyVault,
-      azureKeyVault: {
+      azureKeyVault: new AzureKeyVaultBinding({
         providerId: form.apiKeyVaultProviderId,
         secretName: form.apiKeyVaultSecretName,
         version: form.apiKeyVaultVersion || undefined
-      }
+      })
     })
   }
   return undefined
@@ -510,4 +533,6 @@ function confirmInstanceDelete() {
 
 <style scoped>
 @import '../styles/pages.css';
+
+.page-header { flex-wrap: wrap; gap: .75rem; }
 </style>
