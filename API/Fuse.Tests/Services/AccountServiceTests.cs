@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Fuse.Tests.Services;
 
-public class AccountServiceTests
+public partial class AccountServiceTests
 {
     private sealed class TagLookupService : ITagService
     {
