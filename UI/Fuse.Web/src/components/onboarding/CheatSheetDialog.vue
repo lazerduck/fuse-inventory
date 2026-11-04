@@ -213,7 +213,7 @@ const guides = computed<Guide[]>(() => [
     introduction: 'Add relationships when they help describe your estate. Choose an application above; there is no need to create example records just to finish a guide.', icon: 'account_tree',
     steps: [
       { id: 'connections-target', title: 'Identify an existing dependency target', content: ['Use an existing application instance, data store, message broker or external resource. Only create an External Resource when the real service is not already represented in Fuse.'], to: { name: 'externalResources' }, actionLabel: 'View external resources' },
-      { id: 'connections-link', title: 'Connect the deployed instance', content: ['Open the instance and add a dependency pointing to the resource it calls. Dependencies belong to instances so production and test can use different resources. You can also add or edit dependencies from the graph.'], to: firstInstance.value ? { name: 'instanceEdit', params: firstInstance.value } : { name: 'applications' }, actionLabel: 'Open instance', secondaryTo: { name: 'graph' }, secondaryLabel: 'Explore graph' }
+      { id: 'connections-link', title: 'Connect the deployed instance', content: ['Open the instance and add a dependency pointing to the resource it calls. Dependencies belong to instances so production and test can use different resources. You can also add or edit dependencies from the graph.'], to: firstInstance.value ? { name: 'instanceEdit', params: firstInstance.value, query: { tab: 'dependencies' } } : { name: 'applications' }, actionLabel: 'Open instance', secondaryTo: { name: 'graph' }, secondaryLabel: 'Explore graph' }
     ]
   },
   {

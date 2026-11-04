@@ -37,3 +37,13 @@ for (const posture of ['Unrestricted', 'RestrictedEditing', 'FullyRestricted']) 
     }
   });
 }
+
+test('security settings use the same readable access levels as setup', async ({ authenticatedPage: page }) => {
+  await page.goto('/security');
+  await expect(page.getByText(/Security Level: Fully Restricted/)).toBeVisible();
+  await page.getByRole('button', { name: 'Edit security level' }).click();
+  const picker = page.getByRole('combobox', { name: 'Security Level', exact: true });
+  await expect(picker).toHaveValue('Fully Restricted');
+  await picker.click();
+  await expect(page.getByRole('option').filter({ hasText: 'Unrestricted' })).toContainText('Anyone can read and edit inventory without signing in.');
+});

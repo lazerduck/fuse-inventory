@@ -24,6 +24,13 @@ test('application, instance and pipeline persist independently of details edits'
   expect(targetResponse.ok()).toBeTruthy();
   const target = await targetResponse.json();
   await page.reload();
+  const versionField = page.getByLabel('Version', { exact: true });
+  await versionField.fill('unsaved draft');
+  await page.getByRole('tab', { name: 'Dependencies (0)', exact: true }).click();
+  await page.getByRole('tab', { name: 'Details', exact: true }).click();
+  await expect(versionField).toHaveValue('unsaved draft');
+  await versionField.fill('instance-v1');
+  await page.getByRole('tab', { name: 'Dependencies (0)', exact: true }).click();
   await page.getByRole('button', { name: 'Add Dependency', exact: true }).click();
   const draft = page.locator('tbody tr').filter({ has: page.getByRole('combobox') });
   await expect(draft.getByRole('spinbutton', { name: 'Port', exact: true })).toBeVisible();
@@ -41,6 +48,10 @@ test('application, instance and pipeline persist independently of details edits'
   await expect(dependencyRow.getByRole('button', { name: 'Delete dependency', exact: true })).toBeEnabled();
   await page.reload();
   await expect(page.getByRole('row').filter({ hasText: `${name}-dependency` })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Dependencies (1)', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('link', { name: 'View in graph', exact: true }).click();
+  await expect(page.getByRole('complementary', { name: 'Graph inspector' }).getByRole('heading', { name, exact: true })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp('node=appi-' + instanceUrl.split('/').pop()));
   await page.goto(`/blast-radius?kind=External&id=${target.id}`);
   await expect(page.getByRole('link', { name: 'View Instance', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'View Instance', exact: true }).click();
@@ -80,4 +91,30 @@ test('application, instance and pipeline persist independently of details edits'
   await expect(page).toHaveURL('/applications');
   expect((await adminApi.get(`/api/application/${id}`)).status()).toBe(404);
   expect((await adminApi.get(`/api/externalResource/${target.id}`)).status()).toBe(200);
+});
+
+test('instance API keys offer only vaults and save the selected reference', async ({ authenticatedPage: page, adminApi }) => {
+  const vaultId = randomUUID();
+  await page.route('**/api/SecretProvider', route => route.fulfill({ json: [
+    { id: vaultId, name: 'Team vault', vaultUri: 'https://team.vault.azure.net/' },
+    { id: randomUUID(), name: 'Legacy configuration', vaultUri: 'https://legacy.azconfig.io/' },
+    { id: randomUUID(), name: 'Named configuration', integrationKind: 'AppConfiguration', vaultUri: 'https://custom.example.test/' },
+  ] }));
+  const environment = (await (await adminApi.get('/api/environment')).json())[0];
+  const app = await (await adminApi.post('/api/application', { data: { name: 'Vault picker ' + vaultId } })).json();
+  const instance = await (await adminApi.post(`/api/application/${app.id}/instances`, { data: { environmentId: environment.id } })).json();
+  await page.goto(`/applications/${app.id}/instances/${instance.id}`);
+  await page.getByLabel('API Key Type', { exact: true }).click();
+  await page.getByRole('option', { name: 'Azure Key Vault', exact: true }).click();
+  await page.getByLabel('Key Vault', { exact: true }).click();
+  await expect(page.getByRole('option')).toHaveText(['Team vault']);
+  await page.getByRole('option', { name: 'Team vault', exact: true }).click();
+  await page.getByLabel('Secret Name', { exact: true }).fill('instance-key');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Instance updated', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Key Vault', { exact: true })).toHaveValue('Team vault');
+  await expect(page.getByLabel('Secret Name', { exact: true })).toHaveValue('instance-key');
+  await page.getByLabel('App Configuration Integration', { exact: true }).click();
+  await expect(page.getByRole('option')).toHaveText(['Legacy configuration', 'Named configuration']);
 });
