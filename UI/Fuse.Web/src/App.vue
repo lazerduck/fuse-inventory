@@ -23,8 +23,11 @@
 
         <LicenseChip />
 
-        <q-btn dense flat round icon="info_outline" aria-label="About Fuse Inventory" @click="openAboutDialog">
-          <q-tooltip>About Fuse Inventory</q-tooltip>
+        <q-btn dense flat round icon="info_outline" :aria-label="aboutLabel" @click="aboutDialogOpen = true">
+          <q-badge v-if="availableVersion" floating rounded color="primary" aria-hidden="true">
+            <q-icon name="arrow_upward" size="10px" />
+          </q-badge>
+          <q-tooltip>{{ aboutLabel }}</q-tooltip>
         </q-btn>
 
         <q-btn aria-label="Help" dense flat round icon="help_outline">
@@ -413,11 +416,11 @@
           <q-btn v-close-popup flat round dense icon="close" aria-label="Close" />
         </q-card-section>
 
-        <q-card-section v-if="aboutQuery.isFetching.value" class="about-state">
+        <q-card-section v-if="!aboutQuery.data.value && aboutQuery.isFetching.value" class="about-state">
           <q-spinner color="primary" size="28px" />
           <span>Loading build details…</span>
         </q-card-section>
-        <q-card-section v-else-if="aboutQuery.error.value" class="about-state text-negative">
+        <q-card-section v-else-if="!aboutQuery.data.value && aboutQuery.error.value" class="about-state text-negative">
           <q-icon name="error_outline" size="28px" />
           <span>{{ getErrorMessage(aboutQuery.error.value, 'Unable to load build details.') }}</span>
           <q-btn flat dense color="primary" label="Retry" @click="aboutQuery.refetch()" />
@@ -427,6 +430,17 @@
             <span class="about-label">{{ detail.label }}</span>
             <span :class="{ 'about-monospace': detail.monospace }">{{ detail.value }}</span>
           </div>
+        </q-card-section>
+        <q-card-section v-if="availableVersion" class="about-update">
+          <div class="text-subtitle1 text-weight-medium">Update available · {{ availableVersion }}</div>
+          <div class="row q-gutter-x-md q-mt-xs">
+            <a v-if="releaseNotesUrl" :href="releaseNotesUrl" target="_blank" rel="noopener noreferrer">Release notes</a>
+            <a v-if="compareUrl" :href="compareUrl" target="_blank" rel="noopener noreferrer">Compare changes on GitHub</a>
+          </div>
+          <p class="q-mt-xs q-mb-none">Redeploy the updated image from your container host.</p>
+        </q-card-section>
+        <q-card-section v-if="aboutStatusMessage" class="q-pt-none text-caption">
+          {{ aboutStatusMessage }}
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -461,7 +475,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Notify, Dialog, useQuasar } from 'quasar'
 import { useFuseStore } from './stores/FuseStore'
 import LoginDialog from './components/security/LoginDialog.vue'
-import { HealthCheckProvider, LoginSecurityUser } from 'api/client'
+import { HealthCheckProvider, LoginSecurityUser, UpdateCheckStatus } from 'api/client'
 import { Permission } from 'permissions'
 import { getErrorMessage } from './utils/error'
 import { useOnboardingStore } from './stores/OnboardingStore'
@@ -497,8 +511,40 @@ const canSuggestFirstApplication = computed(() =>
   fuseStore.hasPermission(Permission.ApplicationsRead) &&
   !onboardingStore.hasCompletedTour && !onboardingStore.lastCompletedAt && !onboardingStore.dismissedBanner
 )
-const aboutQuery = useQuery({ queryKey: ['about'], queryFn: () => client.aboutGet(), enabled: false, staleTime: Infinity })
 const aboutDialogOpen = ref(false)
+const aboutQuery = useQuery({
+  queryKey: ['about'],
+  queryFn: ({ signal }) => client.aboutGet(signal),
+  staleTime: 60_000,
+  refetchInterval: query => query.state.data?.updateStatus === UpdateCheckStatus.Checking ? 5_000 : 5 * 60_000
+})
+const availableVersion = computed(() => aboutQuery.data.value?.availableVersion)
+const aboutLabel = computed(() => availableVersion.value
+  ? `About Fuse Inventory, update available: ${availableVersion.value}`
+  : 'About Fuse Inventory')
+const repositoryUrl = 'https://github.com/lazerduck/fuse-inventory'
+const releaseNotesUrl = computed(() => aboutQuery.data.value?.channel === 'release' && availableVersion.value
+  ? `${repositoryUrl}/releases/tag/v${encodeURIComponent(availableVersion.value)}`
+  : undefined)
+const compareUrl = computed(() => {
+  const build = aboutQuery.data.value
+  if (!build?.availableVersion) return
+  if (build.channel === 'release' && build.version) {
+    return `${repositoryUrl}/compare/v${encodeURIComponent(build.version)}...v${encodeURIComponent(build.availableVersion)}`
+  }
+  const nextCommit = /-pre\.([0-9a-f]{7,40})$/i.exec(build.availableVersion)?.[1]
+  if (build.channel === 'pre-release' && nextCommit && build.gitCommitId && /^[0-9a-f]{7,40}$/i.test(build.gitCommitId)) {
+    return `${repositoryUrl}/compare/${build.gitCommitId}...${nextCommit}`
+  }
+})
+const aboutStatusMessage = computed(() => {
+  switch (aboutQuery.data.value?.updateStatus) {
+    case UpdateCheckStatus.Current: return 'You’re up to date on this channel.'
+    case UpdateCheckStatus.Checking: return 'Checking this channel for updates…'
+    case UpdateCheckStatus.Unavailable: return 'The latest update check failed. Fuse will try again automatically.'
+    default: return ''
+  }
+})
 const aboutDetails = computed(() => {
   const about = aboutQuery.data.value
   if (!about) return []
@@ -522,10 +568,6 @@ function toggleTheme() {
   saveThemePreference(useDarkTheme ? 'dark' : 'light')
 }
 
-function openAboutDialog() {
-  aboutDialogOpen.value = true
-  if (!aboutQuery.data.value && !aboutQuery.isFetching.value) void aboutQuery.refetch()
-}
 watch(healthMonitoringEnabled, enabled => {
   if (!enabled && route.name === 'healthOverview') void router.replace({ name: 'home' })
 })
@@ -767,7 +809,7 @@ h1 {
 }
 
 .about-dialog {
-  width: min(360px, calc(100vw - 32px));
+  width: min(460px, calc(100vw - 32px));
 }
 
 .about-header {
@@ -790,6 +832,13 @@ h1 {
   align-items: baseline;
   min-width: 0;
 }
+
+.about-update {
+  border-top: 1px solid var(--fuse-panel-border);
+  overflow-wrap: anywhere;
+}
+
+.about-update a { color: var(--q-primary); }
 
 .about-label {
   color: var(--fuse-text-muted);

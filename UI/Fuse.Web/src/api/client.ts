@@ -15604,6 +15604,8 @@ export class AboutResponse implements IAboutResponse {
   gitCommitId?: string | undefined;
   gitCommitIdShort?: string | undefined;
   buildDate?: string | undefined;
+  updateStatus?: UpdateCheckStatus;
+  availableVersion?: string | undefined;
 
   constructor(data?: IAboutResponse) {
     if (data) {
@@ -15622,6 +15624,8 @@ export class AboutResponse implements IAboutResponse {
       this.gitCommitId = _data["gitCommitId"];
       this.gitCommitIdShort = _data["gitCommitIdShort"];
       this.buildDate = _data["buildDate"];
+      this.updateStatus = _data["updateStatus"];
+      this.availableVersion = _data["availableVersion"];
     }
   }
 
@@ -15640,6 +15644,8 @@ export class AboutResponse implements IAboutResponse {
     data["gitCommitId"] = this.gitCommitId;
     data["gitCommitIdShort"] = this.gitCommitIdShort;
     data["buildDate"] = this.buildDate;
+    data["updateStatus"] = this.updateStatus;
+    data["availableVersion"] = this.availableVersion;
     return data;
   }
 }
@@ -15651,6 +15657,8 @@ export interface IAboutResponse {
   gitCommitId?: string | undefined;
   gitCommitIdShort?: string | undefined;
   buildDate?: string | undefined;
+  updateStatus?: UpdateCheckStatus;
+  availableVersion?: string | undefined;
 }
 
 export class Account implements IAccount {
@@ -23953,6 +23961,14 @@ export class UpdateAzureIntegrationManager implements IUpdateAzureIntegrationMan
 
 export interface IUpdateAzureIntegrationManager {
   credentials?: SecretProviderCredentials;
+}
+
+export enum UpdateCheckStatus {
+  Unsupported = "Unsupported",
+  Checking = "Checking",
+  Current = "Current",
+  Available = "Available",
+  Unavailable = "Unavailable",
 }
 
 export class UpdateDataStore implements IUpdateDataStore {

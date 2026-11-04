@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Fuse.API.Controllers;
+using Fuse.API.Updates;
 using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
 using Fuse.Core;
@@ -62,6 +64,10 @@ FuseCodeModule.Register(builder.Services);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddFuseMcp();
+builder.Services.AddSingleton(AboutResponse.FromEnvironment());
+builder.Services.AddHttpClient(nameof(ChannelUpdateService), client => client.Timeout = TimeSpan.FromSeconds(10));
+builder.Services.AddSingleton<ChannelUpdateService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ChannelUpdateService>());
 
 var app = builder.Build();
 

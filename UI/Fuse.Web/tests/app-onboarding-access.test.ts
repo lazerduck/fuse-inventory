@@ -64,6 +64,37 @@ beforeEach(() => {
 })
 afterEach(() => { wrapper?.unmount(); queryClient?.clear(); vi.resetAllMocks() })
 
+describe('About update notification', () => {
+  it.each([
+    ['release', '0.10.0', 'v0.9.0...v0.10.0'],
+    ['pre-release', '0.10.0-pre.abc1234', '1234567...abc1234']
+  ])('shows the %s update before opening About and explains the host update', async (channel, availableVersion, comparison) => {
+    api.aboutGet.mockResolvedValue({ channel, version: '0.9.0', gitCommitId: '1234567', updateStatus: 'Available', availableVersion })
+    await renderApp()
+    const button = wrapper.findAllComponents(QBtn).find(btn => btn.attributes('aria-label')?.startsWith('About Fuse Inventory'))!
+    expect(button.attributes('aria-label')).toContain(availableVersion)
+    expect(button.findComponent({ name: 'QBadge' }).exists()).toBe(true)
+    button.vm.$emit('click')
+    await nextTick()
+    const about = wrapper.findAllComponents({ name: 'QDialog' }).find(dialog => dialog.text().includes('Build information'))!
+    expect(about.props('modelValue')).toBe(true)
+    expect(about.text()).toContain(`Update available · ${availableVersion}`)
+    const links = about.findAll('a').map(link => link.attributes('href'))
+    const repository = 'https://github.com/lazerduck/fuse-inventory'
+    expect(links).toEqual(channel === 'release'
+      ? [`${repository}/releases/tag/v${availableVersion}`, `${repository}/compare/${comparison}`]
+      : [`${repository}/compare/${comparison}`])
+    expect(about.text()).toContain('Redeploy the updated image from your container host.')
+  })
+
+  it.each(['Current', 'Unavailable', 'Unsupported'])('omits the badge for %s', async updateStatus => {
+    api.aboutGet.mockResolvedValue({ updateStatus })
+    await renderApp()
+    const button = wrapper.findAllComponents(QBtn).find(btn => btn.attributes('aria-label') === 'About Fuse Inventory')!
+    expect(button.findComponent({ name: 'QBadge' }).exists()).toBe(false)
+  })
+})
+
 describe('Global onboarding requests', () => {
   it('does not fetch hidden onboarding inventory for a restricted documentation reader', async () => {
     await renderApp()
