@@ -9,6 +9,11 @@
 
 export interface IFuseApiClient {
   /**
+  * @return OK
+  */
+  applicationChanges(versionId: string, signal?: AbortSignal): Promise<ApplicationChanges>;
+
+  /**
    * @return OK
    */
   aboutGet(signal?: AbortSignal): Promise<AboutResponse>;
@@ -1470,6 +1475,61 @@ export class FuseApiClient implements IFuseApiClient {
   ) {
     this.http = http ? http : (window as any);
     this.baseUrl = baseUrl ?? "";
+  }
+
+  /**
+  * @return OK
+  */
+  applicationChanges(versionId: string, signal?: AbortSignal): Promise<ApplicationChanges> {
+    let url_ = this.baseUrl + "/api/Activity/applications/changes/{versionId}";
+    if (versionId === undefined || versionId === null)
+      throw new globalThis.Error("The parameter 'versionId' must be defined.");
+    url_ = url_.replace("{versionId}", encodeURIComponent("" + versionId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        "Accept": "application/json"
+      }
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processApplicationChanges(_response);
+    });
+  }
+
+  protected processApplicationChanges(response: Response): Promise<ApplicationChanges> {
+    const status = response.status;
+    let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+      let result200: any = null;
+      let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+      result200 = ApplicationChanges.fromJS(resultData200);
+      return result200;
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+      let result403: any = null;
+      let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+      result403 = ProblemDetails.fromJS(resultData403);
+      return throwException("Forbidden", status, _responseText, _headers, result403);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+      let result404: any = null;
+      let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+      result404 = ProblemDetails.fromJS(resultData404);
+      return throwException("Not Found", status, _responseText, _headers, result404);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+      return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<ApplicationChanges>(null as any);
   }
 
   /**
@@ -15848,6 +15908,154 @@ export interface IAccountSqlStatusResponse {
   statusSummary?: string | undefined;
   permissionComparisons?: SqlPermissionComparison[] | undefined;
   errorMessage?: string | undefined;
+}
+
+export class ApplicationChange implements IApplicationChange {
+  field?: string | undefined;
+  before?: string | undefined;
+  after?: string | undefined;
+
+  constructor(data?: IApplicationChange) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.field = _data["field"];
+      this.before = _data["before"];
+      this.after = _data["after"];
+    }
+  }
+
+  static fromJS(data: any): ApplicationChange {
+    data = typeof data === 'object' ? data : {};
+    let result = new ApplicationChange();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["field"] = this.field;
+    data["before"] = this.before;
+    data["after"] = this.after;
+    return data;
+  }
+}
+
+export interface IApplicationChange {
+  field?: string | undefined;
+  before?: string | undefined;
+  after?: string | undefined;
+}
+
+export class ApplicationChangeGroup implements IApplicationChangeGroup {
+  title?: string | undefined;
+  instanceId?: string | undefined;
+  changes?: ApplicationChange[] | undefined;
+
+  constructor(data?: IApplicationChangeGroup) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.title = _data["title"];
+      this.instanceId = _data["instanceId"];
+      if (Array.isArray(_data["changes"])) {
+        this.changes = [] as any;
+        for (let item of _data["changes"])
+          this.changes!.push(ApplicationChange.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ApplicationChangeGroup {
+    data = typeof data === 'object' ? data : {};
+    let result = new ApplicationChangeGroup();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["title"] = this.title;
+    data["instanceId"] = this.instanceId;
+    if (Array.isArray(this.changes)) {
+      data["changes"] = [];
+      for (let item of this.changes)
+        data["changes"].push(item ? item.toJSON() : undefined as any);
+    }
+    return data;
+  }
+}
+
+export interface IApplicationChangeGroup {
+  title?: string | undefined;
+  instanceId?: string | undefined;
+  changes?: ApplicationChange[] | undefined;
+}
+
+export class ApplicationChanges implements IApplicationChanges {
+  applicationName?: string | undefined;
+  notice?: string | undefined;
+  groups?: ApplicationChangeGroup[] | undefined;
+
+  constructor(data?: IApplicationChanges) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationName = _data["applicationName"];
+      this.notice = _data["notice"];
+      if (Array.isArray(_data["groups"])) {
+        this.groups = [] as any;
+        for (let item of _data["groups"])
+          this.groups!.push(ApplicationChangeGroup.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ApplicationChanges {
+    data = typeof data === 'object' ? data : {};
+    let result = new ApplicationChanges();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["applicationName"] = this.applicationName;
+    data["notice"] = this.notice;
+    if (Array.isArray(this.groups)) {
+      data["groups"] = [];
+      for (let item of this.groups)
+        data["groups"].push(item ? item.toJSON() : undefined as any);
+    }
+    return data;
+  }
+}
+
+export interface IApplicationChanges {
+  applicationName?: string | undefined;
+  notice?: string | undefined;
+  groups?: ApplicationChangeGroup[] | undefined;
 }
 
 export class ActivityFeedItem implements IActivityFeedItem {

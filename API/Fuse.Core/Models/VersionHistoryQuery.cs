@@ -15,6 +15,9 @@ public record VersionHistoryQuery
     /// </summary>
     public EntityType? EntityType { get; init; }
     
+    public int? MinVersion { get; init; }
+    public int? MaxVersion { get; init; }
+
     /// <summary>
     /// Filter by minimum timestamp (optional)
     /// </summary>

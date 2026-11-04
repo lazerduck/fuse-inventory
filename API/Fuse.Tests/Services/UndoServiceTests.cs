@@ -219,6 +219,29 @@ public class UndoServiceTests
         Assert.Contains(app.Instances, i => i.Id == referencedInstanceId);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FirstTrackedApplicationEditRetainsItsBaselineForComparisonAndUndo(bool delete)
+    {
+        var store = new InMemoryFuseStore();
+        var app = CreateApp(Guid.NewGuid(), "1.0");
+        var original = store.Current! with { Applications = [app] };
+        var history = new InMemoryVersionHistoryService();
+        var tracker = new SnapshotChangeTracker(history);
+        tracker.Initialize(original);
+        var edited = original with { Applications = delete ? [] : [app with { Version = "2.0" }] };
+        await store.SaveAsync(edited);
+        await tracker.OnSnapshotChangedAsync(edited);
+        var entry = Assert.Single(await history.GetVersionsAsync(app.Id, EntityType.Application));
+        var diff = new ApplicationChangeComparison(edited, _ => true).Compare(entry, entry.InitialApplicationSnapshot);
+        Assert.Contains(new ApplicationChange("Version", "1.0", delete ? null : "2.0"), diff.Groups.Single().Changes);
+
+        var service = new UndoService(history, store, new FakeAuditService(), new FakeCurrentUser());
+        Assert.True((await service.UndoChangeAsync(entry.Id)).IsSuccess);
+        Assert.Equal("1.0", Assert.Single(store.Current!.Applications).Version);
+    }
+
     private static Application CreateApp(Guid id, string version)
     {
         return new Application(
