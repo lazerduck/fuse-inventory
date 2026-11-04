@@ -30,6 +30,9 @@ public record EntityVersion
     /// Null indicates the entity was deleted
     /// </summary>
     public string? EntitySnapshot { get; init; }
+
+    // An existing application's first tracked change has no earlier history entry.
+    public string? InitialApplicationSnapshot { get; init; }
     
     /// <summary>
     /// Timestamp when this version was created

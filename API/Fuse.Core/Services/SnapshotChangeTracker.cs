@@ -65,23 +65,29 @@ public class SnapshotChangeTracker
         var tracker = new SnapshotChangeTracker(versionHistoryService);
         tracker.Initialize(initialSnapshot);
         
-        // Subscribe to changes with fire-and-forget async handling
+        // JsonFuseStore raises Changed in save order. Process snapshots in that same
+        // order so a rapid second edit cannot claim the first edit's baseline or author.
+        var pending = Task.CompletedTask;
+        var gate = new object();
         store.Changed += snapshot =>
         {
-            // Capture user context at event time so async scheduling cannot change attribution.
             var userContext = GetUserContext();
-            _ = Task.Run(async () =>
+            lock (gate)
             {
-                try
+                var previous = pending;
+                pending = Task.Run(async () =>
                 {
-                    await tracker.OnSnapshotChangedAsync(snapshot, userContext);
-                }
-                catch (Exception ex)
-                {
-                    // Log error but don't fail the change operation
-                    Console.Error.WriteLine($"Error tracking snapshot changes: {ex}");
-                }
-            });
+                    await previous;
+                    try
+                    {
+                        await tracker.OnSnapshotChangedAsync(snapshot, userContext);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Error tracking snapshot changes: {ex}");
+                    }
+                });
+            }
         };
     }
 
@@ -269,7 +275,7 @@ public class SnapshotChangeTracker
                         newEntity,
                         updateAction,
                         userContext,
-                        BuildUpdateDescription(entityType, entityId, oldEntity, newEntity));
+                        BuildUpdateDescription(entityType, entityId, oldEntity, newEntity), oldEntity);
                 }
             }
         }
@@ -287,7 +293,7 @@ public class SnapshotChangeTracker
                     null,
                     deleteAction,
                     userContext,
-                    BuildChangeDescription(entityType, deleteAction, entityId, oldEntity));
+                    BuildChangeDescription(entityType, deleteAction, entityId, oldEntity), oldEntity);
             }
         }
     }
@@ -301,7 +307,7 @@ public class SnapshotChangeTracker
         object? entity,
         AuditAction action,
         UserContext userContext,
-        string? changeDescription = null)
+        string? changeDescription = null, object? previousEntity = null)
     {
         // Get the next version number for this entity
         var latestVersion = await _versionHistoryService.GetLatestVersionAsync(entityId, entityType);
@@ -318,7 +324,11 @@ public class SnapshotChangeTracker
             userName: userContext.UserName,
             userId: userContext.UserId,
             changeDescription: changeDescription ?? BuildChangeDescription(entityType, action, entityId, entity)
-        );
+        )
+        {
+            InitialApplicationSnapshot = latestVersion is null && entityType == EntityType.Application
+                ? EntityExtractor.SerializeEntity(previousEntity) : null
+        };
 
         await _versionHistoryService.SaveVersionAsync(version);
     }

@@ -104,6 +104,11 @@ public sealed class LiteDbVersionHistoryService : IVersionHistoryService, IDispo
                 if (query.EntityType.HasValue)
                     q = q.Where(x => x.EntityType == query.EntityType.Value);
                 
+                if (query.MinVersion.HasValue)
+                    q = q.Where(x => x.Version >= query.MinVersion.Value);
+                if (query.MaxVersion.HasValue)
+                    q = q.Where(x => x.Version <= query.MaxVersion.Value);
+
                 if (query.StartTime.HasValue)
                     q = q.Where(x => x.Timestamp >= query.StartTime.Value);
                 
