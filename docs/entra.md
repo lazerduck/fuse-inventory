@@ -8,7 +8,7 @@ Fuse uses Microsoft Entra to authenticate people and obtain security-group IDs. 
 2. In Entra **App registrations**, register a single-tenant application. Add a **Web** redirect URI of `https://YOUR-FUSE-HOST/auth/entra/callback`. For local development use `http://localhost:5173/auth/entra/callback`.
 3. Create a client secret. Copy its **value**, and arrange rotation before its expiry.
 4. Under **Token configuration → Add groups claim**, select **Security groups**, with **Group ID** for ID tokens. Leave **Emit groups as role claims** unchecked. Do not use display names as identity keys.
-5. In Fuse **Security → Microsoft Entra**, enter the tenant ID, application/client ID, secret value and public origin. Set the sign-in lifetime (5–120 minutes; default 60), enable Microsoft sign-in and save. The public origin must match the browser-facing host; HTTPS is required except for loopback development.
+5. In Fuse **Settings → Microsoft Entra → Connection settings**, enter the tenant ID, application/client ID, secret value and public origin. Set the sign-in lifetime (5–120 minutes; default 60), enable Microsoft sign-in and save. The public origin must match the browser-facing host; HTTPS is required except for loopback development.
 6. Use **Test Microsoft sign-in**. Consent is governed by your tenant's policies. Fuse requests `openid profile`; it does not require directory-wide Graph access or retain Microsoft access/refresh tokens.
 7. In Fuse **Roles**, edit or create a role and add the Entra group's **object ID** and a descriptive label. Members inherit that role when signing in with Microsoft. Direct Fuse assignments remain available in **Security → User Accounts**.
 
