@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel;
 using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.Application;
@@ -28,6 +29,8 @@ public sealed class PatchTools(
     IRiskService risks, ITagService tags, ICurrentUser currentUser, McpToolAuthorization authorization)
 {
     [McpServerTool(Name = "inventory_patch_application_pipeline", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Update only supplied application pipeline fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchPipeline(Guid applicationId, Guid pipelineId, string? name = null,
         string? pipelineUri = null, IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
     {
@@ -40,6 +43,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_application_dependency", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Update only supplied application dependency fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchDependency(Guid applicationId, Guid instanceId, Guid dependencyId,
         DateTime expectedUpdatedAt, Guid? targetId = null, TargetKind? targetKind = null, int? port = null,
         DependencyAuthKind? authKind = null, Guid? accountId = null, Guid? identityId = null,
@@ -58,6 +63,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_account_grant", Destructive = true)]
+    [Authorize(Policy = AccountPermissions.UpdateKey)]
+    [Description("Update only supplied account grant fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchGrant(Guid accountId, Guid grantId, DateTime expectedUpdatedAt,
         string? database = null, string? schema = null, IReadOnlyList<Privilege>? privileges = null,
         IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
@@ -73,6 +80,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_identity_assignment", Destructive = true)]
+    [Authorize(Policy = IdentityPermissions.UpdateKey)]
+    [Description("Update only supplied identity assignment fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchIdentityAssignment(Guid identityId, Guid assignmentId, DateTime expectedUpdatedAt,
         TargetKind? targetKind = null, Guid? targetId = null, string? role = null, string? notes = null,
         IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
@@ -88,6 +97,7 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_account", Destructive = true)]
+    [Authorize(Policy = AccountPermissions.UpdateKey)]
     [Description("Patch an account. Omitted fields remain unchanged; clearFields removes nullable fields or tags.")]
     public async Task<object> PatchAccount(Guid accountId, DateTime expectedUpdatedAt,
         Guid? targetId = null, TargetKind? targetKind = null, AuthKind? authKind = null,
@@ -109,6 +119,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_identity", Destructive = true)]
+    [Authorize(Policy = IdentityPermissions.UpdateKey)]
+    [Description("Update only supplied identity fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchIdentity(Guid identityId, DateTime expectedUpdatedAt,
         string? name = null, IdentityKind? kind = null, string? notes = null, Guid? ownerInstanceId = null,
         IReadOnlyList<IdentityAssignment>? assignments = null, IReadOnlyList<Guid>? tagIds = null,
@@ -127,6 +139,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_datastore", Destructive = true)]
+    [Authorize(Policy = DataStorePermissions.UpdateKey)]
+    [Description("Update only supplied datastore fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchDataStore(Guid dataStoreId, DateTime expectedUpdatedAt,
         string? name = null, string? kind = null, Guid? environmentId = null, Guid? platformId = null,
         string? connectionUri = null, IReadOnlyList<Guid>? tagIds = null,
@@ -143,6 +157,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_environment", Destructive = true)]
+    [Authorize(Policy = EnvironmentPermissions.UpdateKey)]
+    [Description("Update only supplied environment fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchEnvironment(Guid environmentId, string? name = null, string? description = null,
         bool? autoCreateInstances = null, string? baseUriTemplate = null, string? healthUriTemplate = null,
         string? openApiUriTemplate = null, IReadOnlyList<Guid>? tagIds = null,
@@ -161,6 +177,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_external_resource", Destructive = true)]
+    [Authorize(Policy = ExternalResourcePermissions.UpdateKey)]
+    [Description("Update only supplied external resource fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchExternalResource(Guid externalResourceId, DateTime expectedUpdatedAt,
         string? name = null, string? description = null, string? resourceUri = null,
         IReadOnlyList<Guid>? tagIds = null, IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
@@ -175,6 +193,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_message_broker", Destructive = true)]
+    [Authorize(Policy = MessageBrokerPermissions.UpdateKey)]
+    [Description("Update only supplied message broker fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchMessageBroker(Guid messageBrokerId, DateTime expectedUpdatedAt,
         string? name = null, string? description = null, string? kind = null, Guid? environmentId = null,
         string? connectionUri = null, IReadOnlyList<BrokerQueueInput>? queues = null,
@@ -196,6 +216,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_platform", Destructive = true)]
+    [Authorize(Policy = PlatformPermissions.UpdateKey)]
+    [Description("Update only supplied platform fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchPlatform(Guid platformId, DateTime expectedUpdatedAt,
         string? displayName = null, string? dnsName = null, string? os = null, PlatformKind? kind = null,
         IReadOnlyList<string>? ipAddresses = null, string? notes = null, IReadOnlyList<Guid>? tagIds = null,
@@ -214,6 +236,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_position", Destructive = true)]
+    [Authorize(Policy = PositionPermissions.UpdateKey)]
+    [Description("Update only supplied position fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchPosition(Guid positionId, DateTime expectedUpdatedAt,
         string? name = null, string? description = null, IReadOnlyList<Guid>? tagIds = null,
         IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
@@ -227,6 +251,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_responsibility_type", Destructive = true)]
+    [Authorize(Policy = ResponsibilityPermissions.UpdateKey)]
+    [Description("Update only supplied responsibility type fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchResponsibilityType(Guid responsibilityTypeId, DateTime expectedUpdatedAt,
         string? name = null, string? description = null, IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
     {
@@ -239,6 +265,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_responsibility", Destructive = true)]
+    [Authorize(Policy = ResponsibilityPermissions.UpdateKey)]
+    [Description("Update only supplied responsibility fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchResponsibility(Guid responsibilityId, DateTime expectedUpdatedAt,
         Guid? positionId = null, Guid? responsibilityTypeId = null, Guid? applicationId = null,
         ResponsibilityScope? scope = null, Guid? environmentId = null, string? notes = null, bool? primary = null,
@@ -255,6 +283,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_risk", Destructive = true)]
+    [Authorize(Policy = RiskPermissions.UpdateKey)]
+    [Description("Update only supplied risk fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchRisk(Guid riskId, DateTime expectedUpdatedAt,
         string? title = null, string? description = null, RiskImpact? impact = null, RiskLikelihood? likelihood = null,
         RiskStatus? status = null, Guid? ownerPositionId = null, Guid? approverPositionId = null,
@@ -276,6 +306,8 @@ public sealed class PatchTools(
     }
 
     [McpServerTool(Name = "inventory_patch_tag", Destructive = true)]
+    [Authorize(Policy = TagPermissions.UpdateKey)]
+    [Description("Update only supplied tag fields. Omitted fields stay unchanged; clearFields explicitly removes supported values.")]
     public async Task<object> PatchTag(Guid tagId, string? name = null, string? description = null,
         TagColor? color = null, IReadOnlyList<string>? clearFields = null, CancellationToken ct = default)
     {

@@ -6,6 +6,7 @@ using Fuse.Core.Areas.Security;
 using Fuse.Core.Models;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Areas.Security.Entra;
+using Fuse.Core.Services;
 using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
 namespace Fuse.API.Middleware;
@@ -51,7 +52,18 @@ public sealed class AuthenticationMiddleware
             }
         }
 
-        await _next(context);
+        var principalId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        SnapshotChangeTracker.SetUserContext(
+            context.User.Identity?.IsAuthenticated == true ? context.User.Identity.Name ?? "anonymous" : "anonymous",
+            Guid.TryParse(principalId, out var id) ? id : null);
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            SnapshotChangeTracker.SetUserContext("System", null);
+        }
     }
 
     private static async Task<ClaimsPrincipal?> TryAuthenticateApiKeyAsync(

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel;
 using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.DataStore;
@@ -33,6 +34,7 @@ public sealed class InventoryReadTools(
     McpToolAuthorization authorization)
 {
     [McpServerTool(Name = "inventory_list_items", ReadOnly = true)]
+    [Authorize(Policy = McpAuthorizationPolicies.InventoryRead)]
     [Description("List one kind of inventory item with its full editable definition. Use inventory_list_applications for applications.")]
     public async Task<object> ListItems(InventoryEntityType entityType, string? query = null,
         IReadOnlyList<Guid>? ids = null, IReadOnlyList<Guid>? tagIds = null,
@@ -70,6 +72,7 @@ public sealed class InventoryReadTools(
     }
 
     [McpServerTool(Name = "inventory_get_item", ReadOnly = true)]
+    [Authorize(Policy = McpAuthorizationPolicies.InventoryRead)]
     [Description("Get one inventory item by type and ID. Use inventory_get_application for applications.")]
     public async Task<object> GetItem(InventoryEntityType entityType, Guid id, CancellationToken ct = default)
     {
@@ -93,7 +96,7 @@ public sealed class InventoryReadTools(
         return item ?? throw new McpException($"{entityType} '{id}' was not found.");
     }
 
-    private static string ReadPermission(InventoryEntityType type) => type switch
+    internal static string ReadPermission(InventoryEntityType type) => type switch
     {
         InventoryEntityType.Account => AccountPermissions.ReadKey,
         InventoryEntityType.DataStore => DataStorePermissions.ReadKey,
