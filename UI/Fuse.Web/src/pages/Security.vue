@@ -44,6 +44,8 @@
         </q-card-section>
       </q-card>
 
+      <EntraSettingsCard v-if="isAdmin" @saved="entraStatusQuery.refetch()" />
+
       <!-- Current User Overview -->
       <q-card class="content-card q-mb-md">
         <q-card-section>
@@ -52,35 +54,31 @@
             <div class="row q-gutter-md">
               <div class="col-auto">
                 <p><strong>Username:</strong> {{ fuseStore.currentUser.userName }}</p>
+                <q-banner v-if="!fuseStore.currentUser.isAdmin && !fuseStore.currentUser.effectiveRoleIds?.length" class="bg-blue-1 text-primary">Your account is awaiting access. Ask a Fuse administrator to assign a role or link an Entra group you belong to.</q-banner>
                 <p><strong>Admin:</strong> {{ fuseStore.currentUser.isAdmin ? 'Yes' : 'No' }}</p>
               </div>
               <div class="col">
                 <p><strong>Assigned Roles:</strong></p>
-                <div v-if="fuseStore.currentUser.roleIds?.length" class="q-gutter-xs q-mb-sm">
-                  <q-chip
-                    v-for="roleId in fuseStore.currentUser.roleIds"
-                    :key="roleId"
-                    dense
-                    color="primary"
-                    text-color="white"
-                    size="sm"
-                    clickable
-                    @click="viewRolePermissions(roleId)"
-                  >
-                    {{ getRoleName(roleId) }}
-                    <q-tooltip>Click to view permissions</q-tooltip>
-                  </q-chip>
-                </div>
-                <span v-else class="text-grey">No roles assigned</span>
+                <RoleMemberships :memberships="fuseStore.currentUser.roleMemberships" @select="viewRolePermissions" />
               </div>
             </div>
             <div class="q-mt-sm">
+              <q-btn
+                v-if="entraStatusQuery.data.value?.enabled && fuseStore.currentUser.hasLocalPassword && !fuseStore.currentUser.entraObjectId"
+                flat
+                color="primary"
+                label="Link Microsoft account"
+                :loading="linkMicrosoftMutation.isPending.value"
+                @click="linkMicrosoft"
+              />
+              <q-chip v-if="fuseStore.currentUser.entraObjectId" icon="verified_user" color="teal" text-color="white">Microsoft account linked</q-chip>
               <q-btn
                 flat
                 dense
                 color="primary"
                 icon="lock_reset"
                 label="Reset My Password"
+                v-if="fuseStore.currentUser.hasLocalPassword"
                 @click="openSelfResetDialog"
               />
             </div>
@@ -154,26 +152,38 @@
           >
           <template #body-cell-roleIds="props">
             <q-td :props="props">
-              <div v-if="props.row.roleIds?.length" class="q-gutter-xs">
-                <q-chip
-                  v-for="roleId in props.row.roleIds"
-                  :key="roleId"
-                  dense
-                  color="primary"
-                  text-color="white"
-                  size="sm"
-                  clickable
-                  @click="viewRolePermissions(roleId)"
-                >
-                  {{ getRoleName(roleId) }}
-                  <q-tooltip>Click to view permissions</q-tooltip>
-                </q-chip>
-              </div>
-              <span v-else class="text-grey">—</span>
+              <RoleMemberships :memberships="props.row.roleMemberships" />
+              <q-badge v-if="!props.row.isAdmin && !props.row.isDisabled && !props.row.effectiveRoleIds?.length" color="orange" label="Awaiting access" />
+              <q-badge v-if="props.row.isDisabled" color="negative" label="Disabled" />
+              <div v-if="props.row.entraVerifiedAt" class="text-caption text-grey">Entra checked {{ new Date(props.row.entraVerifiedAt).toLocaleString() }} · {{ props.row.entraValidUntil ? `valid until ${new Date(props.row.entraValidUntil).toLocaleString()}` : 'refresh required' }}</div>
             </q-td>
           </template>
           <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
+            <q-btn
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate)"
+              flat
+              dense
+              round
+              icon="sync_lock"
+              aria-label="Force sign-in refresh"
+              :disable="revokeUserMutation.isPending.value"
+              @click="revokeUser(props.row)"
+            >
+              <q-tooltip>Revoke sessions / force sign-in refresh</q-tooltip>
+            </q-btn>
+            <q-btn
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate)"
+              flat
+              dense
+              round
+              :icon="props.row.isDisabled ? 'person_add' : 'person_off'"
+              :aria-label="props.row.isDisabled ? 'Enable user' : 'Disable user'"
+              :disable="disableUserMutation.isPending.value"
+              @click="disableUser(props.row)"
+            >
+              <q-tooltip>{{ props.row.isDisabled ? 'Enable user' : 'Disable user' }}</q-tooltip>
+            </q-btn>
             <q-btn aria-label="Edit user"
               flat 
               dense 
@@ -193,7 +203,7 @@
               icon="lock_reset"
               color="warning"
               class="q-ml-xs"
-              v-if="fuseStore.hasPermission(Permission.UsersUpdate) && !isCurrentUser(props.row) && !props.row.isAdmin"
+              v-if="fuseStore.hasPermission(Permission.UsersUpdate) && !isCurrentUser(props.row) && !props.row.isAdmin && props.row.hasLocalPassword"
               @click="openAdminResetDialog(props.row)"
             >
               <q-tooltip>Reset password</q-tooltip>
@@ -429,11 +439,14 @@ import { useDialogDraft } from '../composables/useDialogDraft'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import EntraSettingsCard from '../components/security/EntraSettingsCard.vue'
+import RoleMemberships from '../components/security/RoleMemberships.vue'
+import { useEntraStatus } from '../composables/useEntra'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, QTable, type QTableColumn, Dialog, copyToClipboard } from 'quasar'
 import { useFuseStore } from '../stores/FuseStore'
 import { useFuseClient } from '../composables/useFuseClient'
-import { CreateApiKey, CreateSecurityUser, LoginSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
+import { LinkEntraAccount, SetUserDisabled, CreateApiKey, CreateSecurityUser, LoginSecurityUser, SecurityPosture, type SecurityUserInfo, UpdateSecuritySettings, AssignRolesToUser, ResetPasswordRequest, RoleInfo, ApiKeyInfo } from 'api/client'
 import { securityLevelOptions, securityLevelOption } from '../constants/securityLevels'
 import { Permission } from 'permissions'
 import CreateSecurityAccount from '../components/security/CreateSecurityAccount.vue'
@@ -458,6 +471,8 @@ const isCreateApiKeyDialogOpen = ref(false)
 const isShowApiKeyDialogOpen = ref(false)
 const generatedApiKey = ref('')
 const apiKeyForm = ref<{ name: string; roleIds: string[] }>({ name: '', roleIds: [] })
+
+const entraStatusQuery = useEntraStatus()
 
 const isCreateDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
@@ -711,8 +726,10 @@ function handleEditUser(form: { id: string; roleIds: string[] }) {
 const assignRolesMutation = useMutation({
   mutationFn: ({ userId, payload }: { userId: string, payload: AssignRolesToUser }) => 
     client.roles(userId, payload),
-  onSuccess: async () => {
-    Notify.create({ type: 'positive', message: 'Roles assigned successfully' })
+  onSuccess: async (_, variables) => {
+    const user = users.value.find(u => u.id === variables.userId)
+    const remaining = user?.roleMemberships?.filter(m => m.entraGroups?.length && !variables.payload.roleIds?.includes(m.roleId || '')) ?? []
+    Notify.create({ type: remaining.length ? 'info' : 'positive', message: remaining.length ? `Direct assignments saved. Entra still grants: ${remaining.map(m => m.roleName).join(', ')}. Manage those memberships in Entra.` : 'Direct role assignments saved. Other roles may still grant overlapping permissions.' })
     // Refresh the users list
     queryClient.invalidateQueries({ queryKey: ['securityUsers']})
   },
@@ -834,6 +851,77 @@ function confirmDeleteApiKey(key: ApiKeyInfo) {
 
 const apiKeyDraft = useDialogDraft(apiKeyForm, isCreateApiKeyDialogOpen)
 const securityLevelDraft = useDialogDraft(selectedSecurityLevel, isEditSecurityLevelDialogOpen)
+
+const linkMicrosoftMutation = useMutation({
+  mutationFn: (password: string) => client.entraLink(new LinkEntraAccount({ currentPassword: password })),
+  onSuccess: (result) => {
+    if (result.url) window.location.assign(result.url)
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to link Microsoft account') })
+  }
+})
+
+async function refreshUserAccess(user: SecurityUserInfo) {
+  await queryClient.invalidateQueries({ queryKey: ['securityUsers'] })
+  if (isCurrentUser(user)) {
+    fuseStore.invalidateAuth()
+    await fuseStore.fetchStatus()
+  }
+}
+
+const revokeUserMutation = useMutation({
+  mutationFn: (user: SecurityUserInfo) => client.entraRevoke(user.id!),
+  onSuccess: async (_, user) => {
+    await refreshUserAccess(user)
+    Notify.create({ type: 'positive', message: 'Sessions revoked. Sign in again to refresh access.' })
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to revoke sessions') })
+  }
+})
+
+const disableUserMutation = useMutation({
+  mutationFn: (user: SecurityUserInfo) => client.entraDisabled(user.id!, new SetUserDisabled({ disabled: !user.isDisabled })),
+  onSuccess: async (_, user) => {
+    await refreshUserAccess(user)
+    Notify.create({ type: 'positive', message: user.isDisabled ? 'User enabled' : 'User disabled' })
+  },
+  onError: (error) => {
+    Notify.create({ type: 'negative', message: getErrorMessage(error, 'Unable to update user access') })
+  }
+})
+
+function linkMicrosoft() {
+  Dialog.create({
+    title: 'Link Microsoft account',
+    message: 'Confirm your local password, then sign in with Microsoft.',
+    prompt: { model: '', type: 'password' },
+    cancel: true
+  }).onOk((password: string) => linkMicrosoftMutation.mutate(password))
+}
+
+function revokeUser(user: SecurityUserInfo) {
+  if (!user.id) return
+
+  Dialog.create({
+    title: 'Force sign-in refresh',
+    message: `End all sessions for ${user.userName}? Their next Microsoft sign-in will refresh Entra membership. API keys are unchanged.`,
+    cancel: true
+  }).onOk(() => revokeUserMutation.mutate(user))
+}
+
+function disableUser(user: SecurityUserInfo) {
+  if (!user.id) return
+
+  Dialog.create({
+    title: user.isDisabled ? 'Enable user' : 'Disable user',
+    message: user.isDisabled
+      ? `Allow ${user.userName} to sign in again? Their API keys will work again.`
+      : `Block ${user.userName}, end their sessions and block their API keys?`,
+    cancel: true
+  }).onOk(() => disableUserMutation.mutate(user))
+}
 </script>
 
 <style scoped>

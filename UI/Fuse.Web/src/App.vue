@@ -629,7 +629,10 @@ watch(
 
 onMounted(async () => {
   window.addEventListener('fuse-auth-invalid', handleAuthInvalid)
+  const onEntraError = () => { Notify.create({ type: 'negative', message: 'Microsoft sign-in could not be completed. Check the Entra configuration and account access, then try again.' }) }
+  window.addEventListener('fuse-entra-error', onEntraError, { once: true })
   await fuseStore.initializeAuth()
+  window.removeEventListener('fuse-entra-error', onEntraError)
   await onboardingStore.connectProgressUser(fuseStore.currentUser?.id ?? null)
 
   if (fuseStore.requireSetup) {

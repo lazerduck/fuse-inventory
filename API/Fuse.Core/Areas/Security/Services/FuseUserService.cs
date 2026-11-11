@@ -34,7 +34,7 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         var user = snapshot.SecurityContext.Users.FirstOrDefault(u =>
             string.Equals(u.UserName, userName, StringComparison.OrdinalIgnoreCase));
 
-        if (user is null)
+        if (user is null || user.IsDisabled || string.IsNullOrEmpty(user.PasswordHash))
             return Result<FuseUser>.Failure("Invalid username or password.", ErrorType.Unauthorized);
 
         if (!VerifyPassword(password, user.PasswordHash, user.PasswordSalt))
@@ -152,6 +152,9 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         if (existingUser is null)
             return Result.Failure($"User with id '{id}' was not found.", ErrorType.NotFound);
 
+        if (string.IsNullOrEmpty(existingUser.PasswordHash))
+            return Result.Failure("Entra-only accounts do not have a local password.");
+
         var salt = GenerateSalt();
         var hash = HashPassword(newPassword, salt);
 
@@ -164,6 +167,7 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
                     if (u.Id != id) return u;
                     return u with
                     {
+                        SessionVersion = u.SessionVersion + 1,
                         PasswordHash = hash,
                         PasswordSalt = salt,
                         UpdatedAt = DateTime.UtcNow
@@ -180,23 +184,32 @@ public class FuseUserService(IFuseStore fuseStore, IFuseRoleService roleService)
         if (id == Guid.Empty)
             return Result.Failure("User id is required.", ErrorType.Validation);
 
-        var snapshot = await fuseStore.GetAsync();
-        var existingUser = snapshot.SecurityContext.Users.FirstOrDefault(u => u.Id == id);
-        if (existingUser is null)
-            return Result.Failure($"User with id '{id}' was not found.", ErrorType.NotFound);
-
-        await fuseStore.UpdateAsync(s => s with
+        Result result = Result.Failure($"User with id '{id}' was not found.", ErrorType.NotFound);
+        await fuseStore.UpdateAsync(s =>
         {
-            SecurityContext = s.SecurityContext with
+            var security = s.SecurityContext;
+            var existingUser = security.Users.FirstOrDefault(u => u.Id == id);
+            if (existingUser is null) return s;
+            if (existingUser.IsAdmin && !security.Users.Any(u => u.Id != id && u.IsAdmin && !u.IsDisabled && u.PasswordHash.Length > 0))
             {
-                Users = s.SecurityContext.Users.Where(u => u.Id != id).ToList(),
-                GuideProgress = s.SecurityContext.GuideProgress
-                    .Where(entry => entry.Key != id)
-                    .ToDictionary(entry => entry.Key, entry => entry.Value)
+                result = Result.Failure("Keep at least one enabled local administrator for recovery.");
+                return s;
             }
+            result = Result.Success();
+            return s with
+            {
+                SecurityContext = security with
+                {
+                    Sessions = security.Sessions.Where(x => x.UserId != id).ToArray(),
+                    ApiKeys = security.ApiKeys.Where(x => x.UserId != id).ToArray(),
+                    Users = security.Users.Where(u => u.Id != id).ToList(),
+                    GuideProgress = security.GuideProgress
+                        .Where(entry => entry.Key != id)
+                        .ToDictionary(entry => entry.Key, entry => entry.Value)
+                }
+            };
         });
-
-        return Result.Success();
+        return result;
     }
 
     public async Task<Result<IReadOnlyList<FuseUser>>> GetUsers()

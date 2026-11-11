@@ -133,6 +133,7 @@ public class SecurityUserAndSessionServiceTests
         var store = new InMemoryFuseStore();
         var service = new FuseUserSessionService(store);
         var user = User();
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with { Users = [user] } });
 
         Assert.Equal(ErrorType.Validation, (await service.CreateSession(null!)).ErrorType);
         var created = await service.CreateSession(user);

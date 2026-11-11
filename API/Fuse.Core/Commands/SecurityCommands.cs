@@ -24,11 +24,13 @@ public record DeleteUser(Guid Id)
 public record CreateRole(string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
+    public IReadOnlyList<EntraGroupMapping>? EntraGroups { get; init; }
 }
 
 public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
+    public IReadOnlyList<EntraGroupMapping>? EntraGroups { get; init; }
 }
 
 public record DeleteRole(Guid Id)

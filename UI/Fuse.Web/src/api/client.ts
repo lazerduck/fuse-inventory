@@ -9,11 +9,6 @@
 
 export interface IFuseApiClient {
   /**
-  * @return OK
-  */
-  applicationChanges(versionId: string, signal?: AbortSignal): Promise<ApplicationChanges>;
-
-  /**
    * @return OK
    */
   aboutGet(signal?: AbortSignal): Promise<AboutResponse>;
@@ -135,6 +130,14 @@ export interface IFuseApiClient {
     pageSize: number | undefined,
     signal?: AbortSignal,
   ): Promise<ActivityFeedResult>;
+
+  /**
+   * @return OK
+   */
+  applicationChanges(
+    versionId: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationChanges>;
 
   /**
    * @param page (optional)
@@ -348,51 +351,6 @@ export interface IFuseApiClient {
     signal?: AbortSignal,
   ): Promise<void>;
 
-  scrumPokerRoomsPOST(
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse>;
-  scrumPokerRoomsJoin(
-    roomCode: string,
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse>;
-  scrumPokerRoomsEnter(
-    roomCode: string,
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse>;
-  scrumPokerState(
-    roomCode: string,
-    participantToken: string,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerCardPUT(
-    roomCode: string,
-    body: ScrumPokerCardRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerReveal(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerHide(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerReset(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse>;
-  scrumPokerLeave(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<void>;
-
   /**
    * @param startTime (optional)
    * @param endTime (optional)
@@ -432,6 +390,42 @@ export interface IFuseApiClient {
    * @return OK
    */
   areas(signal?: AbortSignal): Promise<string[]>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  subscriptions(
+    body: AzureDiscoveryAuthentication | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureSubscriptionsResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  resources(
+    body: DiscoverAzureResources | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureResourcesResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  import(
+    body: ImportAzureResources | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureImportResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  exclusions(
+    body: UpdateAzureDiscoveryExclusions | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureDiscoveryExclusionsResponse>;
 
   /**
    * @param format (optional)
@@ -495,6 +489,54 @@ export interface IFuseApiClient {
    * @return No Content
    */
   dataStoreDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  entraStatus(signal?: AbortSignal): Promise<EntraStatusInfo>;
+
+  /**
+   * @return OK
+   */
+  entraSettings(signal?: AbortSignal): Promise<EntraSettingsInfo>;
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  entraSettingsUpdate(
+    body: UpdateEntraSettings | undefined,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  entraLink(
+    body: LinkEntraAccount | undefined,
+    signal?: AbortSignal,
+  ): Promise<EntraLinkInfo>;
+
+  /**
+   * @return OK
+   */
+  entraExchange(signal?: AbortSignal): Promise<LoginSession>;
+
+  /**
+   * @return No Content
+   */
+  entraRevoke(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  entraDisabled(
+    id: string,
+    body: SetUserDisabled | undefined,
+    signal?: AbortSignal,
+  ): Promise<void>;
 
   /**
    * @return OK
@@ -1092,6 +1134,123 @@ export interface IFuseApiClient {
   ): Promise<void>;
 
   /**
+   * @param body (optional)
+   * @return Created
+   */
+  scrumPokerRoomsPOST(
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerRoomsJoin(
+    roomCode: string,
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerRoomsEnter(
+    roomCode: string,
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse>;
+
+  /**
+   * @return OK
+   */
+  scrumPokerRoomAvailability(
+    roomCode: string,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
+   * @param participantToken (optional)
+   * @return OK
+   */
+  scrumPokerState(
+    roomCode: string,
+    participantToken: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerCardPUT(
+    roomCode: string,
+    body: ScrumPokerCardRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerAutoReveal(
+    roomCode: string,
+    body: ScrumPokerAutoRevealRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerLockVotesAfterReveal(
+    roomCode: string,
+    body: ScrumPokerLockVotesAfterRevealRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerReveal(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerReset(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerHide(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse>;
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  scrumPokerLeave(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
    * @return OK
    */
   azureIntegrationManagerGET(
@@ -1143,6 +1302,14 @@ export interface IFuseApiClient {
    * @return No Content
    */
   secretProviderDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  testSavedSecretProviderConnection(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<SecretProviderAccessCheckResponse>;
 
   /**
    * @param body (optional)
@@ -1475,61 +1642,6 @@ export class FuseApiClient implements IFuseApiClient {
   ) {
     this.http = http ? http : (window as any);
     this.baseUrl = baseUrl ?? "";
-  }
-
-  /**
-  * @return OK
-  */
-  applicationChanges(versionId: string, signal?: AbortSignal): Promise<ApplicationChanges> {
-    let url_ = this.baseUrl + "/api/Activity/applications/changes/{versionId}";
-    if (versionId === undefined || versionId === null)
-      throw new globalThis.Error("The parameter 'versionId' must be defined.");
-    url_ = url_.replace("{versionId}", encodeURIComponent("" + versionId));
-    url_ = url_.replace(/[?&]$/, "");
-
-    let options_: RequestInit = {
-      method: "GET",
-      signal,
-      headers: {
-        "Accept": "application/json"
-      }
-    };
-
-    return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processApplicationChanges(_response);
-    });
-  }
-
-  protected processApplicationChanges(response: Response): Promise<ApplicationChanges> {
-    const status = response.status;
-    let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-    if (status === 200) {
-      return response.text().then((_responseText) => {
-      let result200: any = null;
-      let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-      result200 = ApplicationChanges.fromJS(resultData200);
-      return result200;
-      });
-    } else if (status === 403) {
-      return response.text().then((_responseText) => {
-      let result403: any = null;
-      let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-      result403 = ProblemDetails.fromJS(resultData403);
-      return throwException("Forbidden", status, _responseText, _headers, result403);
-      });
-    } else if (status === 404) {
-      return response.text().then((_responseText) => {
-      let result404: any = null;
-      let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-      result404 = ProblemDetails.fromJS(resultData404);
-      return throwException("Not Found", status, _responseText, _headers, result404);
-      });
-    } else if (status !== 200 && status !== 204) {
-      return response.text().then((_responseText) => {
-      return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-      });
-    }
-    return Promise.resolve<ApplicationChanges>(null as any);
   }
 
   /**
@@ -2628,6 +2740,95 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<ActivityFeedResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  applicationChanges(
+    versionId: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationChanges> {
+    let url_ = this.baseUrl + "/api/Activity/applications/changes/{versionId}";
+    if (versionId === undefined || versionId === null)
+      throw new globalThis.Error("The parameter 'versionId' must be defined.");
+    url_ = url_.replace("{versionId}", encodeURIComponent("" + versionId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processApplicationChanges(_response);
+    });
+  }
+
+  protected processApplicationChanges(
+    response: Response,
+  ): Promise<ApplicationChanges> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ApplicationChanges.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ApplicationChanges>(null as any);
   }
 
   /**
@@ -4684,248 +4885,6 @@ export class FuseApiClient implements IFuseApiClient {
     return Promise.resolve<void>(null as any);
   }
 
-  scrumPokerRoomsPOST(
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse> {
-    let url_ = this.baseUrl + "/api/scrum-poker/rooms";
-    url_ = url_.replace(/[?&]$/, "");
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerSessionResponse.fromJS(data),
-          [201],
-        ),
-      );
-  }
-
-  scrumPokerRoomsJoin(
-    roomCode: string,
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse> {
-    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/join";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerSessionResponse.fromJS(data),
-          [200],
-        ),
-      );
-  }
-
-  scrumPokerRoomsEnter(
-    roomCode: string,
-    body: ScrumPokerJoinRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerSessionResponse> {
-    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/enter";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerSessionResponse.fromJS(data),
-          [200],
-        ),
-      );
-  }
-
-  scrumPokerState(
-    roomCode: string,
-    participantToken: string,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    let url_ =
-      this.baseUrl +
-      "/api/scrum-poker/rooms/{roomCode}/state?participantToken={participantToken}";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    if (participantToken === undefined || participantToken === null)
-      throw new globalThis.Error(
-        "The parameter 'participantToken' must be defined.",
-      );
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    url_ = url_.replace(
-      "{participantToken}",
-      encodeURIComponent("" + participantToken),
-    );
-    return this.http
-      .fetch(url_, {
-        method: "GET",
-        signal,
-        headers: { Accept: "application/json" },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerRoomResponse.fromJS(data),
-          [200],
-        ),
-      );
-  }
-
-  scrumPokerCardPUT(
-    roomCode: string,
-    body: ScrumPokerCardRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    return this.scrumPokerCommand(roomCode, "/card", "PUT", body, signal);
-  }
-
-  scrumPokerReveal(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    return this.scrumPokerCommand(roomCode, "/reveal", "POST", body, signal);
-  }
-
-  scrumPokerHide(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    return this.scrumPokerCommand(roomCode, "/hide", "POST", body, signal);
-  }
-
-  scrumPokerReset(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    return this.scrumPokerCommand(roomCode, "/reset", "POST", body, signal);
-  }
-
-  scrumPokerLeave(
-    roomCode: string,
-    body: ScrumPokerParticipantRequest | undefined,
-    signal?: AbortSignal,
-  ): Promise<void> {
-    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/leave";
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method: "POST",
-        signal,
-        headers: { "Content-Type": "application/json" },
-      })
-      .then((response) => this.processScrumPokerVoidResponse(response));
-  }
-
-  private processScrumPokerVoidResponse(response: Response): Promise<void> {
-    const status = response.status;
-    let headers: any = {};
-    if (response.headers && response.headers.forEach)
-      response.headers.forEach((v: any, k: any) => (headers[k] = v));
-    if (status === 204) return response.text().then(() => undefined);
-    return response
-      .text()
-      .then((text) =>
-        throwException(
-          "Unable to leave the Scrum Poker room.",
-          status,
-          text,
-          headers,
-        ),
-      );
-  }
-
-  private scrumPokerCommand(
-    roomCode: string,
-    action: string,
-    method: string,
-    body: any,
-    signal?: AbortSignal,
-  ): Promise<ScrumPokerRoomResponse> {
-    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}" + action;
-    if (roomCode === undefined || roomCode === null)
-      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
-    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
-    const content_ = JSON.stringify(body);
-    return this.http
-      .fetch(url_, {
-        body: content_,
-        method,
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((response) =>
-        this.processScrumPokerResponse(
-          response,
-          (data) => ScrumPokerRoomResponse.fromJS(data),
-          [200],
-        ),
-      );
-  }
-
-  private processScrumPokerResponse<T>(
-    response: Response,
-    factory: (data: any) => T,
-    successStatuses: number[],
-  ): Promise<T> {
-    const status = response.status;
-    let headers: any = {};
-    if (response.headers && response.headers.forEach)
-      response.headers.forEach((v: any, k: any) => (headers[k] = v));
-    if (successStatuses.includes(status)) {
-      return response
-        .text()
-        .then((text) =>
-          factory(text === "" ? null : JSON.parse(text, this.jsonParseReviver)),
-        );
-    }
-    return response
-      .text()
-      .then((text) =>
-        throwException("Scrum Poker request failed.", status, text, headers),
-      );
-  }
-
   /**
    * @param startTime (optional)
    * @param endTime (optional)
@@ -5211,6 +5170,304 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<string[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  subscriptions(
+    body: AzureDiscoveryAuthentication | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureSubscriptionsResponse> {
+    let url_ = this.baseUrl + "/api/azure-discovery/subscriptions";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSubscriptions(_response);
+    });
+  }
+
+  protected processSubscriptions(
+    response: Response,
+  ): Promise<AzureSubscriptionsResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureSubscriptionsResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureSubscriptionsResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  resources(
+    body: DiscoverAzureResources | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureResourcesResponse> {
+    let url_ = this.baseUrl + "/api/azure-discovery/resources";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processResources(_response);
+    });
+  }
+
+  protected processResources(
+    response: Response,
+  ): Promise<AzureResourcesResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureResourcesResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureResourcesResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  import(
+    body: ImportAzureResources | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureImportResponse> {
+    let url_ = this.baseUrl + "/api/azure-discovery/import";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processImport(_response);
+    });
+  }
+
+  protected processImport(response: Response): Promise<AzureImportResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureImportResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureImportResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  exclusions(
+    body: UpdateAzureDiscoveryExclusions | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureDiscoveryExclusionsResponse> {
+    let url_ = this.baseUrl + "/api/azure-discovery/exclusions";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processExclusions(_response);
+    });
+  }
+
+  protected processExclusions(
+    response: Response,
+  ): Promise<AzureDiscoveryExclusionsResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureDiscoveryExclusionsResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureDiscoveryExclusionsResponse>(null as any);
   }
 
   /**
@@ -5841,6 +6098,632 @@ export class FuseApiClient implements IFuseApiClient {
             ? null
             : JSON.parse(_responseText, this.jsonParseReviver);
         result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  entraStatus(signal?: AbortSignal): Promise<EntraStatusInfo> {
+    let url_ = this.baseUrl + "/api/entra/status";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraStatus(_response);
+    });
+  }
+
+  protected processEntraStatus(response: Response): Promise<EntraStatusInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = EntraStatusInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<EntraStatusInfo>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  entraSettings(signal?: AbortSignal): Promise<EntraSettingsInfo> {
+    let url_ = this.baseUrl + "/api/entra/settings";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraSettings(_response);
+    });
+  }
+
+  protected processEntraSettings(
+    response: Response,
+  ): Promise<EntraSettingsInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = EntraSettingsInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<EntraSettingsInfo>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  entraSettingsUpdate(
+    body: UpdateEntraSettings | undefined,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/entra/settings";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraSettingsUpdate(_response);
+    });
+  }
+
+  protected processEntraSettingsUpdate(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = EntraErrorInfo.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  entraLink(
+    body: LinkEntraAccount | undefined,
+    signal?: AbortSignal,
+  ): Promise<EntraLinkInfo> {
+    let url_ = this.baseUrl + "/api/entra/link";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraLink(_response);
+    });
+  }
+
+  protected processEntraLink(response: Response): Promise<EntraLinkInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = EntraLinkInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = EntraErrorInfo.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<EntraLinkInfo>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  entraExchange(signal?: AbortSignal): Promise<LoginSession> {
+    let url_ = this.baseUrl + "/auth/entra/exchange";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraExchange(_response);
+    });
+  }
+
+  protected processEntraExchange(response: Response): Promise<LoginSession> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = LoginSession.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = EntraErrorInfo.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<LoginSession>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  entraRevoke(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/entra/users/{id}/revoke";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraRevoke(_response);
+    });
+  }
+
+  protected processEntraRevoke(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = EntraErrorInfo.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = EntraErrorInfo.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  entraDisabled(
+    id: string,
+    body: SetUserDisabled | undefined,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/entra/users/{id}/disabled";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraDisabled(_response);
+    });
+  }
+
+  protected processEntraDisabled(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = EntraErrorInfo.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = EntraErrorInfo.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = EntraErrorInfo.fromJS(resultData404);
         return throwException(
           "Not Found",
           status,
@@ -11869,6 +12752,1141 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @param body (optional)
+   * @return Created
+   */
+  scrumPokerRoomsPOST(
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerRoomsPOST(_response);
+    });
+  }
+
+  protected processScrumPokerRoomsPOST(
+    response: Response,
+  ): Promise<ScrumPokerSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = ScrumPokerSessionResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerSessionResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerRoomsJoin(
+    roomCode: string,
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/join";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerRoomsJoin(_response);
+    });
+  }
+
+  protected processScrumPokerRoomsJoin(
+    response: Response,
+  ): Promise<ScrumPokerSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerSessionResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerSessionResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerRoomsEnter(
+    roomCode: string,
+    body: ScrumPokerJoinRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerSessionResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/enter";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerRoomsEnter(_response);
+    });
+  }
+
+  protected processScrumPokerRoomsEnter(
+    response: Response,
+  ): Promise<ScrumPokerSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerSessionResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerSessionResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  scrumPokerRoomAvailability(
+    roomCode: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/availability";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerRoomAvailability(_response);
+    });
+  }
+
+  protected processScrumPokerRoomAvailability(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param participantToken (optional)
+   * @return OK
+   */
+  scrumPokerState(
+    roomCode: string,
+    participantToken: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/state?";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    if (participantToken === null)
+      throw new globalThis.Error(
+        "The parameter 'participantToken' cannot be null.",
+      );
+    else if (participantToken !== undefined)
+      url_ +=
+        "participantToken=" + encodeURIComponent("" + participantToken) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerState(_response);
+    });
+  }
+
+  protected processScrumPokerState(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerCardPUT(
+    roomCode: string,
+    body: ScrumPokerCardRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/card";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerCardPUT(_response);
+    });
+  }
+
+  protected processScrumPokerCardPUT(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerAutoReveal(
+    roomCode: string,
+    body: ScrumPokerAutoRevealRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ =
+      this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/settings/auto-reveal";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerAutoReveal(_response);
+    });
+  }
+
+  protected processScrumPokerAutoReveal(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerLockVotesAfterReveal(
+    roomCode: string,
+    body: ScrumPokerLockVotesAfterRevealRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ =
+      this.baseUrl +
+      "/api/scrum-poker/rooms/{roomCode}/settings/lock-votes-after-reveal";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerLockVotesAfterReveal(_response);
+    });
+  }
+
+  protected processScrumPokerLockVotesAfterReveal(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerReveal(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/reveal";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerReveal(_response);
+    });
+  }
+
+  protected processScrumPokerReveal(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerReset(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/reset";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerReset(_response);
+    });
+  }
+
+  protected processScrumPokerReset(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  scrumPokerHide(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<ScrumPokerRoomResponse> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/hide";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerHide(_response);
+    });
+  }
+
+  protected processScrumPokerHide(
+    response: Response,
+  ): Promise<ScrumPokerRoomResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ScrumPokerRoomResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ScrumPokerRoomResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return No Content
+   */
+  scrumPokerLeave(
+    roomCode: string,
+    body: ScrumPokerParticipantRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/scrum-poker/rooms/{roomCode}/leave";
+    if (roomCode === undefined || roomCode === null)
+      throw new globalThis.Error("The parameter 'roomCode' must be defined.");
+    url_ = url_.replace("{roomCode}", encodeURIComponent("" + roomCode));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processScrumPokerLeave(_response);
+    });
+  }
+
+  protected processScrumPokerLeave(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        let result401: any = null;
+        let resultData401 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result401 = ProblemDetails.fromJS(resultData401);
+        return throwException(
+          "Unauthorized",
+          status,
+          _responseText,
+          _headers,
+          result401,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
    * @return OK
    */
   azureIntegrationManagerGET(
@@ -12370,6 +14388,79 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  testSavedSecretProviderConnection(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<SecretProviderAccessCheckResponse> {
+    let url_ = this.baseUrl + "/api/SecretProvider/{id}/test-connection";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processTestSavedSecretProviderConnection(_response);
+    });
+  }
+
+  protected processTestSavedSecretProviderConnection(
+    response: Response,
+  ): Promise<SecretProviderAccessCheckResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = SecretProviderAccessCheckResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SecretProviderAccessCheckResponse>(null as any);
   }
 
   /**
@@ -15910,154 +18001,6 @@ export interface IAccountSqlStatusResponse {
   errorMessage?: string | undefined;
 }
 
-export class ApplicationChange implements IApplicationChange {
-  field?: string | undefined;
-  before?: string | undefined;
-  after?: string | undefined;
-
-  constructor(data?: IApplicationChange) {
-    if (data) {
-      for (var property in data) {
-        if (data.hasOwnProperty(property))
-          (this as any)[property] = (data as any)[property];
-      }
-    }
-  }
-
-  init(_data?: any) {
-    if (_data) {
-      this.field = _data["field"];
-      this.before = _data["before"];
-      this.after = _data["after"];
-    }
-  }
-
-  static fromJS(data: any): ApplicationChange {
-    data = typeof data === 'object' ? data : {};
-    let result = new ApplicationChange();
-    result.init(data);
-    return result;
-  }
-
-  toJSON(data?: any) {
-    data = typeof data === 'object' ? data : {};
-    data["field"] = this.field;
-    data["before"] = this.before;
-    data["after"] = this.after;
-    return data;
-  }
-}
-
-export interface IApplicationChange {
-  field?: string | undefined;
-  before?: string | undefined;
-  after?: string | undefined;
-}
-
-export class ApplicationChangeGroup implements IApplicationChangeGroup {
-  title?: string | undefined;
-  instanceId?: string | undefined;
-  changes?: ApplicationChange[] | undefined;
-
-  constructor(data?: IApplicationChangeGroup) {
-    if (data) {
-      for (var property in data) {
-        if (data.hasOwnProperty(property))
-          (this as any)[property] = (data as any)[property];
-      }
-    }
-  }
-
-  init(_data?: any) {
-    if (_data) {
-      this.title = _data["title"];
-      this.instanceId = _data["instanceId"];
-      if (Array.isArray(_data["changes"])) {
-        this.changes = [] as any;
-        for (let item of _data["changes"])
-          this.changes!.push(ApplicationChange.fromJS(item));
-      }
-    }
-  }
-
-  static fromJS(data: any): ApplicationChangeGroup {
-    data = typeof data === 'object' ? data : {};
-    let result = new ApplicationChangeGroup();
-    result.init(data);
-    return result;
-  }
-
-  toJSON(data?: any) {
-    data = typeof data === 'object' ? data : {};
-    data["title"] = this.title;
-    data["instanceId"] = this.instanceId;
-    if (Array.isArray(this.changes)) {
-      data["changes"] = [];
-      for (let item of this.changes)
-        data["changes"].push(item ? item.toJSON() : undefined as any);
-    }
-    return data;
-  }
-}
-
-export interface IApplicationChangeGroup {
-  title?: string | undefined;
-  instanceId?: string | undefined;
-  changes?: ApplicationChange[] | undefined;
-}
-
-export class ApplicationChanges implements IApplicationChanges {
-  applicationName?: string | undefined;
-  notice?: string | undefined;
-  groups?: ApplicationChangeGroup[] | undefined;
-
-  constructor(data?: IApplicationChanges) {
-    if (data) {
-      for (var property in data) {
-        if (data.hasOwnProperty(property))
-          (this as any)[property] = (data as any)[property];
-      }
-    }
-  }
-
-  init(_data?: any) {
-    if (_data) {
-      this.applicationName = _data["applicationName"];
-      this.notice = _data["notice"];
-      if (Array.isArray(_data["groups"])) {
-        this.groups = [] as any;
-        for (let item of _data["groups"])
-          this.groups!.push(ApplicationChangeGroup.fromJS(item));
-      }
-    }
-  }
-
-  static fromJS(data: any): ApplicationChanges {
-    data = typeof data === 'object' ? data : {};
-    let result = new ApplicationChanges();
-    result.init(data);
-    return result;
-  }
-
-  toJSON(data?: any) {
-    data = typeof data === 'object' ? data : {};
-    data["applicationName"] = this.applicationName;
-    data["notice"] = this.notice;
-    if (Array.isArray(this.groups)) {
-      data["groups"] = [];
-      for (let item of this.groups)
-        data["groups"].push(item ? item.toJSON() : undefined as any);
-    }
-    return data;
-  }
-}
-
-export interface IApplicationChanges {
-  applicationName?: string | undefined;
-  notice?: string | undefined;
-  groups?: ApplicationChangeGroup[] | undefined;
-}
-
 export class ActivityFeedItem implements IActivityFeedItem {
   versionId?: string;
   entityId?: string;
@@ -16306,7 +18249,9 @@ export interface IApiKeyInfo {
   updatedAt?: Date;
 }
 
-export class AppConfigurationEntryResponse implements IAppConfigurationEntryResponse {
+export class AppConfigurationEntryResponse
+  implements IAppConfigurationEntryResponse
+{
   key?: string | undefined;
   value?: string | undefined;
   label?: string | undefined;
@@ -16562,6 +18507,154 @@ export interface IApplication {
   updatedAt?: Date;
 }
 
+export class ApplicationChange implements IApplicationChange {
+  field?: string | undefined;
+  before?: string | undefined;
+  after?: string | undefined;
+
+  constructor(data?: IApplicationChange) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.field = _data["field"];
+      this.before = _data["before"];
+      this.after = _data["after"];
+    }
+  }
+
+  static fromJS(data: any): ApplicationChange {
+    data = typeof data === "object" ? data : {};
+    let result = new ApplicationChange();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["field"] = this.field;
+    data["before"] = this.before;
+    data["after"] = this.after;
+    return data;
+  }
+}
+
+export interface IApplicationChange {
+  field?: string | undefined;
+  before?: string | undefined;
+  after?: string | undefined;
+}
+
+export class ApplicationChangeGroup implements IApplicationChangeGroup {
+  title?: string | undefined;
+  instanceId?: string | undefined;
+  changes?: ApplicationChange[] | undefined;
+
+  constructor(data?: IApplicationChangeGroup) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.title = _data["title"];
+      this.instanceId = _data["instanceId"];
+      if (Array.isArray(_data["changes"])) {
+        this.changes = [] as any;
+        for (let item of _data["changes"])
+          this.changes!.push(ApplicationChange.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ApplicationChangeGroup {
+    data = typeof data === "object" ? data : {};
+    let result = new ApplicationChangeGroup();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["title"] = this.title;
+    data["instanceId"] = this.instanceId;
+    if (Array.isArray(this.changes)) {
+      data["changes"] = [];
+      for (let item of this.changes)
+        data["changes"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IApplicationChangeGroup {
+  title?: string | undefined;
+  instanceId?: string | undefined;
+  changes?: ApplicationChange[] | undefined;
+}
+
+export class ApplicationChanges implements IApplicationChanges {
+  applicationName?: string | undefined;
+  notice?: string | undefined;
+  groups?: ApplicationChangeGroup[] | undefined;
+
+  constructor(data?: IApplicationChanges) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationName = _data["applicationName"];
+      this.notice = _data["notice"];
+      if (Array.isArray(_data["groups"])) {
+        this.groups = [] as any;
+        for (let item of _data["groups"])
+          this.groups!.push(ApplicationChangeGroup.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ApplicationChanges {
+    data = typeof data === "object" ? data : {};
+    let result = new ApplicationChanges();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["applicationName"] = this.applicationName;
+    data["notice"] = this.notice;
+    if (Array.isArray(this.groups)) {
+      data["groups"] = [];
+      for (let item of this.groups)
+        data["groups"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IApplicationChanges {
+  applicationName?: string | undefined;
+  notice?: string | undefined;
+  groups?: ApplicationChangeGroup[] | undefined;
+}
+
 export class ApplicationHealth implements IApplicationHealth {
   applicationId?: string;
   versionSet?: boolean;
@@ -16746,7 +18839,9 @@ export interface IApplicationInstance {
   appConfigurationKeySuffix?: string | undefined;
 }
 
-export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
+export class ApplicationInstanceDependency
+  implements IApplicationInstanceDependency
+{
   id?: string;
   targetId?: string;
   targetKind?: TargetKind;
@@ -17248,7 +19343,145 @@ export enum AuthKind {
   Other = "Other",
 }
 
-export class AzureIntegrationManagerResponse implements IAzureIntegrationManagerResponse {
+export class AzureDiscoveryAuthentication
+  implements IAzureDiscoveryAuthentication
+{
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: IAzureDiscoveryAuthentication) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): AzureDiscoveryAuthentication {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureDiscoveryAuthentication();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface IAzureDiscoveryAuthentication {
+  authMode?: SecretProviderAuthMode;
+}
+
+export class AzureDiscoveryExclusionsResponse
+  implements IAzureDiscoveryExclusionsResponse
+{
+  resourceIds?: string[] | undefined;
+
+  constructor(data?: IAzureDiscoveryExclusionsResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["resourceIds"])) {
+        this.resourceIds = [] as any;
+        for (let item of _data["resourceIds"]) this.resourceIds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): AzureDiscoveryExclusionsResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureDiscoveryExclusionsResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.resourceIds)) {
+      data["resourceIds"] = [];
+      for (let item of this.resourceIds) data["resourceIds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IAzureDiscoveryExclusionsResponse {
+  resourceIds?: string[] | undefined;
+}
+
+export class AzureImportResponse implements IAzureImportResponse {
+  results?: AzureResourceImportResult[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IAzureImportResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["results"])) {
+        this.results = [] as any;
+        for (let item of _data["results"])
+          this.results!.push(AzureResourceImportResult.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): AzureImportResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureImportResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.results)) {
+      data["results"] = [];
+      for (let item of this.results)
+        data["results"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IAzureImportResponse {
+  results?: AzureResourceImportResult[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class AzureIntegrationManagerResponse
+  implements IAzureIntegrationManagerResponse
+{
   hasClientSecretCredentials?: boolean;
   tenantId?: string | undefined;
   clientId?: string | undefined;
@@ -17342,6 +19575,202 @@ export interface IAzureKeyVaultBinding {
   providerId?: string;
   secretName?: string | undefined;
   version?: string | undefined;
+}
+
+export class AzureResourceImportResult implements IAzureResourceImportResult {
+  resourceId?: string | undefined;
+  name?: string | undefined;
+  status?: string | undefined;
+  error?: string | undefined;
+
+  constructor(data?: IAzureResourceImportResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.resourceId = _data["resourceId"];
+      this.name = _data["name"];
+      this.status = _data["status"];
+      this.error = _data["error"];
+    }
+  }
+
+  static fromJS(data: any): AzureResourceImportResult {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureResourceImportResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["resourceId"] = this.resourceId;
+    data["name"] = this.name;
+    data["status"] = this.status;
+    data["error"] = this.error;
+    return data;
+  }
+}
+
+export interface IAzureResourceImportResult {
+  resourceId?: string | undefined;
+  name?: string | undefined;
+  status?: string | undefined;
+  error?: string | undefined;
+}
+
+export class AzureResourcesResponse implements IAzureResourcesResponse {
+  resources?: DiscoveredAzureResource[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IAzureResourcesResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["resources"])) {
+        this.resources = [] as any;
+        for (let item of _data["resources"])
+          this.resources!.push(DiscoveredAzureResource.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): AzureResourcesResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureResourcesResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.resources)) {
+      data["resources"] = [];
+      for (let item of this.resources)
+        data["resources"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IAzureResourcesResponse {
+  resources?: DiscoveredAzureResource[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class AzureSubscriptionResponse implements IAzureSubscriptionResponse {
+  id?: string | undefined;
+  name?: string | undefined;
+
+  constructor(data?: IAzureSubscriptionResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+    }
+  }
+
+  static fromJS(data: any): AzureSubscriptionResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureSubscriptionResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    return data;
+  }
+}
+
+export interface IAzureSubscriptionResponse {
+  id?: string | undefined;
+  name?: string | undefined;
+}
+
+export class AzureSubscriptionsResponse implements IAzureSubscriptionsResponse {
+  subscriptions?: AzureSubscriptionResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IAzureSubscriptionsResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["subscriptions"])) {
+        this.subscriptions = [] as any;
+        for (let item of _data["subscriptions"])
+          this.subscriptions!.push(AzureSubscriptionResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): AzureSubscriptionsResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureSubscriptionsResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.subscriptions)) {
+      data["subscriptions"] = [];
+      for (let item of this.subscriptions)
+        data["subscriptions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IAzureSubscriptionsResponse {
+  subscriptions?: AzureSubscriptionResponse[] | undefined;
+  warnings?: string[] | undefined;
 }
 
 export class BrokerQueue implements IBrokerQueue {
@@ -17750,7 +20179,9 @@ export interface IBulkResolveSummary {
   failed?: number;
 }
 
-export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusResponse {
+export class CachedAccountSqlStatusResponse
+  implements ICachedAccountSqlStatusResponse
+{
   status?: AccountSqlStatusResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -17800,7 +20231,9 @@ export interface ICachedAccountSqlStatusResponse {
   isCached?: boolean;
 }
 
-export class CachedPermissionsOverviewResponse implements ICachedPermissionsOverviewResponse {
+export class CachedPermissionsOverviewResponse
+  implements ICachedPermissionsOverviewResponse
+{
   overview?: SqlIntegrationPermissionsOverviewResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -18261,7 +20694,9 @@ export interface ICreateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class CreateApplicationDependency implements ICreateApplicationDependency {
+export class CreateApplicationDependency
+  implements ICreateApplicationDependency
+{
   applicationId?: string;
   instanceId?: string;
   targetId?: string;
@@ -19044,7 +21479,9 @@ export interface ICreatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class CreateResponsibilityAssignment implements ICreateResponsibilityAssignment {
+export class CreateResponsibilityAssignment
+  implements ICreateResponsibilityAssignment
+{
   positionId?: string;
   responsibilityTypeId?: string;
   applicationId?: string;
@@ -19251,6 +21688,7 @@ export class CreateRole implements ICreateRole {
   description?: string | undefined;
   permissions?: string[] | undefined;
   requestedBy?: string | undefined;
+  entraGroups?: EntraGroupMapping[] | undefined;
 
   constructor(data?: ICreateRole) {
     if (data) {
@@ -19270,6 +21708,11 @@ export class CreateRole implements ICreateRole {
         for (let item of _data["permissions"]) this.permissions!.push(item);
       }
       this.requestedBy = _data["requestedBy"];
+      if (Array.isArray(_data["entraGroups"])) {
+        this.entraGroups = [] as any;
+        for (let item of _data["entraGroups"])
+          this.entraGroups!.push(EntraGroupMapping.fromJS(item));
+      }
     }
   }
 
@@ -19289,6 +21732,11 @@ export class CreateRole implements ICreateRole {
       for (let item of this.permissions) data["permissions"].push(item);
     }
     data["requestedBy"] = this.requestedBy;
+    if (Array.isArray(this.entraGroups)) {
+      data["entraGroups"] = [];
+      for (let item of this.entraGroups)
+        data["entraGroups"].push(item ? item.toJSON() : (undefined as any));
+    }
     return data;
   }
 }
@@ -19298,6 +21746,7 @@ export interface ICreateRole {
   description?: string | undefined;
   permissions?: string[] | undefined;
   requestedBy?: string | undefined;
+  entraGroups?: EntraGroupMapping[] | undefined;
 }
 
 export class CreateSecret implements ICreateSecret {
@@ -19405,7 +21854,7 @@ export class CreateSecurityUser implements ICreateSecurityUser {
   password?: string | undefined;
   roleIds?: string[] | undefined;
   isAdmin?: boolean;
-  initialSecurityPosture?: SecurityPosture | undefined;
+  initialSecurityPosture?: SecurityPosture;
 
   constructor(data?: ICreateSecurityUser) {
     if (data) {
@@ -19455,7 +21904,7 @@ export interface ICreateSecurityUser {
   password?: string | undefined;
   roleIds?: string[] | undefined;
   isAdmin?: boolean;
-  initialSecurityPosture?: SecurityPosture | undefined;
+  initialSecurityPosture?: SecurityPosture;
 }
 
 export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
@@ -19764,6 +22213,146 @@ export enum DependencySeverity {
   Full = "Full",
 }
 
+export class DiscoverAzureResources implements IDiscoverAzureResources {
+  authMode?: SecretProviderAuthMode;
+  subscriptionIds?: string[] | undefined;
+  resourceGroups?: string[] | undefined;
+  kinds?: string[] | undefined;
+  includeIgnored?: boolean;
+
+  constructor(data?: IDiscoverAzureResources) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.authMode = _data["authMode"];
+      if (Array.isArray(_data["subscriptionIds"])) {
+        this.subscriptionIds = [] as any;
+        for (let item of _data["subscriptionIds"])
+          this.subscriptionIds!.push(item);
+      }
+      if (Array.isArray(_data["resourceGroups"])) {
+        this.resourceGroups = [] as any;
+        for (let item of _data["resourceGroups"])
+          this.resourceGroups!.push(item);
+      }
+      if (Array.isArray(_data["kinds"])) {
+        this.kinds = [] as any;
+        for (let item of _data["kinds"]) this.kinds!.push(item);
+      }
+      this.includeIgnored = _data["includeIgnored"];
+    }
+  }
+
+  static fromJS(data: any): DiscoverAzureResources {
+    data = typeof data === "object" ? data : {};
+    let result = new DiscoverAzureResources();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["authMode"] = this.authMode;
+    if (Array.isArray(this.subscriptionIds)) {
+      data["subscriptionIds"] = [];
+      for (let item of this.subscriptionIds) data["subscriptionIds"].push(item);
+    }
+    if (Array.isArray(this.resourceGroups)) {
+      data["resourceGroups"] = [];
+      for (let item of this.resourceGroups) data["resourceGroups"].push(item);
+    }
+    if (Array.isArray(this.kinds)) {
+      data["kinds"] = [];
+      for (let item of this.kinds) data["kinds"].push(item);
+    }
+    data["includeIgnored"] = this.includeIgnored;
+    return data;
+  }
+}
+
+export interface IDiscoverAzureResources {
+  authMode?: SecretProviderAuthMode;
+  subscriptionIds?: string[] | undefined;
+  resourceGroups?: string[] | undefined;
+  kinds?: string[] | undefined;
+  includeIgnored?: boolean;
+}
+
+export class DiscoveredAzureResource implements IDiscoveredAzureResource {
+  resourceId?: string | undefined;
+  name?: string | undefined;
+  kind?: string | undefined;
+  endpoint?: string | undefined;
+  subscriptionId?: string | undefined;
+  resourceGroup?: string | undefined;
+  location?: string | undefined;
+  alreadyAdded?: boolean;
+  ignored?: boolean;
+
+  constructor(data?: IDiscoveredAzureResource) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.resourceId = _data["resourceId"];
+      this.name = _data["name"];
+      this.kind = _data["kind"];
+      this.endpoint = _data["endpoint"];
+      this.subscriptionId = _data["subscriptionId"];
+      this.resourceGroup = _data["resourceGroup"];
+      this.location = _data["location"];
+      this.alreadyAdded = _data["alreadyAdded"];
+      this.ignored = _data["ignored"];
+    }
+  }
+
+  static fromJS(data: any): DiscoveredAzureResource {
+    data = typeof data === "object" ? data : {};
+    let result = new DiscoveredAzureResource();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["resourceId"] = this.resourceId;
+    data["name"] = this.name;
+    data["kind"] = this.kind;
+    data["endpoint"] = this.endpoint;
+    data["subscriptionId"] = this.subscriptionId;
+    data["resourceGroup"] = this.resourceGroup;
+    data["location"] = this.location;
+    data["alreadyAdded"] = this.alreadyAdded;
+    data["ignored"] = this.ignored;
+    return data;
+  }
+}
+
+export interface IDiscoveredAzureResource {
+  resourceId?: string | undefined;
+  name?: string | undefined;
+  kind?: string | undefined;
+  endpoint?: string | undefined;
+  subscriptionId?: string | undefined;
+  resourceGroup?: string | undefined;
+  location?: string | undefined;
+  alreadyAdded?: boolean;
+  ignored?: boolean;
+}
+
 export class DriftResolutionOperation implements IDriftResolutionOperation {
   operationType?: string | undefined;
   database?: string | undefined;
@@ -19840,6 +22429,210 @@ export enum EntityType {
   SecurityUser = "SecurityUser",
   SecurityRole = "SecurityRole",
   PasswordGeneratorConfig = "PasswordGeneratorConfig",
+}
+
+export class EntraErrorInfo implements IEntraErrorInfo {
+  error?: string | undefined;
+
+  constructor(data?: IEntraErrorInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.error = _data["error"];
+    }
+  }
+
+  static fromJS(data: any): EntraErrorInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraErrorInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["error"] = this.error;
+    return data;
+  }
+}
+
+export interface IEntraErrorInfo {
+  error?: string | undefined;
+}
+
+export class EntraGroupMapping implements IEntraGroupMapping {
+  groupId?: string;
+  displayName?: string | undefined;
+
+  constructor(data?: IEntraGroupMapping) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.groupId = _data["groupId"];
+      this.displayName = _data["displayName"];
+    }
+  }
+
+  static fromJS(data: any): EntraGroupMapping {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraGroupMapping();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["groupId"] = this.groupId;
+    data["displayName"] = this.displayName;
+    return data;
+  }
+}
+
+export interface IEntraGroupMapping {
+  groupId?: string;
+  displayName?: string | undefined;
+}
+
+export class EntraLinkInfo implements IEntraLinkInfo {
+  url?: string | undefined;
+
+  constructor(data?: IEntraLinkInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.url = _data["url"];
+    }
+  }
+
+  static fromJS(data: any): EntraLinkInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraLinkInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["url"] = this.url;
+    return data;
+  }
+}
+
+export interface IEntraLinkInfo {
+  url?: string | undefined;
+}
+
+export class EntraSettingsInfo implements IEntraSettingsInfo {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  publicOrigin?: string | undefined;
+  sessionMinutes?: number;
+  hasClientSecret?: boolean;
+
+  constructor(data?: IEntraSettingsInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.enabled = _data["enabled"];
+      this.tenantId = _data["tenantId"];
+      this.clientId = _data["clientId"];
+      this.publicOrigin = _data["publicOrigin"];
+      this.sessionMinutes = _data["sessionMinutes"];
+      this.hasClientSecret = _data["hasClientSecret"];
+    }
+  }
+
+  static fromJS(data: any): EntraSettingsInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraSettingsInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["enabled"] = this.enabled;
+    data["tenantId"] = this.tenantId;
+    data["clientId"] = this.clientId;
+    data["publicOrigin"] = this.publicOrigin;
+    data["sessionMinutes"] = this.sessionMinutes;
+    data["hasClientSecret"] = this.hasClientSecret;
+    return data;
+  }
+}
+
+export interface IEntraSettingsInfo {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  publicOrigin?: string | undefined;
+  sessionMinutes?: number;
+  hasClientSecret?: boolean;
+}
+
+export class EntraStatusInfo implements IEntraStatusInfo {
+  enabled?: boolean;
+
+  constructor(data?: IEntraStatusInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.enabled = _data["enabled"];
+    }
+  }
+
+  static fromJS(data: any): EntraStatusInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraStatusInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["enabled"] = this.enabled;
+    return data;
+  }
+}
+
+export interface IEntraStatusInfo {
+  enabled?: boolean;
 }
 
 export class EnvironmentInfo implements IEnvironmentInfo {
@@ -20351,7 +23144,87 @@ export enum IdentityKind {
   Custom = "Custom",
 }
 
-export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalRequest {
+export class ImportAzureResources implements IImportAzureResources {
+  authMode?: SecretProviderAuthMode;
+  subscriptionIds?: string[] | undefined;
+  resourceIds?: string[] | undefined;
+  resourceGroups?: string[] | undefined;
+  kinds?: string[] | undefined;
+
+  constructor(data?: IImportAzureResources) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.authMode = _data["authMode"];
+      if (Array.isArray(_data["subscriptionIds"])) {
+        this.subscriptionIds = [] as any;
+        for (let item of _data["subscriptionIds"])
+          this.subscriptionIds!.push(item);
+      }
+      if (Array.isArray(_data["resourceIds"])) {
+        this.resourceIds = [] as any;
+        for (let item of _data["resourceIds"]) this.resourceIds!.push(item);
+      }
+      if (Array.isArray(_data["resourceGroups"])) {
+        this.resourceGroups = [] as any;
+        for (let item of _data["resourceGroups"])
+          this.resourceGroups!.push(item);
+      }
+      if (Array.isArray(_data["kinds"])) {
+        this.kinds = [] as any;
+        for (let item of _data["kinds"]) this.kinds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): ImportAzureResources {
+    data = typeof data === "object" ? data : {};
+    let result = new ImportAzureResources();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["authMode"] = this.authMode;
+    if (Array.isArray(this.subscriptionIds)) {
+      data["subscriptionIds"] = [];
+      for (let item of this.subscriptionIds) data["subscriptionIds"].push(item);
+    }
+    if (Array.isArray(this.resourceIds)) {
+      data["resourceIds"] = [];
+      for (let item of this.resourceIds) data["resourceIds"].push(item);
+    }
+    if (Array.isArray(this.resourceGroups)) {
+      data["resourceGroups"] = [];
+      for (let item of this.resourceGroups) data["resourceGroups"].push(item);
+    }
+    if (Array.isArray(this.kinds)) {
+      data["kinds"] = [];
+      for (let item of this.kinds) data["kinds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IImportAzureResources {
+  authMode?: SecretProviderAuthMode;
+  subscriptionIds?: string[] | undefined;
+  resourceIds?: string[] | undefined;
+  resourceGroups?: string[] | undefined;
+  kinds?: string[] | undefined;
+}
+
+export class ImportOrphanPrincipalRequest
+  implements IImportOrphanPrincipalRequest
+{
   principalName?: string | undefined;
   authKind?: AuthKind;
   secretBinding?: SecretBinding;
@@ -20399,7 +23272,9 @@ export interface IImportOrphanPrincipalRequest {
   secretBinding?: SecretBinding;
 }
 
-export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResponse {
+export class ImportOrphanPrincipalResponse
+  implements IImportOrphanPrincipalResponse
+{
   accountId?: string;
   principalName?: string | undefined;
   success?: boolean;
@@ -20870,6 +23745,42 @@ export interface ILicenseStatusResponse {
   lastCheckedUtc?: Date | undefined;
   message?: string | undefined;
   customerName?: string | undefined;
+}
+
+export class LinkEntraAccount implements ILinkEntraAccount {
+  currentPassword?: string | undefined;
+
+  constructor(data?: ILinkEntraAccount) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.currentPassword = _data["currentPassword"];
+    }
+  }
+
+  static fromJS(data: any): LinkEntraAccount {
+    data = typeof data === "object" ? data : {};
+    let result = new LinkEntraAccount();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["currentPassword"] = this.currentPassword;
+    return data;
+  }
+}
+
+export interface ILinkEntraAccount {
+  currentPassword?: string | undefined;
 }
 
 export enum LogLevel {
@@ -21752,7 +24663,9 @@ export interface IResolveDriftResponse {
   errorMessage?: string | undefined;
 }
 
-export class ResolvedAppConfigurationReferenceSecretResponse implements IResolvedAppConfigurationReferenceSecretResponse {
+export class ResolvedAppConfigurationReferenceSecretResponse
+  implements IResolvedAppConfigurationReferenceSecretResponse
+{
   secretName?: string | undefined;
   secretVersion?: string | undefined;
   value?: string | undefined;
@@ -22090,6 +25003,7 @@ export class RoleInfo implements IRoleInfo {
   permissions?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  entraGroups?: EntraGroupMapping[] | undefined;
 
   constructor(data?: IRoleInfo) {
     if (data) {
@@ -22115,6 +25029,11 @@ export class RoleInfo implements IRoleInfo {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      if (Array.isArray(_data["entraGroups"])) {
+        this.entraGroups = [] as any;
+        for (let item of _data["entraGroups"])
+          this.entraGroups!.push(EntraGroupMapping.fromJS(item));
+      }
     }
   }
 
@@ -22140,6 +25059,11 @@ export class RoleInfo implements IRoleInfo {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    if (Array.isArray(this.entraGroups)) {
+      data["entraGroups"] = [];
+      for (let item of this.entraGroups)
+        data["entraGroups"].push(item ? item.toJSON() : (undefined as any));
+    }
     return data;
   }
 }
@@ -22151,6 +25075,63 @@ export interface IRoleInfo {
   permissions?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  entraGroups?: EntraGroupMapping[] | undefined;
+}
+
+export class RoleMembership implements IRoleMembership {
+  roleId?: string;
+  roleName?: string | undefined;
+  direct?: boolean;
+  entraGroups?: EntraGroupMapping[] | undefined;
+
+  constructor(data?: IRoleMembership) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.roleId = _data["roleId"];
+      this.roleName = _data["roleName"];
+      this.direct = _data["direct"];
+      if (Array.isArray(_data["entraGroups"])) {
+        this.entraGroups = [] as any;
+        for (let item of _data["entraGroups"])
+          this.entraGroups!.push(EntraGroupMapping.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): RoleMembership {
+    data = typeof data === "object" ? data : {};
+    let result = new RoleMembership();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["roleId"] = this.roleId;
+    data["roleName"] = this.roleName;
+    data["direct"] = this.direct;
+    if (Array.isArray(this.entraGroups)) {
+      data["entraGroups"] = [];
+      for (let item of this.entraGroups)
+        data["entraGroups"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IRoleMembership {
+  roleId?: string;
+  roleName?: string | undefined;
+  direct?: boolean;
+  entraGroups?: EntraGroupMapping[] | undefined;
 }
 
 export class RotateSecret implements IRotateSecret {
@@ -22195,6 +25176,425 @@ export interface IRotateSecret {
   providerId?: string;
   secretName?: string | undefined;
   newSecretValue?: string | undefined;
+}
+
+export class ScrumPokerAutoRevealRequest
+  implements IScrumPokerAutoRevealRequest
+{
+  participantToken?: string | undefined;
+  enabled?: boolean;
+
+  constructor(data?: IScrumPokerAutoRevealRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.participantToken = _data["participantToken"];
+      this.enabled = _data["enabled"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerAutoRevealRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerAutoRevealRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["participantToken"] = this.participantToken;
+    data["enabled"] = this.enabled;
+    return data;
+  }
+}
+
+export interface IScrumPokerAutoRevealRequest {
+  participantToken?: string | undefined;
+  enabled?: boolean;
+}
+
+export enum ScrumPokerCard {
+  Zero = "Zero",
+  Half = "Half",
+  One = "One",
+  Two = "Two",
+  Three = "Three",
+  Five = "Five",
+  Eight = "Eight",
+  Thirteen = "Thirteen",
+  Twenty = "Twenty",
+  Forty = "Forty",
+  Hundred = "Hundred",
+  Question = "Question",
+  Coffee = "Coffee",
+}
+
+export class ScrumPokerCardRequest implements IScrumPokerCardRequest {
+  participantToken?: string | undefined;
+  card?: ScrumPokerCard;
+
+  constructor(data?: IScrumPokerCardRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.participantToken = _data["participantToken"];
+      this.card = _data["card"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerCardRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerCardRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["participantToken"] = this.participantToken;
+    data["card"] = this.card;
+    return data;
+  }
+}
+
+export interface IScrumPokerCardRequest {
+  participantToken?: string | undefined;
+  card?: ScrumPokerCard;
+}
+
+export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
+  displayName?: string | undefined;
+  participantToken?: string | undefined;
+  avatarColor?: string | undefined;
+
+  constructor(data?: IScrumPokerJoinRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.displayName = _data["displayName"];
+      this.participantToken = _data["participantToken"];
+      this.avatarColor = _data["avatarColor"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerJoinRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerJoinRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["displayName"] = this.displayName;
+    data["participantToken"] = this.participantToken;
+    data["avatarColor"] = this.avatarColor;
+    return data;
+  }
+}
+
+export interface IScrumPokerJoinRequest {
+  displayName?: string | undefined;
+  participantToken?: string | undefined;
+  avatarColor?: string | undefined;
+}
+
+export class ScrumPokerLockVotesAfterRevealRequest
+  implements IScrumPokerLockVotesAfterRevealRequest
+{
+  participantToken?: string | undefined;
+  enabled?: boolean;
+
+  constructor(data?: IScrumPokerLockVotesAfterRevealRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.participantToken = _data["participantToken"];
+      this.enabled = _data["enabled"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerLockVotesAfterRevealRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerLockVotesAfterRevealRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["participantToken"] = this.participantToken;
+    data["enabled"] = this.enabled;
+    return data;
+  }
+}
+
+export interface IScrumPokerLockVotesAfterRevealRequest {
+  participantToken?: string | undefined;
+  enabled?: boolean;
+}
+
+export class ScrumPokerParticipantRequest
+  implements IScrumPokerParticipantRequest
+{
+  participantToken?: string | undefined;
+
+  constructor(data?: IScrumPokerParticipantRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.participantToken = _data["participantToken"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerParticipantRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerParticipantRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["participantToken"] = this.participantToken;
+    return data;
+  }
+}
+
+export interface IScrumPokerParticipantRequest {
+  participantToken?: string | undefined;
+}
+
+export class ScrumPokerParticipantResponse
+  implements IScrumPokerParticipantResponse
+{
+  id?: string;
+  displayName?: string | undefined;
+  avatarColor?: string | undefined;
+  hasVoted?: boolean;
+  card?: ScrumPokerCard;
+
+  constructor(data?: IScrumPokerParticipantResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.displayName = _data["displayName"];
+      this.avatarColor = _data["avatarColor"];
+      this.hasVoted = _data["hasVoted"];
+      this.card = _data["card"];
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerParticipantResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerParticipantResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["displayName"] = this.displayName;
+    data["avatarColor"] = this.avatarColor;
+    data["hasVoted"] = this.hasVoted;
+    data["card"] = this.card;
+    return data;
+  }
+}
+
+export interface IScrumPokerParticipantResponse {
+  id?: string;
+  displayName?: string | undefined;
+  avatarColor?: string | undefined;
+  hasVoted?: boolean;
+  card?: ScrumPokerCard;
+}
+
+export enum ScrumPokerPhase {
+  Voting = "Voting",
+  Revealed = "Revealed",
+}
+
+export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
+  roomCode?: string | undefined;
+  round?: number;
+  phase?: ScrumPokerPhase;
+  autoReveal?: boolean;
+  lockVotesAfterReveal?: boolean;
+  revision?: number;
+  createdUtc?: Date;
+  lastActivityUtc?: Date;
+  average?: number | undefined;
+  participants?: ScrumPokerParticipantResponse[] | undefined;
+
+  constructor(data?: IScrumPokerRoomResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.roomCode = _data["roomCode"];
+      this.round = _data["round"];
+      this.phase = _data["phase"];
+      this.autoReveal = _data["autoReveal"];
+      this.lockVotesAfterReveal = _data["lockVotesAfterReveal"];
+      this.revision = _data["revision"];
+      this.createdUtc = _data["createdUtc"]
+        ? new Date(_data["createdUtc"].toString())
+        : (undefined as any);
+      this.lastActivityUtc = _data["lastActivityUtc"]
+        ? new Date(_data["lastActivityUtc"].toString())
+        : (undefined as any);
+      this.average = _data["average"];
+      if (Array.isArray(_data["participants"])) {
+        this.participants = [] as any;
+        for (let item of _data["participants"])
+          this.participants!.push(ScrumPokerParticipantResponse.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerRoomResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerRoomResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["roomCode"] = this.roomCode;
+    data["round"] = this.round;
+    data["phase"] = this.phase;
+    data["autoReveal"] = this.autoReveal;
+    data["lockVotesAfterReveal"] = this.lockVotesAfterReveal;
+    data["revision"] = this.revision;
+    data["createdUtc"] = this.createdUtc
+      ? this.createdUtc.toISOString()
+      : (undefined as any);
+    data["lastActivityUtc"] = this.lastActivityUtc
+      ? this.lastActivityUtc.toISOString()
+      : (undefined as any);
+    data["average"] = this.average;
+    if (Array.isArray(this.participants)) {
+      data["participants"] = [];
+      for (let item of this.participants)
+        data["participants"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IScrumPokerRoomResponse {
+  roomCode?: string | undefined;
+  round?: number;
+  phase?: ScrumPokerPhase;
+  autoReveal?: boolean;
+  lockVotesAfterReveal?: boolean;
+  revision?: number;
+  createdUtc?: Date;
+  lastActivityUtc?: Date;
+  average?: number | undefined;
+  participants?: ScrumPokerParticipantResponse[] | undefined;
+}
+
+export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
+  roomCode?: string | undefined;
+  participantId?: string;
+  participantToken?: string | undefined;
+  room?: ScrumPokerRoomResponse;
+
+  constructor(data?: IScrumPokerSessionResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.roomCode = _data["roomCode"];
+      this.participantId = _data["participantId"];
+      this.participantToken = _data["participantToken"];
+      this.room = _data["room"]
+        ? ScrumPokerRoomResponse.fromJS(_data["room"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): ScrumPokerSessionResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new ScrumPokerSessionResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["roomCode"] = this.roomCode;
+    data["participantId"] = this.participantId;
+    data["participantToken"] = this.participantToken;
+    data["room"] = this.room ? this.room.toJSON() : (undefined as any);
+    return data;
+  }
+}
+
+export interface IScrumPokerSessionResponse {
+  roomCode?: string | undefined;
+  participantId?: string;
+  participantToken?: string | undefined;
+  room?: ScrumPokerRoomResponse;
 }
 
 export class SecretBinding implements ISecretBinding {
@@ -22303,6 +25703,56 @@ export interface ISecretMetadataResponse {
   contentType?: string | undefined;
 }
 
+export class SecretProviderAccessCheckResponse
+  implements ISecretProviderAccessCheckResponse
+{
+  success?: boolean;
+  checkedAt?: Date;
+  message?: string | undefined;
+
+  constructor(data?: ISecretProviderAccessCheckResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.success = _data["success"];
+      this.checkedAt = _data["checkedAt"]
+        ? new Date(_data["checkedAt"].toString())
+        : (undefined as any);
+      this.message = _data["message"];
+    }
+  }
+
+  static fromJS(data: any): SecretProviderAccessCheckResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new SecretProviderAccessCheckResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["success"] = this.success;
+    data["checkedAt"] = this.checkedAt
+      ? this.checkedAt.toISOString()
+      : (undefined as any);
+    data["message"] = this.message;
+    return data;
+  }
+}
+
+export interface ISecretProviderAccessCheckResponse {
+  success?: boolean;
+  checkedAt?: Date;
+  message?: string | undefined;
+}
+
 export enum SecretProviderAuthMode {
   ManagedIdentity = "ManagedIdentity",
   ClientSecret = "ClientSecret",
@@ -22368,12 +25818,12 @@ export class SecretProviderResponse implements ISecretProviderResponse {
   capabilities?: SecretProviderCapabilities;
   createdAt?: Date;
   updatedAt?: Date;
-  integrationKind?: "KeyVault" | "AppConfiguration";
-  credentialSource?: "SharedCredentials" | "CustomCredentials" | "ManagedIdentity";
-  azureResourceId?: string;
-  lastCheckedAt?: Date;
-  lastCheckSucceeded?: boolean;
-  lastCheckMessage?: string;
+  credentialSource?: string | undefined;
+  integrationKind?: string | undefined;
+  azureResourceId?: string | undefined;
+  lastCheckedAt?: Date | undefined;
+  lastCheckSucceeded?: boolean | undefined;
+  lastCheckMessage?: string | undefined;
 
   constructor(data?: ISecretProviderResponse) {
     if (data) {
@@ -22386,12 +25836,6 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
   init(_data?: any) {
     if (_data) {
-      this.integrationKind = _data["integrationKind"];
-      this.credentialSource = _data["credentialSource"];
-      this.azureResourceId = _data["azureResourceId"];
-      this.lastCheckedAt = _data["lastCheckedAt"] ? new Date(_data["lastCheckedAt"].toString()) : undefined;
-      this.lastCheckSucceeded = _data["lastCheckSucceeded"];
-      this.lastCheckMessage = _data["lastCheckMessage"];
       this.id = _data["id"];
       this.name = _data["name"];
       this.vaultUri = _data["vaultUri"];
@@ -22403,6 +25847,14 @@ export class SecretProviderResponse implements ISecretProviderResponse {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      this.credentialSource = _data["credentialSource"];
+      this.integrationKind = _data["integrationKind"];
+      this.azureResourceId = _data["azureResourceId"];
+      this.lastCheckedAt = _data["lastCheckedAt"]
+        ? new Date(_data["lastCheckedAt"].toString())
+        : (undefined as any);
+      this.lastCheckSucceeded = _data["lastCheckSucceeded"];
+      this.lastCheckMessage = _data["lastCheckMessage"];
     }
   }
 
@@ -22415,12 +25867,6 @@ export class SecretProviderResponse implements ISecretProviderResponse {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
-    data["integrationKind"] = this.integrationKind;
-    data["credentialSource"] = this.credentialSource;
-    data["azureResourceId"] = this.azureResourceId;
-    data["lastCheckedAt"] = this.lastCheckedAt?.toISOString();
-    data["lastCheckSucceeded"] = this.lastCheckSucceeded;
-    data["lastCheckMessage"] = this.lastCheckMessage;
     data["id"] = this.id;
     data["name"] = this.name;
     data["vaultUri"] = this.vaultUri;
@@ -22432,6 +25878,14 @@ export class SecretProviderResponse implements ISecretProviderResponse {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["credentialSource"] = this.credentialSource;
+    data["integrationKind"] = this.integrationKind;
+    data["azureResourceId"] = this.azureResourceId;
+    data["lastCheckedAt"] = this.lastCheckedAt
+      ? this.lastCheckedAt.toISOString()
+      : (undefined as any);
+    data["lastCheckSucceeded"] = this.lastCheckSucceeded;
+    data["lastCheckMessage"] = this.lastCheckMessage;
     return data;
   }
 }
@@ -22444,12 +25898,12 @@ export interface ISecretProviderResponse {
   capabilities?: SecretProviderCapabilities;
   createdAt?: Date;
   updatedAt?: Date;
-  integrationKind?: "KeyVault" | "AppConfiguration";
-  credentialSource?: "SharedCredentials" | "CustomCredentials" | "ManagedIdentity";
-  azureResourceId?: string;
-  lastCheckedAt?: Date;
-  lastCheckSucceeded?: boolean;
-  lastCheckMessage?: string;
+  credentialSource?: string | undefined;
+  integrationKind?: string | undefined;
+  azureResourceId?: string | undefined;
+  lastCheckedAt?: Date | undefined;
+  lastCheckSucceeded?: boolean | undefined;
+  lastCheckMessage?: string | undefined;
 }
 
 export class SecretValueResponse implements ISecretValueResponse {
@@ -22498,7 +25952,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
-  permissions?: string[];
+  permissions?: string[] | undefined;
 
   constructor(data?: ISecurityStateResponse) {
     if (data) {
@@ -22511,12 +25965,15 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
   init(_data?: any) {
     if (_data) {
-      this.permissions = Array.isArray(_data["permissions"]) ? [..._data["permissions"]] : [];
       this.posture = _data["posture"];
       this.requiresSetup = _data["requiresSetup"];
       this.currentUser = _data["currentUser"]
         ? SecurityUserInfo.fromJS(_data["currentUser"])
         : (undefined as any);
+      if (Array.isArray(_data["permissions"])) {
+        this.permissions = [] as any;
+        for (let item of _data["permissions"]) this.permissions!.push(item);
+      }
     }
   }
 
@@ -22529,12 +25986,15 @@ export class SecurityStateResponse implements ISecurityStateResponse {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
-    data["permissions"] = this.permissions ? [...this.permissions] : [];
     data["posture"] = this.posture;
     data["requiresSetup"] = this.requiresSetup;
     data["currentUser"] = this.currentUser
       ? this.currentUser.toJSON()
       : (undefined as any);
+    if (Array.isArray(this.permissions)) {
+      data["permissions"] = [];
+      for (let item of this.permissions) data["permissions"].push(item);
+    }
     return data;
   }
 }
@@ -22543,7 +26003,7 @@ export interface ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
-  permissions?: string[];
+  permissions?: string[] | undefined;
 }
 
 export class SecurityUserInfo implements ISecurityUserInfo {
@@ -22553,6 +26013,13 @@ export class SecurityUserInfo implements ISecurityUserInfo {
   roleIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  isDisabled?: boolean;
+  hasLocalPassword?: boolean;
+  entraObjectId?: string | undefined;
+  entraVerifiedAt?: Date | undefined;
+  entraValidUntil?: Date | undefined;
+  roleMemberships?: RoleMembership[] | undefined;
+  effectiveRoleIds?: string[] | undefined;
 
   constructor(data?: ISecurityUserInfo) {
     if (data) {
@@ -22578,6 +26045,25 @@ export class SecurityUserInfo implements ISecurityUserInfo {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      this.isDisabled = _data["isDisabled"];
+      this.hasLocalPassword = _data["hasLocalPassword"];
+      this.entraObjectId = _data["entraObjectId"];
+      this.entraVerifiedAt = _data["entraVerifiedAt"]
+        ? new Date(_data["entraVerifiedAt"].toString())
+        : (undefined as any);
+      this.entraValidUntil = _data["entraValidUntil"]
+        ? new Date(_data["entraValidUntil"].toString())
+        : (undefined as any);
+      if (Array.isArray(_data["roleMemberships"])) {
+        this.roleMemberships = [] as any;
+        for (let item of _data["roleMemberships"])
+          this.roleMemberships!.push(RoleMembership.fromJS(item));
+      }
+      if (Array.isArray(_data["effectiveRoleIds"])) {
+        this.effectiveRoleIds = [] as any;
+        for (let item of _data["effectiveRoleIds"])
+          this.effectiveRoleIds!.push(item);
+      }
     }
   }
 
@@ -22603,6 +26089,25 @@ export class SecurityUserInfo implements ISecurityUserInfo {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["isDisabled"] = this.isDisabled;
+    data["hasLocalPassword"] = this.hasLocalPassword;
+    data["entraObjectId"] = this.entraObjectId;
+    data["entraVerifiedAt"] = this.entraVerifiedAt
+      ? this.entraVerifiedAt.toISOString()
+      : (undefined as any);
+    data["entraValidUntil"] = this.entraValidUntil
+      ? this.entraValidUntil.toISOString()
+      : (undefined as any);
+    if (Array.isArray(this.roleMemberships)) {
+      data["roleMemberships"] = [];
+      for (let item of this.roleMemberships)
+        data["roleMemberships"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.effectiveRoleIds)) {
+      data["effectiveRoleIds"] = [];
+      for (let item of this.effectiveRoleIds)
+        data["effectiveRoleIds"].push(item);
+    }
     return data;
   }
 }
@@ -22614,6 +26119,13 @@ export interface ISecurityUserInfo {
   roleIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  isDisabled?: boolean;
+  hasLocalPassword?: boolean;
+  entraObjectId?: string | undefined;
+  entraVerifiedAt?: Date | undefined;
+  entraValidUntil?: Date | undefined;
+  roleMemberships?: RoleMembership[] | undefined;
+  effectiveRoleIds?: string[] | undefined;
 }
 
 export class SetAppConfigurationValue implements ISetAppConfigurationValue {
@@ -22704,7 +26216,45 @@ export interface ISetLicenseRequest {
   licenseKey?: string | undefined;
 }
 
-export class SqlAccountCreationOperation implements ISqlAccountCreationOperation {
+export class SetUserDisabled implements ISetUserDisabled {
+  disabled?: boolean;
+
+  constructor(data?: ISetUserDisabled) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.disabled = _data["disabled"];
+    }
+  }
+
+  static fromJS(data: any): SetUserDisabled {
+    data = typeof data === "object" ? data : {};
+    let result = new SetUserDisabled();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["disabled"] = this.disabled;
+    return data;
+  }
+}
+
+export interface ISetUserDisabled {
+  disabled?: boolean;
+}
+
+export class SqlAccountCreationOperation
+  implements ISqlAccountCreationOperation
+{
   operationType?: string | undefined;
   database?: string | undefined;
   success?: boolean;
@@ -22752,7 +26302,9 @@ export interface ISqlAccountCreationOperation {
   errorMessage?: string | undefined;
 }
 
-export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus {
+export class SqlAccountPermissionsStatus
+  implements ISqlAccountPermissionsStatus
+{
   accountId?: string;
   accountName?: string | undefined;
   principalName?: string | undefined;
@@ -22956,7 +26508,9 @@ export interface ISqlDatabasesResponse {
   databases?: string[] | undefined;
 }
 
-export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegrationPermissionsOverviewResponse {
+export class SqlIntegrationPermissionsOverviewResponse
+  implements ISqlIntegrationPermissionsOverviewResponse
+{
   integrationId?: string;
   integrationName?: string | undefined;
   accounts?: SqlAccountPermissionsStatus[] | undefined;
@@ -23244,7 +26798,9 @@ export enum SqlPermissions {
   Create = "Create",
 }
 
-export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSummary {
+export class SqlPermissionsOverviewSummary
+  implements ISqlPermissionsOverviewSummary
+{
   totalAccounts?: number;
   inSyncCount?: number;
   driftCount?: number;
@@ -23550,7 +27106,9 @@ export enum TargetKind {
   MessageBroker = "MessageBroker",
 }
 
-export class TestSecretProviderConnection implements ITestSecretProviderConnection {
+export class TestSecretProviderConnection
+  implements ITestSecretProviderConnection
+{
   vaultUri?: string | undefined;
   authMode?: SecretProviderAuthMode;
   credentials?: SecretProviderCredentials;
@@ -23923,7 +27481,9 @@ export interface IUpdateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateApplicationDependency implements IUpdateApplicationDependency {
+export class UpdateApplicationDependency
+  implements IUpdateApplicationDependency
+{
   applicationId?: string;
   instanceId?: string;
   dependencyId?: string;
@@ -24131,7 +27691,57 @@ export interface IUpdateApplicationPipeline {
   pipelineUri?: string | undefined;
 }
 
-export class UpdateAzureIntegrationManager implements IUpdateAzureIntegrationManager {
+export class UpdateAzureDiscoveryExclusions
+  implements IUpdateAzureDiscoveryExclusions
+{
+  resourceIds?: string[] | undefined;
+  excluded?: boolean;
+
+  constructor(data?: IUpdateAzureDiscoveryExclusions) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["resourceIds"])) {
+        this.resourceIds = [] as any;
+        for (let item of _data["resourceIds"]) this.resourceIds!.push(item);
+      }
+      this.excluded = _data["excluded"];
+    }
+  }
+
+  static fromJS(data: any): UpdateAzureDiscoveryExclusions {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateAzureDiscoveryExclusions();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.resourceIds)) {
+      data["resourceIds"] = [];
+      for (let item of this.resourceIds) data["resourceIds"].push(item);
+    }
+    data["excluded"] = this.excluded;
+    return data;
+  }
+}
+
+export interface IUpdateAzureDiscoveryExclusions {
+  resourceIds?: string[] | undefined;
+  excluded?: boolean;
+}
+
+export class UpdateAzureIntegrationManager
+  implements IUpdateAzureIntegrationManager
+{
   credentials?: SecretProviderCredentials;
 
   constructor(data?: IUpdateAzureIntegrationManager) {
@@ -24243,6 +27853,62 @@ export interface IUpdateDataStore {
   platformId?: string | undefined;
   connectionUri?: string | undefined;
   tagIds?: string[] | undefined;
+}
+
+export class UpdateEntraSettings implements IUpdateEntraSettings {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  publicOrigin?: string | undefined;
+  sessionMinutes?: number;
+  clientSecret?: string | undefined;
+
+  constructor(data?: IUpdateEntraSettings) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.enabled = _data["enabled"];
+      this.tenantId = _data["tenantId"];
+      this.clientId = _data["clientId"];
+      this.publicOrigin = _data["publicOrigin"];
+      this.sessionMinutes = _data["sessionMinutes"];
+      this.clientSecret = _data["clientSecret"];
+    }
+  }
+
+  static fromJS(data: any): UpdateEntraSettings {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateEntraSettings();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["enabled"] = this.enabled;
+    data["tenantId"] = this.tenantId;
+    data["clientId"] = this.clientId;
+    data["publicOrigin"] = this.publicOrigin;
+    data["sessionMinutes"] = this.sessionMinutes;
+    data["clientSecret"] = this.clientSecret;
+    return data;
+  }
+}
+
+export interface IUpdateEntraSettings {
+  enabled?: boolean;
+  tenantId?: string;
+  clientId?: string;
+  publicOrigin?: string | undefined;
+  sessionMinutes?: number;
+  clientSecret?: string | undefined;
 }
 
 export class UpdateEnvironment implements IUpdateEnvironment {
@@ -24374,11 +28040,11 @@ export interface IUpdateExternalResource {
 }
 
 export class UpdateGuideProgress implements IUpdateGuideProgress {
-  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
   lastCompletedAt?: Date | undefined;
+  applicationId?: string | undefined;
 
   constructor(data?: IUpdateGuideProgress) {
     if (data) {
@@ -24391,7 +28057,6 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
 
   init(_data?: any) {
     if (_data) {
-      this.applicationId = _data["applicationId"];
       if (Array.isArray(_data["completedStepIds"])) {
         this.completedStepIds = [] as any;
         for (let item of _data["completedStepIds"])
@@ -24402,6 +28067,7 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
       this.lastCompletedAt = _data["lastCompletedAt"]
         ? new Date(_data["lastCompletedAt"].toString())
         : (undefined as any);
+      this.applicationId = _data["applicationId"];
     }
   }
 
@@ -24414,7 +28080,6 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
-    data["applicationId"] = this.applicationId;
     if (Array.isArray(this.completedStepIds)) {
       data["completedStepIds"] = [];
       for (let item of this.completedStepIds)
@@ -24425,16 +28090,17 @@ export class UpdateGuideProgress implements IUpdateGuideProgress {
     data["lastCompletedAt"] = this.lastCompletedAt
       ? this.lastCompletedAt.toISOString()
       : (undefined as any);
+    data["applicationId"] = this.applicationId;
     return data;
   }
 }
 
 export interface IUpdateGuideProgress {
-  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
   lastCompletedAt?: Date | undefined;
+  applicationId?: string | undefined;
 }
 
 export class UpdateIdentity implements IUpdateIdentity {
@@ -24724,7 +28390,9 @@ export interface IUpdateMessageBroker {
   tagIds?: string[] | undefined;
 }
 
-export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
+export class UpdatePasswordGeneratorConfig
+  implements IUpdatePasswordGeneratorConfig
+{
   allowedCharacters?: string | undefined;
   length?: number;
 
@@ -24906,7 +28574,9 @@ export interface IUpdatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
+export class UpdateResponsibilityAssignment
+  implements IUpdateResponsibilityAssignment
+{
   id?: string;
   positionId?: string;
   responsibilityTypeId?: string;
@@ -25126,6 +28796,7 @@ export class UpdateRole implements IUpdateRole {
   description?: string | undefined;
   permissions?: string[] | undefined;
   requestedBy?: string | undefined;
+  entraGroups?: EntraGroupMapping[] | undefined;
 
   constructor(data?: IUpdateRole) {
     if (data) {
@@ -25146,6 +28817,11 @@ export class UpdateRole implements IUpdateRole {
         for (let item of _data["permissions"]) this.permissions!.push(item);
       }
       this.requestedBy = _data["requestedBy"];
+      if (Array.isArray(_data["entraGroups"])) {
+        this.entraGroups = [] as any;
+        for (let item of _data["entraGroups"])
+          this.entraGroups!.push(EntraGroupMapping.fromJS(item));
+      }
     }
   }
 
@@ -25166,6 +28842,11 @@ export class UpdateRole implements IUpdateRole {
       for (let item of this.permissions) data["permissions"].push(item);
     }
     data["requestedBy"] = this.requestedBy;
+    if (Array.isArray(this.entraGroups)) {
+      data["entraGroups"] = [];
+      for (let item of this.entraGroups)
+        data["entraGroups"].push(item ? item.toJSON() : (undefined as any));
+    }
     return data;
   }
 }
@@ -25176,6 +28857,7 @@ export interface IUpdateRole {
   description?: string | undefined;
   permissions?: string[] | undefined;
   requestedBy?: string | undefined;
+  entraGroups?: EntraGroupMapping[] | undefined;
 }
 
 export class UpdateSecretProvider implements IUpdateSecretProvider {
@@ -25383,12 +29065,12 @@ export interface IUpdateTag {
 }
 
 export class UserGuideProgress implements IUserGuideProgress {
-  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
+  applicationId?: string | undefined;
 
   constructor(data?: IUserGuideProgress) {
     if (data) {
@@ -25401,7 +29083,6 @@ export class UserGuideProgress implements IUserGuideProgress {
 
   init(_data?: any) {
     if (_data) {
-      this.applicationId = _data["applicationId"];
       if (Array.isArray(_data["completedStepIds"])) {
         this.completedStepIds = [] as any;
         for (let item of _data["completedStepIds"])
@@ -25415,6 +29096,7 @@ export class UserGuideProgress implements IUserGuideProgress {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      this.applicationId = _data["applicationId"];
     }
   }
 
@@ -25427,7 +29109,6 @@ export class UserGuideProgress implements IUserGuideProgress {
 
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
-    data["applicationId"] = this.applicationId;
     if (Array.isArray(this.completedStepIds)) {
       data["completedStepIds"] = [];
       for (let item of this.completedStepIds)
@@ -25441,264 +29122,18 @@ export class UserGuideProgress implements IUserGuideProgress {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["applicationId"] = this.applicationId;
     return data;
   }
 }
 
 export interface IUserGuideProgress {
-  applicationId?: string;
   completedStepIds?: string[] | undefined;
   activeGuideId?: string | undefined;
   hasCompletedGettingStarted?: boolean;
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
-}
-
-export enum ScrumPokerCard {
-  Zero = "Zero",
-  Half = "Half",
-  One = "One",
-  Two = "Two",
-  Three = "Three",
-  Five = "Five",
-  Eight = "Eight",
-  Thirteen = "Thirteen",
-  Twenty = "Twenty",
-  Forty = "Forty",
-  Hundred = "Hundred",
-  Question = "Question",
-  Coffee = "Coffee",
-}
-
-export enum ScrumPokerPhase {
-  Voting = "Voting",
-  Revealed = "Revealed",
-}
-
-export interface IScrumPokerJoinRequest {
-  displayName?: string;
-  participantToken?: string;
-  avatarColor?: string;
-}
-export class ScrumPokerJoinRequest implements IScrumPokerJoinRequest {
-  displayName?: string;
-  participantToken?: string;
-  avatarColor?: string;
-  constructor(data?: IScrumPokerJoinRequest) {
-    if (data) {
-      this.displayName = data.displayName;
-      this.participantToken = data.participantToken;
-      this.avatarColor = data.avatarColor;
-    }
-  }
-  static fromJS(data: any): ScrumPokerJoinRequest {
-    return new ScrumPokerJoinRequest(data);
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["displayName"] = this.displayName;
-    data["participantToken"] = this.participantToken;
-    data["avatarColor"] = this.avatarColor;
-    return data;
-  }
-}
-
-export interface IScrumPokerParticipantRequest {
-  participantToken?: string;
-}
-export class ScrumPokerParticipantRequest implements IScrumPokerParticipantRequest {
-  participantToken?: string;
-  constructor(data?: IScrumPokerParticipantRequest) {
-    if (data) this.participantToken = data.participantToken;
-  }
-  static fromJS(data: any): ScrumPokerParticipantRequest {
-    return new ScrumPokerParticipantRequest(data);
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["participantToken"] = this.participantToken;
-    return data;
-  }
-}
-
-export interface IScrumPokerCardRequest extends IScrumPokerParticipantRequest {
-  card?: ScrumPokerCard | null;
-}
-export class ScrumPokerCardRequest implements IScrumPokerCardRequest {
-  participantToken?: string;
-  card?: ScrumPokerCard | null;
-  constructor(data?: IScrumPokerCardRequest) {
-    if (data) {
-      this.participantToken = data.participantToken;
-      this.card = data.card;
-    }
-  }
-  static fromJS(data: any): ScrumPokerCardRequest {
-    return new ScrumPokerCardRequest(data);
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["participantToken"] = this.participantToken;
-    data["card"] = this.card;
-    return data;
-  }
-}
-
-export interface IScrumPokerParticipantResponse {
-  id?: string;
-  displayName?: string;
-  avatarColor?: string;
-  hasVoted?: boolean;
-  card?: ScrumPokerCard | undefined;
-}
-export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResponse {
-  id?: string;
-  displayName?: string;
-  avatarColor?: string;
-  hasVoted?: boolean;
-  card?: ScrumPokerCard | undefined;
-  constructor(data?: IScrumPokerParticipantResponse) {
-    if (data) {
-      this.id = data.id;
-      this.displayName = data.displayName;
-      this.avatarColor = data.avatarColor;
-      this.hasVoted = data.hasVoted;
-      this.card = data.card;
-    }
-  }
-  static fromJS(data: any): ScrumPokerParticipantResponse {
-    return new ScrumPokerParticipantResponse(data);
-  }
-  init(_data?: any) {
-    if (_data) {
-      this.id = _data["id"];
-      this.displayName = _data["displayName"];
-      this.avatarColor = _data["avatarColor"];
-      this.hasVoted = _data["hasVoted"];
-      this.card = _data["card"];
-    }
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["id"] = this.id;
-    data["displayName"] = this.displayName;
-    data["avatarColor"] = this.avatarColor;
-    data["hasVoted"] = this.hasVoted;
-    data["card"] = this.card;
-    return data;
-  }
-}
-
-export interface IScrumPokerRoomResponse {
-  roomCode?: string;
-  round?: number;
-  phase?: ScrumPokerPhase;
-  autoReveal?: boolean;
-  lockVotesAfterReveal?: boolean;
-  revision?: number;
-  average?: number | undefined;
-  createdUtc?: Date;
-  lastActivityUtc?: Date;
-  participants?: ScrumPokerParticipantResponse[];
-}
-export class ScrumPokerRoomResponse implements IScrumPokerRoomResponse {
-  roomCode?: string;
-  round?: number;
-  phase?: ScrumPokerPhase;
-  autoReveal?: boolean;
-  lockVotesAfterReveal?: boolean;
-  revision?: number;
-  average?: number | undefined;
-  createdUtc?: Date;
-  lastActivityUtc?: Date;
-  participants?: ScrumPokerParticipantResponse[];
-  constructor(data?: IScrumPokerRoomResponse) {
-    if (data) Object.assign(this, data);
-  }
-  init(_data?: any) {
-    if (_data) {
-      this.roomCode = _data["roomCode"];
-      this.round = _data["round"];
-      this.phase = _data["phase"];
-      this.autoReveal = _data["autoReveal"];
-      this.lockVotesAfterReveal = _data["lockVotesAfterReveal"];
-      this.revision = _data["revision"];
-      this.average = _data["average"];
-      this.createdUtc = _data["createdUtc"]
-        ? new Date(_data["createdUtc"].toString())
-        : undefined;
-      this.lastActivityUtc = _data["lastActivityUtc"]
-        ? new Date(_data["lastActivityUtc"].toString())
-        : undefined;
-      this.participants = Array.isArray(_data["participants"])
-        ? _data["participants"].map((x: any) =>
-            ScrumPokerParticipantResponse.fromJS(x),
-          )
-        : undefined;
-    }
-  }
-  static fromJS(data: any): ScrumPokerRoomResponse {
-    const result = new ScrumPokerRoomResponse();
-    result.init(data);
-    return result;
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["roomCode"] = this.roomCode;
-    data["round"] = this.round;
-    data["phase"] = this.phase;
-    data["autoReveal"] = this.autoReveal;
-    data["lockVotesAfterReveal"] = this.lockVotesAfterReveal;
-    data["revision"] = this.revision;
-    data["average"] = this.average;
-    data["createdUtc"] = this.createdUtc?.toISOString();
-    data["lastActivityUtc"] = this.lastActivityUtc?.toISOString();
-    data["participants"] = this.participants?.map((x) => x.toJSON());
-    return data;
-  }
-}
-
-export interface IScrumPokerSessionResponse {
-  roomCode?: string;
-  participantId?: string;
-  participantToken?: string;
-  room?: ScrumPokerRoomResponse;
-}
-export class ScrumPokerSessionResponse implements IScrumPokerSessionResponse {
-  roomCode?: string;
-  participantId?: string;
-  participantToken?: string;
-  room?: ScrumPokerRoomResponse;
-  constructor(data?: IScrumPokerSessionResponse) {
-    if (data) {
-      this.roomCode = data.roomCode;
-      this.participantToken = data.participantToken;
-      this.room = data.room;
-    }
-  }
-  init(_data?: any) {
-    if (_data) {
-      this.roomCode = _data["roomCode"];
-      this.participantId = _data["participantId"];
-      this.participantToken = _data["participantToken"];
-      this.room = _data["room"]
-        ? ScrumPokerRoomResponse.fromJS(_data["room"])
-        : undefined;
-    }
-  }
-  static fromJS(data: any): ScrumPokerSessionResponse {
-    const result = new ScrumPokerSessionResponse();
-    result.init(data);
-    return result;
-  }
-  toJSON(data?: any) {
-    data = typeof data === "object" ? data : {};
-    data["roomCode"] = this.roomCode;
-    data["participantId"] = this.participantId;
-    data["participantToken"] = this.participantToken;
-    data["room"] = this.room?.toJSON();
-    return data;
-  }
+  applicationId?: string | undefined;
 }
 
 export interface FileParameter {

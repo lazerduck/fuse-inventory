@@ -21,6 +21,11 @@ export function useFuseClient() {
           headers.set('Authorization', `Bearer ${token}`)
         }
         
+        // The single-use OIDC handoff rejects cross-site form submissions.
+        if (new URL(String(url), window.location.origin).pathname === '/auth/entra/exchange') {
+          headers.set('X-Fuse-Entra', '1')
+        }
+
         // Create new init with updated headers
         const authInit: RequestInit = {
           ...init,

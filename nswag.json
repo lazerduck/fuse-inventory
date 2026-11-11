@@ -1,9 +1,9 @@
 {
   "runtime": "Net100",
-  "defaultVariables": null,
+  "defaultVariables": "ApiBaseUrl=http://localhost:5071",
   "documentGenerator": {
     "fromDocument": {
-      "url": "http://localhost:5071/swagger/v1/swagger.json",
+      "url": "$(ApiBaseUrl)/swagger/v1/swagger.json",
       "output": null,
       "newLineBehavior": "Auto"
     }

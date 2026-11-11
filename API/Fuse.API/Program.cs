@@ -58,6 +58,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+Fuse.API.Entra.EntraAuthentication.Register(builder.Services);
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 
@@ -95,6 +96,22 @@ app.UseHttpsRedirection();
 
 // Explicit routing so that SecurityMiddleware can read endpoint metadata (e.g. [RequirePermission])
 app.UseRouting();
+
+// Only the OIDC callback needs the remote authentication handler. Other API routes use Fuse sessions.
+app.UseWhen(ctx => ctx.Request.Path == "/auth/entra/callback", branch =>
+{
+    branch.Use(async (context, next) =>
+    {
+        var store = context.RequestServices.GetRequiredService<IFuseStore>();
+        if (!(await store.GetAsync()).SecurityContext.Entra.Enabled)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        await next(context);
+    });
+    branch.UseAuthentication();
+});
 
 app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/mcp"), branch =>
 {

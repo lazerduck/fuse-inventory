@@ -5,6 +5,10 @@
     "dotnet-reportgenerator-globaltool": {
       "version": "5.5.12",
       "commands": ["reportgenerator"]
+    },
+    "nswag.consolecore": {
+      "version": "14.6.3",
+      "commands": ["nswag"]
     }
   }
 }
