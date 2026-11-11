@@ -120,6 +120,7 @@
             rows="3"
             class="q-mt-md"
           />
+          <EntraGroupEditor v-if="entraEnabled || roleForm.entraGroups.length" v-model="roleForm.entraGroups" />
           <div class="q-mt-md">
             <div class="text-subtitle2 q-mb-sm">Permissions</div>
             <PermissionSelector v-model="roleForm.permissions" />
@@ -163,6 +164,7 @@
             rows="3"
             class="q-mt-md"
           />
+          <EntraGroupEditor v-if="entraEnabled || roleForm.entraGroups.length" v-model="roleForm.entraGroups" />
           <div class="q-mt-md">
             <div class="text-subtitle2 q-mb-sm">Permissions</div>
             <PermissionSelector v-model="roleForm.permissions" />
@@ -227,7 +229,12 @@ import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { CreateRole, UpdateRole, RoleInfo } from 'api/client'
 import { Permission } from 'permissions'
 import { getErrorMessage } from '../utils/error'
+import { useEntraStatus } from '../composables/useEntra'
+import EntraGroupEditor from '../components/roles/EntraGroupEditor.vue'
 import PermissionSelector from '../components/roles/PermissionSelector.vue'
+
+const entraStatusQuery = useEntraStatus()
+const entraEnabled = computed(() => entraStatusQuery.data.value?.enabled ?? false)
 
 const fuseStore = useFuseStore()
 const queryClient = useQueryClient()
@@ -257,7 +264,8 @@ const roleForm = ref({
   id: '',
   name: '',
   description: '',
-  permissions: [] as string[]
+  permissions: [] as string[],
+  entraGroups: [] as {groupId: string; displayName: string}[]
 })
 
 const { data, isLoading } = useRoles()
@@ -288,7 +296,8 @@ function openCreateDialog() {
     id: '',
     name: '',
     description: '',
-    permissions: []
+    permissions: [],
+    entraGroups: []
   }
   isCreateDialogOpen.value = true
 }
@@ -299,7 +308,8 @@ function closeCreateDialog() {
     id: '',
     name: '',
     description: '',
-    permissions: []
+    permissions: [],
+    entraGroups: []
   }
 }
 
@@ -313,7 +323,8 @@ function editRole(role: RoleInfo) {
     id: role.id || '',
     name: role.name || '',
     description: role.description || '',
-    permissions: [...(role.permissions || [])] as string[]
+    permissions: [...(role.permissions || [])] as string[],
+    entraGroups: (role.entraGroups || []).map(g => ({ groupId: g.groupId || '', displayName: g.displayName || '' }))
   }
   selectedRole.value = role
   isEditDialogOpen.value = true
@@ -326,7 +337,8 @@ function closeEditDialog() {
     id: '',
     name: '',
     description: '',
-    permissions: []
+    permissions: [],
+    entraGroups: []
   }
 }
 
@@ -389,7 +401,8 @@ function handleCreateRole() {
   const payload = Object.assign(new CreateRole(), {
     name: roleForm.value.name,
     description: roleForm.value.description,
-    permissions: roleForm.value.permissions
+    permissions: roleForm.value.permissions,
+    entraGroups: roleForm.value.entraGroups
   })
   createRoleMutation.mutate(payload)
 }
@@ -399,7 +412,8 @@ function handleUpdateRole() {
   const payload = Object.assign(new UpdateRole(), {
     name: roleForm.value.name,
     description: roleForm.value.description,
-    permissions: roleForm.value.permissions
+    permissions: roleForm.value.permissions,
+    entraGroups: roleForm.value.entraGroups
   })
   updateRoleMutation.mutate({ id: roleForm.value.id, payload })
 }

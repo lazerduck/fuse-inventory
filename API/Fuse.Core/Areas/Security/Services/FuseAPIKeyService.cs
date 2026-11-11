@@ -160,7 +160,7 @@ public class FuseAPIKeyService(IFuseStore fuseStore, IFuseUserService userServic
 
         var prefix = ExtractPrefix(apiKey);
         var candidate = snapshot.SecurityContext.ApiKeys.FirstOrDefault(k => k.KeyPrefix == prefix);
-        if (candidate is not null && VerifyPassword(apiKey, candidate.KeyHash, candidate.KeySalt))
+        if (candidate is not null && snapshot.SecurityContext.Users.Any(u => u.Id == candidate.UserId && !u.IsDisabled) && VerifyPassword(apiKey, candidate.KeyHash, candidate.KeySalt))
             return Result<FuseApiKey>.Success(candidate);
 
         return Result<FuseApiKey>.Failure("Invalid API key.", ErrorType.Unauthorized);

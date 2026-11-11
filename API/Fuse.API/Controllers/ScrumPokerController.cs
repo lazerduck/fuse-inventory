@@ -14,6 +14,7 @@ public sealed class ScrumPokerController(
     IFuseStore fuseStore) : ControllerBase
 {
     [HttpPost("rooms")]
+    [SwaggerOperation(OperationId = "scrumPokerRoomsPOST")]
     [ProducesResponseType<ScrumPokerSessionResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -29,6 +30,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/join")]
+    [SwaggerOperation(OperationId = "scrumPokerRoomsJoin")]
     [ProducesResponseType<ScrumPokerSessionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -43,6 +45,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/enter")]
+    [SwaggerOperation(OperationId = "scrumPokerRoomsEnter")]
     [ProducesResponseType<ScrumPokerSessionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -56,6 +59,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpGet("rooms/{roomCode}/availability")]
+    [SwaggerOperation(OperationId = "scrumPokerRoomAvailability")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> GetRoomAvailability(string roomCode)
     {
@@ -66,6 +70,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpGet("rooms/{roomCode}/state")]
+    [SwaggerOperation(OperationId = "scrumPokerState")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -79,6 +84,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPut("rooms/{roomCode}/card")]
+    [SwaggerOperation(OperationId = "scrumPokerCardPUT")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -94,6 +100,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/settings/auto-reveal")]
+    [SwaggerOperation(OperationId = "scrumPokerAutoReveal")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -107,6 +114,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/settings/lock-votes-after-reveal")]
+    [SwaggerOperation(OperationId = "scrumPokerLockVotesAfterReveal")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -120,6 +128,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/reveal")]
+    [SwaggerOperation(OperationId = "scrumPokerReveal")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,6 +142,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/reset")]
+    [SwaggerOperation(OperationId = "scrumPokerReset")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -146,6 +156,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/hide")]
+    [SwaggerOperation(OperationId = "scrumPokerHide")]
     [ProducesResponseType<ScrumPokerRoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -159,6 +170,7 @@ public sealed class ScrumPokerController(
     }
 
     [HttpPost("rooms/{roomCode}/leave")]
+    [SwaggerOperation(OperationId = "scrumPokerLeave")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

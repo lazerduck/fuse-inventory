@@ -5,6 +5,9 @@
         <div class="text-h6">Login</div>
         <q-btn aria-label="Close dialog" flat round dense icon="close" @click="handleClose" />
       </q-card-section>
+      <q-card-section v-if="entraEnabled">
+        <q-btn class="full-width" outline color="primary" label="Sign in with Microsoft" href="/auth/entra/login" />
+      </q-card-section>
       <q-separator />
       <q-form @submit.prevent="handleSubmit">
         <q-card-section>
@@ -49,7 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { useEntraStatus } from '../../composables/useEntra'
+import { computed, reactive, ref, watch } from 'vue'
+
+const entraStatusQuery = useEntraStatus()
+const entraEnabled = computed(() => entraStatusQuery.data.value?.enabled ?? false)
 
 interface LoginForm {
   userName: string
@@ -83,6 +90,7 @@ const form = reactive<LoginForm>({
 watch(() => props.modelValue, (newVal) => {
   isOpen.value = newVal
   if (newVal) {
+    void entraStatusQuery.refetch()
     // Reset form when dialog opens
     form.userName = ''
     form.password = ''

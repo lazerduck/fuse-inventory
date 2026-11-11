@@ -153,8 +153,20 @@ public static class SnapshotValidator
         if (s.SecurityContext.Users.Any(u => string.IsNullOrWhiteSpace(u.UserName)))
             errs.Add("Security user names cannot be empty.");
 
-        if (s.SecurityContext.Users.Any(u => string.IsNullOrWhiteSpace(u.PasswordHash) || string.IsNullOrWhiteSpace(u.PasswordSalt)))
-            errs.Add("Security user credentials are invalid.");
+        foreach (var user in s.SecurityContext.Users)
+        {
+            var hasPassword = !string.IsNullOrWhiteSpace(user.PasswordHash) && !string.IsNullOrWhiteSpace(user.PasswordSalt);
+            var passwordless = string.IsNullOrEmpty(user.PasswordHash) && string.IsNullOrEmpty(user.PasswordSalt);
+            var hasEntraIdentity = user.EntraTenantId is { } tenant && tenant != Guid.Empty
+                && user.EntraObjectId is { } objectId && objectId != Guid.Empty;
+            if (!hasPassword && !(passwordless && hasEntraIdentity))
+                errs.Add("Security user credentials are invalid.");
+            if ((user.EntraTenantId is not null || user.EntraObjectId is not null) && !hasEntraIdentity)
+                errs.Add("Entra identities require both tenant and object IDs.");
+        }
+        if (s.SecurityContext.Users.Where(u => u.EntraObjectId is not null)
+            .GroupBy(u => (u.EntraTenantId, u.EntraObjectId)).Any(g => g.Count() > 1))
+            errs.Add("An Entra identity cannot be linked to multiple Fuse users.");
 
         return errs;
     }

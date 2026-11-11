@@ -1,4 +1,6 @@
 using Fuse.API.CurrentUser;
+using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Security.Entra;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Areas.Security.Permissions;
@@ -16,7 +18,8 @@ namespace Fuse.API.Controllers
         IFuseSecurityService fuseSecurityService,
         IFuseUserService fuseUserService,
         IFuseUserSessionService fuseUserSessionService,
-        IFuseRoleService fuseRoleService
+        IFuseRoleService fuseRoleService,
+        IFuseStore store
         ) : ControllerBase
     {
 
@@ -36,10 +39,15 @@ namespace Fuse.API.Controllers
                 if (userResult.IsSuccess && userResult.Value is not null)
                 {
                     var user = userResult.Value;
-                    userInfo = new SecurityUserInfo(user);
-                    if (user.RoleIds.Count > 0)
+                    var security = (await store.GetAsync()).SecurityContext;
+                    var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+                    var session = security.Sessions.FirstOrDefault(s => s.Token == token);
+                    var memberships = RoleMembershipResolver.Resolve(security, user, session?.IsEntra == true ? session.EntraGroupIds : []);
+                    var effectiveIds = memberships.Select(m => m.RoleId).ToArray();
+                    userInfo = new SecurityUserInfo(user) { RoleMemberships = memberships, EffectiveRoleIds = effectiveIds };
+                    if (effectiveIds.Length > 0)
                     {
-                        var roles = await fuseRoleService.GetRolesByIds(user.RoleIds);
+                        var roles = await fuseRoleService.GetRolesByIds(effectiveIds);
                         if (roles.IsSuccess && roles.Value is not null)
                         {
                             permissions = roles.Value.SelectMany(role => role.Permissions)
@@ -69,6 +77,8 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(403)]
         public async Task<ActionResult<SecurityPosture>> UpdateSettings([FromBody] UpdateSecuritySettings command)
         {
+            if ((await store.GetAsync()).SecurityContext.Entra.Enabled && command.Posture != SecurityPosture.FullyRestricted)
+                return BadRequest(new { error = "Disable Entra before enabling anonymous access." });
             await fuseSecurityService.SetSecurityPosture(command.Posture);
 
             return Ok(await fuseSecurityService.GetSecurityPosture());
@@ -162,7 +172,12 @@ namespace Fuse.API.Controllers
         public async Task<IActionResult> GetAccounts()
         {
             var usersResult = await fuseUserService.GetUsers();   
-            return Ok(usersResult.Value!.Select(m => new SecurityUserInfo(m)));
+            var security = (await store.GetAsync()).SecurityContext;
+            return Ok(usersResult.Value!.Select(user =>
+            {
+                var memberships = RoleMembershipResolver.Resolve(security, user, RoleMembershipResolver.RecentGroups(security, user, DateTime.UtcNow));
+                return new SecurityUserInfo(user) { RoleMemberships = memberships, EffectiveRoleIds = memberships.Select(m => m.RoleId).ToArray() };
+            }));
         }
 
         [HttpGet("permissions/catalog")]

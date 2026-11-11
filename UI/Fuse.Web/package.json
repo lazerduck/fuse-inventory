@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:typecheck": "vue-tsc --noEmit -p tsconfig.tests.json"
+    "test:typecheck": "vue-tsc --noEmit -p tsconfig.tests.json",
+    "generate:api": "cd ../.. && dotnet tool run nswag run nswag.json && UI/Fuse.Web/node_modules/.bin/prettier --write UI/Fuse.Web/src/api/client.ts"
   },
   "dependencies": {
     "@quasar/extras": "^2.1.0",
@@ -32,6 +33,7 @@
     "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^30.1.3",
+    "prettier": "3.6.2",
     "sass": "^1.107.1",
     "typescript": "~6.0.3",
     "vite": "^8.3.5",

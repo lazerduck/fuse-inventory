@@ -111,7 +111,7 @@ The demo environment includes sample configurations for accounts, applications, 
 Fuse runs entirely inside your environment — so you are responsible for securing the host, container, and data volume.
 
 When given secrets or integration keys, Fuse stores them **on disk** so the system can use them when needed.
-(No local encryption is performed; encrypting locally would still require storing a reversible key on disk.)
+Most integration secrets are stored as supplied. The Entra client secret uses ASP.NET Data Protection with keys stored in the same data volume; protect and back up that entire volume.
 
 Creating the first administrator account signs you in. Access defaults to **Fully Restricted**; expand **Change access level** during setup if you want anonymous reading or editing instead. Your choice applies when the account is created. The setup wizard then creates your first environment and opens a four-step guide to documenting an application and its deployed instance. Existing installations keep their chosen security posture.
 
@@ -122,6 +122,8 @@ You can change the access model in Security settings:
 * **Fully Restricted** — sign-in required; roles control read and write permissions
 
 Use roles to limit inventory editing and access to secret values.
+
+Microsoft Entra sign-in supports group-derived roles alongside direct Fuse assignments, explicit account linking, and session revocation. See the [Entra setup and validation guide](docs/entra.md) for configuration, refresh behaviour, limitations, and validation results.
 
 ---
 

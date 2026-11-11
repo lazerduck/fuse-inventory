@@ -7,6 +7,7 @@ using Fuse.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Xunit;
+using Fuse.Tests.TestInfrastructure;
 
 namespace Fuse.Tests.AuthMiddleware;
 
@@ -39,7 +40,7 @@ public class AuthenticationMiddlewareUnitTests
         var sessionService = new Mock<IFuseUserSessionService>();
         var userService = new Mock<IFuseUserService>();
 
-        await middleware.InvokeAsync(context, apiKeyService.Object, sessionService.Object, userService.Object, LogService);
+        await middleware.InvokeAsync(context, apiKeyService.Object, sessionService.Object, userService.Object, LogService, new InMemoryFuseStore());
 
         Assert.Equal(AuthenticationMiddleware.ApiKeyAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("integration-key", context.User.FindFirstValue(ClaimTypes.Name));
@@ -64,7 +65,7 @@ public class AuthenticationMiddlewareUnitTests
             apiKeyService.Object,
             Mock.Of<IFuseUserSessionService>(),
             Mock.Of<IFuseUserService>(),
-            LogService);
+            LogService, new InMemoryFuseStore());
 
         Assert.False(context.User.Identity?.IsAuthenticated ?? false);
     }
@@ -96,7 +97,14 @@ public class AuthenticationMiddlewareUnitTests
                 DateTime.UtcNow,
                 DateTime.UtcNow)));
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService);
+        var store = new InMemoryFuseStore();
+        var storedUser = (await userService.Object.GetUser(userId)).Value!;
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with
+        {
+            Users = [storedUser], Sessions = [new Session("token-1", userId, DateTime.UtcNow.AddHours(1))],
+            Roles = storedUser.RoleIds.Select(id => new FuseRole(id, "Role", "", [], DateTime.UtcNow, DateTime.UtcNow)).ToArray()
+        }});
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService, store);
 
         Assert.Equal(AuthenticationMiddleware.UserAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("admin-user", context.User.FindFirstValue(ClaimTypes.Name));
@@ -113,7 +121,7 @@ public class AuthenticationMiddlewareUnitTests
 
         var sessionService = new Mock<IFuseUserSessionService>();
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, Mock.Of<IFuseUserService>(), LogService);
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, Mock.Of<IFuseUserService>(), LogService, new InMemoryFuseStore());
 
         sessionService.Verify(s => s.ValidateSession(It.IsAny<string>()), Times.Never);
         Assert.False(context.User.Identity?.IsAuthenticated ?? false);
@@ -146,7 +154,14 @@ public class AuthenticationMiddlewareUnitTests
                 DateTime.UtcNow,
                 DateTime.UtcNow)));
 
-        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService);
+        var store = new InMemoryFuseStore();
+        var storedUser = (await userService.Object.GetUser(userId)).Value!;
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with
+        {
+            Users = [storedUser], Sessions = [new Session("token-2", userId, DateTime.UtcNow.AddHours(1))],
+            Roles = storedUser.RoleIds.Select(id => new FuseRole(id, "Role", "", [], DateTime.UtcNow, DateTime.UtcNow)).ToArray()
+        }});
+        await middleware.InvokeAsync(context, Mock.Of<IFuseAPIKeyService>(), sessionService.Object, userService.Object, LogService, store);
 
         Assert.Equal(AuthenticationMiddleware.UserAuthType, context.User.Identity?.AuthenticationType);
         Assert.Equal("normal-user", context.User.FindFirstValue(ClaimTypes.Name));

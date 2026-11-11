@@ -2,6 +2,7 @@ using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using System.Security.Cryptography;
 
 namespace Fuse.Core.Areas.Security.Services;
 
@@ -14,9 +15,9 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
         if (user is null)
             return Result<string>.Failure("User is required.", ErrorType.Validation);
 
-        var token = Guid.NewGuid().ToString("N");
+        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var expiresAt = DateTime.UtcNow.Add(SessionLifetime);
-        var session = new Session(token, user.Id, expiresAt);
+        var session = new Session(token, user.Id, expiresAt) { Version = user.SessionVersion };
 
         await fuseStore.UpdateAsync(s => s with
         {
@@ -53,7 +54,13 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
             return Result<string>.Failure("Session has expired.", ErrorType.Unauthorized);
         }
 
-        var refreshedToken = Guid.NewGuid().ToString("N");
+        if (existing.IsEntra)
+            return Result<string>.Failure("Sign in with Microsoft again to refresh Entra membership.", ErrorType.Unauthorized);
+        var validation = await ValidateSession(token);
+        if (!validation.IsSuccess)
+            return Result<string>.Failure("Session has been revoked.", ErrorType.Unauthorized);
+
+        var refreshedToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         await fuseStore.UpdateAsync(s => s with
         {
             SecurityContext = s.SecurityContext with
@@ -104,6 +111,14 @@ public class FuseUserSessionService(IFuseStore fuseStore) : IFuseUserSessionServ
 
         if (session.ExpiresAt <= DateTime.UtcNow)
             return Result<Guid>.Failure("Session has expired.", ErrorType.Unauthorized);
+
+        var user = snapshot.SecurityContext.Users.FirstOrDefault(u => u.Id == session.UserId);
+        if (user is null || user.IsDisabled || user.SessionVersion != session.Version)
+            return Result<Guid>.Failure("Session has been revoked.", ErrorType.Unauthorized);
+        var entra = snapshot.SecurityContext.Entra;
+        if (session.IsEntra && (!entra.Enabled || entra.Version != session.EntraConfigurationVersion
+            || user.EntraTenantId != entra.TenantId))
+            return Result<Guid>.Failure("Entra sign-in must be refreshed.", ErrorType.Unauthorized);
 
         return Result<Guid>.Success(session.UserId);
     }

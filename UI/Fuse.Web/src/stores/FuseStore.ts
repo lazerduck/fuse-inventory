@@ -155,6 +155,28 @@ export const useFuseStore = defineStore("fuse", {
       await this.fetchStatus();
     },
     async initializeAuth() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("entra") === "complete") {
+        try {
+          const antiforgery = await fuseClient().entraAntiforgery();
+          const session = await fuseClient().entraExchange(antiforgery.requestToken!);
+          if (!session.token || !session.expiresAt) {
+            throw new Error("Microsoft sign-in did not return a session.");
+          }
+          setToken(session.token, session.expiresAt);
+        } catch {
+          this.invalidateAuth();
+          window.dispatchEvent(new CustomEvent("fuse-entra-error"));
+        } finally {
+          url.searchParams.delete("entra");
+          window.history.replaceState({}, "", url);
+        }
+      }
+      if (url.searchParams.has("entraError")) {
+        url.searchParams.delete("entraError");
+        window.history.replaceState({}, "", url);
+        window.dispatchEvent(new CustomEvent("fuse-entra-error"));
+      }
       // Try to restore session from stored token
       const token = getToken();
       if (token) {

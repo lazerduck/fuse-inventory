@@ -11,4 +11,7 @@ public record RoleInfo(
     IReadOnlyList<string> Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt
-);
+)
+{
+    public IReadOnlyList<EntraGroupMapping> EntraGroups { get; init; } = [];
+}
