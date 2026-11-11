@@ -23,6 +23,7 @@ public static class EntraAuthentication
     public static void Register(IServiceCollection services)
     {
         services.AddSingleton<EntraFlowTickets>();
+        services.AddAntiforgery(options => options.HeaderName = "X-Fuse-Entra");
         services.AddSingleton<IEntraSecretProtector, EntraSecretProtector>();
         var dataDirectory = Environment.GetEnvironmentVariable("FUSE_DATA_DIR") ?? Path.Combine(AppContext.BaseDirectory, "data");
         services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(dataDirectory, "protection-keys")))

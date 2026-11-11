@@ -50,7 +50,7 @@ it('invalidates shared authentication when an Entra request returns 401', async 
   }
 })
 
-it('adds the required same-origin proof header when exchanging the generated handoff request', async () => {
+it('sends the antiforgery token through the generated handoff request', async () => {
   const fetch = vi
     .fn()
     .mockResolvedValue(
@@ -59,11 +59,11 @@ it('adds the required same-origin proof header when exchanging the generated han
   vi.stubGlobal('fetch', fetch)
   const { useFuseClient } = await import('../src/composables/useFuseClient')
 
-  const session = await useFuseClient().entraExchange()
+  const session = await useFuseClient().entraExchange('test-antiforgery-token')
 
   const [url, options] = fetch.mock.calls[0]!
   expect(url).toBe('https://fuse-api.example.test/auth/entra/exchange')
-  expect(new Headers(options.headers).get('X-Fuse-Entra')).toBe('1')
+  expect(new Headers(options.headers).get('X-Fuse-Entra')).toBe('test-antiforgery-token')
   expect(session.token).toBe('session')
   expect(session.expiresAt).toBeInstanceOf(Date)
 })

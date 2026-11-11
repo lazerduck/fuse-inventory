@@ -158,7 +158,8 @@ export const useFuseStore = defineStore("fuse", {
       const url = new URL(window.location.href);
       if (url.searchParams.get("entra") === "complete") {
         try {
-          const session = await fuseClient().entraExchange();
+          const antiforgery = await fuseClient().entraAntiforgery();
+          const session = await fuseClient().entraExchange(antiforgery.requestToken!);
           if (!session.token || !session.expiresAt) {
             throw new Error("Microsoft sign-in did not return a session.");
           }

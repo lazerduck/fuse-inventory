@@ -44,7 +44,7 @@ User-account lists show the most recently verified group membership and verifica
 ## Operation and limits
 
 - The backend uses the standard ASP.NET Core OpenID Connect handler with authorization code, PKCE, state, nonce, and issuer/audience/signature/lifetime validation. Only the configured tenant is accepted.
-- Fuse exchanges a short-lived, single-use HttpOnly cookie for its own session token. Microsoft tokens and Fuse session tokens are not placed in redirect URLs. Fuse's existing browser session storage mechanism remains in use.
+- Fuse exchanges a short-lived, single-use HttpOnly cookie for its own session token. The exchange also requires an ASP.NET Core antiforgery token paired with the browser's antiforgery cookie. Microsoft tokens and Fuse session tokens are not placed in redirect URLs. Fuse's existing browser session storage mechanism remains in use.
 - The client secret is protected with ASP.NET Data Protection. Persist and restrict access to the entire `FUSE_DATA_DIR`, including `protection-keys`; back it up together with the configuration. The colocated keys do not protect against someone who can read the whole data directory. After losing the keys, re-enter the client secret.
 - Login/link handoff tickets are held in process memory. Restarting during sign-in requires retrying. Multiple replicas need shared ticket storage or session affinity, as well as shared Data Protection keys; the current implementation targets Fuse's single-instance deployment.
 - Entra omits group lists beyond its token group limit (200 for JWT). Fuse rejects group-overage sign-ins rather than retaining stale permissions or silently dropping groups. Directory resolution through Graph is not implemented. See [Microsoft's group-claim configuration and limits](https://learn.microsoft.com/en-us/entra/identity/hybrid/connect/how-to-connect-fed-group-claims).
@@ -77,7 +77,7 @@ Live checks confirmed:
 
 Account-linking collision/proof checks, group-overage handling, persistence/reload, settings validation, API-key blocking and the OIDC event lifecycle are also covered by automated tests. The live exercise did not simulate an overage-sized directory or migrate an existing local account.
 
-The refactor was rechecked against the same real tenant: the settings form saved through the generated client and Core settings service, Microsoft sign-in obtained inherited permissions, adding/removing a direct grant preserved the inherited source, and session revocation rejected the old token. A fresh Microsoft sign-in restored inherited-only access. Automated regressions additionally cover the configured API base URL, shared 401 handling, typed validation messages, and the custom handoff header.
+The refactor was rechecked against the same real tenant: the settings form saved through the generated client and Core settings service, Microsoft sign-in obtained inherited permissions, adding/removing a direct grant preserved the inherited source, and session revocation rejected the old token. A fresh Microsoft sign-in restored inherited-only access. Automated regressions additionally cover the configured API base URL, shared 401 handling, typed validation messages, and the handoff's antiforgery token validation.
 
 ## Maintaining the API clients
 

@@ -9,6 +9,7 @@ using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Antiforgery;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ public class EntraController(
     EntraFlowTickets tickets,
     IFuseUserService users,
     IFuseUserSessionService sessions,
+    IAntiforgery antiforgery,
     IEntraIdentityService identities) : ControllerBase
 {
     [HttpGet("api/entra/status")]
@@ -104,17 +106,32 @@ public class EntraController(
         return Ok(new EntraLinkInfo("/auth/entra/login"));
     }
 
+    [HttpGet("auth/entra/antiforgery")]
+    [AllowWithoutPermission]
+    [SwaggerOperation(OperationId = "entraAntiforgery")]
+    [ProducesResponseType(200, Type = typeof(EntraAntiforgeryInfo))]
+    public ActionResult<EntraAntiforgeryInfo> Antiforgery()
+    {
+        var tokens = antiforgery.GetAndStoreTokens(HttpContext);
+        return Ok(new EntraAntiforgeryInfo(tokens.RequestToken!));
+    }
+
     [HttpPost("auth/entra/exchange")]
     [AllowWithoutPermission]
     [SwaggerOperation(OperationId = "entraExchange")]
     [ProducesResponseType(200, Type = typeof(LoginSession))]
     [ProducesResponseType(400, Type = typeof(EntraErrorInfo))]
     [ProducesResponseType(401, Type = typeof(EntraErrorInfo))]
-    public async Task<ActionResult<LoginSession>> Exchange()
+    public async Task<ActionResult<LoginSession>> Exchange([FromHeader(Name = "X-Fuse-Entra")] string requestToken)
     {
-        // Same-origin custom header prevents a cross-site form from consuming the handoff.
-        if (Request.Headers["X-Fuse-Entra"] != "1")
-            return BadRequest();
+        try
+        {
+            await antiforgery.ValidateRequestAsync(HttpContext);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            return BadRequest(new EntraErrorInfo("Invalid sign-in antiforgery token. Please retry Microsoft sign-in."));
+        }
         var ticket = tickets.Take(Request.Cookies[EntraAuthentication.HandoffCookie]);
         Response.Cookies.Delete(EntraAuthentication.HandoffCookie);
         if (ticket?.SessionToken is not { } token)

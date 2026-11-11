@@ -521,7 +521,16 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  entraExchange(signal?: AbortSignal): Promise<LoginSession>;
+  entraAntiforgery(signal?: AbortSignal): Promise<EntraAntiforgeryInfo>;
+
+  /**
+   * @param x_Fuse_Entra (optional)
+   * @return OK
+   */
+  entraExchange(
+    x_Fuse_Entra: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<LoginSession>;
 
   /**
    * @return No Content
@@ -6441,7 +6450,62 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  entraExchange(signal?: AbortSignal): Promise<LoginSession> {
+  entraAntiforgery(signal?: AbortSignal): Promise<EntraAntiforgeryInfo> {
+    let url_ = this.baseUrl + "/auth/entra/antiforgery";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processEntraAntiforgery(_response);
+    });
+  }
+
+  protected processEntraAntiforgery(
+    response: Response,
+  ): Promise<EntraAntiforgeryInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = EntraAntiforgeryInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<EntraAntiforgeryInfo>(null as any);
+  }
+
+  /**
+   * @param x_Fuse_Entra (optional)
+   * @return OK
+   */
+  entraExchange(
+    x_Fuse_Entra: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<LoginSession> {
     let url_ = this.baseUrl + "/auth/entra/exchange";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -6449,6 +6513,10 @@ export class FuseApiClient implements IFuseApiClient {
       method: "POST",
       signal,
       headers: {
+        "X-Fuse-Entra":
+          x_Fuse_Entra !== undefined && x_Fuse_Entra !== null
+            ? "" + x_Fuse_Entra
+            : "",
         Accept: "application/json",
       },
     };
@@ -22431,6 +22499,42 @@ export enum EntityType {
   PasswordGeneratorConfig = "PasswordGeneratorConfig",
 }
 
+export class EntraAntiforgeryInfo implements IEntraAntiforgeryInfo {
+  requestToken?: string | undefined;
+
+  constructor(data?: IEntraAntiforgeryInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.requestToken = _data["requestToken"];
+    }
+  }
+
+  static fromJS(data: any): EntraAntiforgeryInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new EntraAntiforgeryInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["requestToken"] = this.requestToken;
+    return data;
+  }
+}
+
+export interface IEntraAntiforgeryInfo {
+  requestToken?: string | undefined;
+}
+
 export class EntraErrorInfo implements IEntraErrorInfo {
   error?: string | undefined;
 
@@ -29185,6 +29289,5 @@ function throwException(
   headers: { [key: string]: any },
   result?: any,
 ): any {
-  if (result !== null && result !== undefined) throw result;
-  else throw new ApiException(message, status, response, headers, null);
+  throw new ApiException(message, status, response, headers, result);
 }

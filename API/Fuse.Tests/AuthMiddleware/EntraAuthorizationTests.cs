@@ -4,6 +4,9 @@ using System.Text.Json;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
+using Fuse.Core.Responses;
+using Fuse.API.Entra;
+using Fuse.Core.Areas.Security.Entra;
 using Fuse.Tests.TestInfrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -183,13 +186,86 @@ public class EntraAuthorizationTests(ApiIntegrationFixture fixture) : IAsyncLife
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/tag")).StatusCode);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("1")]
+    public async Task MissingOrForgedAntiforgeryTokenDoesNotConsumeHandoff(string? requestToken)
+    {
+        var session = await SignInMappedUser();
+        using var client = fixture.CreateUnauthenticatedHttpClient();
+        AddHandoffCookie(client, session.Token);
+        if (requestToken is not null)
+            client.DefaultRequestHeaders.Add("X-Fuse-Entra", requestToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+
+        await AddAntiforgeryToken(client);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+    }
+
     [Fact]
-    public async Task HandoffRequiresBothCustomHeaderAndSingleUseTicket()
+    public async Task AntiforgeryTokenMustMatchTheBrowserCookie()
+    {
+        var session = await SignInMappedUser();
+        using var client = fixture.CreateUnauthenticatedHttpClient();
+        using var otherClient = fixture.CreateUnauthenticatedHttpClient();
+        AddHandoffCookie(client, session.Token);
+        await AddAntiforgeryToken(client);
+        var otherToken = await otherClient.GetFromJsonAsync<EntraAntiforgeryInfo>("/auth/entra/antiforgery");
+        client.DefaultRequestHeaders.Remove("X-Fuse-Entra");
+        client.DefaultRequestHeaders.Add("X-Fuse-Entra", otherToken!.RequestToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+
+        await AddAntiforgeryToken(client);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task AntiforgeryTokenAloneDoesNotAuthorizeAnExchange()
     {
         using var client = fixture.CreateUnauthenticatedHttpClient();
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
-        client.DefaultRequestHeaders.Add("X-Fuse-Entra", "1");
+        await AddAntiforgeryToken(client);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandoffRequiresAValidSessionAndCanOnlyBeExchangedOnce(bool revoked)
+    {
+        var session = await SignInMappedUser();
+        using var client = fixture.CreateUnauthenticatedHttpClient();
+        AddHandoffCookie(client, session.Token);
+        await AddAntiforgeryToken(client);
+        if (revoked)
+            await _identities.Revoke(session.UserId);
+
+        var response = await client.PostAsync("/auth/entra/exchange", null);
+        Assert.Equal(revoked ? HttpStatusCode.Unauthorized : HttpStatusCode.OK, response.StatusCode);
+        if (!revoked)
+        {
+            var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(session.Token, result.GetProperty("token").GetString());
+            Assert.True(response.Headers.CacheControl!.NoStore);
+        }
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/auth/entra/exchange", null)).StatusCode);
+    }
+
+    private void AddHandoffCookie(HttpClient client, string sessionToken)
+    {
+        var tickets = _scope.ServiceProvider.GetRequiredService<EntraFlowTickets>();
+        var ticket = tickets.Issue(new EntraFlowTicket(sessionToken, null, null));
+        client.DefaultRequestHeaders.Add("Cookie", $"{EntraAuthentication.HandoffCookie}={ticket}");
+    }
+
+    private static async Task AddAntiforgeryToken(HttpClient client)
+    {
+        var response = await client.GetAsync("/auth/entra/antiforgery");
+        Assert.True(response.Headers.CacheControl!.NoStore);
+        var token = await response.Content.ReadFromJsonAsync<EntraAntiforgeryInfo>();
+        client.DefaultRequestHeaders.Remove("X-Fuse-Entra");
+        client.DefaultRequestHeaders.Add("X-Fuse-Entra", token!.RequestToken);
     }
 
     [Fact]

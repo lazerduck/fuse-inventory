@@ -9,6 +9,7 @@ import { SecurityStateResponse, CreateRole, LoginSession, RoleMembership } from 
 const api = vi.hoisted(() => ({
   state: vi.fn(),
   getAppSettings: vi.fn(),
+  entraAntiforgery: vi.fn(),
   entraExchange: vi.fn()
 }))
 vi.mock('../src/composables/useFuseClient', () => ({
@@ -22,6 +23,7 @@ beforeEach(() => {
   localStorage.clear()
   window.history.replaceState({}, '', '/')
   api.getAppSettings.mockResolvedValue(null)
+  api.entraAntiforgery.mockResolvedValue({ requestToken: 'test-antiforgery-token' })
 })
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -90,6 +92,7 @@ it('exchanges an HttpOnly sign-in handoff and loads effective permissions', asyn
   const store = useFuseStore(createPinia())
   await store.initializeAuth()
   expect(api.entraExchange).toHaveBeenCalledOnce()
+  expect(api.entraExchange).toHaveBeenCalledWith('test-antiforgery-token')
   expect(store.sessionToken).toBe('entra-session')
   expect(store.hasPermission('tags:create')).toBe(true)
   expect(window.location.search).toBe('')

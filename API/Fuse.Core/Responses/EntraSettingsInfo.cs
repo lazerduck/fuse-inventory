@@ -12,4 +12,6 @@ public record EntraStatusInfo(bool Enabled);
 
 public record EntraLinkInfo(string Url);
 
+public record EntraAntiforgeryInfo(string RequestToken);
+
 public record EntraErrorInfo(string? Error);
