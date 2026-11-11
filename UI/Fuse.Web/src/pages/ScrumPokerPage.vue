@@ -152,11 +152,11 @@
 
     <template v-else>
       <q-banner
-        v-if="errorMessage"
+        v-if="errorMessage || connectionError"
         rounded
         dense
         class="banner-error q-mb-lg"
-        >{{ errorMessage }}</q-banner
+        >{{ errorMessage || connectionError }}</q-banner
       >
 
       <div class="scrum-layout">
@@ -499,7 +499,12 @@ const lockVotesAfterRevealSaving = ref(false);
 const roomName = ref("");
 const errorMessage = ref("");
 const selectedCard = ref<ScrumPokerCard | null>(null);
-let pollTimer: ReturnType<typeof setInterval> | undefined;
+const connectionError = ref("");
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+let pollRequest: AbortController | undefined;
+let polling = false;
+let pollGeneration = 0;
+let pollFailures = 0;
 
 const featureEnabled = computed(
   () => fuseStore.appSettings?.scrumPokerEnabled === true,
@@ -851,50 +856,90 @@ function currentAvatarColor() {
 }
 
 async function refreshRoom() {
-  if (!session.value?.roomCode || !session.value.participantToken) return;
+  const currentSession = session.value;
+  if (
+    !polling ||
+    pollRequest ||
+    !currentSession?.roomCode ||
+    !currentSession.participantToken
+  )
+    return;
+
+  const generation = pollGeneration;
+  const controller = new AbortController();
+  pollRequest = controller;
+  // A connection that stalls without rejecting must also be able to recover.
+  const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
     const result = await client.scrumPokerState(
-      session.value.roomCode,
-      session.value.participantToken,
+      currentSession.roomCode,
+      currentSession.participantToken,
+      controller.signal,
     );
+    if (generation !== pollGeneration) return;
     room.value = result;
     const me = result.participants?.find(
       (p) => p.id === currentParticipantId.value,
     );
     selectedCard.value = me?.card ?? null;
+    pollFailures = 0;
+    connectionError.value = "";
   } catch (error) {
+    if (generation !== pollGeneration) return;
     if (isInvalidSessionError(error)) {
       try {
         const result = await client.scrumPokerRoomsEnter(
-          session.value.roomCode!,
+          currentSession.roomCode,
           {
             displayName: participantName.value || displayName.value.trim(),
-            participantToken: session.value.participantToken,
+            participantToken: currentSession.participantToken,
           } as any,
+          controller.signal,
         );
+        if (generation !== pollGeneration) return;
         session.value = result;
         room.value = result.room ?? null;
-        startPolling();
+        selectedCard.value = currentCard();
+        pollFailures = 0;
+        connectionError.value = "";
         return;
-      } catch {
-        // Clear the local session when the token can no longer rejoin the room.
+      } catch (rejoinError) {
+        if (generation !== pollGeneration) return;
+        if (isTransientConnectionError(rejoinError)) {
+          markConnectionInterrupted();
+          return;
+        }
+        // Clear the local session only when rejoining definitively fails.
       }
-      const roomCode = session.value.roomCode!;
       stopPolling();
-      sessionStorage.removeItem(storageKey(roomCode));
+      sessionStorage.removeItem(storageKey(currentSession.roomCode));
       session.value = null;
       room.value = null;
       selectedCard.value = null;
-      joinCode.value = roomCode;
+      joinCode.value = currentSession.roomCode;
       errorMessage.value = "";
       return;
     }
 
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : "The room is no longer available.";
+    if (isTransientConnectionError(error)) {
+      markConnectionInterrupted();
+      return;
+    }
+    errorMessage.value = sessionActionError(
+      error,
+      "The room is no longer available.",
+    );
     stopPolling();
+  } finally {
+    clearTimeout(timeout);
+    if (generation === pollGeneration) {
+      pollRequest = undefined;
+      if (polling) {
+        // Schedule after completion so slow requests cannot accumulate.
+        const delay = Math.min(1000 * 2 ** Math.min(pollFailures, 4), 10_000);
+        pollTimer = setTimeout(() => void refreshRoom(), delay);
+      }
+    }
   }
 }
 
@@ -904,16 +949,42 @@ function isInvalidSessionError(error: unknown) {
   return status === 401 || status === 404;
 }
 
+function isTransientConnectionError(error: unknown) {
+  const status = (error as { status?: number } | null)?.status;
+  return (
+    status === undefined ||
+    status === 0 ||
+    status === 408 ||
+    status === 429 ||
+    status >= 500
+  );
+}
+
+function markConnectionInterrupted() {
+  pollFailures++;
+  connectionError.value = "Connection interrupted. Reconnecting automatically…";
+}
+
 function startPolling() {
   stopPolling();
+  polling = true;
+  pollFailures = 0;
   void refreshRoom();
-  pollTimer = setInterval(() => void refreshRoom(), 1000);
 }
 function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = undefined;
-  }
+  polling = false;
+  pollGeneration++;
+  clearTimeout(pollTimer);
+  pollTimer = undefined;
+  pollRequest?.abort();
+  pollRequest = undefined;
+  connectionError.value = "";
+}
+function resumePolling() {
+  if (!polling || pollRequest || document.visibilityState === "hidden") return;
+  clearTimeout(pollTimer);
+  pollFailures = 0;
+  void refreshRoom();
 }
 
 async function selectCard(card: ScrumPokerCard | null) {
@@ -1193,6 +1264,9 @@ async function loadStoredSession() {
 
 onMounted(async () => {
   window.addEventListener("pagehide", leaveRoomOnPageHide);
+  window.addEventListener("online", resumePolling);
+  window.addEventListener("focus", resumePolling);
+  document.addEventListener("visibilitychange", resumePolling);
   clearLegacyParticipantIdentityStorage();
   await fuseStore.fetchStatus();
   await loadStoredSession();
@@ -1224,6 +1298,9 @@ watch(
 );
 onBeforeUnmount(() => {
   window.removeEventListener("pagehide", leaveRoomOnPageHide);
+  window.removeEventListener("online", resumePolling);
+  window.removeEventListener("focus", resumePolling);
+  document.removeEventListener("visibilitychange", resumePolling);
   stopPolling();
 });
 </script>
