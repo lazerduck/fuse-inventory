@@ -61,7 +61,56 @@ public class AccountServiceTests
     {
         sqlInspector ??= Mock.Of<IAccountSqlInspector>();
         sqlCache ??= Mock.Of<ISqlPermissionsCache>();
-        return new AccountService(store, new TagLookupService(store), sqlInspector);
+        return new AccountService(store, new TagLookupService(store), sqlInspector, new FakeAuditService(), Mock.Of<ICurrentUser>());
+    }
+
+    [Fact]
+    public async Task ConcurrentNamedCreates_ConflictAndAuditOnlyTheWinner()
+    {
+        var target = new ExternalResource(Guid.NewGuid(), "Service", null, null, [], DateTime.UtcNow, DateTime.UtcNow);
+        var store = NewStore(res: [target]);
+        var audit = new FakeAuditService();
+        var actorId = Guid.NewGuid();
+        var actor = Mock.Of<ICurrentUser>(u => u.UserName == "automation-key" && u.UserId == actorId);
+        var service = new AccountService(store, new TagLookupService(store), Mock.Of<IAccountSqlInspector>(), audit, actor);
+        var command = new CreateAccount(target.Id, TargetKind.External, AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.PlainReference, "sensitive-reference", null), "test_acc_1",
+            new Dictionary<string, string> { ["private"] = "do-not-log" }, []);
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(() => service.CreateAccountAsync(command))));
+
+        var account = Assert.Single((await store.GetAsync()).Accounts);
+        Assert.Single(results, r => r.IsSuccess);
+        Assert.All(results.Where(r => !r.IsSuccess), r =>
+        {
+            Assert.Equal(ErrorType.Conflict, r.ErrorType);
+            Assert.Contains(account.Id.ToString(), r.Error);
+        });
+        var entry = Assert.Single(audit.Logs);
+        Assert.Equal((AuditAction.AccountCreated, "automation-key", actorId), (entry.Action, entry.UserName, entry.UserId));
+        Assert.DoesNotContain("sensitive-reference", entry.ChangeDetails);
+        Assert.DoesNotContain("do-not-log", entry.ChangeDetails);
+    }
+
+    [Fact]
+    public async Task DuplicateChecks_AllowOtherTargetsAndUnnamedCredentials_ButRejectRenameCollisions()
+    {
+        var target = new ExternalResource(Guid.NewGuid(), "Service", null, null, [], DateTime.UtcNow, DateTime.UtcNow);
+        var other = target with { Id = Guid.NewGuid() };
+        var store = NewStore(res: [target, other]);
+        var service = CreateService(store);
+        var command = new CreateAccount(target.Id, TargetKind.External, AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.None, null, null), "alice", null, []);
+        Assert.True((await service.CreateAccountAsync(command)).IsSuccess);
+        Assert.True((await service.CreateAccountAsync(command with { TargetId = other.Id })).IsSuccess);
+        var bob = (await service.CreateAccountAsync(command with { UserName = "bob" })).Value!;
+        var renamed = await service.UpdateAccountAsync(new(bob.Id, bob.TargetId, bob.TargetKind, bob.AuthKind,
+            bob.SecretBinding, "alice", null, []));
+        Assert.Equal(ErrorType.Conflict, renamed.ErrorType);
+        Assert.Equal("bob", (await service.GetAccountByIdAsync(bob.Id))!.UserName);
+        var unnamed = command with { AuthKind = AuthKind.ApiKey, UserName = null };
+        Assert.True((await service.CreateAccountAsync(unnamed)).IsSuccess);
+        Assert.True((await service.CreateAccountAsync(unnamed)).IsSuccess);
     }
 
     [Fact]

@@ -137,6 +137,44 @@ public class AzureKeyVaultClientTests
         CreatedAt: DateTime.UtcNow,
         UpdatedAt: DateTime.UtcNow);
 
+    [Theory]
+    [InlineData("existing")]
+    [InlineData("EXISTING")]
+    public async Task CreateSecret_RejectsExistingNameWithoutAddingAVersion(string name)
+    {
+        var sf = new FakeSecretClientFactory();
+        await sf.Instance.SetSecretAsync("existing", "original");
+        var version = sf.Instance.GetLatestVersion("existing");
+        var client = new AzureKeyVaultClient(new FakeCredentialFactory(), sf);
+        var result = await client.CreateSecretAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity, SecretProviderCapabilities.Create), name, "replacement");
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal(version, sf.Instance.GetLatestVersion("existing"));
+        Assert.Equal("original", (await sf.Instance.GetSecretAsync("existing")).Value.Value);
+    }
+
+    [Fact]
+    public async Task CreateSecret_FailedMetadataCheckDoesNotWrite()
+    {
+        var sf = new FakeSecretClientFactory();
+        sf.Instance.ThrowList = true;
+        var client = new AzureKeyVaultClient(new FakeCredentialFactory(), sf);
+        var result = await client.CreateSecretAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity, SecretProviderCapabilities.Create), "new", "value");
+        Assert.False(result.IsSuccess);
+        Assert.Null(sf.Instance.GetLatestVersion("new"));
+    }
+
+    [Fact]
+    public async Task ConcurrentCreates_AcrossClientInstancesAndProviderAliases_WriteOnlyOnce()
+    {
+        var sf = new FakeSecretClientFactory();
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(i => Task.Run(() =>
+            new AzureKeyVaultClient(new FakeCredentialFactory(), sf).CreateSecretAsync(
+                NewProvider(SecretProviderAuthMode.ManagedIdentity, SecretProviderCapabilities.Create), "same-name", $"value-{i}"))));
+        Assert.Single(results, r => r.IsSuccess);
+        Assert.All(results.Where(r => !r.IsSuccess), r => Assert.Equal(ErrorType.Conflict, r.ErrorType));
+        Assert.Equal(sf.Instance.GetFirstVersion("same-name"), sf.Instance.GetLatestVersion("same-name"));
+    }
+
     [Fact]
     public async Task TestConnection_Success()
     {

@@ -4,6 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Fuse.Core.Areas.Tag;
+using Fuse.Core.Areas.Audit;
 
 namespace Fuse.Core.Areas.Account;
 
@@ -12,12 +13,17 @@ public class AccountService : IAccountService
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
     private readonly IAccountSqlInspector _sqlInspector;
+    private readonly IAuditService _auditService;
+    private readonly ICurrentUser _currentUser;
 
-    public AccountService(IFuseStore fuseStore, ITagService tagService, IAccountSqlInspector sqlInspector)
+    public AccountService(IFuseStore fuseStore, ITagService tagService, IAccountSqlInspector sqlInspector,
+        IAuditService auditService, ICurrentUser currentUser)
     {
         _fuseStore = fuseStore;
         _tagService = tagService;
         _sqlInspector = sqlInspector;
+        _auditService = auditService;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<Models.Account>> GetAccountsAsync()
@@ -54,7 +60,17 @@ public class AccountService : IAccountService
             UpdatedAt: now
         );
 
-        await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Append(account).ToList() });
+        Models.Account? duplicate = null;
+        await _fuseStore.UpdateAsync(s =>
+        {
+            // Check inside the store's write lock so concurrent retries cannot both insert.
+            duplicate = FindDuplicate(s, account.TargetId, account.TargetKind, account.AuthKind, account.UserName);
+            return duplicate is null ? s with { Accounts = s.Accounts.Append(account).ToList() } : s;
+        });
+        if (duplicate is not null)
+            return DuplicateAccount(duplicate);
+
+        await AuditAccountAsync(AuditAction.AccountCreated, account);
         return Result<Models.Account>.Success(account);
     }
 
@@ -76,9 +92,18 @@ public class AccountService : IAccountService
         var normalizedGrants = grantValidation.Value!;
 
         var updated = existing;
+        Models.Account? duplicate = null;
 
         await _fuseStore.UpdateAsync(s =>
         {
+            // Preserve edits to legacy duplicates unless the account's identity changes.
+            var current = s.Accounts.FirstOrDefault(a => a.Id == command.Id);
+            if (current is not null && (current.TargetId != command.TargetId || current.TargetKind != command.TargetKind
+                || current.AuthKind != command.AuthKind || current.UserName != command.UserName))
+            {
+                duplicate = FindDuplicate(s, command.TargetId, command.TargetKind, command.AuthKind, command.UserName, command.Id);
+                if (duplicate is not null) return s;
+            }
             var targetChanged = false;
             var updatedAccounts = s.Accounts.Select(x =>
             {
@@ -139,13 +164,16 @@ public class AccountService : IAccountService
 
             return s with { Accounts = updatedAccounts };
         });
+        if (duplicate is not null) return DuplicateAccount(duplicate);
+        await AuditAccountAsync(AuditAction.AccountUpdated, updated);
         return Result<Models.Account>.Success(updated);
     }
 
     public async Task<Result> DeleteAccountAsync(DeleteAccount command)
     {
         var store = await _fuseStore.GetAsync();
-        if (!store.Accounts.Any(a => a.Id == command.Id))
+        var existing = store.Accounts.FirstOrDefault(a => a.Id == command.Id);
+        if (existing is null)
             return Result.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
         await _fuseStore.UpdateAsync(s =>
@@ -192,8 +220,23 @@ public class AccountService : IAccountService
             };
         });
 
+        await AuditAccountAsync(AuditAction.AccountDeleted, existing);
         return Result.Success();
     }
+
+    private static Models.Account? FindDuplicate(Snapshot snapshot, Guid targetId, TargetKind targetKind,
+        AuthKind authKind, string? userName, Guid? excludeId = null) =>
+        string.IsNullOrWhiteSpace(userName) ? null : snapshot.Accounts.FirstOrDefault(a =>
+            a.Id != excludeId && a.TargetId == targetId && a.TargetKind == targetKind && a.AuthKind == authKind
+            && string.Equals(a.UserName, userName, StringComparison.Ordinal));
+
+    private static Result<Models.Account> DuplicateAccount(Models.Account existing) =>
+        Result<Models.Account>.Failure($"An account with this target, authentication kind and username already exists (account ID '{existing.Id}'). Read or edit that account instead.", ErrorType.Conflict);
+
+    private Task AuditAccountAsync(AuditAction action, Models.Account account) =>
+        _auditService.LogAsync(AuditHelper.CreateLog(action, AuditArea.Account,
+            _currentUser.UserName, _currentUser.UserId, account.Id,
+            new { account.TargetId, account.TargetKind, account.AuthKind, account.UserName }));
 
     private async Task<Result<Models.Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
     {
@@ -712,7 +755,7 @@ public class AccountService : IAccountService
         var created = new List<Models.Account>();
         var now = DateTime.UtcNow;
 
-        foreach (var targetId in command.TargetIds)
+        foreach (var targetId in command.TargetIds.Distinct())
         {
             var targetExists = source.TargetKind switch
             {
@@ -736,7 +779,17 @@ public class AccountService : IAccountService
             created.Add(cloned);
         }
 
-        await _fuseStore.UpdateAsync(s => s with { Accounts = s.Accounts.Concat(created).ToList() });
+        Models.Account? duplicate = null;
+        await _fuseStore.UpdateAsync(s =>
+        {
+            duplicate = created.Select(a => FindDuplicate(s, a.TargetId, a.TargetKind, a.AuthKind, a.UserName))
+                .FirstOrDefault(a => a is not null);
+            return duplicate is null ? s with { Accounts = s.Accounts.Concat(created).ToList() } : s;
+        });
+        if (duplicate is not null)
+            return Result<IReadOnlyList<Models.Account>>.Failure(DuplicateAccount(duplicate).Error!, ErrorType.Conflict);
+        foreach (var account in created)
+            await AuditAccountAsync(AuditAction.AccountCreated, account);
         return Result<IReadOnlyList<Models.Account>>.Success(created);
     }
 }

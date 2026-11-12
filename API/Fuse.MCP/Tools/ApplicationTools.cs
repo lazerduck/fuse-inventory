@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel;
 using Fuse.Core.Areas.Application;
 using Fuse.Core.Areas.Environment;
@@ -21,6 +22,7 @@ public sealed class ApplicationTools(
     McpToolAuthorization authorization)
 {
     [McpServerTool(Name = "inventory_list_applications", ReadOnly = true)]
+    [Authorize(Policy = ApplicationPermissions.ReadKey)]
     [Description("List safe application and instance summaries in the Fuse inventory.")]
     public async Task<object> ListApplications(
         Guid? applicationId = null, string? query = null, string? name = null,
@@ -53,6 +55,7 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_get_application", ReadOnly = true)]
+    [Authorize(Policy = ApplicationPermissions.ReadKey)]
     [Description("Get one application and its instances without secret values.")]
     public async Task<object> GetApplication(Guid applicationId, CancellationToken cancellationToken = default)
     {
@@ -62,6 +65,7 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_review_completeness", ReadOnly = true)]
+    [Authorize(Policy = ApplicationPermissions.ReadKey)]
     [Description("Review missing application and instance documentation fields.")]
     public async Task<object> ReviewCompleteness(Guid? applicationId = null, CancellationToken cancellationToken = default)
     {
@@ -73,6 +77,10 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_list_reference_data", ReadOnly = true)]
+    [Authorize(Policy = ApplicationPermissions.ReadKey)]
+    [Authorize(Policy = EnvironmentPermissions.ReadKey)]
+    [Authorize(Policy = PlatformPermissions.ReadKey)]
+    [Authorize(Policy = TagPermissions.ReadKey)]
     [Description("List environments, platforms, and tags that may be referenced by inventory updates.")]
     public async Task<object> ListReferenceData(CancellationToken cancellationToken = default)
     {
@@ -89,6 +97,7 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_patch_application", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateKey)]
     [Description("Patch documented application fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateApplicationDocumentation(
         Guid applicationId, DateTime expectedUpdatedAt,
@@ -119,6 +128,7 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_patch_application_instance", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
     [Description("Patch documented instance fields. The expected timestamp prevents overwriting concurrent changes.")]
     public async Task<object> UpdateInstanceDocumentation(
         Guid applicationId, Guid instanceId, DateTime expectedUpdatedAt,
@@ -149,6 +159,8 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_create_application", Destructive = false)]
+    [Authorize(Policy = ApplicationPermissions.CreateKey)]
+    [Description("Create the application inventory record. This documents inventory; it does not provision an external resource.")]
     public async Task<object> CreateApplication(string name, string? version = null, string? description = null,
         string? owner = null, string? notes = null, string? framework = null, string? repositoryUri = null,
         string? icon = null, IReadOnlyList<Guid>? tagIds = null, CancellationToken ct = default)
@@ -159,6 +171,7 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_replace_application", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateKey)]
     [Description("Replace an application's complete definition, including its name. Read it first to preserve unchanged fields.")]
     public async Task<object> ReplaceApplication(Guid applicationId, string name, string? version = null,
         string? description = null, string? owner = null, string? notes = null, string? framework = null,
@@ -170,10 +183,14 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_delete_application", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.DeleteKey)]
+    [Description("Delete the application inventory record. This may remove related inventory references.")]
     public async Task<object> DeleteApplication(Guid applicationId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteKey, ct); return McpResult.Done(await applications.DeleteApplicationAsync(new(applicationId))); }
 
     [McpServerTool(Name = "inventory_create_application_instance", Destructive = false)]
+    [Authorize(Policy = ApplicationPermissions.CreateInstanceKey)]
+    [Description("Create the application instance inventory record. This documents inventory; it does not provision an external resource.")]
     public async Task<object> CreateInstance(Guid applicationId, Guid environmentId, Guid? platformId = null,
         string? baseUri = null, string? healthUri = null, string? openApiUri = null, string? version = null,
         IReadOnlyList<Guid>? tagIds = null, SecretBindingInput? apiKey = null,
@@ -186,6 +203,8 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_replace_application_instance", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Replace the application instance definition. Read it first and supply every field that should be preserved.")]
     public async Task<object> ReplaceInstance(Guid applicationId, Guid instanceId, Guid environmentId,
         Guid? platformId = null, string? baseUri = null, string? healthUri = null, string? openApiUri = null,
         string? version = null, IReadOnlyList<Guid>? tagIds = null, SecretBindingInput? apiKey = null,
@@ -198,34 +217,48 @@ public sealed class ApplicationTools(
     }
 
     [McpServerTool(Name = "inventory_delete_application_instance", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.DeleteInstanceKey)]
+    [Description("Delete the application instance inventory record. This may remove related inventory references.")]
     public async Task<object> DeleteInstance(Guid applicationId, Guid instanceId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeleteInstanceAsync(new(applicationId, instanceId))); }
 
     [McpServerTool(Name = "inventory_create_application_pipeline", Destructive = false)]
+    [Authorize(Policy = ApplicationPermissions.CreateInstanceKey)]
+    [Description("Create the application pipeline inventory record. This documents inventory; it does not provision an external resource.")]
     public async Task<object> CreatePipeline(Guid applicationId, string name, string? pipelineUri = null, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.CreateInstanceKey, ct); return McpResult.Value(await applications.CreatePipelineAsync(new(applicationId, name, ParseUri(pipelineUri, "pipelineUri")))); }
 
     [McpServerTool(Name = "inventory_replace_application_pipeline", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Replace the application pipeline definition. Read it first and supply every field that should be preserved.")]
     public async Task<object> ReplacePipeline(Guid applicationId, Guid pipelineId, string name, string? pipelineUri = null, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdatePipelineAsync(new(applicationId, pipelineId, name, ParseUri(pipelineUri, "pipelineUri")))); }
 
     [McpServerTool(Name = "inventory_delete_application_pipeline", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.DeleteInstanceKey)]
+    [Description("Delete the application pipeline inventory record. This may remove related inventory references.")]
     public async Task<object> DeletePipeline(Guid applicationId, Guid pipelineId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.DeleteInstanceKey, ct); return McpResult.Done(await applications.DeletePipelineAsync(new(applicationId, pipelineId))); }
 
     [McpServerTool(Name = "inventory_create_application_dependency", Destructive = false)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Create the application dependency inventory record. This documents inventory; it does not provision an external resource.")]
     public async Task<object> CreateDependency(Guid applicationId, Guid instanceId, Guid targetId, TargetKind targetKind,
         DependencyAuthKind authKind, int? port = null, Guid? accountId = null, Guid? identityId = null,
         DependencySeverity severity = DependencySeverity.Full, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.CreateDependencyAsync(new(applicationId, instanceId, targetId, targetKind, port, authKind, accountId, identityId, severity))); }
 
     [McpServerTool(Name = "inventory_replace_application_dependency", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Replace the application dependency definition. Read it first and supply every field that should be preserved.")]
     public async Task<object> ReplaceDependency(Guid applicationId, Guid instanceId, Guid dependencyId, Guid targetId,
         TargetKind targetKind, DependencyAuthKind authKind, int? port = null, Guid? accountId = null,
         Guid? identityId = null, DependencySeverity severity = DependencySeverity.Full, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Value(await applications.UpdateDependencyAsync(new(applicationId, instanceId, dependencyId, targetId, targetKind, port, authKind, accountId, identityId, severity))); }
 
     [McpServerTool(Name = "inventory_delete_application_dependency", Destructive = true)]
+    [Authorize(Policy = ApplicationPermissions.UpdateInstanceKey)]
+    [Description("Delete the application dependency inventory record. This may remove related inventory references.")]
     public async Task<object> DeleteDependency(Guid applicationId, Guid instanceId, Guid dependencyId, CancellationToken ct = default)
     { await authorization.RequireAsync(ApplicationPermissions.UpdateInstanceKey, ct); return McpResult.Done(await applications.DeleteDependencyAsync(new(applicationId, instanceId, dependencyId))); }
 

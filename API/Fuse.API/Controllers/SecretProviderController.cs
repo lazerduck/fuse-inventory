@@ -339,6 +339,7 @@ public class SecretProviderController : ControllerBase
             return result.ErrorType switch
             {
                 ErrorType.NotFound => NotFound(new { error = result.Error }),
+                ErrorType.Conflict => Conflict(new { error = result.Error }),
                 _ => BadRequest(new { error = result.Error })
             };
         }
