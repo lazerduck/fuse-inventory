@@ -21,6 +21,16 @@ namespace Fuse.API.Controllers
             _cache = cache;
         }
 
+        [HttpPost("bulk")]
+        [RequirePermissionKey(AccountPermissions.CreateKey)]
+        public async Task<ActionResult<BulkAccountResponse>> BulkCreate([FromBody] BulkCreateAccounts command)
+            => Ok(await _accountService.BulkCreateAsync(command));
+
+        [HttpPost("bulk-grants")]
+        [RequirePermissionKey(AccountPermissions.UpdateKey)]
+        public async Task<ActionResult<BulkAccountResponse>> BulkGrants([FromBody] BulkAssignGrants command)
+            => Ok(await _accountService.BulkGrantsAsync(command));
+
         [HttpGet]
         [SwaggerOperation(OperationId = "accountAll")]
         [RequirePermissionKey(AccountPermissions.ReadKey)]
