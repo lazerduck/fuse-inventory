@@ -23,6 +23,12 @@ Resolution: the security-state response supplies only the signed-in user’s ass
 - Security copy describing FullyRestricted as “Read account required to read, Admin to edit” predates granular permissions.
 - A completely empty data directory reports readiness 503 until initial data is written. The harness waits for the setup API and verifies readiness after onboarding.
 
+## Browser test synchronization — risk saves
+
+The initial server baseline hit a timing failure while editing risk mitigation: the PUT completed successfully after about 7.6 seconds, but the test had already started a seven-second navigation assertion. The trace and server logs did not establish a persistence defect or the cause of the slower write.
+
+The regression now waits for the exact create/update response and verifies HTTP 201/200 before checking navigation. The seven-second UI assertion budget and overall 30-second test deadline remain unchanged. A second scenario delays the successful save acknowledgement by eight seconds, then verifies navigation, mitigation persistence and the unchanged target/owner references. This fixes the test's synchronization; it does not claim to improve backend write latency.
+
 ## UI-003 — Fixed: Tags pagination is not restored after reload
 
 Create at least 12 tags, filter to that group, move to page 2, then reload. The filter is retained but the table returns to page 1. Expected: page 2 is restored, as the page's persisted-table-state integration intends.
@@ -31,7 +37,7 @@ Before the fix, `TagsPage` supplied `:pagination="pagination"` without handling 
 
 ## Scrum poker reliability assessment — 2026-11-11
 
-Follow-up: SP-001 is fixed in the frontend. The user explicitly deferred changes to the 15-minute timeout behaviour (SP-002). Response ordering (SP-003) is also outside this retry fix. For the retry PR, the SP-002 preservation regression is explicitly skipped with its deferred reason. SP-003 remains an expected-failure browser regression, marked only after setup and delivery of the stale response; unexpected success fails the suite. Both desired-behaviour assertions are retained for follow-up work.
+Follow-up: SP-001 and SP-003 are fixed in the frontend. The user explicitly deferred changes to the 15-minute timeout behaviour (SP-002), so its preservation regression remains skipped with the deferred reason. SP-003 is now a normal browser regression; its desired-behaviour assertions are unchanged.
 
 The application was built from this worktree with its Node 26 production Dockerfile. Browser tests used Node 26.13.0, Playwright 1.64.1 and Chromium against disposable Compose project `fuse-poker-2d45`, loopback port `52145`, and a dedicated named volume. No normal installation or other Compose project was used. Backend tests ran against the actual in-memory store with supplied timestamps, avoiding a real 16-minute wait.
 
@@ -70,13 +76,13 @@ Cause: `SelectCard` updates `Participants`, but `KnownParticipants` still contai
 
 Required fix: preserve the latest participant state when evicting or keep the recovery registry in sync, while continuing to clear saved votes on reset. Regression: `ReturnAfterTimeout_RestoresIdentityAvatarAndLatestVoteInSameRound` in `API/Fuse.Tests/Areas/ScrumPoker/InMemoryScrumPokerStoreTests.cs`. The companion reset test passes and must remain passing.
 
-### SP-003 — Medium: delayed responses overwrite newer room state
+### SP-003 — Fixed: delayed responses overwrite newer room state
 
 Reproduction: hold a real round-1 poll response, reset through the guest UI and verify both participants see round 2, then deliver the held response while subsequent polls remain delayed. The guest returns to round 1 with the previous vote; the host remains on round 2. This is stale client state, not rollback of server data.
 
-Cause: `refreshRoom` assigns every returned snapshot directly, ignoring `revision`. The retry fix prevents overlapping polls, but an older poll can still overwrite a newer mutation response.
+Previous cause: `refreshRoom` assigned every returned snapshot directly, ignoring `revision`. Sequential polling prevented overlapping polls, but an older poll could still overwrite a newer mutation response. Mutation and settings responses could likewise arrive after a newer poll.
 
-Required fix: reject snapshots older than the currently applied revision, ensure responses still belong to the active session, and limit overlapping polling. Regression: `a delayed poll cannot roll back a completed reset` in `Tests/Playwright/tests/scrum-poker-reliability.spec.ts`.
+Resolution: polling, card/round actions and settings updates apply snapshots through the same revision and session guard. A lower revision cannot replace the current room or selected card. Responses and errors from an abandoned session are ignored, while a recreated room with a new participant session starts a fresh revision sequence. Polling remains sequential with the existing retry and timeout behaviour. Mounted component regressions cover delayed polls, mutations, settings, abandoned sessions and automatic room recreation. The browser regression `a delayed poll cannot roll back a completed reset` in `Tests/Playwright/tests/scrum-poker-reliability.spec.ts` no longer has an expected-failure marker.
 
 ### Re-running
 
@@ -84,7 +90,7 @@ Use a free port and the normal disposable-server harness (Node 26):
 
 ```sh
 cd Tests/Playwright
-# Includes the documented SP-003 expected failure:
+# Includes the SP-003 delayed-response regression:
 FUSE_TEST_PORT=52145 npm test -- scrum-poker
 npm run typecheck
 ```
@@ -96,3 +102,5 @@ dotnet test API/Fuse.Tests/Fuse.Tests.csproj --filter FullyQualifiedName~ScrumPo
 ```
 
 When fixing SP-002 or SP-003, remove its skip/expected-failure marker and make its existing assertion pass without weakening it. Browser traces, screenshots and the HTML report are generated under the usual ignored Playwright output directories.
+
+Validation after the synchronization and SP-003 fixes: all 76 Chromium browser tests and all 150 frontend component tests pass. Both TypeScript checks and the production frontend build pass. SP-002 remains the explicitly deferred backend timeout scenario.
