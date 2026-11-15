@@ -18,18 +18,21 @@
       >
         <template #body-cell-permissions="props">
           <q-td :props="props">
-            <div v-if="props.row.actualPermissions?.length" class="tag-list">
-              <template v-for="grant in props.row.actualPermissions" :key="grant.database">
+            <div v-if="props.row.errorMessage" class="text-negative q-mb-sm" role="alert">
+              {{ props.row.errorMessage }}
+            </div>
+            <div v-if="!props.row.errorMessage && props.row.actualPermissions?.length" class="tag-list">
+              <template v-for="grant in props.row.actualPermissions" :key="`${grant.database}-${grant.schema}`">
                 <q-badge
                   v-for="priv in grant.privileges"
-                  :key="`${grant.database}-${priv}`"
+                  :key="`${grant.database}-${grant.schema}-${priv}`"
                   outline
                   color="secondary"
-                  :label="`${grant.database ?? 'default'}:${priv}`"
+                  :label="`${grant.database ?? 'default'}${grant.schema ? `.${grant.schema}` : ''}:${priv}`"
                 />
               </template>
             </div>
-            <span v-else class="text-grey">—</span>
+            <span v-else-if="!props.row.errorMessage" class="text-grey">—</span>
           </q-td>
         </template>
         <template #body-cell-actions="props">
@@ -42,9 +45,10 @@
               color="primary"
               label="Import"
               :loading="isImportingPrincipal === props.row.principalName"
+              :disable="!!props.row.errorMessage"
               @click="emit('import-orphan', props.row)"
             >
-              <q-tooltip>Create Fuse account from SQL principal</q-tooltip>
+              <q-tooltip>{{ props.row.errorMessage || 'Create Fuse account from SQL principal' }}</q-tooltip>
             </q-btn>
           </q-td>
         </template>

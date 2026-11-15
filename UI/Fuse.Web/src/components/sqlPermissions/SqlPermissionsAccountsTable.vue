@@ -49,8 +49,11 @@
         </template>
         <template #body-cell-permissions="props">
           <q-td :props="props">
+            <div v-if="props.row.errorMessage" class="text-negative" role="alert">
+              {{ props.row.errorMessage }}
+            </div>
             <PermissionDiffSummary
-              v-if="props.row.permissionComparisons?.length"
+              v-else-if="props.row.permissionComparisons?.length"
               :missing-count="countMissingPermissions(props.row)"
               :extra-count="countExtraPermissions(props.row)"
               :show-all-in-sync="props.row.status === SyncStatus.InSync"

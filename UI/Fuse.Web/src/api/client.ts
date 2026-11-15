@@ -26761,6 +26761,7 @@ export interface ISqlIntegrationResponse {
 export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
   principalName?: string | undefined;
   actualPermissions?: SqlActualGrant[] | undefined;
+  errorMessage?: string | undefined;
 
   constructor(data?: ISqlOrphanPrincipal) {
     if (data) {
@@ -26779,6 +26780,7 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
         for (let item of _data["actualPermissions"])
           this.actualPermissions!.push(SqlActualGrant.fromJS(item));
       }
+      this.errorMessage = _data["errorMessage"];
     }
   }
 
@@ -26799,6 +26801,7 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
           item ? item.toJSON() : (undefined as any),
         );
     }
+    data["errorMessage"] = this.errorMessage;
     return data;
   }
 }
@@ -26806,6 +26809,7 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
 export interface ISqlOrphanPrincipal {
   principalName?: string | undefined;
   actualPermissions?: SqlActualGrant[] | undefined;
+  errorMessage?: string | undefined;
 }
 
 export class SqlPermissionComparison implements ISqlPermissionComparison {

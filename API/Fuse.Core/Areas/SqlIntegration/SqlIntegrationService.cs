@@ -464,7 +464,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
                 integration, principalName, ct);
 
-            if (!isSuccessful || actualPermissions is null)
+            if (!isSuccessful || actualPermissions is null || actualPermissions.InspectionError is not null)
             {
                 accountStatuses.Add(new SqlAccountPermissionsStatus(
                     AccountId: account.Id,
@@ -472,7 +472,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                     PrincipalName: principalName,
                     Status: SyncStatus.Error,
                     PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                    ErrorMessage: errorMessage ?? "Failed to retrieve SQL permissions."));
+                    ErrorMessage: actualPermissions?.InspectionError ?? errorMessage ?? "Failed to retrieve SQL permissions."));
                 continue;
             }
 
@@ -519,7 +519,8 @@ public class SqlIntegrationService : ISqlIntegrationService
                 {
                     orphanPrincipals.Add(new SqlOrphanPrincipal(
                         principal.PrincipalName,
-                        principal.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
+                        principal.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList(),
+                        principal.InspectionError));
                 }
             }
         }
@@ -624,6 +625,11 @@ public class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.ServerError);
         }
 
+        if (actualPermissions.InspectionError is not null)
+        {
+            return Result<ResolveDriftResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
+        }
+
         // Check if principal exists (we can't resolve drift for missing principals)
         if (!actualPermissions.Exists)
         {
@@ -666,7 +672,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             integration, principalName, ct);
 
         SqlAccountPermissionsStatus updatedStatus;
-        if (recheckSuccess && updatedPermissions is not null)
+        if (recheckSuccess && updatedPermissions is not null && updatedPermissions.InspectionError is null)
         {
             var updatedComparisons = SqlPermissionDiff.BuildComparisons(account.Grants, updatedPermissions);
             var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
@@ -688,7 +694,14 @@ public class SqlIntegrationService : ISqlIntegrationService
                 PrincipalName: principalName,
                 Status: SyncStatus.Error,
                 PermissionComparisons: comparisons,
-                ErrorMessage: recheckError ?? "Failed to verify updated permissions.");
+                ErrorMessage: updatedPermissions?.InspectionError ?? recheckError ?? "Failed to verify updated permissions.");
+        }
+
+        if (applySuccess && updatedStatus.Status != SyncStatus.InSync)
+        {
+            applySuccess = false;
+            applyError = updatedStatus.ErrorMessage
+                ?? "SQL permissions remain out of sync after applying changes. Inherited role permissions may require changing the role membership or role grants.";
         }
 
         // Log the drift resolution to audit
@@ -804,6 +817,11 @@ public class SqlIntegrationService : ISqlIntegrationService
             return Result<ImportPermissionsResponse>.Failure(
                 inspectError ?? "Failed to retrieve SQL permissions.",
                 ErrorType.ServerError);
+        }
+
+        if (actualPermissions.InspectionError is not null)
+        {
+            return Result<ImportPermissionsResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
         }
 
         // Check if principal exists
@@ -940,6 +958,11 @@ public class SqlIntegrationService : ISqlIntegrationService
             return Result<ImportOrphanPrincipalResponse>.Failure(
                 inspectError ?? "Failed to retrieve SQL permissions.",
                 ErrorType.ServerError);
+        }
+
+        if (actualPermissions.InspectionError is not null)
+        {
+            return Result<ImportOrphanPrincipalResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
         }
 
         if (!actualPermissions.Exists)
@@ -1206,7 +1229,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             var (recheckSuccess, updatedPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(
                 integration, principalName, ct);
 
-            if (recheckSuccess && updatedPermissions is not null)
+            if (recheckSuccess && updatedPermissions is not null && updatedPermissions.InspectionError is null)
             {
                 var updatedComparisons = Fuse.Core.Helpers.SqlPermissionDiff.BuildComparisons(account.Grants, updatedPermissions);
                 var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
@@ -1233,6 +1256,19 @@ public class SqlIntegrationService : ISqlIntegrationService
                     Status: status,
                     PermissionComparisons: updatedComparisons,
                     ErrorMessage: null);
+            }
+            else
+            {
+                // Creation succeeded, but incomplete inspection must remain visible
+                // rather than returning no status or treating partial grants as in sync.
+                updatedStatus = new SqlAccountPermissionsStatus(
+                    AccountId: account.Id,
+                    AccountName: GetAccountDisplayName(account, snapshot),
+                    PrincipalName: principalName,
+                    Status: SyncStatus.Error,
+                    PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
+                    ErrorMessage: updatedPermissions?.InspectionError ?? recheckError
+                        ?? "Failed to verify permissions after creating the SQL account.");
             }
         }
 

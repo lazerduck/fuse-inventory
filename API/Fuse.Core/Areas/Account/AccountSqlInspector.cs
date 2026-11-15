@@ -8,7 +8,7 @@ namespace Fuse.Core.Areas.Account;
 /// <summary>
 /// Inspects SQL Server principals and their permissions.
 /// </summary>
-public class AccountSqlInspector : IAccountSqlInspector
+public partial class AccountSqlInspector : IAccountSqlInspector
 {
     /// <inheritdoc />
     public async Task<(bool IsSuccessful, IReadOnlyList<string> PrincipalNames, string? ErrorMessage)> GetAllPrincipalNamesAsync(
@@ -100,17 +100,8 @@ public class AccountSqlInspector : IAccountSqlInspector
             await using var connection = new SqlConnection(sanitizedConnectionString);
             await connection.OpenAsync(ct);
 
-            // Check if principal exists
-            bool principalExists = await CheckPrincipalExistsAsync(connection, principalName, ct);
-            if (!principalExists)
-            {
-                return (true, new SqlPrincipalPermissions(principalName, false, Array.Empty<SqlActualGrant>()), null);
-            }
-
-            // Get the actual permissions for the principal
-            var grants = await GetPrincipalGrantsAsync(connection, principalName, ct);
-
-            return (true, new SqlPrincipalPermissions(principalName, true, grants), null);
+            var permissions = await ReadPrincipalPermissionsAsync(connection, new[] { principalName }, ct);
+            return (true, permissions[principalName], null);
         }
         catch (SqlException ex)
         {
@@ -383,117 +374,6 @@ public class AccountSqlInspector : IAccountSqlInspector
         };
     }
 
-    private static async Task<bool> CheckPrincipalExistsAsync(SqlConnection connection, string principalName, CancellationToken ct)
-    {
-        // Check if login exists at server level (not just user in current database)
-        const string query = @"
-            SELECT COUNT(*) 
-            FROM sys.server_principals 
-            WHERE name = @PrincipalName AND type IN ('S', 'U', 'G', 'E', 'X')";
-
-        await using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@PrincipalName", principalName);
-
-        var result = await command.ExecuteScalarAsync(ct);
-        return result is not null && Convert.ToInt32(result) > 0;
-    }
-
-    private static async Task<IReadOnlyList<SqlActualGrant>> GetPrincipalGrantsAsync(SqlConnection connection, string principalName, CancellationToken ct)
-    {
-        // Query to check permissions across all accessible databases
-        const string query = @"
-            DECLARE @PrincipalName NVARCHAR(128) = @PrincipalNameParam;
-            DECLARE @SQL NVARCHAR(MAX) = '';
-
-            -- Build dynamic SQL to query each database using fully qualified names
-            SELECT @SQL = @SQL + 
-                'SELECT 
-                    ''' + name + ''' AS DatabaseName,
-                    CASE 
-                        WHEN p.class = 0 THEN NULL
-                        WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id)
-                        ELSE SCHEMA_NAME(o.schema_id)
-                    END AS SchemaName,
-                    p.permission_name AS PermissionName
-                FROM ' + QUOTENAME(name) + '.sys.database_permissions p
-                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
-                LEFT JOIN ' + QUOTENAME(name) + '.sys.objects o ON p.major_id = o.object_id AND p.class = 1
-                WHERE dp.name = @PrincipalName
-                  AND p.state_desc IN (''GRANT'', ''GRANT_WITH_GRANT_OPTION'')
-                  AND p.class IN (0, 1, 3)
-                UNION ALL
-                SELECT 
-                    ''' + name + ''' AS DatabaseName,
-                    NULL AS SchemaName,
-                    perms.PermissionName
-                FROM ' + QUOTENAME(name) + '.sys.database_role_members rm
-                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id
-                INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id
-                CROSS APPLY (
-                    SELECT PermissionName FROM (VALUES
-                        (''db_datareader'', ''SELECT''),
-                        (''db_datawriter'', ''INSERT''),
-                        (''db_datawriter'', ''UPDATE''),
-                        (''db_datawriter'', ''DELETE''),
-                        (''db_owner'', ''SELECT''),
-                        (''db_owner'', ''INSERT''),
-                        (''db_owner'', ''UPDATE''),
-                        (''db_owner'', ''DELETE''),
-                        (''db_owner'', ''EXECUTE''),
-                        (''db_owner'', ''ALTER''),
-                        (''db_owner'', ''CONTROL''),
-                        (''db_ddladmin'', ''ALTER''),
-                        (''db_executor'', ''EXECUTE'')
-                    ) AS RolePerms(RoleName, PermissionName)
-                    WHERE RolePerms.RoleName = r.name
-                ) perms
-                WHERE dp.name = @PrincipalName
-                  AND r.name IN (''db_datareader'', ''db_datawriter'', ''db_owner'', ''db_ddladmin'', ''db_executor'')
-                UNION ALL '
-            FROM sys.databases
-            WHERE state_desc = 'ONLINE' 
-              AND (database_id > 4 OR name IN ('master', 'msdb', 'model', 'tempdb'));
-
-            -- Remove trailing UNION ALL and execute
-            IF LEN(@SQL) > 0
-            BEGIN
-                SET @SQL = LEFT(@SQL, LEN(@SQL) - 10);  -- Remove last 'UNION ALL'
-                EXEC sp_executesql @SQL, N'@PrincipalName NVARCHAR(128)', @PrincipalName;
-            END";
-
-        await using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@PrincipalNameParam", principalName);
-
-        var grants = new Dictionary<(string?, string?), HashSet<Privilege>>();
-
-        await using var reader = await command.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
-        {
-            var databaseName = reader.IsDBNull(0) ? null : reader.GetString(0);
-            var schemaName = reader.IsDBNull(1) ? null : reader.GetString(1);
-            var permissionName = reader.IsDBNull(2) ? null : reader.GetString(2);
-
-            if (string.IsNullOrWhiteSpace(permissionName))
-                continue;
-
-            var key = (databaseName, schemaName);
-            if (!grants.TryGetValue(key, out var privileges))
-            {
-                privileges = new HashSet<Privilege>();
-                grants[key] = privileges;
-            }
-
-            // Map SQL Server permissions to Fuse Privilege enum
-            var privilege = MapSqlPermissionToPrivilege(permissionName);
-            if (privilege.HasValue)
-            {
-                privileges.Add(privilege.Value);
-            }
-        }
-
-        return grants.Select(g => new SqlActualGrant(g.Key.Item1, g.Key.Item2, g.Value)).ToList();
-    }
-
     private static Privilege? MapSqlPermissionToPrivilege(string sqlPermission)
     {
         // Map SQL Server permission names to Fuse Privilege enum
@@ -526,6 +406,12 @@ public class AccountSqlInspector : IAccountSqlInspector
         if (string.IsNullOrWhiteSpace(principalName))
         {
             return (false, Array.Empty<SqlAccountCreationOperation>(), "Principal name is required.");
+        }
+
+        // QUOTENAME returns NULL for identifiers longer than SQL Server's sysname limit.
+        if (principalName.Length > 128)
+        {
+            return (false, Array.Empty<SqlAccountCreationOperation>(), "Principal name must not exceed 128 characters.");
         }
 
         if (string.IsNullOrWhiteSpace(password))
@@ -607,21 +493,18 @@ public class AccountSqlInspector : IAccountSqlInspector
     {
         try
         {
-            // Use sp_executesql with parameterized password to avoid SQL injection.
-            // The login name must be an identifier (escaped with brackets), but the password
-            // can be safely passed as a parameter through dynamic SQL execution.
-            var escapedPrincipal = EscapeIdentifier(principalName);
-            
-            // Build the dynamic SQL that will be executed by sp_executesql
-            // The @password parameter is safely passed to the dynamic SQL
-            var dynamicSql = $"CREATE LOGIN {escapedPrincipal} WITH PASSWORD = @password;";
+            // CREATE LOGIN requires a password literal. Keep credentials in parameters
+            // on the wire, then quote the identifier and literal inside the SQL batch.
+            const string sql = @"
+DECLARE @statement nvarchar(max) =
+    N'CREATE LOGIN ' + QUOTENAME(@principalName) +
+    N' WITH PASSWORD = N''' + REPLACE(@password, N'''', N'''''') + N''';';
+EXEC sys.sp_executesql @statement;";
 
-            await using var command = new SqlCommand("sp_executesql", connection);
-            command.CommandType = System.Data.CommandType.StoredProcedure;
-            command.Parameters.AddWithValue("@stmt", dynamicSql);
-            command.Parameters.AddWithValue("@params", "@password NVARCHAR(MAX)");
-            command.Parameters.AddWithValue("@password", password);
-            
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add("@principalName", System.Data.SqlDbType.NVarChar, -1).Value = principalName;
+            command.Parameters.Add("@password", System.Data.SqlDbType.NVarChar, -1).Value = password;
+
             await command.ExecuteNonQueryAsync(ct);
 
             return new SqlAccountCreationOperation(
@@ -784,15 +667,8 @@ public class AccountSqlInspector : IAccountSqlInspector
                 }
             }
 
-            // For each principal, get their permissions
-            var principals = new List<SqlPrincipalPermissions>();
-            foreach (var principalName in principalNames)
-            {
-                var grants = await GetPrincipalGrantsAsync(connection, principalName, ct);
-                principals.Add(new SqlPrincipalPermissions(principalName, true, grants));
-            }
-
-            return (true, principals, null);
+            var permissions = await ReadPrincipalPermissionsAsync(connection, principalNames, ct);
+            return (true, principalNames.Select(name => permissions[name]).ToList(), null);
         }
         catch (SqlException ex)
         {
@@ -847,167 +723,8 @@ public class AccountSqlInspector : IAccountSqlInspector
             await using var connection = new SqlConnection(sanitizedConnectionString);
             await connection.OpenAsync(ct);
 
-            // Load the principal names into a temporary table so the server-side dynamic
-            // SQL can JOIN against them. This avoids embedding the names in the query text
-            // (as an IN clause) or in the dynamically-built UNION ALL string, keeping the
-            // size of @SQL proportional only to the number of databases — not to the
-            // number of principals. Sending a very large pre-assembled UNION ALL query
-            // from C# causes SQL Server to allocate a Large Object in tempdb for the query
-            // text, which can exhaust tempdb space.
-            //
-            // COLLATE DATABASE_DEFAULT ensures the column uses the current connection's
-            // database collation rather than tempdb's collation (which may differ on
-            // servers configured with a non-default collation). The JOIN in the dynamic
-            // SQL also collates dp.name to DATABASE_DEFAULT so both sides always match,
-            // regardless of the individual user-database collation.
-            const string createTempTable = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL);";
-            await using (var cmd = new SqlCommand(createTempTable, connection))
-            {
-                await cmd.ExecuteNonQueryAsync(ct);
-            }
-
-            // Insert all principal names in batches to minimise round-trips while staying
-            // within SQL Server's 2100-parameter limit.
-            const int insertBatchSize = 500;
-            for (int offset = 0; offset < validPrincipals.Count; offset += insertBatchSize)
-            {
-                var batch = validPrincipals.Skip(offset).Take(insertBatchSize).ToList();
-                var paramPlaceholders = string.Join(", ", Enumerable.Range(0, batch.Count).Select(j => $"(@n{j})"));
-                await using var insertCmd = new SqlCommand(
-                    $"INSERT INTO #Principals (Name) VALUES {paramPlaceholders}", connection);
-                for (int j = 0; j < batch.Count; j++)
-                    insertCmd.Parameters.AddWithValue($"@n{j}", batch[j]);
-                await insertCmd.ExecuteNonQueryAsync(ct);
-            }
-
-            var validPrincipalsSet = new HashSet<string>(validPrincipals, StringComparer.OrdinalIgnoreCase);
-
-            // Build the cross-database UNION ALL on the SQL Server side using T-SQL string
-            // concatenation — the same pattern used in GetPrincipalGrantsAsync. The C# code
-            // sends only a small, fixed-size script; SQL Server builds and executes @SQL
-            // internally. The #Principals temp table (session-scoped) is accessible from
-            // within sp_executesql and is used for filtering so the dynamically-built SQL
-            // stays proportional to the number of databases only.
-            const string dynamicSqlQuery = @"
-                DECLARE @SQL NVARCHAR(MAX) = N'';
-
-                SELECT @SQL = @SQL +
-                    'SELECT dp.name COLLATE DATABASE_DEFAULT AS PrincipalName, ''' + REPLACE(name, '''', '''''') + ''' AS DatabaseName, '
-                    + 'CASE WHEN p.class = 0 THEN CAST(NULL AS NVARCHAR(128)) '
-                    + 'WHEN p.class = 3 THEN SCHEMA_NAME(p.major_id) '
-                    + 'ELSE SCHEMA_NAME(o.schema_id) END AS SchemaName, '
-                    + 'p.permission_name AS PermissionName '
-                    + 'FROM ' + QUOTENAME(name) + '.sys.database_permissions p '
-                    + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON p.grantee_principal_id = dp.principal_id '
-                    + 'LEFT JOIN ' + QUOTENAME(name) + '.sys.objects o ON p.major_id = o.object_id AND p.class = 1 '
-                    + 'INNER JOIN #Principals pr ON dp.name COLLATE DATABASE_DEFAULT = pr.Name '
-                    + 'WHERE p.state_desc IN (''GRANT'', ''GRANT_WITH_GRANT_OPTION'') AND p.class IN (0, 1, 3) '
-                    + 'UNION ALL '
-                    + 'SELECT dp.name COLLATE DATABASE_DEFAULT, ''' + REPLACE(name, '''', '''''') + ''', NULL AS SchemaName, perms.PermissionName '
-                    + 'FROM ' + QUOTENAME(name) + '.sys.database_role_members rm '
-                    + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals dp ON rm.member_principal_id = dp.principal_id '
-                    + 'INNER JOIN ' + QUOTENAME(name) + '.sys.database_principals r ON rm.role_principal_id = r.principal_id '
-                    + 'INNER JOIN #Principals pr ON dp.name COLLATE DATABASE_DEFAULT = pr.Name '
-                    + 'CROSS APPLY (SELECT PermissionName FROM (VALUES '
-                    + '(''db_datareader'', ''SELECT''), '
-                    + '(''db_datawriter'', ''INSERT''), '
-                    + '(''db_datawriter'', ''UPDATE''), '
-                    + '(''db_datawriter'', ''DELETE''), '
-                    + '(''db_owner'', ''SELECT''), '
-                    + '(''db_owner'', ''INSERT''), '
-                    + '(''db_owner'', ''UPDATE''), '
-                    + '(''db_owner'', ''DELETE''), '
-                    + '(''db_owner'', ''EXECUTE''), '
-                    + '(''db_owner'', ''ALTER''), '
-                    + '(''db_owner'', ''CONTROL''), '
-                    + '(''db_ddladmin'', ''ALTER''), '
-                    + '(''db_executor'', ''EXECUTE'') '
-                    + ') AS RolePerms(RoleName, PermissionName) WHERE RolePerms.RoleName = r.name) perms '
-                    + 'WHERE r.name IN (''db_datareader'', ''db_datawriter'', ''db_owner'', ''db_ddladmin'', ''db_executor'') '
-                    + 'UNION ALL '
-                FROM sys.databases
-                WHERE state_desc = 'ONLINE'
-                  AND (database_id > 4 OR name IN ('master', 'msdb', 'model', 'tempdb'));
-
-                IF LEN(@SQL) > 0
-                BEGIN
-                    SET @SQL = LEFT(@SQL, LEN(@SQL) - 10);
-                    EXEC sp_executesql @SQL;
-                END";
-
-            var allRows = new List<(string PrincipalName, string? DatabaseName, string? SchemaName, string PermissionName)>();
-
-            await using (var command = new SqlCommand(dynamicSqlQuery, connection))
-            await using (var reader = await command.ExecuteReaderAsync(ct))
-            {
-                while (await reader.ReadAsync(ct))
-                {
-                    var principalName = reader.IsDBNull(0) ? null : reader.GetString(0);
-                    var databaseName = reader.IsDBNull(1) ? null : reader.GetString(1);
-                    var schemaName = reader.IsDBNull(2) ? null : reader.GetString(2);
-                    var permissionName = reader.IsDBNull(3) ? null : reader.GetString(3);
-
-                    if (string.IsNullOrWhiteSpace(permissionName))
-                        continue;
-
-                    if (!string.IsNullOrWhiteSpace(principalName))
-                    {
-                        allRows.Add((principalName, databaseName, schemaName, permissionName));
-                    }
-                }
-            }
-
-            // Group by principal name and build the result dictionary,
-            // restricted to only the requested principals.
-            var resultMap = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
-
-            var grouped = allRows
-                .Where(r => !string.IsNullOrWhiteSpace(r.PrincipalName) && validPrincipalsSet.Contains(r.PrincipalName!))
-                .GroupBy(r => r.PrincipalName!, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var group in grouped)
-            {
-                var principalName = group.Key;
-
-                var grantsMap = new Dictionary<(string?, string?), HashSet<Privilege>>();
-
-                foreach (var row in group)
-                {
-                    if (string.IsNullOrWhiteSpace(row.PermissionName))
-                        continue;
-
-                    var key = (row.DatabaseName, row.SchemaName);
-                    if (!grantsMap.TryGetValue(key, out var privileges))
-                    {
-                        privileges = new HashSet<Privilege>();
-                        grantsMap[key] = privileges;
-                    }
-
-                    var privilege = MapSqlPermissionToPrivilege(row.PermissionName);
-                    if (privilege.HasValue)
-                    {
-                        privileges.Add(privilege.Value);
-                    }
-                }
-
-                var grants = grantsMap.Select(g => new SqlActualGrant(g.Key.Item1, g.Key.Item2, g.Value)).ToList();
-                resultMap[principalName] = new SqlPrincipalPermissions(principalName, true, grants);
-            }
-
-            // Principals not found in the permissions rows may still exist at the server level
-            // (e.g. a login with no grants). Check existence to correctly set Exists=true/false.
-            var missingPrincipals = validPrincipals.Where(n => !resultMap.ContainsKey(n)).ToList();
-            if (missingPrincipals.Count > 0)
-            {
-                var missingInClause = "(" + string.Join(", ", missingPrincipals.Select(n => "N'" + EscapeStringLiteral(n) + "'")) + ")";
-                var existingSet = await GetExistingServerPrincipalsAsync(connection, missingPrincipals, missingInClause, ct);
-                foreach (var name in missingPrincipals)
-                {
-                    resultMap[name] = new SqlPrincipalPermissions(name, existingSet.Contains(name), Array.Empty<SqlActualGrant>());
-                }
-            }
-
-            return (true, resultMap, null);
+            var permissions = await ReadPrincipalPermissionsAsync(connection, validPrincipals, ct);
+            return (true, permissions, null);
         }
         catch (SqlException ex)
         {
@@ -1028,26 +745,4 @@ public class AccountSqlInspector : IAccountSqlInspector
         return value.Replace("'", "''");
     }
 
-    /// <summary>
-    /// Returns the subset of <paramref name="principalNames"/> that exist as server-level logins.
-    /// </summary>
-    private static async Task<HashSet<string>> GetExistingServerPrincipalsAsync(
-        SqlConnection connection,
-        IReadOnlyList<string> principalNames,
-        string principalInClause,
-        CancellationToken ct)
-    {
-        var query = $"SELECT name FROM sys.server_principals WHERE name IN {principalInClause} AND type IN ('S', 'U', 'G', 'E', 'X')";
-
-        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await using (var command = new SqlCommand(query, connection))
-        await using (var reader = await command.ExecuteReaderAsync(ct))
-        {
-            while (await reader.ReadAsync(ct))
-            {
-                existing.Add(reader.GetString(0));
-            }
-        }
-        return existing;
-    }
 }

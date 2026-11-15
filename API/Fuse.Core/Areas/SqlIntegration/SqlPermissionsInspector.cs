@@ -56,7 +56,7 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
         var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
             integration, principalName, ct);
 
-        if (!isSuccessful || actualPermissions is null)
+        if (!isSuccessful || actualPermissions is null || actualPermissions.InspectionError is not null)
         {
             return new AccountSqlStatusResponse(
                 AccountId: account.Id,
@@ -65,7 +65,7 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
                 Status: SyncStatus.Error,
                 StatusSummary: "Failed to retrieve SQL permissions.",
                 PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                ErrorMessage: errorMessage ?? "Unknown error occurred while querying SQL permissions."
+                ErrorMessage: actualPermissions?.InspectionError ?? errorMessage ?? "Unknown error occurred while querying SQL permissions."
             );
         }
 
@@ -168,7 +168,7 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
                         PrincipalName: principalName,
                         Status: status,
                         PermissionComparisons: comparisons,
-                        ErrorMessage: null));
+                        ErrorMessage: actualPermissions.InspectionError));
                 }
                 else
                 {
@@ -220,7 +220,8 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
                         {
                             orphanPrincipals.Add(new SqlOrphanPrincipal(
                                 orph.PrincipalName!,
-                                orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList()));
+                                orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList(),
+                                orph.InspectionError));
                         }
                     }
                 }
