@@ -62,7 +62,6 @@ test('a delayed poll cannot roll back a completed reset', async ({ poker }) => {
   await guest.evaluate(() => new Promise<void>(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
-  test.fail(true, 'SP-003: stale response ordering is deferred; see Tests/UI_TEST_FINDINGS.md.');
   await expect(guest.getByText('Round 2', { exact: true })).toBeVisible();
   await expect(guest.locator('.poker-card--selected')).toHaveCount(0);
 });

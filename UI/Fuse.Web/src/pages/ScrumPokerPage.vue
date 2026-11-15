@@ -802,10 +802,13 @@ function submitRoomEntry() {
 async function runSessionAction(
   action: () => Promise<ScrumPokerSessionResponse>,
 ) {
+  stopPolling();
+  const generation = pollGeneration;
   loading.value = true;
   errorMessage.value = "";
   try {
     const result = await action();
+    if (generation !== pollGeneration) return;
     leaveRequestSent.value = false;
     session.value = result;
     room.value = result.room ?? null;
@@ -831,28 +834,60 @@ async function runSessionAction(
       name: "scrumPokerRoom",
       params: { roomCode: result.roomCode },
     });
+    if (!isActiveSession(result, generation)) return;
     startPolling();
     await nextTick();
     showEntranceSplash.value = true;
   } catch (error) {
+    if (generation !== pollGeneration) return;
     errorMessage.value = sessionActionError(error, "Unable to join the room.");
   } finally {
-    loading.value = false;
+    if (generation === pollGeneration) loading.value = false;
   }
 }
 
 function currentCard() {
-  const me = session.value?.room?.participants?.find(
+  const me = room.value?.participants?.find(
     (p) => p.id === session.value?.participantId,
   );
   return me?.card ?? null;
 }
 
 function currentAvatarColor() {
-  const me = session.value?.room?.participants?.find(
+  const me = room.value?.participants?.find(
     (p) => p.id === session.value?.participantId,
   );
   return me?.avatarColor;
+}
+
+function isActiveSession(
+  expected: ScrumPokerSessionResponse,
+  generation: number,
+) {
+  return (
+    generation === pollGeneration &&
+    session.value?.roomCode === expected.roomCode &&
+    session.value?.participantId === expected.participantId &&
+    session.value?.participantToken === expected.participantToken
+  );
+}
+
+function applyRoomSnapshot(
+  snapshot: ScrumPokerRoomResponse,
+  expectedSession: ScrumPokerSessionResponse,
+  generation: number,
+) {
+  if (
+    !isActiveSession(expectedSession, generation) ||
+    snapshot.roomCode !== expectedSession.roomCode ||
+    (snapshot.revision ?? 0) < (room.value?.revision ?? 0)
+  )
+    return;
+
+  // Polls, mutations and settings can finish out of order. Apply the room and
+  // our selected card together only when this is still the newest snapshot.
+  room.value = snapshot;
+  selectedCard.value = currentCard();
 }
 
 async function refreshRoom() {
@@ -876,16 +911,12 @@ async function refreshRoom() {
       currentSession.participantToken,
       controller.signal,
     );
-    if (generation !== pollGeneration) return;
-    room.value = result;
-    const me = result.participants?.find(
-      (p) => p.id === currentParticipantId.value,
-    );
-    selectedCard.value = me?.card ?? null;
+    if (!isActiveSession(currentSession, generation)) return;
+    applyRoomSnapshot(result, currentSession, generation);
     pollFailures = 0;
     connectionError.value = "";
   } catch (error) {
-    if (generation !== pollGeneration) return;
+    if (!isActiveSession(currentSession, generation)) return;
     if (isInvalidSessionError(error)) {
       try {
         const result = await client.scrumPokerRoomsEnter(
@@ -896,15 +927,26 @@ async function refreshRoom() {
           } as any,
           controller.signal,
         );
-        if (generation !== pollGeneration) return;
+        if (!isActiveSession(currentSession, generation)) return;
+        if (
+          result.roomCode !== currentSession.roomCode ||
+          result.participantId !== currentSession.participantId ||
+          result.participantToken !== currentSession.participantToken
+        ) {
+          // An expired room may have been recreated under the same code. Its
+          // new participant session starts a fresh revision sequence.
+          room.value = null;
+          actionLoading.value = false;
+          autoRevealSaving.value = false;
+          lockVotesAfterRevealSaving.value = false;
+        }
         session.value = result;
-        room.value = result.room ?? null;
-        selectedCard.value = currentCard();
+        if (result.room) applyRoomSnapshot(result.room, result, generation);
         pollFailures = 0;
         connectionError.value = "";
         return;
       } catch (rejoinError) {
-        if (generation !== pollGeneration) return;
+        if (!isActiveSession(currentSession, generation)) return;
         if (isTransientConnectionError(rejoinError)) {
           markConnectionInterrupted();
           return;
@@ -979,6 +1021,10 @@ function stopPolling() {
   pollRequest?.abort();
   pollRequest = undefined;
   connectionError.value = "";
+  loading.value = false;
+  actionLoading.value = false;
+  autoRevealSaving.value = false;
+  lockVotesAfterRevealSaving.value = false;
 }
 function resumePolling() {
   if (!polling || pollRequest || document.visibilityState === "hidden") return;
@@ -988,57 +1034,58 @@ function resumePolling() {
 }
 
 async function selectCard(card: ScrumPokerCard | null) {
-  if (!session.value) return;
-  actionLoading.value = true;
-  errorMessage.value = "";
-  try {
-    room.value = await client.scrumPokerCardPUT(session.value.roomCode!, {
-      participantToken: session.value.participantToken,
-      card,
-    } as any);
-    selectedCard.value = card;
-  } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to select that card.";
-  } finally {
-    actionLoading.value = false;
-  }
+  await roomAction(
+    (currentSession) =>
+      client.scrumPokerCardPUT(currentSession.roomCode!, {
+        participantToken: currentSession.participantToken,
+        card,
+      } as any),
+    "Unable to select that card.",
+  );
 }
 async function revealCards() {
   if (readyCount.value === 0) return;
-  await roomAction(() =>
-    client.scrumPokerReveal(session.value!.roomCode!, {
-      participantToken: session.value!.participantToken,
+  await roomAction((currentSession) =>
+    client.scrumPokerReveal(currentSession.roomCode!, {
+      participantToken: currentSession.participantToken,
     } as any),
   );
 }
 async function hideCards() {
   if (readyCount.value === 0) return;
-  await roomAction(() =>
-    client.scrumPokerHide(session.value!.roomCode!, {
-      participantToken: session.value!.participantToken,
+  await roomAction((currentSession) =>
+    client.scrumPokerHide(currentSession.roomCode!, {
+      participantToken: currentSession.participantToken,
     } as any),
   );
 }
 async function resetRound() {
   if (readyCount.value === 0) return;
-  await roomAction(() =>
-    client.scrumPokerReset(session.value!.roomCode!, {
-      participantToken: session.value!.participantToken,
+  await roomAction((currentSession) =>
+    client.scrumPokerReset(currentSession.roomCode!, {
+      participantToken: currentSession.participantToken,
     } as any),
   );
-  selectedCard.value = null;
 }
-async function roomAction(action: () => Promise<ScrumPokerRoomResponse>) {
+async function roomAction(
+  action: (
+    currentSession: ScrumPokerSessionResponse,
+  ) => Promise<ScrumPokerRoomResponse>,
+  fallback = "Unable to update the room.",
+) {
+  const currentSession = session.value;
+  if (!currentSession) return;
+  const generation = pollGeneration;
   actionLoading.value = true;
   errorMessage.value = "";
   try {
-    room.value = await action();
+    applyRoomSnapshot(await action(currentSession), currentSession, generation);
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to update the room.";
+    if (!isActiveSession(currentSession, generation)) return;
+    errorMessage.value = error instanceof Error ? error.message : fallback;
   } finally {
-    actionLoading.value = false;
+    if (isActiveSession(currentSession, generation))
+      actionLoading.value = false;
   }
 }
 async function copyRoomCode() {
@@ -1055,24 +1102,28 @@ async function copyInviteLink() {
 }
 
 async function updateAutoReveal(enabled: boolean) {
+  const currentSession = session.value;
   if (
-    !session.value?.roomCode ||
-    !session.value.participantToken ||
+    !currentSession?.roomCode ||
+    !currentSession.participantToken ||
     autoRevealSaving.value
   )
     return;
 
   if (enabled === roomAutoReveal.value) return;
 
+  const generation = pollGeneration;
   autoRevealSaving.value = true;
   errorMessage.value = "";
   try {
-    room.value = await setAutoRevealOnServer(
-      session.value.roomCode,
-      session.value.participantToken,
+    const result = await setAutoRevealOnServer(
+      currentSession.roomCode,
+      currentSession.participantToken,
       enabled,
     );
+    applyRoomSnapshot(result, currentSession, generation);
   } catch (error) {
+    if (!isActiveSession(currentSession, generation)) return;
     const message =
       error instanceof Error
         ? error.message
@@ -1080,7 +1131,8 @@ async function updateAutoReveal(enabled: boolean) {
     errorMessage.value = message;
     Notify.create({ type: "negative", message });
   } finally {
-    autoRevealSaving.value = false;
+    if (isActiveSession(currentSession, generation))
+      autoRevealSaving.value = false;
   }
 }
 
@@ -1089,24 +1141,28 @@ function onAutoRevealChange(enabled: boolean) {
 }
 
 async function updateLockVotesAfterReveal(enabled: boolean) {
+  const currentSession = session.value;
   if (
-    !session.value?.roomCode ||
-    !session.value.participantToken ||
+    !currentSession?.roomCode ||
+    !currentSession.participantToken ||
     lockVotesAfterRevealSaving.value
   )
     return;
 
   if (enabled === roomLockVotesAfterReveal.value) return;
 
+  const generation = pollGeneration;
   lockVotesAfterRevealSaving.value = true;
   errorMessage.value = "";
   try {
-    room.value = await setLockVotesAfterRevealOnServer(
-      session.value.roomCode,
-      session.value.participantToken,
+    const result = await setLockVotesAfterRevealOnServer(
+      currentSession.roomCode,
+      currentSession.participantToken,
       enabled,
     );
+    applyRoomSnapshot(result, currentSession, generation);
   } catch (error) {
+    if (!isActiveSession(currentSession, generation)) return;
     const message =
       error instanceof Error
         ? error.message
@@ -1114,7 +1170,8 @@ async function updateLockVotesAfterReveal(enabled: boolean) {
     errorMessage.value = message;
     Notify.create({ type: "negative", message });
   } finally {
-    lockVotesAfterRevealSaving.value = false;
+    if (isActiveSession(currentSession, generation))
+      lockVotesAfterRevealSaving.value = false;
   }
 }
 
