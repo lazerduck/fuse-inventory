@@ -127,7 +127,7 @@ import { useSecretProviders } from '../composables/useSecretProviders'
 import { useAzureIntegrationManager } from '../composables/useAzureIntegrationManager'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { getErrorMessage } from '../utils/error'
-import { isAppConfigurationEndpoint, parseCapabilities } from '../utils/secretProviders'
+import { isAppConfiguration, parseCapabilities } from '../utils/secretProviders'
 import SecretProviderForm from '../components/secretProvider/SecretProviderForm.vue'
 import AzureDiscoveryDialog from '../components/secretProvider/AzureDiscoveryDialog.vue'
 
@@ -184,7 +184,6 @@ function openAzureManagerDialog() {
 }
 function closeAzureManagerDialog() { if (!isUpdatingAzureManager.value) void managerDraft.discard(() => { isAzureManagerDialogOpen.value = false; azureManagerForm.value.clientSecret = '' }) }
 function formatDate(value?: Date | string | null) { return value ? new Date(value).toLocaleString() : 'Not checked' }
-function isAppConfiguration(provider: SecretProviderResponse) { return provider.integrationKind ? provider.integrationKind === 'AppConfiguration' : isAppConfigurationEndpoint(provider.vaultUri) }
 function credentialLabel(provider: SecretProviderResponse) {
   if (provider.authMode === SecretProviderAuthMode.ManagedIdentity) return 'Managed identity'
   if (provider.credentialSource === 'CustomCredentials') return 'Custom credentials'

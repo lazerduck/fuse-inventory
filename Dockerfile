@@ -1,5 +1,5 @@
 # Static frontend assets are shared by every target architecture. Build once natively.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend-build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-build
 
 WORKDIR /app/frontend
 

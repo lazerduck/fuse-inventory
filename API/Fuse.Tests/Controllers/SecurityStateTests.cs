@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using Fuse.Tests.TestInfrastructure;
 
 namespace Fuse.Tests.Controllers;
 
@@ -16,12 +17,14 @@ public class SecurityStateTests
     private readonly Mock<IFuseUserService> users = new();
     private readonly Mock<IFuseRoleService> roles = new();
 
+    private readonly InMemoryFuseStore store = new();
+
     private SecurityController Controller(Guid? userId = null)
     {
         var security = new Mock<IFuseSecurityService>();
         security.Setup(s => s.GetSecurityPosture()).ReturnsAsync(SecurityPosture.FullyRestricted);
         var controller = new SecurityController(security.Object, users.Object,
-            Mock.Of<IFuseUserSessionService>(), roles.Object);
+            Mock.Of<IFuseUserSessionService>(), roles.Object, store);
         var context = new DefaultHttpContext();
         if (userId is not null)
             context.User = new ClaimsPrincipal(new ClaimsIdentity(
@@ -57,6 +60,8 @@ public class SecurityStateTests
             new(roleId, "Reader", "", ["tags:read"], DateTime.UtcNow, DateTime.UtcNow),
             new(otherRoleId, "Creator", "", ["tags:read", "tags:create"], DateTime.UtcNow, DateTime.UtcNow)
         ]));
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with
+        { Roles = [new(roleId, "Reader", "", ["tags:read"], DateTime.UtcNow, DateTime.UtcNow), new(otherRoleId, "Creator", "", ["tags:read", "tags:create"], DateTime.UtcNow, DateTime.UtcNow)] } });
         var state = State(await Controller(user.Id).GetState());
         Assert.Equal(user.Id, state.CurrentUser!.Id);
         Assert.Equal(["tags:read", "tags:create"], state.Permissions);

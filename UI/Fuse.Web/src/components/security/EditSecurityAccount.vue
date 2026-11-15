@@ -24,7 +24,8 @@
             class="full-span"
           />
           <div class="full-span q-mt-md">
-            <div class="text-subtitle2 q-mb-sm">Role Assignments</div>
+            <div class="text-subtitle2 q-mb-sm">Direct Role Assignments</div>
+            <p class="text-caption">Entra group memberships are managed in Entra. Removing a direct assignment does not remove inherited access.</p>
             <q-select
               v-model="form.roleIds"
               label="Assigned Roles"

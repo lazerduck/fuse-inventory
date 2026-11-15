@@ -57,6 +57,9 @@ public class SecretOperationService : ISecretOperationService
         if (string.IsNullOrWhiteSpace(command.SecretName))
             return Result.Failure("Secret name is required.", ErrorType.Validation);
 
+        if (!System.Text.RegularExpressions.Regex.IsMatch(command.SecretName, @"\A[a-zA-Z0-9-]{1,127}\z"))
+            return Result.Failure("Secret names must be 1–127 letters, digits or hyphens.", ErrorType.Validation);
+
         if (string.IsNullOrWhiteSpace(command.SecretValue))
             return Result.Failure("Secret value is required.", ErrorType.Validation);
 

@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Fuse.API.Controllers;
+using Fuse.API.Updates;
 using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
 using Fuse.Core;
@@ -56,12 +58,17 @@ builder.Services.AddCors(options =>
     });
 });
 
+Fuse.API.Entra.EntraAuthentication.Register(builder.Services);
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddFuseMcp();
+builder.Services.AddSingleton(AboutResponse.FromEnvironment());
+builder.Services.AddHttpClient(nameof(ChannelUpdateService), client => client.Timeout = TimeSpan.FromSeconds(10));
+builder.Services.AddSingleton<ChannelUpdateService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ChannelUpdateService>());
 
 var app = builder.Build();
 
@@ -89,6 +96,22 @@ app.UseHttpsRedirection();
 
 // Explicit routing so that SecurityMiddleware can read endpoint metadata (e.g. [RequirePermission])
 app.UseRouting();
+
+// Only the OIDC callback needs the remote authentication handler. Other API routes use Fuse sessions.
+app.UseWhen(ctx => ctx.Request.Path == "/auth/entra/callback", branch =>
+{
+    branch.Use(async (context, next) =>
+    {
+        var store = context.RequestServices.GetRequiredService<IFuseStore>();
+        if (!(await store.GetAsync()).SecurityContext.Entra.Enabled)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        await next(context);
+    });
+    branch.UseAuthentication();
+});
 
 app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api/mcp"), branch =>
 {

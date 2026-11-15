@@ -1,4 +1,5 @@
 export const SecurityPermissions = {
+  SecuritySettingsUpdate: 'security:settings:update',
   UsersRead: 'useraccount:read',
   UsersCreate: 'useraccount:create',
   UsersUpdate: 'useraccount:update',

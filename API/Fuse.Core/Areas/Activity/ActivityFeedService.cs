@@ -58,7 +58,7 @@ public sealed class ActivityFeedService : IActivityFeedService
                 var hasPrevious = i + 1 < ordered.Count;
 
                 // A delete requires a previous version to restore. Other changes can always be reverted.
-                lookup[version.Id] = version.EntitySnapshot is null ? hasPrevious : true;
+                lookup[version.Id] = version.EntitySnapshot is not null || hasPrevious || version.InitialApplicationSnapshot is not null;
             }
         }
 

@@ -11,9 +11,9 @@ public interface IFuseRoleService
 
 	Task<Result<IReadOnlyList<FuseRole>>> GetRolesByIds(IReadOnlyList<Guid> roleIds);
 
-	Task<Result<FuseRole>> CreateRole(string name, string description, IReadOnlyList<string> permissions);
+	Task<Result<FuseRole>> CreateRole(string name, string description, IReadOnlyList<string> permissions, IReadOnlyList<EntraGroupMapping>? entraGroups = null);
 
-	Task<Result<FuseRole>> UpdateRole(Guid id, string name, string description, IReadOnlyList<string> permissions);
+	Task<Result<FuseRole>> UpdateRole(Guid id, string name, string description, IReadOnlyList<string> permissions, IReadOnlyList<EntraGroupMapping>? entraGroups = null);
 
 	Task<Result> DeleteRole(Guid id);
 

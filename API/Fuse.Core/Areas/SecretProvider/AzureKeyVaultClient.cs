@@ -11,6 +11,9 @@ namespace Fuse.Core.Areas.SecretProvider;
 
 public class AzureKeyVaultClient : IAzureKeyVaultClient
 {
+    // Bound lock storage and share it across scoped clients and provider aliases for one vault.
+    // Key Vault has no create-only SetSecret operation: this coordinates Fuse writers only.
+    private static readonly SemaphoreSlim[] CreateLocks = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1, 1)).ToArray();
     private readonly ITokenCredentialFactory _credentialFactory;
     private readonly IKeyVaultSecretClientFactory _secretClientFactory;
     private readonly IAzureIntegrationManagerService? _azureIntegrationManagerService;
@@ -72,9 +75,19 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
 
     public async Task<Result> CreateSecretAsync(Models.SecretProvider provider, string secretName, string secretValue)
     {
+        var lockKey = $"{provider.VaultUri.GetLeftPart(UriPartial.Authority)}/{secretName}";
+        var gate = CreateLocks[(uint)StringComparer.OrdinalIgnoreCase.GetHashCode(lockKey) % (uint)CreateLocks.Length];
+        await gate.WaitAsync();
         try
         {
             var client = await GetClientAsync(provider);
+            // Inspect metadata, including disabled secrets, without retrieving secret values.
+            // Fail closed if metadata cannot be read; a failed check is not proof of absence.
+            await foreach (var secret in client.GetPropertiesOfSecretsAsync())
+            {
+                if (string.Equals(secret.Name, secretName, StringComparison.OrdinalIgnoreCase))
+                    return Result.Failure($"Secret '{secretName}' already exists. Use its reference or explicitly rotate it instead.", ErrorType.Conflict);
+            }
             await client.SetSecretAsync(secretName, secretValue);
             return Result.Success();
         }
@@ -85,6 +98,10 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
         catch (Exception ex)
         {
             return Result.Failure($"Failed to create secret: {ex.Message}", ErrorType.Validation);
+        }
+        finally
+        {
+            gate.Release();
         }
     }
 

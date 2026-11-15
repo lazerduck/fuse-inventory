@@ -45,13 +45,21 @@
             v-model="filter"
             dense
             outlined
-            debounce="300"
-            placeholder="Search..."
+            aria-label="Search applications"
+            placeholder="Search applications"
           >
             <template #append>
               <q-icon name="search" />
             </template>
           </q-input>
+        </template>
+        <template #body-cell-name="props">
+          <q-td :props="props">
+            <router-link v-if="props.row.id" class="text-primary" :to="{ name: 'viewApp', params: { id: props.row.id } }">
+              {{ props.value }}
+            </router-link>
+            <span v-else>{{ props.value }}</span>
+          </q-td>
         </template>
         <template #body-cell-tags="props">
           <q-td :props="props">
@@ -78,13 +86,12 @@
 
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn aria-label="Edit application"
+            <q-btn v-if="fuseStore.hasPermission(Permission.ApplicationsUpdate)" aria-label="Edit application"
               flat
               dense
               round
               icon="edit"
               color="primary"
-              :disable="!fuseStore.hasPermission(Permission.ApplicationsRead)"
               @click="navigateToEdit(props.row)"
             />
             <q-btn aria-label="Delete application"
@@ -101,8 +108,15 @@
         </template>
 
         <template #no-data>
-          <div class="q-pa-md text-grey-7">
-            No applications found. Create one to get started.
+          <div v-if="!applicationsLoading && !applicationsError" class="q-pa-md">
+            <template v-if="filter">
+              No applications match your search.
+              <q-btn flat dense no-caps color="primary" label="Clear search" @click="filter = ''" />
+            </template>
+            <template v-else>
+              No applications yet.
+              <span v-if="fuseStore.hasPermission(Permission.ApplicationsCreate)">Create one to get started.</span>
+            </template>
           </div>
         </template>
       </q-table>
@@ -191,8 +205,9 @@
 
 <script setup lang="ts">
 import { useDialogDraft } from '../composables/useDialogDraft'
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useOnboardingStore } from '../stores/OnboardingStore'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
@@ -224,6 +239,8 @@ interface ApplicationForm {
 }
 
 const router = useRouter()
+const route = useRoute()
+const onboardingStore = useOnboardingStore()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const fuseStore = useFuseStore()
@@ -331,6 +348,13 @@ function navigateToEdit(app: Application) {
   router.push({ name: 'applicationEdit', params: { id: app.id } })
 }
 
+watch(() => [route.query.create, fuseStore.hasPermission(Permission.ApplicationsCreate)], ([create, allowed]) => {
+  if (create !== '1' || !allowed) return
+  openCreateDialog()
+  const { create: _create, ...query } = route.query
+  void router.replace({ query })
+}, { immediate: true })
+
 const createApplicationMutation = useMutation({
   mutationFn: (payload: CreateApplication) => client.applicationPOST(payload),
   onSuccess: (createdApp) => {
@@ -345,6 +369,7 @@ const createApplicationMutation = useMutation({
     isCreateDialogOpen.value = false
     Notify.create({ type: 'positive', message: 'Application created' })
     if (createdApp?.id) {
+      if (route.query.guide === 'first-application') onboardingStore.trackApplication(createdApp.id)
       router.push({ name: 'applicationEdit', params: { id: createdApp.id } })
     }
   },

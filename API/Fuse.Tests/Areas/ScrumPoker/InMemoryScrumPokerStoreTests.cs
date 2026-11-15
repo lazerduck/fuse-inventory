@@ -99,4 +99,83 @@ public class InMemoryScrumPokerStoreTests
 
         Assert.Equal(ScrumPokerPhase.Revealed, room.Phase);
     }
+
+    [Fact(Skip = "SP-002: vote preservation after the 15-minute timeout is deferred; see Tests/UI_TEST_FINDINGS.md.")]
+    public void ReturnAfterTimeout_RestoresIdentityAvatarAndLatestVoteInSameRound()
+    {
+        var now = new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Utc);
+        var store = new InMemoryScrumPokerStore();
+        var host = store.CreateRoom("Host", now).Value!;
+        var guest = store.JoinRoom(host.Room.RoomCode, "Guest", now, avatarColor: "avatar-image-4").Value!;
+        store.SelectCard(host.Room.RoomCode, guest.Participant.Token, ScrumPokerCard.Five, now.AddSeconds(1));
+        store.SelectCard(host.Room.RoomCode, guest.Participant.Token, ScrumPokerCard.Eight, now.AddSeconds(2));
+
+        var afterTimeout = now.AddMinutes(16);
+        var room = store.GetRoom(host.Room.RoomCode, host.Participant.Token, afterTimeout).Value!;
+        Assert.Single(room.Participants);
+        var rejoined = store.JoinRoom(host.Room.RoomCode, "Guest", afterTimeout, guest.Participant.Token).Value!;
+
+        Assert.Equal(guest.Participant.Id, rejoined.Participant.Id);
+        Assert.Equal(guest.Participant.Token, rejoined.Participant.Token);
+        Assert.Equal("avatar-image-4", rejoined.Participant.AvatarColor);
+        Assert.Equal(ScrumPokerCard.Eight, rejoined.Participant.SelectedCard);
+    }
+
+    [Fact]
+    public void ReturnAfterTimeoutAndReset_DoesNotRestoreAPreviousRoundsVote()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var host = store.CreateRoom("Host", now).Value!;
+        var guest = store.JoinRoom(host.Room.RoomCode, "Guest", now).Value!;
+        store.SelectCard(host.Room.RoomCode, guest.Participant.Token, ScrumPokerCard.Eight, now);
+        // Leave saves a participant with a vote in the recovery registry.
+        store.Leave(host.Room.RoomCode, guest.Participant.Token, now);
+        store.JoinRoom(host.Room.RoomCode, "Guest", now, guest.Participant.Token);
+        store.GetRoom(host.Room.RoomCode, host.Participant.Token, now.AddMinutes(16));
+        store.Reset(host.Room.RoomCode, host.Participant.Token, now.AddMinutes(16));
+
+        var rejoined = store.JoinRoom(host.Room.RoomCode, "Guest", now.AddMinutes(17), guest.Participant.Token).Value!;
+
+        Assert.Equal(guest.Participant.Id, rejoined.Participant.Id);
+        Assert.Equal(2, rejoined.Room.Round);
+        Assert.Null(rejoined.Participant.SelectedCard);
+    }
+
+    [Fact]
+    public void RejoiningAnActiveParticipantInAFullRoom_DoesNotCreateADuplicate()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var host = store.CreateRoom("Host", now).Value!;
+        for (var i = 1; i < InMemoryScrumPokerStore.MaxParticipantsPerRoom; i++)
+            Assert.True(store.JoinRoom(host.Room.RoomCode, $"Guest {i}", now).IsSuccess);
+
+        var rejoined = store.JoinRoom(host.Room.RoomCode, "Host", now.AddSeconds(1), host.Participant.Token);
+
+        Assert.True(rejoined.IsSuccess);
+        Assert.Equal(host.Participant.Id, rejoined.Value!.Participant.Id);
+        Assert.Equal(InMemoryScrumPokerStore.MaxParticipantsPerRoom, rejoined.Value.Room.Participants.Count);
+        Assert.False(store.JoinRoom(host.Room.RoomCode, "Overflow", now.AddSeconds(1)).IsSuccess);
+    }
+
+    [Fact]
+    public async Task ConcurrentJoinsAndVotes_KeepDistinctParticipantsAndAllVotes()
+    {
+        var now = DateTime.UtcNow;
+        var store = new InMemoryScrumPokerStore();
+        var host = store.CreateRoom("Host", now).Value!;
+        var guests = await Task.WhenAll(Enumerable.Range(1, 19).Select(i => Task.Run(() =>
+            store.JoinRoom(host.Room.RoomCode, $"Guest {i}", now))));
+        Assert.All(guests, result => Assert.True(result.IsSuccess));
+        var participants = guests.Select(result => result.Value!.Participant).Append(host.Participant).ToArray();
+        Assert.Equal(20, participants.Select(participant => participant.Id).Distinct().Count());
+
+        var votes = await Task.WhenAll(participants.Select(participant => Task.Run(() =>
+            store.SelectCard(host.Room.RoomCode, participant.Token, ScrumPokerCard.Five, now.AddSeconds(1)))));
+        Assert.All(votes, result => Assert.True(result.IsSuccess));
+        var room = store.GetRoom(host.Room.RoomCode, host.Participant.Token, now.AddSeconds(2)).Value!;
+        Assert.Equal(20, room.Participants.Count);
+        Assert.All(room.Participants, participant => Assert.Equal(ScrumPokerCard.Five, participant.SelectedCard));
+    }
 }
