@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1>Settings</h1>
-        <p class="subtitle">Configure application behaviour, licensing and data retention.</p>
+        <p class="subtitle">Configure application behaviour, sign-in, licensing and data retention.</p>
       </div>
     </div>
 
@@ -24,6 +24,28 @@
       </section>
 
       <q-separator />
+
+      <template v-if="canConfigureEntra">
+        <section id="entra" class="settings-section">
+          <div class="section-heading">
+            <h2>Microsoft Entra</h2>
+            <p>Microsoft sign-in and group-based Fuse roles.</p>
+          </div>
+          <div class="entra-controls">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">{{ entraEnabled ? 'Microsoft sign-in enabled' : 'Microsoft sign-in disabled' }}</div>
+                <div class="setting-help">{{ entraEnabled ? 'Check the connection with your Microsoft account. View your assigned roles on Security.' : 'Configure your connection to enable Microsoft sign-in.' }}</div>
+              </div>
+              <q-btn v-if="entraEnabled" outline no-wrap color="primary" label="Test Microsoft sign-in" href="/auth/entra/login" />
+            </div>
+            <q-expansion-item v-model="entraExpanded" label="Connection settings" icon="settings" class="q-mt-sm">
+              <EntraSettingsForm />
+            </q-expansion-item>
+          </div>
+        </section>
+        <q-separator />
+      </template>
 
       <section class="settings-section">
         <div class="section-heading">
@@ -230,11 +252,21 @@
 <script setup lang="ts">
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { HealthCheckProvider, LogLevel, LoggingSettings } from 'api/client'
+import { Permission } from 'permissions'
+import EntraSettingsForm from '../components/security/EntraSettingsForm.vue'
+import { useEntraStatus } from '../composables/useEntra'
 import { useFuseStore } from '../stores/FuseStore'
 import { useKumaIntegrations } from '../composables/useKumaIntegrations'
 
 const fuseStore = useFuseStore()
+const route = useRoute()
+const entraStatusQuery = useEntraStatus()
+const entraEnabled = computed(() => entraStatusQuery.data.value?.enabled ?? false)
+const canConfigureEntra = computed(() => fuseStore.hasPermission(Permission.SecuritySettingsUpdate))
+const entraExpanded = ref(route.hash === '#entra')
+watch(() => route.hash, hash => { if (hash === '#entra') entraExpanded.value = true })
 const kumaIntegrations = useKumaIntegrations()
 void fuseStore.fetchStatus()
 
@@ -412,6 +444,10 @@ const canEdit = computed(() => fuseStore.hasPermission('appsettings:update'))
 .setting-row + .setting-row { border-top: 1px solid rgba(127, 127, 127, .18); }
 .setting-label { font-size: .95rem; font-weight: 500; }
 .setting-help { margin-top: .25rem; color: var(--fuse-text-muted); font-size: .8rem; line-height: 1.4; }
+.entra-controls { grid-column: 2; min-width: 0; }
+.entra-controls .setting-row { flex-wrap: wrap; gap: .75rem; }
+.entra-controls .setting-row > div { flex: 1 1 240px; }
+#entra { scroll-margin-top: 90px; }
 .retention-row { align-items: flex-start; padding: 1rem 0; }
 .retention-control { display: flex; flex: 0 0 190px; flex-direction: column; align-items: flex-start; gap: .5rem; }
 .retention-input { width: 190px; flex: none; }
@@ -419,6 +455,9 @@ const canEdit = computed(() => fuseStore.hasPermission('appsettings:update'))
 @media (max-width: 700px) {
   .settings-section { grid-template-columns: 1fr; row-gap: 1rem; }
   .setting-row { grid-column: 1; }
+  .entra-controls { grid-column: 1; }
+  .entra-controls .setting-row { align-items: flex-start; flex-direction: column; gap: .75rem; }
+  .entra-controls .setting-row > div { flex-basis: auto; }
   .retention-row { align-items: stretch; flex-direction: column; gap: .75rem; }
   .retention-control { flex-basis: auto; }
   .retention-input { width: 100%; }
