@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+lab_definition_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec python3 "$lab_definition_root/scripts/manage.py" "$@"

@@ -1,0 +1,41 @@
+name: Lab Management
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Tests/Labs/**'
+      - '.github/workflows/lab-management.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Tests/Labs/**'
+      - '.github/workflows/lab-management.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: lab-management-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  management:
+    name: Lab lifecycle and isolation checks
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - name: Verify Python runtime
+        run: |
+          python3 -c 'import sys; assert sys.version_info >= (3, 12), "Python 3.12 or newer is required"; print(sys.version)'
+      - name: Check Python and browser harness syntax
+        run: |
+          python3 -m compileall -q Tests/Labs/scripts Tests/Labs/sql/scripts Tests/Labs/tests
+          node --check Tests/Labs/sql/scripts/ui-check.mjs
+      - name: Test lab lifecycle and instance isolation without Docker
+        run: python3 -m unittest discover -s Tests/Labs/tests -p 'test_*.py' -v

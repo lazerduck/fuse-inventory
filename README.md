@@ -216,6 +216,8 @@ dotnet test API/Fuse.Tests/Fuse.Tests.csproj --filter "Category=Integration"
 
 Integration tests currently include API auth middleware end-to-end tests and SQL inspector tests that run against Testcontainers SQL Server.
 
+For repeatable validation against deployed services, see the [integration lab guide](Tests/Labs/README.md). It covers named SQL labs, inventory, isolated experiments, explicit resets, and saved API/SQL/browser results.
+
 To generate the same coverage report as CI, run from the repository root with Docker running:
 
 ```bash

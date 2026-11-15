@@ -1,0 +1,73 @@
+services:
+  sql:
+    labels:
+      io.fuse.lab.instance: ${LAB_INSTANCE:?Initialize a named lab instance}
+      io.fuse.lab.root: ${LAB_ROOT_ID:?Initialize a named lab instance}
+    image: ${SQL_IMAGE:?Initialize a named lab instance}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Initialize a named lab instance}
+      MSSQL_MEMORY_LIMIT_MB: "3072"
+      LabInspectorPassword: ${LAB_INSPECTOR_PASSWORD:?Initialize a named lab instance}
+      LabManagerPassword: ${LAB_MANAGER_PASSWORD:?Initialize a named lab instance}
+      LabUserPassword: ${LAB_USER_PASSWORD:?Initialize a named lab instance}
+    ports:
+      - "127.0.0.1:${SQL_PORT:?Initialize a named lab instance}:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=\"$${MSSQL_SA_PASSWORD}\" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    mem_limit: 4g
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+  fuse:
+    labels:
+      io.fuse.lab.instance: ${LAB_INSTANCE:?Initialize a named lab instance}
+      io.fuse.lab.root: ${LAB_ROOT_ID:?Initialize a named lab instance}
+    image: ${FUSE_IMAGE:?Initialize a named lab instance}
+    build:
+      context: ${FUSE_SOURCE_DIR:?Initialize a named lab instance}
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${FUSE_VERSION}
+        GIT_COMMIT_ID: ${FUSE_COMMIT}
+        BUILD_DATE: ${FUSE_BUILD_DATE}
+    depends_on:
+      sql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "127.0.0.1:${FUSE_PORT:?Initialize a named lab instance}:8080"
+    volumes:
+      - fuse-data:/app/data
+    mem_limit: 2g
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  sql-data:
+    labels:
+      io.fuse.lab.instance: ${LAB_INSTANCE:?Initialize a named lab instance}
+      io.fuse.lab.root: ${LAB_ROOT_ID:?Initialize a named lab instance}
+  fuse-data:
+    labels:
+      io.fuse.lab.instance: ${LAB_INSTANCE:?Initialize a named lab instance}
+      io.fuse.lab.root: ${LAB_ROOT_ID:?Initialize a named lab instance}
+networks:
+  default:
+    labels:
+      io.fuse.lab.instance: ${LAB_INSTANCE:?Initialize a named lab instance}
+      io.fuse.lab.root: ${LAB_ROOT_ID:?Initialize a named lab instance}
