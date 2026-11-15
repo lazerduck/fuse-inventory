@@ -18,11 +18,13 @@ vi.mock('../src/stores/FuseStore', () => ({ useFuseStore: () => ({
   get currentUser() { return access.currentUser }, appSettings: null, requireSetup: false, isLoggedIn: false
 }) }))
 const onboarding = reactive({ hasCompletedTour: false, lastCompletedAt: null, dismissedBanner: false,
+  applicationId: null as string | null,
   activeGuideId: null as string | null, completedGuideSteps: [] as string[], showCheatSheet: false })
 vi.mock('../src/stores/OnboardingStore', () => ({ useOnboardingStore: () => ({
   get hasCompletedTour() { return onboarding.hasCompletedTour }, get lastCompletedAt() { return onboarding.lastCompletedAt },
   get dismissedBanner() { return onboarding.dismissedBanner }, get activeGuideId() { return onboarding.activeGuideId },
   get completedGuideSteps() { return onboarding.completedGuideSteps }, get showCheatSheet() { return onboarding.showCheatSheet },
+  get applicationId() { return onboarding.applicationId },
   connectProgressUser: actions.connectProgressUser, markCompleted: vi.fn(), setCheatSheetVisible: vi.fn()
 }) }))
 vi.mock('../src/composables/useOnboardingTour', () => ({ useOnboardingTour: () => ({ startTour: vi.fn() }) }))
@@ -55,11 +57,43 @@ beforeEach(() => {
   onboarding.hasCompletedTour = false
   onboarding.dismissedBanner = false
   onboarding.activeGuideId = null
+  onboarding.applicationId = null
   for (const method of Object.values(api)) method.mockResolvedValue([])
   actions.initializeAuth.mockResolvedValue(undefined)
   actions.connectProgressUser.mockResolvedValue(undefined)
 })
 afterEach(() => { wrapper?.unmount(); queryClient?.clear(); vi.resetAllMocks() })
+
+describe('About update notification', () => {
+  it.each([
+    ['release', '0.10.0', 'v0.9.0...v0.10.0'],
+    ['pre-release', '0.10.0-pre.abc1234', '1234567...abc1234']
+  ])('shows the %s update before opening About and explains the host update', async (channel, availableVersion, comparison) => {
+    api.aboutGet.mockResolvedValue({ channel, version: '0.9.0', gitCommitId: '1234567', updateStatus: 'Available', availableVersion })
+    await renderApp()
+    const button = wrapper.findAllComponents(QBtn).find(btn => btn.attributes('aria-label')?.startsWith('About Fuse Inventory'))!
+    expect(button.attributes('aria-label')).toContain(availableVersion)
+    expect(button.findComponent({ name: 'QBadge' }).exists()).toBe(true)
+    button.vm.$emit('click')
+    await nextTick()
+    const about = wrapper.findAllComponents({ name: 'QDialog' }).find(dialog => dialog.text().includes('Build information'))!
+    expect(about.props('modelValue')).toBe(true)
+    expect(about.text()).toContain(`Update available · ${availableVersion}`)
+    const links = about.findAll('a').map(link => link.attributes('href'))
+    const repository = 'https://github.com/lazerduck/fuse-inventory'
+    expect(links).toEqual(channel === 'release'
+      ? [`${repository}/releases/tag/v${availableVersion}`, `${repository}/compare/${comparison}`]
+      : [`${repository}/compare/${comparison}`])
+    expect(about.text()).toContain('Redeploy the updated image from your container host.')
+  })
+
+  it.each(['Current', 'Unavailable', 'Unsupported'])('omits the badge for %s', async updateStatus => {
+    api.aboutGet.mockResolvedValue({ updateStatus })
+    await renderApp()
+    const button = wrapper.findAllComponents(QBtn).find(btn => btn.attributes('aria-label') === 'About Fuse Inventory')!
+    expect(button.findComponent({ name: 'QBadge' }).exists()).toBe(false)
+  })
+})
 
 describe('Global onboarding requests', () => {
   it('does not fetch hidden onboarding inventory for a restricted documentation reader', async () => {
@@ -103,6 +137,30 @@ describe('Global onboarding requests', () => {
 })
 
 describe('Guides drawer inventory requests', () => {
+  it('uses the selected application and drops its links when read access is revoked', async () => {
+    onboarding.activeGuideId = 'first-application'
+    onboarding.applicationId = 'selected-app'
+    access.permissions = new Set(['application:read'])
+    api.applicationAll.mockResolvedValue([{ id: 'other-app' }, { id: 'selected-app' }])
+    await renderGuide(true)
+    const openDocumentation = () => wrapper.findAllComponents(QBtn).find(button => button.props('label') === 'View documentation')!.vm.$emit('click')
+    openDocumentation()
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'viewApp', params: { id: 'selected-app' } })
+    access.permissions.clear()
+    await nextTick()
+    openDocumentation()
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'viewHome' })
+  })
+
+  it('does not silently target the first application when none is selected', async () => {
+    onboarding.activeGuideId = 'first-application'
+    access.permissions = new Set(['application:read'])
+    api.applicationAll.mockResolvedValue([{ id: 'other-app' }])
+    await renderGuide(true)
+    wrapper.findAllComponents(QBtn).find(button => button.props('label') === 'Open Instances tab')!.vm.$emit('click')
+    expect(actions.push).toHaveBeenLastCalledWith({ name: 'applications' })
+  })
+
   it('only fetches permitted contextual records when the drawer is opened', async () => {
     access.permissions = new Set(['application:read'])
     await renderGuide(false)

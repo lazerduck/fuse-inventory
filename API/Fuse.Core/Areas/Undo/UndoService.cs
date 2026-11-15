@@ -39,14 +39,8 @@ public sealed class UndoService : IUndoService
 
         var previous = index + 1 < ordered.Count ? ordered[index + 1] : null;
 
-        // Undo rule:
-        // - If target is a delete (snapshot null), restore previous snapshot.
-        // - Otherwise restore previous snapshot; if none exists, remove the entity.
-        string? restoredSnapshot = target.EntitySnapshot is null
-            ? previous?.EntitySnapshot
-            : previous?.EntitySnapshot;
-
-        if (target.EntitySnapshot is null && previous is null)
+        var restoredSnapshot = previous?.EntitySnapshot ?? target.InitialApplicationSnapshot;
+        if (target.EntitySnapshot is null && restoredSnapshot is null)
             return Result<UndoChangeResult>.Failure("Cannot undo this deletion because no prior version exists.", ErrorType.Validation);
 
         object? restoredEntity = null;
@@ -91,7 +85,9 @@ public sealed class UndoService : IUndoService
             EntityId: target.EntityId,
             EntityType: target.EntityType,
             RestoredFromVersion: previous?.Version ?? 0,
-            Message: previous is null
+            Message: target.InitialApplicationSnapshot is not null
+                ? "Restored the application to its state before the first recorded change."
+                : previous is null
                 ? "Entity reverted by removing its first recorded version."
                 : $"Entity reverted to version {previous.Version}."
         );

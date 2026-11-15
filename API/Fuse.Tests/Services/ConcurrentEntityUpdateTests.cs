@@ -157,7 +157,7 @@ public class ConcurrentEntityUpdateTests
             Accounts = [account with { TargetId = otherTarget.Id }],
             Applications = [app with { Instances = [instance with { Dependencies = [dependency] }] }]
         });
-        var service = new Fuse.Core.Areas.Account.AccountService(store, new FakeTagService(store), Mock.Of<Fuse.Core.Areas.Account.IAccountSqlInspector>());
+        var service = new Fuse.Core.Areas.Account.AccountService(store, new FakeTagService(store), Mock.Of<Fuse.Core.Areas.Account.IAccountSqlInspector>(), new FakeAuditService(), Mock.Of<ICurrentUser>());
         var result = await service.UpdateAccountAsync(new UpdateAccount(account.Id, target.Id, TargetKind.External, account.AuthKind,
             account.SecretBinding, null, null, []));
 

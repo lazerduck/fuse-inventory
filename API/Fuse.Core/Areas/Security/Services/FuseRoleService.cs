@@ -45,13 +45,16 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
         return Result<IReadOnlyList<FuseRole>>.Success(roles);
     }
 
-    public async Task<Result<FuseRole>> CreateRole(string name, string description, IReadOnlyList<string> permissions)
+    public async Task<Result<FuseRole>> CreateRole(string name, string description, IReadOnlyList<string> permissions, IReadOnlyList<EntraGroupMapping>? entraGroups = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             return Result<FuseRole>.Failure("Role name cannot be empty.", ErrorType.Validation);
 
         if (permissions is null)
             return Result<FuseRole>.Failure("Permissions cannot be null.", ErrorType.Validation);
+
+        if (entraGroups?.Any(g => g.GroupId == Guid.Empty || string.IsNullOrWhiteSpace(g.DisplayName)) == true)
+            return Result<FuseRole>.Failure("Each Entra group needs an object ID and display name.", ErrorType.Validation);
 
         var normalizedPermissionsResult = ValidateAndNormalizePermissions(permissions);
         if (!normalizedPermissionsResult.IsSuccess)
@@ -69,7 +72,7 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
             Permissions: normalizedPermissionsResult.Value!,
             CreatedAt: now,
             UpdatedAt: now
-        );
+        ) { EntraGroups = entraGroups?.DistinctBy(g => g.GroupId).ToArray() ?? [] };
 
         await fuseStore.UpdateAsync(s => s with
         {
@@ -82,7 +85,7 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
         return Result<FuseRole>.Success(role);
     }
 
-    public async Task<Result<FuseRole>> UpdateRole(Guid id, string name, string description, IReadOnlyList<string> permissions)
+    public async Task<Result<FuseRole>> UpdateRole(Guid id, string name, string description, IReadOnlyList<string> permissions, IReadOnlyList<EntraGroupMapping>? entraGroups = null)
     {
         if (id == Guid.Empty)
             return Result<FuseRole>.Failure("Role id is required.", ErrorType.Validation);
@@ -92,6 +95,9 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
 
         if (permissions is null)
             return Result<FuseRole>.Failure("Permissions cannot be null.", ErrorType.Validation);
+
+        if (entraGroups?.Any(g => g.GroupId == Guid.Empty || string.IsNullOrWhiteSpace(g.DisplayName)) == true)
+            return Result<FuseRole>.Failure("Each Entra group needs an object ID and display name.", ErrorType.Validation);
 
         var normalizedPermissionsResult = ValidateAndNormalizePermissions(permissions);
         if (!normalizedPermissionsResult.IsSuccess)
@@ -120,6 +126,7 @@ public class FuseRoleService(IFuseStore fuseStore, IEnumerable<AreaPermissions> 
                         Name = name.Trim(),
                         Description = description?.Trim() ?? string.Empty,
                         Permissions = normalizedPermissionsResult.Value!,
+                        EntraGroups = entraGroups?.DistinctBy(g => g.GroupId).ToArray() ?? r.EntraGroups,
                         UpdatedAt = DateTime.UtcNow
                     };
                     return updatedRole;

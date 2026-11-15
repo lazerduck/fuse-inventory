@@ -302,6 +302,10 @@ A comprehensive list of features and capabilities in Fuse-Inventory.
 - 100+ distinct audit action types
 - Each record captures: timestamp (UTC), action type, area/category, username, user ID, entity ID, and change details (JSON diff)
 
+### Application change history
+- In Activities, choose **View changes** on an application entry to compare its recorded versions.
+- Changed instances are grouped by environment and instance ID, with before and after values for fields and dependencies. Related resource names use the current inventory where available.
+
 ### Audit Log Search
 - Filter by date range, action type, area, username, entity ID, or free-text search on change details
 - Pagination with configurable page size

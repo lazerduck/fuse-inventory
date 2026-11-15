@@ -118,6 +118,7 @@ public class SecurityRoleAndApiKeyServiceTests
     {
         var store = new InMemoryFuseStore();
         var user = User();
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with { Users = [user] } });
         var role = Role();
         var users = new Mock<IFuseUserService>();
         var roles = new Mock<IFuseRoleService>();
@@ -151,6 +152,7 @@ public class SecurityRoleAndApiKeyServiceTests
         var roles = Mock.Of<IFuseRoleService>();
         var service = new FuseAPIKeyService(store, users, roles);
         var user = User();
+        await store.UpdateAsync(s => s with { SecurityContext = s.SecurityContext with { Users = [user] } });
         var role = Role();
         Mock.Get(users).Setup(x => x.GetUser(user.Id)).ReturnsAsync(Result<FuseUser>.Success(user));
         Mock.Get(roles).Setup(x => x.GetRolesByIds(It.IsAny<IReadOnlyList<Guid>>())).ReturnsAsync(Result<IReadOnlyList<FuseRole>>.Success([role]));

@@ -32,6 +32,11 @@ export default defineConfig(({ mode }) => {
       interval: 100,
     },
     proxy: {
+      '/auth/entra': {
+        target: env.VITE_API_PROXY_TARGET || env.VITE_API_BASE_URL || 'http://localhost:5071',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api': {
         target: env.VITE_API_PROXY_TARGET || env.VITE_API_BASE_URL || 'http://localhost:5071',
         changeOrigin: true,

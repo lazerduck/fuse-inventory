@@ -16,6 +16,10 @@ public static class SqlPermissionDiff
         IReadOnlyList<Grant> configuredGrants,
         SqlPrincipalPermissions actualPermissions)
     {
+        // An incomplete representation must never become a proposed broader GRANT.
+        if (actualPermissions.InspectionError is not null)
+            return Array.Empty<SqlPermissionComparison>();
+
         var comparisons = new List<SqlPermissionComparison>();
 
         var actualGrantsLookup = actualPermissions.Grants
@@ -68,6 +72,9 @@ public static class SqlPermissionDiff
 
     public static SyncStatus ComputeStatus(SqlPrincipalPermissions actualPermissions, IReadOnlyList<SqlPermissionComparison> comparisons)
     {
+        if (actualPermissions.InspectionError is not null)
+            return SyncStatus.Error;
+
         var principalMissing = !actualPermissions.Exists;
         if (principalMissing)
             return SyncStatus.MissingPrincipal;

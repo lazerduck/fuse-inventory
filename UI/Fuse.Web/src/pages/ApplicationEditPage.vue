@@ -245,6 +245,7 @@
 </template>
 
 <script setup lang="ts">
+import { useOnboardingStore } from '../stores/OnboardingStore'
 import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -510,6 +511,8 @@ const createInstanceMutation = useMutation({
     Notify.create({ type: 'positive', message: 'Instance created' })
     closeInstanceDialog()
     if (createdInstance?.id && application.value?.id) {
+      const onboarding = useOnboardingStore()
+      if (onboarding.applicationId === application.value.id) onboarding.setGuideStepCompleted('first-app-instance', true)
       router.push({
         name: 'instanceEdit',
         params: { applicationId: application.value.id, instanceId: createdInstance.id }
