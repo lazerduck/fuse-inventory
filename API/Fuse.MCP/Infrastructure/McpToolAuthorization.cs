@@ -17,9 +17,18 @@ public sealed class McpToolAuthorization(
         if (user?.Identity?.IsAuthenticated != true)
             throw new McpException("Authentication is required.");
 
+        if (!await HasPermissionAsync(user, permissionKey, ct))
+            throw new McpException($"The caller requires the '{permissionKey}' permission.");
+    }
+
+    public async Task<bool> HasPermissionAsync(ClaimsPrincipal user, string permissionKey, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (user.Identity?.IsAuthenticated != true) return false;
+
         if (string.Equals(user.FindFirst(FuseAuthenticationClaims.IsAdmin)?.Value,
                 bool.TrueString, StringComparison.OrdinalIgnoreCase))
-            return;
+            return true;
 
         var descriptor = permissionCatalogs
             .Select(c => c.TryGetPermissionDescriptor(permissionKey))
@@ -33,11 +42,10 @@ public sealed class McpToolAuthorization(
             .Select(id => id!.Value)
             .ToList();
         if (roleIds.Count == 0)
-            throw new McpException($"The API key requires the '{permissionKey}' permission.");
+            return false;
 
         var roles = await roleService.GetRolesByIds(roleIds);
-        if (!roles.IsSuccess || !roles.Value!.SelectMany(r => r.Permissions)
-                .Contains(permissionKey, StringComparer.OrdinalIgnoreCase))
-            throw new McpException($"The API key requires the '{permissionKey}' permission.");
+        return roles.IsSuccess && roles.Value!.SelectMany(r => r.Permissions)
+            .Contains(permissionKey, StringComparer.OrdinalIgnoreCase);
     }
 }

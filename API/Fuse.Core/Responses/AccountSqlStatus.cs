@@ -60,7 +60,8 @@ public record SqlAccountPermissionsStatus(
 /// </summary>
 public record SqlOrphanPrincipal(
     string PrincipalName,
-    IReadOnlyList<SqlActualGrant> ActualPermissions
+    IReadOnlyList<SqlActualGrant> ActualPermissions,
+    string? ErrorMessage = null
 );
 
 /// <summary>

@@ -44,7 +44,18 @@
         </q-card-section>
       </q-card>
 
-      <EntraSettingsCard v-if="isAdmin" @saved="entraStatusQuery.refetch()" />
+      <q-banner
+        v-if="entraStatusQuery.data.value?.enabled && fuseStore.currentUser"
+        dense rounded inline-actions
+        class="q-mb-md"
+        :class="$q.dark.isActive ? 'bg-blue-10 text-blue-1' : 'bg-blue-1 text-primary'"
+      >
+        Microsoft Entra sign-in is enabled. Users can receive Fuse roles through linked Entra groups.
+        <template #action>
+          <q-btn v-if="fuseStore.hasPermission(Permission.RolesRead)" flat label="Manage roles" to="/roles" />
+          <q-btn v-if="fuseStore.hasPermission(Permission.SecuritySettingsUpdate)" flat label="Entra settings" to="/appsettings#entra" />
+        </template>
+      </q-banner>
 
       <!-- Current User Overview -->
       <q-card class="content-card q-mb-md">
@@ -54,7 +65,7 @@
             <div class="row q-gutter-md">
               <div class="col-auto">
                 <p><strong>Username:</strong> {{ fuseStore.currentUser.userName }}</p>
-                <q-banner v-if="!fuseStore.currentUser.isAdmin && !fuseStore.currentUser.effectiveRoleIds?.length" class="bg-blue-1 text-primary">Your account is awaiting access. Ask a Fuse administrator to assign a role or link an Entra group you belong to.</q-banner>
+                <q-banner v-if="!fuseStore.currentUser.isAdmin && !fuseStore.currentUser.effectiveRoleIds?.length" :class="$q.dark.isActive ? 'bg-blue-10 text-blue-1' : 'bg-blue-1 text-primary'" dense rounded>Your account is awaiting access. Ask a Fuse administrator to assign a role or link an Entra group you belong to.</q-banner>
                 <p><strong>Admin:</strong> {{ fuseStore.currentUser.isAdmin ? 'Yes' : 'No' }}</p>
               </div>
               <div class="col">
@@ -439,7 +450,6 @@ import { useDialogDraft } from '../composables/useDialogDraft'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import EntraSettingsCard from '../components/security/EntraSettingsCard.vue'
 import RoleMemberships from '../components/security/RoleMemberships.vue'
 import { useEntraStatus } from '../composables/useEntra'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'

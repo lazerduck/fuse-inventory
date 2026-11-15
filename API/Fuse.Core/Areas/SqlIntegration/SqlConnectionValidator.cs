@@ -149,33 +149,54 @@ public class SqlConnectionValidator : ISqlConnectionValidator
     {
         try
         {
-            // Check if user has permissions to ALTER users/logins or manage role membership
-            // These are the permissions needed to modify account permissions
-            const string query = @"
-                SELECT 
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY USER') AS HasAlterUser,
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') AS HasAlterLogin,
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'CONTROL SERVER') AS HasControlServer";
-            
-            await using var command = new SqlCommand(query, connection);
-            await using var reader = await command.ExecuteReaderAsync(ct);
-            
-            if (await reader.ReadAsync(ct))
+            // Login-management rights do not authorize GRANT/REVOKE inside a database.
+            // CONTROL SERVER does; otherwise inspect the user's actual database authority.
+            await using (var serverCommand = new SqlCommand(
+                "SELECT HAS_PERMS_BY_NAME(NULL, NULL, 'CONTROL SERVER')", connection))
             {
-                bool HasPerm(int ordinal)
-                    => !reader.IsDBNull(ordinal) && reader.GetInt32(ordinal) == 1;
+                if (await serverCommand.ExecuteScalarAsync(ct) is int serverControl && serverControl == 1)
+                    return true;
+            }
 
-                var hasAlterUser = HasPerm(0);
-                var hasAlterLogin = HasPerm(1);
-                var hasControlServer = HasPerm(2);
+            var databases = new List<string>();
+            const string databasesQuery = @"
+                SELECT name FROM sys.databases
+                WHERE database_id > 4 AND state = 0 AND HAS_DBACCESS(name) = 1";
+            await using (var databasesCommand = new SqlCommand(databasesQuery, connection))
+            await using (var reader = await databasesCommand.ExecuteReaderAsync(ct))
+            {
+                while (await reader.ReadAsync(ct))
+                    databases.Add(reader.GetString(0));
+            }
 
-                // Can write/alter permissions if they have any of these
-                return hasAlterUser || hasAlterLogin || hasControlServer;
+            // The integration has a single capability flag, not per-database flags.
+            // Advertise Write when at least one user database allows permission
+            // management; SQL Server still authorizes every operation at its target.
+            foreach (var database in databases)
+            {
+                var quotedDatabase = $"[{database.Replace("]", "]]")}]";
+                var query = $@"
+                    EXEC {quotedDatabase}.sys.sp_executesql N'
+                        SELECT CASE
+                            WHEN HAS_PERMS_BY_NAME(DB_NAME(), ''DATABASE'', ''CONTROL'') = 1
+                              OR IS_MEMBER(''db_securityadmin'') = 1
+                            THEN 1 ELSE 0 END';";
+                try
+                {
+                    await using var command = new SqlCommand(query, connection);
+                    if (await command.ExecuteScalarAsync(ct) is int canManagePermissions && canManagePermissions == 1)
+                        return true;
+                }
+                catch (SqlException)
+                {
+                    // A database may become inaccessible after discovery. Continue
+                    // checking other databases rather than discarding their authority.
+                }
             }
 
             return false;
         }
-        catch
+        catch (SqlException)
         {
             return false;
         }
@@ -185,34 +206,18 @@ public class SqlConnectionValidator : ISqlConnectionValidator
     {
         try
         {
-            // Check if user has permissions to create new users/logins
+            // Account creation starts with a server login. Database-local CREATE USER
+            // or ALTER ANY USER rights alone cannot create that login.
             const string query = @"
-                SELECT 
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'CREATE USER') AS HasCreateUser,
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY USER') AS HasAlterUser,
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') AS HasAlterLogin,
-                    HAS_PERMS_BY_NAME(NULL, NULL, 'CONTROL SERVER') AS HasControlServer";
-            
+                SELECT CASE
+                    WHEN HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') = 1
+                      OR HAS_PERMS_BY_NAME(NULL, NULL, 'CONTROL SERVER') = 1
+                    THEN 1 ELSE 0 END";
+
             await using var command = new SqlCommand(query, connection);
-            await using var reader = await command.ExecuteReaderAsync(ct);
-            
-            if (await reader.ReadAsync(ct))
-            {
-                bool HasPerm(int ordinal)
-                    => !reader.IsDBNull(ordinal) && reader.GetInt32(ordinal) == 1;
-
-                var hasCreateUser = HasPerm(0);
-                var hasAlterUser = HasPerm(1);
-                var hasAlterLogin = HasPerm(2);
-                var hasControlServer = HasPerm(3);
-
-                // Can create accounts if they have CREATE USER, ALTER ANY LOGIN, or CONTROL SERVER
-                return hasCreateUser || hasAlterLogin || hasControlServer;
-            }
-
-            return false;
+            return await command.ExecuteScalarAsync(ct) is int canCreateLogin && canCreateLogin == 1;
         }
-        catch
+        catch (SqlException)
         {
             return false;
         }

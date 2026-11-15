@@ -127,6 +127,53 @@ Microsoft Entra sign-in supports group-derived roles alongside direct Fuse assig
 
 ---
 
+## MCP workflows
+
+Enable the MCP server in **App Settings**, then connect a Streamable HTTP client to
+`https://<your-fuse-host>/api/mcp`. Authenticate with an `x-api-key` header or a Fuse
+session bearer token. MCP always requires authentication, regardless of the UI's
+anonymous-access setting. API keys use their assigned roles; tool discovery and
+execution both enforce those permissions. Generic inventory readers additionally
+check the permission for the requested entity type.
+
+Secret creation and account creation are separate operations:
+
+1. Use `inventory_list_secret_providers` to find a Key Vault provider and its
+   capabilities. Use `inventory_list_secrets` to inspect existing names without
+   retrieving values. Both require `secretproviders:read`; listing secrets also
+   requires the provider's **Check** capability.
+2. Call `inventory_create_secret` with `providerId` and `secretName`. Omitting
+   `secretValue` uses Fuse's configured secure password generator. Supplying a
+   value stores that value instead. Names must contain 1–127 letters, digits or
+   hyphens. This requires `secretproviders:secrets:create` and the provider's
+   **Create** capability. The result contains a `secretBinding`, never the value.
+3. Pass that binding to `inventory_create_account`, or use
+   `inventory_patch_account` to attach it to an existing account. These require
+   `accounts:create` or `accounts:update`, respectively. Reading an account to
+   obtain its current `updatedAt` for patching requires `accounts:read`.
+
+Creation rejects an existing secret name, including disabled secrets, rather than
+rotating it. The vault identity needs metadata-list and secret-set access; a failed
+metadata check stops creation. Concurrent creates through one Fuse process are
+serialized for the same vault/name, including provider aliases. Key Vault's set
+operation is not an atomic create-only write, so this cannot prevent a simultaneous
+write from another application or Fuse process. Explicit rotation remains a
+separate REST/UI operation.
+
+Named accounts conflict when target, authentication kind and exact, case-sensitive
+username match. The check runs inside the store's write lock, including clones and
+identity-changing edits. Existing duplicate records remain editable; unnamed
+credentials are not deduplicated. A conflict identifies the existing account so a
+client can inspect it instead of repeating a create. Accounts document inventory;
+creating one does not provision a SQL principal.
+
+Account creation, editing, deletion and cloning write audit events without secret
+bindings or parameter values. Version history attributes requests to the signed-in
+user or API key. With a shared key, attribution identifies the key rather than the
+individual operating the client.
+
+---
+
 ## 🧬 Core Model
 
 Fuse Inventory’s model reflects how real systems are structured:

@@ -1,58 +1,53 @@
 <template>
-  <q-card class="content-card q-mb-md">
-    <q-card-section>
-      <div class="text-h6">Microsoft Entra</div>
-      <p>
-        Connect your organisation’s Microsoft accounts. Fuse roles can be assigned directly or through Entra security
-        groups.
-      </p>
-      <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md">{{ error }}</q-banner>
-      <q-form v-if="settingsQuery.data.value" @submit.prevent="save" class="q-gutter-md">
-        <q-toggle v-model="settings.enabled" label="Enable Microsoft sign-in" />
-        <q-input v-model="settings.tenantId" outlined label="Tenant ID" required />
-        <q-input v-model="settings.clientId" outlined label="Application (client) ID" required />
-        <q-input
-          v-model="secret"
-          outlined
-          type="password"
-          autocomplete="new-password"
-          label="Client secret"
-          :hint="
-            settings.hasClientSecret
-              ? 'A secret is stored. Leave blank to keep it.'
-              : 'Enter the secret value, not its ID.'
-          "
-        />
-        <q-input
-          v-model="settings.publicOrigin"
-          outlined
-          label="Public origin"
-          hint="For example https://inventory.example.com"
-          required
-        />
-        <div>
-          Web redirect URI:
-          <code>{{ redirectUri }}</code>
-        </div>
-        <q-input
-          v-model.number="settings.sessionMinutes"
-          outlined
-          type="number"
-          :min="5"
-          :max="120"
-          label="Refresh Microsoft sign-in after (minutes)"
-        />
-        <q-banner class="bg-blue-1 text-primary">
-          Enabling Entra sets Fuse to fully restricted access. Keep a local administrator for recovery. Configure
-          security-group object IDs in the app registration’s token claims; no paid group-to-application assignment is
-          needed. Saving settings ends existing Entra sessions.
-        </q-banner>
-        <q-btn color="primary" label="Save Entra settings" type="submit" :loading="saveMutation.isPending.value" />
-        <q-btn v-if="savedEnabled" outline label="Test Microsoft sign-in" href="/auth/entra/login" />
-      </q-form>
-      <q-spinner v-else-if="settingsQuery.isPending.value" />
-    </q-card-section>
-  </q-card>
+  <div class="q-pa-md">
+    <p>
+      Connect your organisation’s Microsoft accounts. Fuse roles can be assigned directly or through Entra security
+      groups.
+    </p>
+    <q-banner v-if="error" class="q-mb-md" :class="$q.dark.isActive ? 'bg-red-10 text-red-1' : 'bg-red-1 text-negative'" dense rounded>{{ error }}</q-banner>
+    <q-form v-if="settingsQuery.data.value" @submit.prevent="save" class="q-gutter-md">
+      <q-toggle v-model="settings.enabled" label="Enable Microsoft sign-in" />
+      <q-input v-model="settings.tenantId" outlined label="Tenant ID" required />
+      <q-input v-model="settings.clientId" outlined label="Application (client) ID" required />
+      <q-input
+        v-model="secret"
+        outlined
+        type="password"
+        autocomplete="new-password"
+        label="Client secret"
+        :hint="
+          settings.hasClientSecret
+            ? 'A secret is stored. Leave blank to keep it.'
+            : 'Enter the secret value, not its ID.'
+        "
+      />
+      <q-input
+        v-model="settings.publicOrigin"
+        outlined
+        label="Public origin"
+        hint="For example https://inventory.example.com"
+        required
+      />
+      <div>
+        Web redirect URI:
+        <code>{{ redirectUri }}</code>
+      </div>
+      <q-input
+        v-model.number="settings.sessionMinutes"
+        outlined
+        type="number"
+        :min="5"
+        :max="120"
+        label="Refresh Microsoft sign-in after (minutes)"
+      />
+      <q-banner :class="$q.dark.isActive ? 'bg-blue-10 text-blue-1' : 'bg-blue-1 text-primary'" dense rounded>
+        Enabling Microsoft sign-in requires users to sign in before accessing Fuse. Keep a local administrator
+        account so you can sign in if Microsoft is unavailable. Saving changes signs out existing Microsoft sessions.
+      </q-banner>
+      <q-btn color="primary" label="Save Entra settings" type="submit" :loading="saveMutation.isPending.value" />
+    </q-form>
+    <q-spinner v-else-if="settingsQuery.isPending.value" />
+  </div>
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
@@ -65,13 +60,11 @@ import { useUnsavedChanges } from '../../composables/useUnsavedChanges'
 import { useFuseStore } from '../../stores/FuseStore'
 import { getErrorMessage } from '../../utils/error'
 
-const emit = defineEmits<{ saved: [] }>()
 const client = useFuseClient()
 const queryClient = useQueryClient()
 const store = useFuseStore()
 const settingsQuery = useEntraSettings()
 const settings = ref(new EntraSettingsInfo())
-const savedEnabled = ref(false)
 const secret = ref('')
 const redirectUri = computed(() => `${(settings.value.publicOrigin ?? '').replace(/\/$/, '')}/auth/entra/callback`)
 const draft = useUnsavedChanges(computed(() => ({ settings: settings.value, secret: secret.value })))
@@ -81,7 +74,6 @@ function loadSettings(value: EntraSettingsInfo) {
     ...value,
     publicOrigin: value.publicOrigin || window.location.origin
   })
-  savedEnabled.value = value.enabled ?? false
   secret.value = ''
   draft.markClean()
 }
@@ -104,7 +96,6 @@ const saveMutation = useMutation({
     await queryClient.invalidateQueries({ queryKey: ['entraStatus'] })
     await queryClient.invalidateQueries({ queryKey: ['entraSettings'] })
     await store.fetchStatus()
-    emit('saved')
     Notify.create({
       type: 'positive',
       message: 'Entra settings saved. Test Microsoft sign-in to verify the connection.'
