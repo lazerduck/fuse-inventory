@@ -83,7 +83,7 @@ import type { ApplicationInstance } from 'api/client'
 import { useEnvironments } from '../../composables/useEnvironments'
 import { usePlatforms } from '../../composables/usePlatforms'
 import { useSecretProviders } from '../../composables/useSecretProviders'
-import { isAppConfigurationEndpoint } from '../../utils/secretProviders'
+import { isAppConfiguration } from '../../utils/secretProviders'
 import TagSelect from '../tags/TagSelect.vue'
 
 type Mode = 'create' | 'edit'
@@ -128,7 +128,7 @@ const environmentOptions = environmentsStore.options
 const platformOptions = platformsStore.options
 const appConfigurationProviderOptions = computed(() =>
   (secretProvidersQuery.data.value ?? [])
-    .filter((provider) => !!provider.id && isAppConfigurationEndpoint(provider.vaultUri))
+    .filter((provider) => !!provider.id && isAppConfiguration(provider))
     .map((provider) => ({ label: provider.name ?? provider.id!, value: provider.id! }))
 )
 

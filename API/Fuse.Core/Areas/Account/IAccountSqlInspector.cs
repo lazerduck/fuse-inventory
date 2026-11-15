@@ -9,7 +9,8 @@ namespace Fuse.Core.Areas.Account;
 public record SqlPrincipalPermissions(
     string? PrincipalName,
     bool Exists,
-    IReadOnlyList<SqlActualGrant> Grants
+    IReadOnlyList<SqlActualGrant> Grants,
+    string? InspectionError = null
 );
 
 /// <summary>

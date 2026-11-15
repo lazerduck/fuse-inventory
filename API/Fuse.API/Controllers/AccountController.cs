@@ -98,12 +98,15 @@ namespace Fuse.API.Controllers
         [RequirePermissionKey(AccountPermissions.CreateKey)]
         [ProducesResponseType(201, Type = typeof(Account))]
         [ProducesResponseType(400)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult<Account>> CreateAccount([FromBody] CreateAccount command)
         {
             var result = await _accountService.CreateAccountAsync(command);
             if (!result.IsSuccess)
             {
-                return BadRequest(new { error = result.Error });
+                return result.ErrorType == ErrorType.Conflict
+                    ? Conflict(new { error = result.Error })
+                    : BadRequest(new { error = result.Error });
             }
 
             var account = result.Value!;
@@ -116,6 +119,7 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(200, Type = typeof(Account))]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult<Account>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccount command)
         {
             var merged = command with { Id = id };
@@ -125,6 +129,7 @@ namespace Fuse.API.Controllers
                 return result.ErrorType switch
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }
@@ -176,6 +181,7 @@ namespace Fuse.API.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Account>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult<IEnumerable<Account>>> CloneAccount([FromRoute] Guid id, [FromBody] CloneAccount command)
         {
             var merged = command with { SourceId = id };
@@ -185,6 +191,7 @@ namespace Fuse.API.Controllers
                 return result.ErrorType switch
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }

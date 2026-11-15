@@ -24,7 +24,7 @@ namespace Fuse.API.Controllers
         public async Task<ActionResult<IEnumerable<RoleInfo>>> GetRoles()
         {
             var roleResult = await roleService.GetRoles();
-            var roles = roleResult.Value!.Select(r => new RoleInfo(r.Id, r.Name, r.Description, r.Permissions, r.CreatedAt, r.UpdatedAt));
+            var roles = roleResult.Value!.Select(r => new RoleInfo(r.Id, r.Name, r.Description, r.Permissions, r.CreatedAt, r.UpdatedAt) { EntraGroups = r.EntraGroups });
             return Ok(roles);
         }
 
@@ -46,7 +46,7 @@ namespace Fuse.API.Controllers
             }
             var role = roleResult.Value!;
 
-            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt);
+            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt) { EntraGroups = role.EntraGroups };
             return Ok(roleInfo);
         }
 
@@ -62,7 +62,7 @@ namespace Fuse.API.Controllers
             var result = await roleService.CreateRole(
                 command.Name,
                 command.Description,
-                command.Permissions);
+                command.Permissions, command.EntraGroups);
             
             if (!result.IsSuccess)
             {
@@ -74,7 +74,7 @@ namespace Fuse.API.Controllers
             }
 
             var role = result.Value!;
-            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt);
+            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt) { EntraGroups = role.EntraGroups };
             return CreatedAtAction(nameof(GetRoleById), new { id = role.Id }, roleInfo);
         }
 
@@ -92,7 +92,7 @@ namespace Fuse.API.Controllers
                 id,
                 command.Name,
                 command.Description,
-                command.Permissions);
+                command.Permissions, command.EntraGroups);
             
             if (!result.IsSuccess)
             {
@@ -105,7 +105,7 @@ namespace Fuse.API.Controllers
             }
 
             var role = result.Value!;
-            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt);
+            var roleInfo = new RoleInfo(role.Id, role.Name, role.Description, role.Permissions, role.CreatedAt, role.UpdatedAt) { EntraGroups = role.EntraGroups };
             return Ok(roleInfo);
         }
 

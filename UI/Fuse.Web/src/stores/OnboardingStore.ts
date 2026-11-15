@@ -10,6 +10,7 @@ interface OnboardingState {
   activeGuideId: string | null
   completedGuideSteps: string[]
   guideProgressVersion: number
+  applicationId: string | null
   progressUserId: string | null
 }
 
@@ -26,6 +27,7 @@ const defaultState: OnboardingState = {
   activeGuideId: 'first-application',
   completedGuideSteps: [],
   guideProgressVersion: GUIDE_PROGRESS_VERSION,
+  applicationId: null,
   progressUserId: null
 }
 
@@ -62,7 +64,7 @@ function persistState(state: OnboardingState): void {
   }
 
   try {
-    const { hasCompletedTour, dismissedBanner, showCheatSheet, lastCompletedAt, activeGuideId, completedGuideSteps, guideProgressVersion } = state
+    const { hasCompletedTour, dismissedBanner, showCheatSheet, lastCompletedAt, activeGuideId, completedGuideSteps, guideProgressVersion, applicationId } = state
     const persistable = {
       hasCompletedTour,
       dismissedBanner,
@@ -70,7 +72,8 @@ function persistState(state: OnboardingState): void {
       lastCompletedAt,
       activeGuideId,
       completedGuideSteps,
-      guideProgressVersion
+      guideProgressVersion,
+      applicationId
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable))
   } catch (error) {
@@ -79,6 +82,7 @@ function persistState(state: OnboardingState): void {
 }
 
 interface ServerGuideProgress {
+  applicationId?: string | null
   completedStepIds?: string[]
   activeGuideId?: string | null
   hasCompletedGettingStarted?: boolean
@@ -100,7 +104,8 @@ async function requestGuideProgress(method: 'GET' | 'PUT', state?: OnboardingSta
       completedStepIds: state.completedGuideSteps,
       activeGuideId: state.activeGuideId,
       hasCompletedGettingStarted: state.hasCompletedTour,
-      lastCompletedAt: state.lastCompletedAt
+      lastCompletedAt: state.lastCompletedAt,
+      applicationId: state.applicationId
     }) : undefined
   })
 
@@ -111,6 +116,15 @@ async function requestGuideProgress(method: 'GET' | 'PUT', state?: OnboardingSta
 export const useOnboardingStore = defineStore('onboarding', {
   state: (): OnboardingState => loadPersistedState(),
   actions: {
+    trackApplication(id: string | null) {
+      this.applicationId = id
+      if (id) {
+        this.setGuideStepCompleted('first-app-create', true)
+      } else {
+        persistState(this.$state)
+        void this.syncUserProgress()
+      }
+    },
     startRequested() {
       this.isTourActive = true
       this.dismissedBanner = true
@@ -135,6 +149,7 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.lastCompletedAt = null
       this.isTourActive = false
       this.activeGuideId = 'first-application'
+      this.applicationId = null
       this.completedGuideSteps = []
       this.guideProgressVersion = GUIDE_PROGRESS_VERSION
       persistState(this.$state)
@@ -173,6 +188,7 @@ export const useOnboardingStore = defineStore('onboarding', {
       try {
         const progress = await requestGuideProgress('GET')
         if (this.progressUserId !== userId) return
+        this.applicationId = progress.applicationId ?? null
         this.completedGuideSteps = [...(progress.completedStepIds ?? [])]
         this.activeGuideId = progress.activeGuideId ?? 'first-application'
         this.hasCompletedTour = progress.hasCompletedGettingStarted ?? false

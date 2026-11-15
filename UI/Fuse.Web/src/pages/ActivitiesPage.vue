@@ -93,6 +93,8 @@
           </template>
           <template #body-cell-undo="props">
             <q-td :props="props" class="text-right">
+              <q-btn v-if="canReadApplication && props.row.entityType === EntityType.Application && props.row.versionId"
+                dense flat color="primary" label="View changes" @click="selectedEntry = props.row" />
               <q-btn
                 v-if="props.row.canUndo && canUndo(props.row.entityType)"
                 dense
@@ -102,7 +104,6 @@
                 label="Undo"
                 @click="confirmUndo(props.row.versionId)"
               />
-              <span v-else class="text-grey-6">-</span>
             </q-td>
           </template>
           <template #no-data>
@@ -110,6 +111,8 @@
           </template>
         </q-table>
       </q-card>
+      <ApplicationChangesDialog v-if="selectedEntry && canReadApplication" :key="selectedEntry.versionId"
+        :entry="selectedEntry" @close="selectedEntry = null" />
     </template>
   </div>
 </template>
@@ -118,7 +121,8 @@
 import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Dialog, Notify, type QTableColumn, type QTableProps } from 'quasar'
-import { EntityType, SecurityPosture } from 'api/client'
+import ApplicationChangesDialog from '../components/activity/ApplicationChangesDialog.vue'
+import { type ActivityFeedItem, EntityType, SecurityPosture } from 'api/client'
 import { Permission } from 'permissions'
 import { useActivityFeed } from '../composables/useActivityFeed'
 import { useFuseClient } from '../composables/useFuseClient'
@@ -131,6 +135,10 @@ const canReadActivity = computed(() => {
   if (fuseStore.securityPosture === SecurityPosture.Unrestricted) return true
   return fuseStore.isLoggedIn && fuseStore.hasPermission(Permission.ActivityRead)
 })
+
+const canReadApplication = computed(() => fuseStore.hasPermission(Permission.ApplicationsRead))
+const selectedEntry = ref<ActivityFeedItem | null>(null)
+watch(() => [canReadActivity.value, canReadApplication.value, fuseStore.currentUser?.id], () => { selectedEntry.value = null })
 
 const filters = ref({
   startTime: '',

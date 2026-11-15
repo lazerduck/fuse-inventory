@@ -1,6 +1,6 @@
 # Fuse UI regression tests
 
-Requires Node 22, Docker Compose v2 and the Playwright Chromium browser.
+Requires Node 26, Docker Compose v2 and the Playwright Chromium browser.
 
 CI uses Ubuntu 26.04 with the Playwright version in `package-lock.json`. Reinstall Chromium after updating Playwright so the browser revision matches the test runner.
 
@@ -29,3 +29,12 @@ Retries are disabled. Failed tests retain screenshots, video and traces in `test
 Component tests live in `UI/Fuse.Web/tests` and run with `npm test` from that directory. They mount real Vue/Quasar controls with isolated Pinia and query caches. Tags dialog teleporting is stubbed; data-service boundaries are mocked. Browser tests separately exercise the real persistence and permission endpoints.
 
 See [the coverage plan](../UI_TEST_PLAN.md) and [product findings](../UI_TEST_FINDINGS.md). Explicit expected failures reference a finding and must fail on their intended behavioural assertion; unexpected success fails CI. Mocked integration states do not establish connectivity to live SQL, Azure or Kuma services.
+
+To verify an alternative first-run access level on fresh disposable data, run just the bootstrap test:
+
+```sh
+FUSE_TEST_SETUP_POSTURE=RestrictedEditing npm test -- bootstrap.spec.ts
+FUSE_TEST_SETUP_POSTURE=Unrestricted npm test -- bootstrap.spec.ts
+```
+
+The normal suite uses Fully Restricted, which is the setup default.

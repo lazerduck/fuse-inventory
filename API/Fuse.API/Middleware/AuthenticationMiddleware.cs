@@ -4,6 +4,9 @@ using Fuse.Core.Areas.Logging;
 using Fuse.Core.Areas.Security.Interfaces;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Models;
+using Fuse.Core.Interfaces;
+using Fuse.Core.Areas.Security.Entra;
+using Fuse.Core.Services;
 using SystemLogLevel = Fuse.Core.Models.LogLevel;
 
 namespace Fuse.API.Middleware;
@@ -22,7 +25,7 @@ public sealed class AuthenticationMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IFuseAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService, ILogService logService)
+    public async Task InvokeAsync(HttpContext context, IFuseAPIKeyService apiKeyService, IFuseUserSessionService sessionService, IFuseUserService userService, ILogService logService, IFuseStore store)
     {
         var cancellationToken = context.RequestAborted;
 
@@ -41,7 +44,7 @@ public sealed class AuthenticationMiddleware
             var token = ExtractBearerToken(context.Request);
             if (token is not null)
             {
-                var principal = await TryAuthenticateTokenAsync(token, sessionService, userService, cancellationToken);
+                var principal = await TryAuthenticateTokenAsync(token, sessionService, userService, store, cancellationToken);
                 if (principal is not null)
                     context.User = principal;
                 else
@@ -49,7 +52,18 @@ public sealed class AuthenticationMiddleware
             }
         }
 
-        await _next(context);
+        var principalId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        SnapshotChangeTracker.SetUserContext(
+            context.User.Identity?.IsAuthenticated == true ? context.User.Identity.Name ?? "anonymous" : "anonymous",
+            Guid.TryParse(principalId, out var id) ? id : null);
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            SnapshotChangeTracker.SetUserContext("System", null);
+        }
     }
 
     private static async Task<ClaimsPrincipal?> TryAuthenticateApiKeyAsync(
@@ -78,6 +92,7 @@ public sealed class AuthenticationMiddleware
         string token,
         IFuseUserSessionService sessionService,
         IFuseUserService userService,
+        IFuseStore store,
         CancellationToken cancellationToken)
     {
         var sessionResult = await sessionService.ValidateSession(token);
@@ -99,8 +114,12 @@ public sealed class AuthenticationMiddleware
         if (user.IsAdmin)
             claims.Add(new Claim(IsAdminClaimType, bool.TrueString));
 
-        foreach (var roleId in user.RoleIds)
-            claims.Add(new Claim(RoleIdClaimType, roleId.ToString()));
+        var security = (await store.GetAsync(cancellationToken)).SecurityContext;
+        var session = security.Sessions.FirstOrDefault(s => s.Token == token);
+        if (session is null || user.IsDisabled || session.Version != user.SessionVersion) return null;
+        var memberships = RoleMembershipResolver.Resolve(security, user, session.IsEntra ? session.EntraGroupIds : []);
+        foreach (var membership in memberships)
+            claims.Add(new Claim(RoleIdClaimType, membership.RoleId.ToString()));
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, UserAuthType));
     }

@@ -9,7 +9,7 @@ public record UpdateSecuritySettings(SecurityPosture Posture)
     public Guid? RequestedBy { get; init; }
 }
 
-public record CreateSecurityUser(string UserName, string Password, List<Guid> RoleIds, bool IsAdmin = false);
+public record CreateSecurityUser(string UserName, string Password, List<Guid> RoleIds, bool IsAdmin = false, SecurityPosture? InitialSecurityPosture = null);
 
 public record LoginSecurityUser(string UserName, string Password);
 
@@ -24,11 +24,13 @@ public record DeleteUser(Guid Id)
 public record CreateRole(string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
+    public IReadOnlyList<EntraGroupMapping>? EntraGroups { get; init; }
 }
 
 public record UpdateRole(Guid Id, string Name, string Description, IReadOnlyList<string> Permissions)
 {
     public Guid? RequestedBy { get; init; }
+    public IReadOnlyList<EntraGroupMapping>? EntraGroups { get; init; }
 }
 
 public record DeleteRole(Guid Id)

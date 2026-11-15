@@ -17,6 +17,7 @@ using Fuse.Core.Areas.Responsibility;
 using Fuse.Core.Areas.Risk;
 using Fuse.Core.Areas.Security;
 using Fuse.Core.Areas.Security.Interfaces;
+using Fuse.Core.Areas.Security.Entra;
 using Fuse.Core.Areas.Security.Permissions;
 using Fuse.Core.Areas.Security.Services;
 using Fuse.Core.Areas.SecretProvider;
@@ -57,6 +58,8 @@ public static class FuseCodeModule
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IRiskService, RiskService>();
         services.AddScoped<IConfigService, ConfigService>();
+        services.AddScoped<IEntraIdentityService, EntraIdentityService>();
+        services.AddScoped<IEntraSettingsService, EntraSettingsService>();
         services.AddScoped<IFuseRoleService, FuseRoleService>();
         services.AddScoped<IFuseUserService, FuseUserService>();
         services.AddScoped<IFuseUserSessionService, FuseUserSessionService>();

@@ -294,20 +294,14 @@ router.beforeEach((to, from) => {
 
 router.beforeEach((to, from) => to.fullPath === from.fullPath || confirmNavigation())
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to) => {
   const fuseStore = useFuseStore()
 
-  // Check if setup is required
   if (to.name === 'healthOverview' && fuseStore.appSettings?.healthCheckProvider === 'None') {
-    next({ name: 'home' })
-  } else if (fuseStore.requireSetup && to.name !== 'security') {
-    // Redirect to security page if setup is required
-    next({ name: 'security' })
-  } else if (!fuseStore.requireSetup && to.name === 'security' && from.name !== null) {
-    // Allow navigation away from security page only if setup is complete
-    next()
-  } else {
-    next()
+    return { name: 'home' }
+  }
+  if (fuseStore.requireSetup && to.name !== 'security') {
+    return { name: 'security' }
   }
 })
 

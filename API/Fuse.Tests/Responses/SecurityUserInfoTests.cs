@@ -13,6 +13,6 @@ public class SecurityUserInfoTests
 
         var result = SecurityUserInfo.FromFuseUser(user);
 
-        Assert.Equal(new SecurityUserInfo(user.Id, user.UserName, user.IsAdmin, user.RoleIds, user.CreatedAt, user.UpdatedAt), result);
+        Assert.Equal(new SecurityUserInfo(user.Id, user.UserName, user.IsAdmin, user.RoleIds, user.CreatedAt, user.UpdatedAt) { HasLocalPassword = true }, result);
     }
 }
