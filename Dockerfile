@@ -1,5 +1,6 @@
 # Static frontend assets are shared by every target architecture. Build once natively.
-FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-build
+# The native TypeScript bridge requires glibc; Alpine/musl is unsupported.
+FROM --platform=$BUILDPLATFORM node:26-bookworm-slim AS frontend-build
 
 WORKDIR /app/frontend
 
