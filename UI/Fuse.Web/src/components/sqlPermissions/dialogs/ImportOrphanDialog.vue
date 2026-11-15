@@ -12,6 +12,10 @@
           <strong>{{ orphan.principalName }}</strong>?
         </p>
 
+        <q-banner v-if="orphan?.errorMessage" class="bg-negative text-white q-mb-md" role="alert">
+          {{ orphan.errorMessage }}
+        </q-banner>
+
         <div class="q-mt-md">
           <div class="text-subtitle2 q-mb-sm">Authentication Type</div>
           <q-select
@@ -46,16 +50,16 @@
           />
         </div>
 
-        <div v-if="orphan?.actualPermissions?.length" class="q-mt-md">
+        <div v-if="!orphan?.errorMessage && orphan?.actualPermissions?.length" class="q-mt-md">
           <div class="text-subtitle2 q-mb-sm">Permissions to import:</div>
           <div class="tag-list">
-            <template v-for="grant in orphan.actualPermissions" :key="grant.database">
+            <template v-for="grant in orphan.actualPermissions" :key="`${grant.database}-${grant.schema}`">
               <q-badge
                 v-for="priv in grant.privileges"
-                :key="`${grant.database}-${priv}`"
+                :key="`${grant.database}-${grant.schema}-${priv}`"
                 outline
                 color="secondary"
-                :label="`${grant.database ?? 'default'}:${priv}`"
+                :label="`${grant.database ?? 'default'}${grant.schema ? `.${grant.schema}` : ''}:${priv}`"
               />
             </template>
           </div>
@@ -69,6 +73,7 @@
           label="Import Account"
           color="primary"
           :loading="isImporting"
+          :disable="!!orphan?.errorMessage"
           @click="submit"
         />
       </q-card-actions>
@@ -130,6 +135,7 @@ const secretBindingOptions = [
 ]
 
 function submit() {
+  if (props.orphan?.errorMessage) return
   emit('submit', {
     authKind: authKind.value,
     secretBindingKind: secretBindingKind.value,

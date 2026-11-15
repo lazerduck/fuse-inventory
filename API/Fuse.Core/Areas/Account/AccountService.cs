@@ -530,7 +530,7 @@ public class AccountService : IAccountService
         var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
             sqlIntegration, principalName, ct);
 
-        if (!isSuccessful || actualPermissions is null)
+        if (!isSuccessful || actualPermissions is null || actualPermissions.InspectionError is not null)
         {
             return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
                 AccountId: accountId,
@@ -539,7 +539,7 @@ public class AccountService : IAccountService
                 Status: SyncStatus.Error,
                 StatusSummary: "Failed to retrieve SQL permissions.",
                 PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                ErrorMessage: errorMessage ?? "Unknown error occurred while querying SQL permissions."
+                ErrorMessage: actualPermissions?.InspectionError ?? errorMessage ?? "Unknown error occurred while querying SQL permissions."
             ));
         }
 
