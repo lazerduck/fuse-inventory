@@ -873,7 +873,7 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+  progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
    * @param body (optional)
@@ -974,6 +974,70 @@ export interface IFuseApiClient {
    * @return No Content
    */
   positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  redisIntegrationPOST(
+    body: CreateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationPUT(
+    id: string,
+    body: UpdateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  redisIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationValidate(
+    body: ValidateRedisConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisDiscoveryResponse>;
 
   /**
    * @return OK
@@ -1816,6 +1880,22 @@ export class FuseApiClient implements IFuseApiClient {
           result400,
         );
       });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException(
@@ -1975,6 +2055,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -2374,6 +2470,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -9843,7 +9955,7 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+  progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -9856,13 +9968,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressGETGET(_response);
+      return this.processProgressGET(_response);
     });
   }
 
-  protected processProgressGETGET(
-    response: Response,
-  ): Promise<UserGuideProgress> {
+  protected processProgressGET(response: Response): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -10987,6 +11097,669 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/RedisIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationAll(_response);
+    });
+  }
+
+  protected processRedisIntegrationAll(
+    response: Response,
+  ): Promise<RedisIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(RedisIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  redisIntegrationPOST(
+    body: CreateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationPOST(_response);
+    });
+  }
+
+  protected processRedisIntegrationPOST(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = RedisIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationGET(_response);
+    });
+  }
+
+  protected processRedisIntegrationGET(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationPUT(
+    id: string,
+    body: UpdateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationPUT(_response);
+    });
+  }
+
+  protected processRedisIntegrationPUT(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  redisIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationDELETE(_response);
+    });
+  }
+
+  protected processRedisIntegrationDELETE(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationValidate(
+    body: ValidateRedisConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationValidate(_response);
+    });
+  }
+
+  protected processRedisIntegrationValidate(
+    response: Response,
+  ): Promise<RedisConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processRedisIntegrationValidateSaved(
+    response: Response,
+  ): Promise<RedisConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processRedisIntegrationDiscovery(
+    response: Response,
+  ): Promise<RedisDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisDiscoveryResponse>(null as any);
   }
 
   /**
@@ -18317,9 +19090,7 @@ export interface IApiKeyInfo {
   updatedAt?: Date;
 }
 
-export class AppConfigurationEntryResponse
-  implements IAppConfigurationEntryResponse
-{
+export class AppConfigurationEntryResponse implements IAppConfigurationEntryResponse {
   key?: string | undefined;
   value?: string | undefined;
   label?: string | undefined;
@@ -18907,9 +19678,7 @@ export interface IApplicationInstance {
   appConfigurationKeySuffix?: string | undefined;
 }
 
-export class ApplicationInstanceDependency
-  implements IApplicationInstanceDependency
-{
+export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
   id?: string;
   targetId?: string;
   targetKind?: TargetKind;
@@ -19251,6 +20020,9 @@ export enum AuditAction {
   IdentityUpdated = "IdentityUpdated",
   IdentityDeleted = "IdentityDeleted",
   ChangeReverted = "ChangeReverted",
+  RedisIntegrationCreated = "RedisIntegrationCreated",
+  RedisIntegrationUpdated = "RedisIntegrationUpdated",
+  RedisIntegrationDeleted = "RedisIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -19271,6 +20043,7 @@ export enum AuditArea {
   ResponsibilityType = "ResponsibilityType",
   ResponsibilityAssignment = "ResponsibilityAssignment",
   Risk = "Risk",
+  RedisIntegration = "RedisIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -19411,9 +20184,7 @@ export enum AuthKind {
   Other = "Other",
 }
 
-export class AzureDiscoveryAuthentication
-  implements IAzureDiscoveryAuthentication
-{
+export class AzureDiscoveryAuthentication implements IAzureDiscoveryAuthentication {
   authMode?: SecretProviderAuthMode;
 
   constructor(data?: IAzureDiscoveryAuthentication) {
@@ -19449,9 +20220,7 @@ export interface IAzureDiscoveryAuthentication {
   authMode?: SecretProviderAuthMode;
 }
 
-export class AzureDiscoveryExclusionsResponse
-  implements IAzureDiscoveryExclusionsResponse
-{
+export class AzureDiscoveryExclusionsResponse implements IAzureDiscoveryExclusionsResponse {
   resourceIds?: string[] | undefined;
 
   constructor(data?: IAzureDiscoveryExclusionsResponse) {
@@ -19547,9 +20316,7 @@ export interface IAzureImportResponse {
   warnings?: string[] | undefined;
 }
 
-export class AzureIntegrationManagerResponse
-  implements IAzureIntegrationManagerResponse
-{
+export class AzureIntegrationManagerResponse implements IAzureIntegrationManagerResponse {
   hasClientSecretCredentials?: boolean;
   tenantId?: string | undefined;
   clientId?: string | undefined;
@@ -20247,9 +21014,7 @@ export interface IBulkResolveSummary {
   failed?: number;
 }
 
-export class CachedAccountSqlStatusResponse
-  implements ICachedAccountSqlStatusResponse
-{
+export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusResponse {
   status?: AccountSqlStatusResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -20299,9 +21064,7 @@ export interface ICachedAccountSqlStatusResponse {
   isCached?: boolean;
 }
 
-export class CachedPermissionsOverviewResponse
-  implements ICachedPermissionsOverviewResponse
-{
+export class CachedPermissionsOverviewResponse implements ICachedPermissionsOverviewResponse {
   overview?: SqlIntegrationPermissionsOverviewResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -20762,9 +21525,7 @@ export interface ICreateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class CreateApplicationDependency
-  implements ICreateApplicationDependency
-{
+export class CreateApplicationDependency implements ICreateApplicationDependency {
   applicationId?: string;
   instanceId?: string;
   targetId?: string;
@@ -21547,9 +22308,59 @@ export interface ICreatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class CreateResponsibilityAssignment
-  implements ICreateResponsibilityAssignment
-{
+export class CreateRedisIntegration implements ICreateRedisIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreateRedisIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreateRedisIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateRedisIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreateRedisIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class CreateResponsibilityAssignment implements ICreateResponsibilityAssignment {
   positionId?: string;
   responsibilityTypeId?: string;
   applicationId?: string;
@@ -23326,9 +24137,7 @@ export interface IImportAzureResources {
   kinds?: string[] | undefined;
 }
 
-export class ImportOrphanPrincipalRequest
-  implements IImportOrphanPrincipalRequest
-{
+export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalRequest {
   principalName?: string | undefined;
   authKind?: AuthKind;
   secretBinding?: SecretBinding;
@@ -23376,9 +24185,7 @@ export interface IImportOrphanPrincipalRequest {
   secretBinding?: SecretBinding;
 }
 
-export class ImportOrphanPrincipalResponse
-  implements IImportOrphanPrincipalResponse
-{
+export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResponse {
   accountId?: string;
   principalName?: string | undefined;
   success?: boolean;
@@ -24663,6 +25470,520 @@ export interface IProblemDetails {
   [key: string]: any;
 }
 
+export class RedisAccountMatchResponse implements IRedisAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+  redisUsername?: string | undefined;
+
+  constructor(data?: IRedisAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+      this.redisUsername = _data["redisUsername"];
+    }
+  }
+
+  static fromJS(data: any): RedisAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    data["redisUsername"] = this.redisUsername;
+    return data;
+  }
+}
+
+export interface IRedisAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+  redisUsername?: string | undefined;
+}
+
+export class RedisAclSelectorResponse implements IRedisAclSelectorResponse {
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+
+  constructor(data?: IRedisAclSelectorResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.commands = _data["commands"];
+      this.keyPatterns = _data["keyPatterns"];
+      this.channelPatterns = _data["channelPatterns"];
+    }
+  }
+
+  static fromJS(data: any): RedisAclSelectorResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAclSelectorResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["commands"] = this.commands;
+    data["keyPatterns"] = this.keyPatterns;
+    data["channelPatterns"] = this.channelPatterns;
+    return data;
+  }
+}
+
+export interface IRedisAclSelectorResponse {
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+}
+
+export class RedisAclUserResponse implements IRedisAclUserResponse {
+  username?: string | undefined;
+  enabled?: boolean | undefined;
+  flags?: string[] | undefined;
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+  selectors?: RedisAclSelectorResponse[] | undefined;
+  matchedAccountIds?: string[] | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRedisAclUserResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.enabled = _data["enabled"];
+      if (Array.isArray(_data["flags"])) {
+        this.flags = [] as any;
+        for (let item of _data["flags"]) this.flags!.push(item);
+      }
+      this.commands = _data["commands"];
+      this.keyPatterns = _data["keyPatterns"];
+      this.channelPatterns = _data["channelPatterns"];
+      if (Array.isArray(_data["selectors"])) {
+        this.selectors = [] as any;
+        for (let item of _data["selectors"])
+          this.selectors!.push(RedisAclSelectorResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RedisAclUserResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAclUserResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["enabled"] = this.enabled;
+    if (Array.isArray(this.flags)) {
+      data["flags"] = [];
+      for (let item of this.flags) data["flags"].push(item);
+    }
+    data["commands"] = this.commands;
+    data["keyPatterns"] = this.keyPatterns;
+    data["channelPatterns"] = this.channelPatterns;
+    if (Array.isArray(this.selectors)) {
+      data["selectors"] = [];
+      for (let item of this.selectors)
+        data["selectors"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRedisAclUserResponse {
+  username?: string | undefined;
+  enabled?: boolean | undefined;
+  flags?: string[] | undefined;
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+  selectors?: RedisAclSelectorResponse[] | undefined;
+  matchedAccountIds?: string[] | undefined;
+  status?: string | undefined;
+}
+
+export class RedisConnectionTestResult implements IRedisConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IRedisConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): RedisConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IRedisConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class RedisDiscoveryResponse implements IRedisDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  connectionStatus?: string | undefined;
+  serverStatus?: string | undefined;
+  aclStatus?: string | undefined;
+  aclComplete?: boolean;
+  server?: RedisServerInfo;
+  users?: RedisAclUserResponse[] | undefined;
+  accounts?: RedisAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IRedisDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.connectionStatus = _data["connectionStatus"];
+      this.serverStatus = _data["serverStatus"];
+      this.aclStatus = _data["aclStatus"];
+      this.aclComplete = _data["aclComplete"];
+      this.server = _data["server"]
+        ? RedisServerInfo.fromJS(_data["server"])
+        : (undefined as any);
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"])
+          this.users!.push(RedisAclUserResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(RedisAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): RedisDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["connectionStatus"] = this.connectionStatus;
+    data["serverStatus"] = this.serverStatus;
+    data["aclStatus"] = this.aclStatus;
+    data["aclComplete"] = this.aclComplete;
+    data["server"] = this.server ? this.server.toJSON() : (undefined as any);
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users)
+        data["users"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IRedisDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  connectionStatus?: string | undefined;
+  serverStatus?: string | undefined;
+  aclStatus?: string | undefined;
+  aclComplete?: boolean;
+  server?: RedisServerInfo;
+  users?: RedisAclUserResponse[] | undefined;
+  accounts?: RedisAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class RedisIntegrationResponse implements IRedisIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IRedisIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): RedisIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IRedisIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class RedisKeyspaceInfo implements IRedisKeyspaceInfo {
+  database?: number;
+  keys?: number;
+  expires?: number;
+
+  constructor(data?: IRedisKeyspaceInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.database = _data["database"];
+      this.keys = _data["keys"];
+      this.expires = _data["expires"];
+    }
+  }
+
+  static fromJS(data: any): RedisKeyspaceInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisKeyspaceInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["database"] = this.database;
+    data["keys"] = this.keys;
+    data["expires"] = this.expires;
+    return data;
+  }
+}
+
+export interface IRedisKeyspaceInfo {
+  database?: number;
+  keys?: number;
+  expires?: number;
+}
+
+export class RedisServerInfo implements IRedisServerInfo {
+  version?: string | undefined;
+  mode?: string | undefined;
+  role?: string | undefined;
+  uptimeSeconds?: number | undefined;
+  usedMemoryBytes?: number | undefined;
+  connectedClients?: number | undefined;
+  keyspaces?: RedisKeyspaceInfo[] | undefined;
+
+  constructor(data?: IRedisServerInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.version = _data["version"];
+      this.mode = _data["mode"];
+      this.role = _data["role"];
+      this.uptimeSeconds = _data["uptimeSeconds"];
+      this.usedMemoryBytes = _data["usedMemoryBytes"];
+      this.connectedClients = _data["connectedClients"];
+      if (Array.isArray(_data["keyspaces"])) {
+        this.keyspaces = [] as any;
+        for (let item of _data["keyspaces"])
+          this.keyspaces!.push(RedisKeyspaceInfo.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): RedisServerInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisServerInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["version"] = this.version;
+    data["mode"] = this.mode;
+    data["role"] = this.role;
+    data["uptimeSeconds"] = this.uptimeSeconds;
+    data["usedMemoryBytes"] = this.usedMemoryBytes;
+    data["connectedClients"] = this.connectedClients;
+    if (Array.isArray(this.keyspaces)) {
+      data["keyspaces"] = [];
+      for (let item of this.keyspaces)
+        data["keyspaces"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IRedisServerInfo {
+  version?: string | undefined;
+  mode?: string | undefined;
+  role?: string | undefined;
+  uptimeSeconds?: number | undefined;
+  usedMemoryBytes?: number | undefined;
+  connectedClients?: number | undefined;
+  keyspaces?: RedisKeyspaceInfo[] | undefined;
+}
+
 export class ResetPasswordRequest implements IResetPasswordRequest {
   newPassword?: string | undefined;
 
@@ -24767,9 +26088,7 @@ export interface IResolveDriftResponse {
   errorMessage?: string | undefined;
 }
 
-export class ResolvedAppConfigurationReferenceSecretResponse
-  implements IResolvedAppConfigurationReferenceSecretResponse
-{
+export class ResolvedAppConfigurationReferenceSecretResponse implements IResolvedAppConfigurationReferenceSecretResponse {
   secretName?: string | undefined;
   secretVersion?: string | undefined;
   value?: string | undefined;
@@ -25282,9 +26601,7 @@ export interface IRotateSecret {
   newSecretValue?: string | undefined;
 }
 
-export class ScrumPokerAutoRevealRequest
-  implements IScrumPokerAutoRevealRequest
-{
+export class ScrumPokerAutoRevealRequest implements IScrumPokerAutoRevealRequest {
   participantToken?: string | undefined;
   enabled?: boolean;
 
@@ -25424,9 +26741,7 @@ export interface IScrumPokerJoinRequest {
   avatarColor?: string | undefined;
 }
 
-export class ScrumPokerLockVotesAfterRevealRequest
-  implements IScrumPokerLockVotesAfterRevealRequest
-{
+export class ScrumPokerLockVotesAfterRevealRequest implements IScrumPokerLockVotesAfterRevealRequest {
   participantToken?: string | undefined;
   enabled?: boolean;
 
@@ -25466,9 +26781,7 @@ export interface IScrumPokerLockVotesAfterRevealRequest {
   enabled?: boolean;
 }
 
-export class ScrumPokerParticipantRequest
-  implements IScrumPokerParticipantRequest
-{
+export class ScrumPokerParticipantRequest implements IScrumPokerParticipantRequest {
   participantToken?: string | undefined;
 
   constructor(data?: IScrumPokerParticipantRequest) {
@@ -25504,9 +26817,7 @@ export interface IScrumPokerParticipantRequest {
   participantToken?: string | undefined;
 }
 
-export class ScrumPokerParticipantResponse
-  implements IScrumPokerParticipantResponse
-{
+export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResponse {
   id?: string;
   displayName?: string | undefined;
   avatarColor?: string | undefined;
@@ -25807,9 +27118,7 @@ export interface ISecretMetadataResponse {
   contentType?: string | undefined;
 }
 
-export class SecretProviderAccessCheckResponse
-  implements ISecretProviderAccessCheckResponse
-{
+export class SecretProviderAccessCheckResponse implements ISecretProviderAccessCheckResponse {
   success?: boolean;
   checkedAt?: Date;
   message?: string | undefined;
@@ -26356,9 +27665,7 @@ export interface ISetUserDisabled {
   disabled?: boolean;
 }
 
-export class SqlAccountCreationOperation
-  implements ISqlAccountCreationOperation
-{
+export class SqlAccountCreationOperation implements ISqlAccountCreationOperation {
   operationType?: string | undefined;
   database?: string | undefined;
   success?: boolean;
@@ -26406,9 +27713,7 @@ export interface ISqlAccountCreationOperation {
   errorMessage?: string | undefined;
 }
 
-export class SqlAccountPermissionsStatus
-  implements ISqlAccountPermissionsStatus
-{
+export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus {
   accountId?: string;
   accountName?: string | undefined;
   principalName?: string | undefined;
@@ -26612,9 +27917,7 @@ export interface ISqlDatabasesResponse {
   databases?: string[] | undefined;
 }
 
-export class SqlIntegrationPermissionsOverviewResponse
-  implements ISqlIntegrationPermissionsOverviewResponse
-{
+export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegrationPermissionsOverviewResponse {
   integrationId?: string;
   integrationName?: string | undefined;
   accounts?: SqlAccountPermissionsStatus[] | undefined;
@@ -26906,9 +28209,7 @@ export enum SqlPermissions {
   Create = "Create",
 }
 
-export class SqlPermissionsOverviewSummary
-  implements ISqlPermissionsOverviewSummary
-{
+export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSummary {
   totalAccounts?: number;
   inSyncCount?: number;
   driftCount?: number;
@@ -27214,9 +28515,7 @@ export enum TargetKind {
   MessageBroker = "MessageBroker",
 }
 
-export class TestSecretProviderConnection
-  implements ITestSecretProviderConnection
-{
+export class TestSecretProviderConnection implements ITestSecretProviderConnection {
   vaultUri?: string | undefined;
   authMode?: SecretProviderAuthMode;
   credentials?: SecretProviderCredentials;
@@ -27589,9 +28888,7 @@ export interface IUpdateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateApplicationDependency
-  implements IUpdateApplicationDependency
-{
+export class UpdateApplicationDependency implements IUpdateApplicationDependency {
   applicationId?: string;
   instanceId?: string;
   dependencyId?: string;
@@ -27799,9 +29096,7 @@ export interface IUpdateApplicationPipeline {
   pipelineUri?: string | undefined;
 }
 
-export class UpdateAzureDiscoveryExclusions
-  implements IUpdateAzureDiscoveryExclusions
-{
+export class UpdateAzureDiscoveryExclusions implements IUpdateAzureDiscoveryExclusions {
   resourceIds?: string[] | undefined;
   excluded?: boolean;
 
@@ -27847,9 +29142,7 @@ export interface IUpdateAzureDiscoveryExclusions {
   excluded?: boolean;
 }
 
-export class UpdateAzureIntegrationManager
-  implements IUpdateAzureIntegrationManager
-{
+export class UpdateAzureIntegrationManager implements IUpdateAzureIntegrationManager {
   credentials?: SecretProviderCredentials;
 
   constructor(data?: IUpdateAzureIntegrationManager) {
@@ -28498,9 +29791,7 @@ export interface IUpdateMessageBroker {
   tagIds?: string[] | undefined;
 }
 
-export class UpdatePasswordGeneratorConfig
-  implements IUpdatePasswordGeneratorConfig
-{
+export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
   allowedCharacters?: string | undefined;
   length?: number;
 
@@ -28682,9 +29973,63 @@ export interface IUpdatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateResponsibilityAssignment
-  implements IUpdateResponsibilityAssignment
-{
+export class UpdateRedisIntegration implements IUpdateRedisIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdateRedisIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdateRedisIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateRedisIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdateRedisIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
   id?: string;
   positionId?: string;
   responsibilityTypeId?: string;
@@ -29242,6 +30587,50 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidateRedisConnection implements IValidateRedisConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidateRedisConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidateRedisConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateRedisConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidateRedisConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export interface FileParameter {

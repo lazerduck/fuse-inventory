@@ -73,6 +73,16 @@ public static class SnapshotValidator
             TagsMustExist(ds.TagIds, $"DataStore {ds.Id}");
         }
 
+        if (s.RedisIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate Redis integration Ids detected");
+        foreach (var integration in s.RedisIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"Redis integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "redis", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"Redis integration {integration.Id}: data store must have kind Redis");
+        }
+
         // Applications and Instances
         foreach (var app in s.Applications)
         {

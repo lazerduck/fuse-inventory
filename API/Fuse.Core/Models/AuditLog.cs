@@ -128,7 +128,10 @@ public enum AuditAction
     IdentityDeleted,
 
     // Undo actions
-    ChangeReverted
+    ChangeReverted,
+    RedisIntegrationCreated,
+    RedisIntegrationUpdated,
+    RedisIntegrationDeleted
 }
 
 /// <summary>
@@ -152,7 +155,8 @@ public enum AuditArea
     Position,
     ResponsibilityType,
     ResponsibilityAssignment,
-    Risk
+    Risk,
+    RedisIntegration
 }
 
 /// <summary>

@@ -309,6 +309,12 @@
                 SQL Integrations
               </q-item-section>
             </q-item>
+            <q-item clickable v-ripple :to="{ name: 'redisIntegrations' }" active-class="nav-active"
+              v-if="fuseStore.hasPermission(Permission.RedisIntegrationsRead)"
+              data-tour-id="nav-redis-integrations">
+              <q-item-section avatar><q-icon name="memory" /></q-item-section>
+              <q-item-section>Redis Integrations</q-item-section>
+            </q-item>
           </q-expansion-item>
 
           <q-expansion-item label="Administration" icon="settings" dense expand-separator class="nav-group nav-group--administration">

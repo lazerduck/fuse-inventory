@@ -26,6 +26,8 @@ public record Snapshot(
     LicenseState? License = null
 )
 {
+    public IReadOnlyList<RedisIntegration> RedisIntegrations { get; init; } = Array.Empty<RedisIntegration>();
+
     public Snapshot(
         IReadOnlyList<Application> Applications,
         IReadOnlyList<DataStore> DataStores,
