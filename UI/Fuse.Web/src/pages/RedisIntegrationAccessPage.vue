@@ -40,3 +40,7 @@ const error = computed(() => {
   return value ? getErrorMessage(value, 'Unable to inspect Redis access') : null
 })
 </script>
+
+<style scoped>
+@import '../styles/pages.css';
+</style>

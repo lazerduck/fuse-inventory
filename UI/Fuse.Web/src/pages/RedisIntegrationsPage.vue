@@ -147,3 +147,7 @@ async function testSaved(item: RedisIntegrationResponse) {
   } finally { activeProbes.delete(id) }
 }
 </script>
+
+<style scoped>
+@import '../styles/pages.css';
+</style>
