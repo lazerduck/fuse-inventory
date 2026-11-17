@@ -873,7 +873,7 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+  progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
    * @param body (optional)
@@ -974,6 +974,70 @@ export interface IFuseApiClient {
    * @return No Content
    */
   positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  postgresqlIntegrationPOST(
+    body: CreatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationPUT(
+    id: string,
+    body: UpdatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  postgresqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationValidate(
+    body: ValidatePostgreSqlConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlDiscoveryResponse>;
 
   /**
    * @return OK
@@ -10019,7 +10083,7 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+  progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -10032,13 +10096,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressGETGET(_response);
+      return this.processProgressGET(_response);
     });
   }
 
-  protected processProgressGETGET(
-    response: Response,
-  ): Promise<UserGuideProgress> {
+  protected processProgressGET(response: Response): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -11163,6 +11225,671 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationAll(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationAll(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(PostgreSqlIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  postgresqlIntegrationPOST(
+    body: CreatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationPOST(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationPOST(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = PostgreSqlIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationGET(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationGET(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationPUT(
+    id: string,
+    body: UpdatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationPUT(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationPUT(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  postgresqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationDELETE(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationValidate(
+    body: ValidatePostgreSqlConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationValidate(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationValidate(
+    response: Response,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationValidateSaved(
+    response: Response,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationDiscovery(
+    response: Response,
+  ): Promise<PostgreSqlDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlDiscoveryResponse>(null as any);
   }
 
   /**
@@ -20757,6 +21484,9 @@ export enum AuditAction {
   RabbitMqIntegrationCreated = "RabbitMqIntegrationCreated",
   RabbitMqIntegrationUpdated = "RabbitMqIntegrationUpdated",
   RabbitMqIntegrationDeleted = "RabbitMqIntegrationDeleted",
+  PostgreSqlIntegrationCreated = "PostgreSqlIntegrationCreated",
+  PostgreSqlIntegrationUpdated = "PostgreSqlIntegrationUpdated",
+  PostgreSqlIntegrationDeleted = "PostgreSqlIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -20779,6 +21509,7 @@ export enum AuditArea {
   Risk = "Risk",
   RedisIntegration = "RedisIntegration",
   RabbitMqIntegration = "RabbitMqIntegration",
+  PostgreSqlIntegration = "PostgreSqlIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -23041,6 +23772,58 @@ export interface ICreatePosition {
   name?: string | undefined;
   description?: string | undefined;
   tagIds?: string[] | undefined;
+}
+
+export class CreatePostgreSqlIntegration implements ICreatePostgreSqlIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreatePostgreSqlIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreatePostgreSqlIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreatePostgreSqlIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreatePostgreSqlIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export class CreateRabbitMqIntegration implements ICreateRabbitMqIntegration {
@@ -26186,6 +26969,474 @@ export interface IPosition {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export class PostgreSqlAccountMatchResponse implements IPostgreSqlAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IPostgreSqlAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IPostgreSqlAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+}
+
+export class PostgreSqlConnectionTestResult implements IPostgreSqlConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IPostgreSqlConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IPostgreSqlConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class PostgreSqlDiscoveryResponse implements IPostgreSqlDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  rolesStatus?: string | undefined;
+  membershipsStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  roles?: PostgreSqlRoleResponse[] | undefined;
+  memberships?: PostgreSqlMembershipResponse[] | undefined;
+  permissions?: PostgreSqlPrivilegeResponse[] | undefined;
+  accounts?: PostgreSqlAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.database = _data["database"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.rolesStatus = _data["rolesStatus"];
+      this.membershipsStatus = _data["membershipsStatus"];
+      this.permissionsStatus = _data["permissionsStatus"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(PostgreSqlRoleResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["memberships"])) {
+        this.memberships = [] as any;
+        for (let item of _data["memberships"])
+          this.memberships!.push(PostgreSqlMembershipResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["permissions"])) {
+        this.permissions = [] as any;
+        for (let item of _data["permissions"])
+          this.permissions!.push(PostgreSqlPrivilegeResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(PostgreSqlAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["database"] = this.database;
+    data["connectionStatus"] = this.connectionStatus;
+    data["rolesStatus"] = this.rolesStatus;
+    data["membershipsStatus"] = this.membershipsStatus;
+    data["permissionsStatus"] = this.permissionsStatus;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.memberships)) {
+      data["memberships"] = [];
+      for (let item of this.memberships)
+        data["memberships"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.permissions)) {
+      data["permissions"] = [];
+      for (let item of this.permissions)
+        data["permissions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  rolesStatus?: string | undefined;
+  membershipsStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  roles?: PostgreSqlRoleResponse[] | undefined;
+  memberships?: PostgreSqlMembershipResponse[] | undefined;
+  permissions?: PostgreSqlPrivilegeResponse[] | undefined;
+  accounts?: PostgreSqlAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class PostgreSqlIntegrationResponse implements IPostgreSqlIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IPostgreSqlIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IPostgreSqlIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class PostgreSqlMembershipResponse implements IPostgreSqlMembershipResponse {
+  member?: string | undefined;
+  role?: string | undefined;
+  direct?: boolean;
+  inherited?: boolean;
+  canSetRole?: boolean;
+
+  constructor(data?: IPostgreSqlMembershipResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.member = _data["member"];
+      this.role = _data["role"];
+      this.direct = _data["direct"];
+      this.inherited = _data["inherited"];
+      this.canSetRole = _data["canSetRole"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlMembershipResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlMembershipResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["member"] = this.member;
+    data["role"] = this.role;
+    data["direct"] = this.direct;
+    data["inherited"] = this.inherited;
+    data["canSetRole"] = this.canSetRole;
+    return data;
+  }
+}
+
+export interface IPostgreSqlMembershipResponse {
+  member?: string | undefined;
+  role?: string | undefined;
+  direct?: boolean;
+  inherited?: boolean;
+  canSetRole?: boolean;
+}
+
+export class PostgreSqlPrivilegeResponse implements IPostgreSqlPrivilegeResponse {
+  role?: string | undefined;
+  kind?: string | undefined;
+  name?: string | undefined;
+  privileges?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlPrivilegeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.role = _data["role"];
+      this.kind = _data["kind"];
+      this.name = _data["name"];
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"]) this.privileges!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlPrivilegeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlPrivilegeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["role"] = this.role;
+    data["kind"] = this.kind;
+    data["name"] = this.name;
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges) data["privileges"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlPrivilegeResponse {
+  role?: string | undefined;
+  kind?: string | undefined;
+  name?: string | undefined;
+  privileges?: string[] | undefined;
+}
+
+export class PostgreSqlRoleResponse implements IPostgreSqlRoleResponse {
+  name?: string | undefined;
+  canLogin?: boolean;
+  inherit?: boolean;
+  superuser?: boolean;
+  createRole?: boolean;
+  createDatabase?: boolean;
+  bypassRowSecurity?: boolean;
+  canConnect?: boolean;
+  matchedAccountIds?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlRoleResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.canLogin = _data["canLogin"];
+      this.inherit = _data["inherit"];
+      this.superuser = _data["superuser"];
+      this.createRole = _data["createRole"];
+      this.createDatabase = _data["createDatabase"];
+      this.bypassRowSecurity = _data["bypassRowSecurity"];
+      this.canConnect = _data["canConnect"];
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlRoleResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlRoleResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["canLogin"] = this.canLogin;
+    data["inherit"] = this.inherit;
+    data["superuser"] = this.superuser;
+    data["createRole"] = this.createRole;
+    data["createDatabase"] = this.createDatabase;
+    data["bypassRowSecurity"] = this.bypassRowSecurity;
+    data["canConnect"] = this.canConnect;
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlRoleResponse {
+  name?: string | undefined;
+  canLogin?: boolean;
+  inherit?: boolean;
+  superuser?: boolean;
+  createRole?: boolean;
+  createDatabase?: boolean;
+  bypassRowSecurity?: boolean;
+  canConnect?: boolean;
+  matchedAccountIds?: string[] | undefined;
 }
 
 export enum Privilege {
@@ -31212,6 +32463,62 @@ export interface IUpdatePosition {
   tagIds?: string[] | undefined;
 }
 
+export class UpdatePostgreSqlIntegration implements IUpdatePostgreSqlIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdatePostgreSqlIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdatePostgreSqlIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdatePostgreSqlIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdatePostgreSqlIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
 export class UpdateRabbitMqIntegration implements IUpdateRabbitMqIntegration {
   id?: string;
   name?: string | undefined;
@@ -31886,6 +33193,50 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidatePostgreSqlConnection implements IValidatePostgreSqlConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidatePostgreSqlConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidatePostgreSqlConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidatePostgreSqlConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidatePostgreSqlConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export class ValidateRabbitMqConnection implements IValidateRabbitMqConnection {

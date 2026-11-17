@@ -90,6 +90,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
         )
         {
             RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct),
+            PostgreSqlIntegrations = await ReadAsync<PostgreSqlIntegration>("postgresqlintegrations.json", ct),
             RabbitMqIntegrations = await ReadAsync<RabbitMqIntegration>("rabbitmqintegrations.json", ct)
         };
 
@@ -146,6 +147,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.RedisIntegrations, snapshot.RedisIntegrations))
             writeTasks.Add(WriteAsync("redisintegrations.json", snapshot.RedisIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.PostgreSqlIntegrations, snapshot.PostgreSqlIntegrations))
+            writeTasks.Add(WriteAsync("postgresqlintegrations.json", snapshot.PostgreSqlIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
             writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
         if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))
