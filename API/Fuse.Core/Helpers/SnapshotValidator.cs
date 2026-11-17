@@ -83,6 +83,17 @@ public static class SnapshotValidator
                 errs.Add($"Redis integration {integration.Id}: data store must have kind Redis");
         }
 
+        if (s.PostgreSqlIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate PostgreSql integration Ids detected");
+        foreach (var integration in s.PostgreSqlIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"PostgreSql integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "postgresql", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"PostgreSql integration {integration.Id}: data store must have kind PostgreSql");
+        }
+
+        if (s.PostgreSqlIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate PostgreSQL integration data stores.");
         foreach(var integration in s.RabbitMqIntegrations)
             if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
                 errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");

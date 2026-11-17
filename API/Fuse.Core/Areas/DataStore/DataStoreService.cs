@@ -84,6 +84,9 @@ public class DataStoreService : IDataStoreService
         if (!string.Equals(command.Kind, "redis", StringComparison.OrdinalIgnoreCase)
             && store.RedisIntegrations.Any(i => i.DataStoreId == command.Id))
             return Result<Models.DataStore>.Failure("Remove the Redis integrations before changing this data store's kind.", ErrorType.Conflict);
+        if (!string.Equals(command.Kind, "postgresql", StringComparison.OrdinalIgnoreCase)
+            && store.PostgreSqlIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result<Models.DataStore>.Failure("Remove the PostgreSql integrations before changing this data store's kind.", ErrorType.Conflict);
 
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<Models.DataStore>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
@@ -136,6 +139,8 @@ public class DataStoreService : IDataStoreService
 
         if (store.RedisIntegrations.Any(i => i.DataStoreId == command.Id))
             return Result.Failure("Remove the Redis integrations before deleting this data store.", ErrorType.Conflict);
+        if (store.PostgreSqlIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result.Failure("Remove the PostgreSql integrations before deleting this data store.", ErrorType.Conflict);
 
         await _fuseStore.UpdateAsync(s => s with { DataStores = s.DataStores.Where(x => x.Id != command.Id).ToList() });
         return Result.Success();
