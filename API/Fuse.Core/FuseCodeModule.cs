@@ -23,6 +23,7 @@ using Fuse.Core.Areas.Security.Services;
 using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.RedisIntegration;
+using Fuse.Core.Areas.RabbitMqIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
 using Fuse.Core.Areas.ScrumPoker;
@@ -42,6 +43,10 @@ public static class FuseCodeModule
 {
     public static void Register(IServiceCollection services)
     {
+        services.AddScoped<IRabbitMqIntegrationService, RabbitMqIntegrationService>();
+        services.AddScoped<IRabbitMqInspector, RabbitMqInspector>();
+        services.AddSingleton<AreaPermissions, RabbitMqIntegrationPermissions>();
+        services.AddHttpClient("rabbitmq-inspector", c => c.Timeout = TimeSpan.FromSeconds(5)).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
         // Register memory cache for background services
         services.AddMemoryCache();
         

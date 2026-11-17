@@ -161,6 +161,7 @@ const router = createRouter({
       name: 'sqlPermissionsOverview',
       component: () => import('./pages/SqlPermissionsOverviewPage.vue')
     },
+    { path: '/rabbitmq-integrations', name: 'rabbitMqIntegrations', component: () => import('./pages/RabbitMqIntegrationsPage.vue') },
     {
       path: '/redis-integrations',
       name: 'redisIntegrations',

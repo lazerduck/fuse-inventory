@@ -131,7 +131,10 @@ public enum AuditAction
     ChangeReverted,
     RedisIntegrationCreated,
     RedisIntegrationUpdated,
-    RedisIntegrationDeleted
+    RedisIntegrationDeleted,
+    RabbitMqIntegrationCreated,
+    RabbitMqIntegrationUpdated,
+    RabbitMqIntegrationDeleted
 }
 
 /// <summary>
@@ -156,7 +159,8 @@ public enum AuditArea
     ResponsibilityType,
     ResponsibilityAssignment,
     Risk,
-    RedisIntegration
+    RedisIntegration,
+    RabbitMqIntegration
 }
 
 /// <summary>

@@ -331,7 +331,8 @@ public class ConfigService : IConfigService
                 License: current.License
             )
             {
-                RedisIntegrations = current.RedisIntegrations
+                RedisIntegrations = current.RedisIntegrations,
+                RabbitMqIntegrations = current.RabbitMqIntegrations
             };
         }, ct);
 

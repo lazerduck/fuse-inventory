@@ -89,7 +89,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
 
         )
         {
-            RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct)
+            RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct),
+            RabbitMqIntegrations = await ReadAsync<RabbitMqIntegration>("rabbitmqintegrations.json", ct)
         };
 
         var errors = SnapshotValidator.Validate(snapshot);
@@ -118,6 +119,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             throw new InvalidOperationException("Data validation failed:\n" + string.Join("\n", errors));
 
         var writeTasks = new List<Task>();
+        if (_cache is null || !ReferenceEquals(_cache.RabbitMqIntegrations, snapshot.RabbitMqIntegrations))
+            writeTasks.Add(WriteAsync("rabbitmqintegrations.json", snapshot.RabbitMqIntegrations, ct));
 
         if (_cache is null || !ReferenceEquals(_cache.Applications, snapshot.Applications))
             writeTasks.Add(WriteAsync("applications.json", snapshot.Applications, ct));
