@@ -14,7 +14,7 @@
         @click="edit()"
       />
     </div>
-    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md">{{
+    <q-banner v-if="error" class="inspection-error q-mb-md">{{
       error
     }}</q-banner>
     <q-linear-progress v-if="busy" indeterminate />
@@ -72,7 +72,7 @@
       <q-banner
         v-for="warning in discovery.warnings"
         :key="warning"
-        class="bg-orange-1 q-mb-sm"
+        class="inspection-warning q-mb-sm"
         >{{ warning }}</q-banner
       >
       <h3>Cluster roles — {{ discovery.rolesStatus }}</h3>
@@ -200,7 +200,7 @@
               v-model="clearPassword"
               label="Clear saved password"
             />
-            <q-banner v-if="formError" class="bg-red-1">{{
+            <q-banner v-if="formError" class="inspection-error">{{
               formError
             }}</q-banner> </q-card-section
           ><q-card-actions align="right"
@@ -418,6 +418,15 @@ onBeforeUnmount(() => controller.abort());
 </script>
 <style scoped src="../styles/pages.css"></style>
 <style scoped>
+.inspection-warning {
+  background-color: var(--fuse-status-drift-bg);
+  color: var(--fuse-text);
+}
+.inspection-error {
+  background-color: var(--fuse-status-error-bg);
+  color: var(--fuse-text);
+}
+
 h2 {
   font-size: 1.5rem;
   line-height: 1.4;
