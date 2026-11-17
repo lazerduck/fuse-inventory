@@ -83,6 +83,10 @@ public static class SnapshotValidator
                 errs.Add($"Redis integration {integration.Id}: data store must have kind Redis");
         }
 
+        foreach(var integration in s.RabbitMqIntegrations)
+            if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
+                errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");
+        if(s.RabbitMqIntegrations.GroupBy(x=>x.MessageBrokerId).Any(x=>x.Count()>1) || s.RabbitMqIntegrations.GroupBy(x=>x.Id).Any(x=>x.Count()>1)) errs.Add("Duplicate RabbitMQ integration.");
         // Applications and Instances
         foreach (var app in s.Applications)
         {

@@ -873,7 +873,7 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
    * @param body (optional)
@@ -974,6 +974,70 @@ export interface IFuseApiClient {
    * @return No Content
    */
   positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  rabbitMqIntegrationPOST(
+    body: CreateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationPUT(
+    id: string,
+    body: UpdateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  rabbitMqIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationValidate(
+    body: ValidateRabbitMqConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqDiscoveryResponse>;
 
   /**
    * @return OK
@@ -9955,7 +10019,7 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -9968,11 +10032,13 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressGET(_response);
+      return this.processProgressGETGET(_response);
     });
   }
 
-  protected processProgressGET(response: Response): Promise<UserGuideProgress> {
+  protected processProgressGETGET(
+    response: Response,
+  ): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -11097,6 +11163,671 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationAll(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationAll(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(RabbitMqIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  rabbitMqIntegrationPOST(
+    body: CreateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationPOST(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationPOST(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = RabbitMqIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationGET(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationGET(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationPUT(
+    id: string,
+    body: UpdateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationPUT(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationPUT(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  rabbitMqIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationDELETE(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationValidate(
+    body: ValidateRabbitMqConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationValidate(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationValidate(
+    response: Response,
+  ): Promise<RabbitMqConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationValidateSaved(
+    response: Response,
+  ): Promise<RabbitMqConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationDiscovery(
+    response: Response,
+  ): Promise<RabbitMqDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqDiscoveryResponse>(null as any);
   }
 
   /**
@@ -20023,6 +20754,9 @@ export enum AuditAction {
   RedisIntegrationCreated = "RedisIntegrationCreated",
   RedisIntegrationUpdated = "RedisIntegrationUpdated",
   RedisIntegrationDeleted = "RedisIntegrationDeleted",
+  RabbitMqIntegrationCreated = "RabbitMqIntegrationCreated",
+  RabbitMqIntegrationUpdated = "RabbitMqIntegrationUpdated",
+  RabbitMqIntegrationDeleted = "RabbitMqIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -20044,6 +20778,7 @@ export enum AuditArea {
   ResponsibilityAssignment = "ResponsibilityAssignment",
   Risk = "Risk",
   RedisIntegration = "RedisIntegration",
+  RabbitMqIntegration = "RabbitMqIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -22306,6 +23041,62 @@ export interface ICreatePosition {
   name?: string | undefined;
   description?: string | undefined;
   tagIds?: string[] | undefined;
+}
+
+export class CreateRabbitMqIntegration implements ICreateRabbitMqIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreateRabbitMqIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreateRabbitMqIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateRabbitMqIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreateRabbitMqIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export class CreateRedisIntegration implements ICreateRedisIntegration {
@@ -25468,6 +26259,454 @@ export interface IProblemDetails {
   instance?: string | undefined;
 
   [key: string]: any;
+}
+
+export class RabbitMqAccountMatch implements IRabbitMqAccountMatch {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRabbitMqAccountMatch) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqAccountMatch {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqAccountMatch();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRabbitMqAccountMatch {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+}
+
+export class RabbitMqConnectionTestResult implements IRabbitMqConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IRabbitMqConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IRabbitMqConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class RabbitMqDiscoveryResponse implements IRabbitMqDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  virtualHost?: string | undefined;
+  connectionStatus?: string | undefined;
+  topologyStatus?: string | undefined;
+  usersStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  resources?: RabbitMqResource[] | undefined;
+  queues?: RabbitMqQueueMatch[] | undefined;
+  users?: string[] | undefined;
+  permissions?: RabbitMqPermission[] | undefined;
+  accounts?: RabbitMqAccountMatch[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IRabbitMqDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.virtualHost = _data["virtualHost"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.topologyStatus = _data["topologyStatus"];
+      this.usersStatus = _data["usersStatus"];
+      this.permissionsStatus = _data["permissionsStatus"];
+      if (Array.isArray(_data["resources"])) {
+        this.resources = [] as any;
+        for (let item of _data["resources"])
+          this.resources!.push(RabbitMqResource.fromJS(item));
+      }
+      if (Array.isArray(_data["queues"])) {
+        this.queues = [] as any;
+        for (let item of _data["queues"])
+          this.queues!.push(RabbitMqQueueMatch.fromJS(item));
+      }
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"]) this.users!.push(item);
+      }
+      if (Array.isArray(_data["permissions"])) {
+        this.permissions = [] as any;
+        for (let item of _data["permissions"])
+          this.permissions!.push(RabbitMqPermission.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(RabbitMqAccountMatch.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): RabbitMqDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["virtualHost"] = this.virtualHost;
+    data["connectionStatus"] = this.connectionStatus;
+    data["topologyStatus"] = this.topologyStatus;
+    data["usersStatus"] = this.usersStatus;
+    data["permissionsStatus"] = this.permissionsStatus;
+    if (Array.isArray(this.resources)) {
+      data["resources"] = [];
+      for (let item of this.resources)
+        data["resources"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.queues)) {
+      data["queues"] = [];
+      for (let item of this.queues)
+        data["queues"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users) data["users"].push(item);
+    }
+    if (Array.isArray(this.permissions)) {
+      data["permissions"] = [];
+      for (let item of this.permissions)
+        data["permissions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IRabbitMqDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  virtualHost?: string | undefined;
+  connectionStatus?: string | undefined;
+  topologyStatus?: string | undefined;
+  usersStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  resources?: RabbitMqResource[] | undefined;
+  queues?: RabbitMqQueueMatch[] | undefined;
+  users?: string[] | undefined;
+  permissions?: RabbitMqPermission[] | undefined;
+  accounts?: RabbitMqAccountMatch[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class RabbitMqIntegrationResponse implements IRabbitMqIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IRabbitMqIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): RabbitMqIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IRabbitMqIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class RabbitMqPermission implements IRabbitMqPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  configure?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
+
+  constructor(data?: IRabbitMqPermission) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.virtualHost = _data["virtualHost"];
+      this.configure = _data["configure"];
+      this.write = _data["write"];
+      this.read = _data["read"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqPermission {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqPermission();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["virtualHost"] = this.virtualHost;
+    data["configure"] = this.configure;
+    data["write"] = this.write;
+    data["read"] = this.read;
+    return data;
+  }
+}
+
+export interface IRabbitMqPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  configure?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
+}
+
+export class RabbitMqQueueMatch implements IRabbitMqQueueMatch {
+  name?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRabbitMqQueueMatch) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqQueueMatch {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqQueueMatch();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRabbitMqQueueMatch {
+  name?: string | undefined;
+  status?: string | undefined;
+}
+
+export class RabbitMqResource implements IRabbitMqResource {
+  name?: string | undefined;
+  kind?: string | undefined;
+  virtualHost?: string | undefined;
+  type?: string | undefined;
+  destination?: string | undefined;
+  routingKey?: string | undefined;
+
+  constructor(data?: IRabbitMqResource) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.kind = _data["kind"];
+      this.virtualHost = _data["virtualHost"];
+      this.type = _data["type"];
+      this.destination = _data["destination"];
+      this.routingKey = _data["routingKey"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqResource {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqResource();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["kind"] = this.kind;
+    data["virtualHost"] = this.virtualHost;
+    data["type"] = this.type;
+    data["destination"] = this.destination;
+    data["routingKey"] = this.routingKey;
+    return data;
+  }
+}
+
+export interface IRabbitMqResource {
+  name?: string | undefined;
+  kind?: string | undefined;
+  virtualHost?: string | undefined;
+  type?: string | undefined;
+  destination?: string | undefined;
+  routingKey?: string | undefined;
 }
 
 export class RedisAccountMatchResponse implements IRedisAccountMatchResponse {
@@ -29973,6 +31212,66 @@ export interface IUpdatePosition {
   tagIds?: string[] | undefined;
 }
 
+export class UpdateRabbitMqIntegration implements IUpdateRabbitMqIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdateRabbitMqIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdateRabbitMqIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateRabbitMqIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdateRabbitMqIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
 export class UpdateRedisIntegration implements IUpdateRedisIntegration {
   id?: string;
   name?: string | undefined;
@@ -30587,6 +31886,54 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidateRabbitMqConnection implements IValidateRabbitMqConnection {
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidateRabbitMqConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidateRabbitMqConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateRabbitMqConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidateRabbitMqConnection {
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export class ValidateRedisConnection implements IValidateRedisConnection {

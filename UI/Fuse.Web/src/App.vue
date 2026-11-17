@@ -309,6 +309,7 @@
                 SQL Integrations
               </q-item-section>
             </q-item>
+            <q-item clickable :to="{ name: 'rabbitMqIntegrations' }" v-if="fuseStore.hasPermission('rabbitmqintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>RabbitMQ</q-item-section></q-item>
             <q-item clickable v-ripple :to="{ name: 'redisIntegrations' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.RedisIntegrationsRead)"
               data-tour-id="nav-redis-integrations">

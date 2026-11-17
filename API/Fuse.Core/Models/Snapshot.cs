@@ -26,6 +26,8 @@ public record Snapshot(
     LicenseState? License = null
 )
 {
+    public IReadOnlyList<RabbitMqIntegration> RabbitMqIntegrations { get; init; } = Array.Empty<RabbitMqIntegration>();
+
     public IReadOnlyList<RedisIntegration> RedisIntegrations { get; init; } = Array.Empty<RedisIntegration>();
 
     public Snapshot(
