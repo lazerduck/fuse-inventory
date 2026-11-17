@@ -41,6 +41,7 @@ Fuse Inventory can also integrate with:
 * **Uptime-Kuma** to display health information
 * **Azure Key Vault** so you can assign, create, update, and view secrets based on your permissions
 * **Azure App Configuration** to explore configuration alongside your inventory
+* **Redis** to validate connections, discover ACL users and match them to documented accounts without changing Redis. See the [Redis integration guide](docs/redis.md).
 
 Fuse Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
 

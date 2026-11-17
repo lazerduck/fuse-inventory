@@ -22,6 +22,7 @@ using Fuse.Core.Areas.Security.Permissions;
 using Fuse.Core.Areas.Security.Services;
 using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.SqlIntegration;
+using Fuse.Core.Areas.RedisIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
 using Fuse.Core.Areas.ScrumPoker;
@@ -99,6 +100,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, RiskPermissions>();
         services.AddSingleton<AreaPermissions, SecretProviderPermissions>();
         services.AddSingleton<AreaPermissions, SqlIntegrationPermissions>();
+        services.AddSingleton<AreaPermissions, RedisIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, TagPermissions>();
         services.AddSingleton<AreaPermissions, UndoPermissions>();
         services.AddSingleton<AreaPermissions, APIKeyPermissions>();
@@ -140,6 +142,8 @@ public static class FuseCodeModule
         // Register SQL Integration services
         services.AddScoped<ISqlIntegrationService, SqlIntegrationService>();
         services.AddScoped<ISqlConnectionValidator, SqlConnectionValidator>();
+        services.AddScoped<IRedisIntegrationService, RedisIntegrationService>();
+        services.AddScoped<IRedisInspector, RedisInspector>();
 
         // Register SQL Permissions Cache service as both hosted service and singleton for cache queries
         // Note: Uses IServiceProvider to create scopes for accessing IAccountSqlInspector (which is scoped)

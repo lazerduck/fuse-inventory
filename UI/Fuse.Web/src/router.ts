@@ -162,6 +162,16 @@ const router = createRouter({
       component: () => import('./pages/SqlPermissionsOverviewPage.vue')
     },
     {
+      path: '/redis-integrations',
+      name: 'redisIntegrations',
+      component: () => import('./pages/RedisIntegrationsPage.vue')
+    },
+    {
+      path: '/redis-integrations/:id/access',
+      name: 'redisIntegrationAccess',
+      component: () => import('./pages/RedisIntegrationAccessPage.vue')
+    },
+    {
       path: '/password-generator',
       name: 'passwordGenerator',
       component: () => import('./pages/PasswordGeneratorPage.vue')

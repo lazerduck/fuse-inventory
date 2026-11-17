@@ -87,7 +87,10 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             AzureIntegrationManager: await ReadObjectAsync<AzureIntegrationManager>("azureintegrationmanager.json", ct),
             License: await ReadObjectAsync<LicenseState>("license.json", ct)
 
-        );
+        )
+        {
+            RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct)
+        };
 
         var errors = SnapshotValidator.Validate(snapshot);
         if (errors.Count > 0)
@@ -138,6 +141,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
         if (_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
             writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.RedisIntegrations, snapshot.RedisIntegrations))
+            writeTasks.Add(WriteAsync("redisintegrations.json", snapshot.RedisIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
             writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
         if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))

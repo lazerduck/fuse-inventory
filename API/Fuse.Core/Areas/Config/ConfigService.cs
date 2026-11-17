@@ -329,7 +329,10 @@ public class ConfigService : IConfigService
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig,
                 AzureIntegrationManager: current.AzureIntegrationManager,
                 License: current.License
-            );
+            )
+            {
+                RedisIntegrations = current.RedisIntegrations
+            };
         }, ct);
 
         await _auditService.LogAsync(AuditHelper.CreateLog(
