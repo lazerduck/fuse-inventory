@@ -157,6 +157,7 @@
           )
         "
         :columns="permissionColumns"
+        :row-key="permissionKey"
         :pagination="{ rowsPerPage: 15 }"
         :rows-per-page-options="[15, 30, 100]"
       />
@@ -258,6 +259,8 @@ interface Discovery {
   accounts: { accountId: string; username?: string; status: string }[];
 }
 const roleFilter = ref<string | null>(null);
+const permissionKey = (row: Discovery["permissions"][number]) =>
+  JSON.stringify([row.role, row.kind, row.name]);
 const permissionColumns = [
   { name: "role", label: "Role", field: "role", sortable: true },
   { name: "kind", label: "Kind", field: "kind", sortable: true },
