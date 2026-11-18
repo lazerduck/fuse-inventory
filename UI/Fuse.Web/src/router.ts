@@ -163,6 +163,7 @@ const router = createRouter({
     },
     { path: '/rabbitmq-integrations', name: 'rabbitMqIntegrations', component: () => import('./pages/RabbitMqIntegrationsPage.vue') },
     { path: '/postgresql-integrations', name: 'postgreSqlIntegrations', component: () => import('./pages/PostgreSqlIntegrationsPage.vue') },
+    { path: '/mongodb-integrations', name: 'mongoDbIntegrations', component: () => import('./pages/MongoDbIntegrationsPage.vue') },
     {
       path: '/redis-integrations',
       name: 'redisIntegrations',

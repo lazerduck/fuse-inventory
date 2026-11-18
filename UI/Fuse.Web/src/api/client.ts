@@ -873,7 +873,71 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+  mongodbIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  mongodbIntegrationPOST(
+    body: CreateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationPUT(
+    id: string,
+    body: UpdateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  mongodbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationValidate(
+    body: ValidateMongoDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbDiscoveryResponse>;
+
+  /**
+   * @return OK
+   */
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
    * @param body (optional)
@@ -10083,7 +10147,670 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+  mongodbIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationAll(_response);
+    });
+  }
+
+  protected processMongodbIntegrationAll(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(MongoDbIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  mongodbIntegrationPOST(
+    body: CreateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationPOST(_response);
+    });
+  }
+
+  protected processMongodbIntegrationPOST(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = MongoDbIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationGET(_response);
+    });
+  }
+
+  protected processMongodbIntegrationGET(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationPUT(
+    id: string,
+    body: UpdateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationPUT(_response);
+    });
+  }
+
+  protected processMongodbIntegrationPUT(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  mongodbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationDELETE(_response);
+    });
+  }
+
+  protected processMongodbIntegrationDELETE(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationValidate(
+    body: ValidateMongoDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationValidate(_response);
+    });
+  }
+
+  protected processMongodbIntegrationValidate(
+    response: Response,
+  ): Promise<MongoDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processMongodbIntegrationValidateSaved(
+    response: Response,
+  ): Promise<MongoDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processMongodbIntegrationDiscovery(
+    response: Response,
+  ): Promise<MongoDbDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbDiscoveryResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -10096,11 +10823,13 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressGET(_response);
+      return this.processProgressGETGET(_response);
     });
   }
 
-  protected processProgressGET(response: Response): Promise<UserGuideProgress> {
+  protected processProgressGETGET(
+    response: Response,
+  ): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -21487,6 +22216,9 @@ export enum AuditAction {
   PostgreSqlIntegrationCreated = "PostgreSqlIntegrationCreated",
   PostgreSqlIntegrationUpdated = "PostgreSqlIntegrationUpdated",
   PostgreSqlIntegrationDeleted = "PostgreSqlIntegrationDeleted",
+  MongoDbIntegrationCreated = "MongoDbIntegrationCreated",
+  MongoDbIntegrationUpdated = "MongoDbIntegrationUpdated",
+  MongoDbIntegrationDeleted = "MongoDbIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -21510,6 +22242,7 @@ export enum AuditArea {
   RedisIntegration = "RedisIntegration",
   RabbitMqIntegration = "RabbitMqIntegration",
   PostgreSqlIntegration = "PostgreSqlIntegration",
+  MongoDbIntegration = "MongoDbIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -23638,6 +24371,66 @@ export interface ICreateMessageBroker {
   queues?: BrokerQueueInput[] | undefined;
   topics?: BrokerTopicInput[] | undefined;
   tagIds?: string[] | undefined;
+}
+
+export class CreateMongoDbIntegration implements ICreateMongoDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: ICreateMongoDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): CreateMongoDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateMongoDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface ICreateMongoDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
 }
 
 export class CreatePlatform implements ICreatePlatform {
@@ -26559,6 +27352,616 @@ export interface IMessageBroker {
   updatedAt?: Date;
   queues?: BrokerQueue[] | undefined;
   topics?: BrokerTopic[] | undefined;
+}
+
+export class MongoDbAccountMatchResponse implements IMongoDbAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IMongoDbAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IMongoDbAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+}
+
+export class MongoDbConnectionTestResult implements IMongoDbConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IMongoDbConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IMongoDbConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class MongoDbDiscoveryResponse implements IMongoDbDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  collectionsStatus?: string | undefined;
+  collections?: string[] | undefined;
+  rolesStatus?: string | undefined;
+  roles?: MongoDbRoleResponse[] | undefined;
+  userScopes?: MongoDbUserScopeResponse[] | undefined;
+  users?: MongoDbUserResponse[] | undefined;
+  accounts?: MongoDbAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IMongoDbDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.database = _data["database"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.collectionsStatus = _data["collectionsStatus"];
+      if (Array.isArray(_data["collections"])) {
+        this.collections = [] as any;
+        for (let item of _data["collections"]) this.collections!.push(item);
+      }
+      this.rolesStatus = _data["rolesStatus"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["userScopes"])) {
+        this.userScopes = [] as any;
+        for (let item of _data["userScopes"])
+          this.userScopes!.push(MongoDbUserScopeResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"])
+          this.users!.push(MongoDbUserResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(MongoDbAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["database"] = this.database;
+    data["connectionStatus"] = this.connectionStatus;
+    data["collectionsStatus"] = this.collectionsStatus;
+    if (Array.isArray(this.collections)) {
+      data["collections"] = [];
+      for (let item of this.collections) data["collections"].push(item);
+    }
+    data["rolesStatus"] = this.rolesStatus;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.userScopes)) {
+      data["userScopes"] = [];
+      for (let item of this.userScopes)
+        data["userScopes"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users)
+        data["users"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  collectionsStatus?: string | undefined;
+  collections?: string[] | undefined;
+  rolesStatus?: string | undefined;
+  roles?: MongoDbRoleResponse[] | undefined;
+  userScopes?: MongoDbUserScopeResponse[] | undefined;
+  users?: MongoDbUserResponse[] | undefined;
+  accounts?: MongoDbAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class MongoDbIntegrationResponse implements IMongoDbIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IMongoDbIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IMongoDbIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
+export class MongoDbPrivilegeResponse implements IMongoDbPrivilegeResponse {
+  scope?: string | undefined;
+  database?: string | undefined;
+  collection?: string | undefined;
+  actions?: string[] | undefined;
+
+  constructor(data?: IMongoDbPrivilegeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.scope = _data["scope"];
+      this.database = _data["database"];
+      this.collection = _data["collection"];
+      if (Array.isArray(_data["actions"])) {
+        this.actions = [] as any;
+        for (let item of _data["actions"]) this.actions!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbPrivilegeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbPrivilegeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["scope"] = this.scope;
+    data["database"] = this.database;
+    data["collection"] = this.collection;
+    if (Array.isArray(this.actions)) {
+      data["actions"] = [];
+      for (let item of this.actions) data["actions"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbPrivilegeResponse {
+  scope?: string | undefined;
+  database?: string | undefined;
+  collection?: string | undefined;
+  actions?: string[] | undefined;
+}
+
+export class MongoDbRoleReference implements IMongoDbRoleReference {
+  name?: string | undefined;
+  database?: string | undefined;
+
+  constructor(data?: IMongoDbRoleReference) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.database = _data["database"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbRoleReference {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbRoleReference();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["database"] = this.database;
+    return data;
+  }
+}
+
+export interface IMongoDbRoleReference {
+  name?: string | undefined;
+  database?: string | undefined;
+}
+
+export class MongoDbRoleResponse implements IMongoDbRoleResponse {
+  name?: string | undefined;
+  database?: string | undefined;
+  isBuiltin?: boolean;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+
+  constructor(data?: IMongoDbRoleResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.database = _data["database"];
+      this.isBuiltin = _data["isBuiltin"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["inheritedRoles"])) {
+        this.inheritedRoles = [] as any;
+        for (let item of _data["inheritedRoles"])
+          this.inheritedRoles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"])
+          this.privileges!.push(MongoDbPrivilegeResponse.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbRoleResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbRoleResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["database"] = this.database;
+    data["isBuiltin"] = this.isBuiltin;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.inheritedRoles)) {
+      data["inheritedRoles"] = [];
+      for (let item of this.inheritedRoles)
+        data["inheritedRoles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges)
+        data["privileges"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbRoleResponse {
+  name?: string | undefined;
+  database?: string | undefined;
+  isBuiltin?: boolean;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+}
+
+export class MongoDbUserResponse implements IMongoDbUserResponse {
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+  privilegesStatus?: string | undefined;
+  matchedAccountIds?: string[] | undefined;
+
+  constructor(data?: IMongoDbUserResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["inheritedRoles"])) {
+        this.inheritedRoles = [] as any;
+        for (let item of _data["inheritedRoles"])
+          this.inheritedRoles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"])
+          this.privileges!.push(MongoDbPrivilegeResponse.fromJS(item));
+      }
+      this.privilegesStatus = _data["privilegesStatus"];
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbUserResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbUserResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.inheritedRoles)) {
+      data["inheritedRoles"] = [];
+      for (let item of this.inheritedRoles)
+        data["inheritedRoles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges)
+        data["privileges"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["privilegesStatus"] = this.privilegesStatus;
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbUserResponse {
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+  privilegesStatus?: string | undefined;
+  matchedAccountIds?: string[] | undefined;
+}
+
+export class MongoDbUserScopeResponse implements IMongoDbUserScopeResponse {
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IMongoDbUserScopeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbUserScopeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbUserScopeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IMongoDbUserScopeResponse {
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
 }
 
 export enum MonitorStatus {
@@ -32281,6 +33684,70 @@ export interface IUpdateMessageBroker {
   tagIds?: string[] | undefined;
 }
 
+export class UpdateMongoDbIntegration implements IUpdateMongoDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IUpdateMongoDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): UpdateMongoDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateMongoDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IUpdateMongoDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
 export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
   allowedCharacters?: string | undefined;
   length?: number;
@@ -33193,6 +34660,58 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidateMongoDbConnection implements IValidateMongoDbConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IValidateMongoDbConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): ValidateMongoDbConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateMongoDbConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IValidateMongoDbConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
 }
 
 export class ValidatePostgreSqlConnection implements IValidatePostgreSqlConnection {

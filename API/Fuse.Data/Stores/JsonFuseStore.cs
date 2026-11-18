@@ -91,6 +91,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
         {
             RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct),
             PostgreSqlIntegrations = await ReadAsync<PostgreSqlIntegration>("postgresqlintegrations.json", ct),
+            MongoDbIntegrations = await ReadAsync<MongoDbIntegration>("mongodbintegrations.json", ct),
             RabbitMqIntegrations = await ReadAsync<RabbitMqIntegration>("rabbitmqintegrations.json", ct)
         };
 
@@ -149,6 +150,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             writeTasks.Add(WriteAsync("redisintegrations.json", snapshot.RedisIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.PostgreSqlIntegrations, snapshot.PostgreSqlIntegrations))
             writeTasks.Add(WriteAsync("postgresqlintegrations.json", snapshot.PostgreSqlIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.MongoDbIntegrations, snapshot.MongoDbIntegrations))
+            writeTasks.Add(WriteAsync("mongodbintegrations.json", snapshot.MongoDbIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
             writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
         if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))

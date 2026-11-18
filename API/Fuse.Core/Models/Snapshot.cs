@@ -30,6 +30,7 @@ public record Snapshot(
 
     public IReadOnlyList<RedisIntegration> RedisIntegrations { get; init; } = Array.Empty<RedisIntegration>();
     public IReadOnlyList<PostgreSqlIntegration> PostgreSqlIntegrations { get; init; } = Array.Empty<PostgreSqlIntegration>();
+    public IReadOnlyList<MongoDbIntegration> MongoDbIntegrations { get; init; } = Array.Empty<MongoDbIntegration>();
 
     public Snapshot(
         IReadOnlyList<Application> Applications,

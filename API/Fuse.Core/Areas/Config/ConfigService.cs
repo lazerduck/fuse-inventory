@@ -333,6 +333,7 @@ public class ConfigService : IConfigService
             {
                 RedisIntegrations = current.RedisIntegrations,
                 PostgreSqlIntegrations = current.PostgreSqlIntegrations,
+                MongoDbIntegrations = current.MongoDbIntegrations,
                 RabbitMqIntegrations = current.RabbitMqIntegrations
             };
         }, ct);
