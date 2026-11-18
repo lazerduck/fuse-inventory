@@ -24,6 +24,7 @@ using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.RedisIntegration;
 using Fuse.Core.Areas.PostgreSqlIntegration;
+using Fuse.Core.Areas.MongoDbIntegration;
 using Fuse.Core.Areas.RabbitMqIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
@@ -108,6 +109,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, SqlIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, RedisIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, PostgreSqlIntegrationPermissions>();
+        services.AddSingleton<AreaPermissions, MongoDbIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, TagPermissions>();
         services.AddSingleton<AreaPermissions, UndoPermissions>();
         services.AddSingleton<AreaPermissions, APIKeyPermissions>();
@@ -151,8 +153,11 @@ public static class FuseCodeModule
         services.AddScoped<ISqlConnectionValidator, SqlConnectionValidator>();
         services.AddScoped<IRedisIntegrationService, RedisIntegrationService>();
         services.AddScoped<IPostgreSqlIntegrationService, PostgreSqlIntegrationService>();
+        services.AddScoped<IMongoDbIntegrationService, MongoDbIntegrationService>();
         services.AddScoped<IRedisInspector, RedisInspector>();
         services.AddScoped<IPostgreSqlInspector, PostgreSqlInspector>();
+        services.AddScoped<IMongoDbInspector, MongoDbInspector>();
+        services.AddSingleton<IMongoDbSessionFactory, MongoDbSessionFactory>();
 
         // Register SQL Permissions Cache service as both hosted service and singleton for cache queries
         // Note: Uses IServiceProvider to create scopes for accessing IAccountSqlInspector (which is scoped)

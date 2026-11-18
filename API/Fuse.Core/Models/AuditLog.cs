@@ -137,7 +137,10 @@ public enum AuditAction
     RabbitMqIntegrationDeleted,
     PostgreSqlIntegrationCreated,
     PostgreSqlIntegrationUpdated,
-    PostgreSqlIntegrationDeleted
+    PostgreSqlIntegrationDeleted,
+    MongoDbIntegrationCreated,
+    MongoDbIntegrationUpdated,
+    MongoDbIntegrationDeleted
 }
 
 /// <summary>
@@ -164,7 +167,8 @@ public enum AuditArea
     Risk,
     RedisIntegration,
     RabbitMqIntegration,
-    PostgreSqlIntegration
+    PostgreSqlIntegration,
+    MongoDbIntegration
 }
 
 /// <summary>

@@ -94,6 +94,17 @@ public static class SnapshotValidator
         }
 
         if (s.PostgreSqlIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate PostgreSQL integration data stores.");
+        if (s.MongoDbIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate MongoDb integration Ids detected");
+        foreach (var integration in s.MongoDbIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"MongoDb integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "mongodb", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"MongoDb integration {integration.Id}: data store must have kind MongoDb");
+        }
+
+        if (s.MongoDbIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate MongoDB integration data stores.");
         foreach(var integration in s.RabbitMqIntegrations)
             if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
                 errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");

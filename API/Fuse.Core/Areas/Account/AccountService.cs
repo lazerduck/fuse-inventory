@@ -64,7 +64,7 @@ public class AccountService : IAccountService
         await _fuseStore.UpdateAsync(s =>
         {
             // Check inside the store's write lock so concurrent retries cannot both insert.
-            duplicate = FindDuplicate(s, account.TargetId, account.TargetKind, account.AuthKind, account.UserName);
+            duplicate = FindDuplicate(s, account.TargetId, account.TargetKind, account.AuthKind, account.UserName, account.Parameters);
             return duplicate is null ? s with { Accounts = s.Accounts.Append(account).ToList() } : s;
         });
         if (duplicate is not null)
@@ -99,9 +99,10 @@ public class AccountService : IAccountService
             // Preserve edits to legacy duplicates unless the account's identity changes.
             var current = s.Accounts.FirstOrDefault(a => a.Id == command.Id);
             if (current is not null && (current.TargetId != command.TargetId || current.TargetKind != command.TargetKind
-                || current.AuthKind != command.AuthKind || current.UserName != command.UserName))
+                || current.AuthKind != command.AuthKind || current.UserName != command.UserName
+                || (IsMongoDb(s, command.TargetId, command.TargetKind) && MongoDbIdentity.AuthSource(current.Parameters) != MongoDbIdentity.AuthSource(command.Parameters))))
             {
-                duplicate = FindDuplicate(s, command.TargetId, command.TargetKind, command.AuthKind, command.UserName, command.Id);
+                duplicate = FindDuplicate(s, command.TargetId, command.TargetKind, command.AuthKind, command.UserName, command.Parameters, command.Id);
                 if (duplicate is not null) return s;
             }
             var targetChanged = false;
@@ -225,10 +226,14 @@ public class AccountService : IAccountService
     }
 
     private static Models.Account? FindDuplicate(Snapshot snapshot, Guid targetId, TargetKind targetKind,
-        AuthKind authKind, string? userName, Guid? excludeId = null) =>
+        AuthKind authKind, string? userName, Dictionary<string, string>? parameters, Guid? excludeId = null) =>
         string.IsNullOrWhiteSpace(userName) ? null : snapshot.Accounts.FirstOrDefault(a =>
             a.Id != excludeId && a.TargetId == targetId && a.TargetKind == targetKind && a.AuthKind == authKind
-            && string.Equals(a.UserName, userName, StringComparison.Ordinal));
+            && string.Equals(a.UserName, userName, StringComparison.Ordinal)
+            && (!IsMongoDb(snapshot, targetId, targetKind) || MongoDbIdentity.AuthSource(a.Parameters) == MongoDbIdentity.AuthSource(parameters)));
+
+    private static bool IsMongoDb(Snapshot snapshot, Guid targetId, TargetKind kind) => kind == TargetKind.DataStore
+        && snapshot.DataStores.Any(d => d.Id == targetId && string.Equals(d.Kind, "MongoDB", StringComparison.OrdinalIgnoreCase));
 
     private static Result<Models.Account> DuplicateAccount(Models.Account existing) =>
         Result<Models.Account>.Failure($"An account with this target, authentication kind and username already exists (account ID '{existing.Id}'). Read or edit that account instead.", ErrorType.Conflict);
@@ -782,7 +787,7 @@ public class AccountService : IAccountService
         Models.Account? duplicate = null;
         await _fuseStore.UpdateAsync(s =>
         {
-            duplicate = created.Select(a => FindDuplicate(s, a.TargetId, a.TargetKind, a.AuthKind, a.UserName))
+            duplicate = created.Select(a => FindDuplicate(s, a.TargetId, a.TargetKind, a.AuthKind, a.UserName, a.Parameters))
                 .FirstOrDefault(a => a is not null);
             return duplicate is null ? s with { Accounts = s.Accounts.Concat(created).ToList() } : s;
         });
