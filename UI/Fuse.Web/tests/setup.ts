@@ -15,3 +15,13 @@ Element.prototype.scrollTo = function (options?: ScrollToOptions | number, y?: n
     if (options?.top !== undefined) this.scrollTop = options.top
   }
 }
+
+// jsdom parses calc-size(), but cannot lay out or animate intrinsic heights.
+// Keep Quasar on its measured transition fallback; Playwright covers animation.
+if (typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && !Element.prototype.animate) {
+  const supports = CSS.supports.bind(CSS)
+  CSS.supports = (property: string, value?: string) => {
+    if (property === 'height' && value === 'calc-size(auto, size)') return false
+    return value === undefined ? supports(property) : supports(property, value)
+  }
+}
