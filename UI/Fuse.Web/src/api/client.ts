@@ -873,6 +873,70 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
+  mongodbIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  mongodbIntegrationPOST(
+    body: CreateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationPUT(
+    id: string,
+    body: UpdateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  mongodbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationValidate(
+    body: ValidateMongoDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbDiscoveryResponse>;
+
+  /**
+   * @return OK
+   */
   progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
@@ -974,6 +1038,198 @@ export interface IFuseApiClient {
    * @return No Content
    */
   positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  postgresqlIntegrationPOST(
+    body: CreatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationPUT(
+    id: string,
+    body: UpdatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  postgresqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationValidate(
+    body: ValidatePostgreSqlConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlDiscoveryResponse>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  rabbitMqIntegrationPOST(
+    body: CreateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationPUT(
+    id: string,
+    body: UpdateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  rabbitMqIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationValidate(
+    body: ValidateRabbitMqConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqDiscoveryResponse>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  redisIntegrationPOST(
+    body: CreateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationPUT(
+    id: string,
+    body: UpdateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse>;
+
+  /**
+   * @return No Content
+   */
+  redisIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationValidate(
+    body: ValidateRedisConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  redisIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisDiscoveryResponse>;
 
   /**
    * @return OK
@@ -1816,6 +2072,22 @@ export class FuseApiClient implements IFuseApiClient {
           result400,
         );
       });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException(
@@ -1975,6 +2247,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -2374,6 +2662,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -9843,6 +10147,669 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
+  mongodbIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationAll(_response);
+    });
+  }
+
+  protected processMongodbIntegrationAll(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(MongoDbIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  mongodbIntegrationPOST(
+    body: CreateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationPOST(_response);
+    });
+  }
+
+  protected processMongodbIntegrationPOST(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = MongoDbIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationGET(_response);
+    });
+  }
+
+  protected processMongodbIntegrationGET(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationPUT(
+    id: string,
+    body: UpdateMongoDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationPUT(_response);
+    });
+  }
+
+  protected processMongodbIntegrationPUT(
+    response: Response,
+  ): Promise<MongoDbIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  mongodbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationDELETE(_response);
+    });
+  }
+
+  protected processMongodbIntegrationDELETE(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  mongodbIntegrationValidate(
+    body: ValidateMongoDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationValidate(_response);
+    });
+  }
+
+  protected processMongodbIntegrationValidate(
+    response: Response,
+  ): Promise<MongoDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processMongodbIntegrationValidateSaved(
+    response: Response,
+  ): Promise<MongoDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  mongodbIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MongoDbDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processMongodbIntegrationDiscovery(
+    response: Response,
+  ): Promise<MongoDbDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbDiscoveryResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
   progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
@@ -10987,6 +11954,1999 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationAll(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationAll(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(PostgreSqlIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  postgresqlIntegrationPOST(
+    body: CreatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationPOST(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationPOST(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = PostgreSqlIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationGET(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationGET(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationPUT(
+    id: string,
+    body: UpdatePostgreSqlIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationPUT(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationPUT(
+    response: Response,
+  ): Promise<PostgreSqlIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  postgresqlIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationDELETE(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlIntegrationValidate(
+    body: ValidatePostgreSqlConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationValidate(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationValidate(
+    response: Response,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationValidateSaved(
+    response: Response,
+  ): Promise<PostgreSqlConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  postgresqlIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PostgreSqlDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/PostgreSqlIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processPostgresqlIntegrationDiscovery(
+    response: Response,
+  ): Promise<PostgreSqlDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PostgreSqlDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PostgreSqlDiscoveryResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationAll(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationAll(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(RabbitMqIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  rabbitMqIntegrationPOST(
+    body: CreateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationPOST(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationPOST(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = RabbitMqIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationGET(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationGET(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationPUT(
+    id: string,
+    body: UpdateRabbitMqIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationPUT(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationPUT(
+    response: Response,
+  ): Promise<RabbitMqIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  rabbitMqIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationDELETE(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  rabbitMqIntegrationValidate(
+    body: ValidateRabbitMqConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationValidate(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationValidate(
+    response: Response,
+  ): Promise<RabbitMqConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationValidateSaved(
+    response: Response,
+  ): Promise<RabbitMqConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  rabbitMqIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RabbitMqDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/RabbitMqIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRabbitMqIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processRabbitMqIntegrationDiscovery(
+    response: Response,
+  ): Promise<RabbitMqDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RabbitMqDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RabbitMqDiscoveryResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/RedisIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationAll(_response);
+    });
+  }
+
+  protected processRedisIntegrationAll(
+    response: Response,
+  ): Promise<RedisIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(RedisIntegrationResponse.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  redisIntegrationPOST(
+    body: CreateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationPOST(_response);
+    });
+  }
+
+  protected processRedisIntegrationPOST(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = RedisIntegrationResponse.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationGET(_response);
+    });
+  }
+
+  protected processRedisIntegrationGET(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationPUT(
+    id: string,
+    body: UpdateRedisIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationPUT(_response);
+    });
+  }
+
+  protected processRedisIntegrationPUT(
+    response: Response,
+  ): Promise<RedisIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisIntegrationResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisIntegrationResponse>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  redisIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationDELETE(_response);
+    });
+  }
+
+  protected processRedisIntegrationDELETE(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  redisIntegrationValidate(
+    body: ValidateRedisConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationValidate(_response);
+    });
+  }
+
+  protected processRedisIntegrationValidate(
+    response: Response,
+  ): Promise<RedisConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processRedisIntegrationValidateSaved(
+    response: Response,
+  ): Promise<RedisConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  redisIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<RedisDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/RedisIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRedisIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processRedisIntegrationDiscovery(
+    response: Response,
+  ): Promise<RedisDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = RedisDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<RedisDiscoveryResponse>(null as any);
   }
 
   /**
@@ -18317,9 +21277,7 @@ export interface IApiKeyInfo {
   updatedAt?: Date;
 }
 
-export class AppConfigurationEntryResponse
-  implements IAppConfigurationEntryResponse
-{
+export class AppConfigurationEntryResponse implements IAppConfigurationEntryResponse {
   key?: string | undefined;
   value?: string | undefined;
   label?: string | undefined;
@@ -18907,9 +21865,7 @@ export interface IApplicationInstance {
   appConfigurationKeySuffix?: string | undefined;
 }
 
-export class ApplicationInstanceDependency
-  implements IApplicationInstanceDependency
-{
+export class ApplicationInstanceDependency implements IApplicationInstanceDependency {
   id?: string;
   targetId?: string;
   targetKind?: TargetKind;
@@ -19251,6 +22207,18 @@ export enum AuditAction {
   IdentityUpdated = "IdentityUpdated",
   IdentityDeleted = "IdentityDeleted",
   ChangeReverted = "ChangeReverted",
+  RedisIntegrationCreated = "RedisIntegrationCreated",
+  RedisIntegrationUpdated = "RedisIntegrationUpdated",
+  RedisIntegrationDeleted = "RedisIntegrationDeleted",
+  RabbitMqIntegrationCreated = "RabbitMqIntegrationCreated",
+  RabbitMqIntegrationUpdated = "RabbitMqIntegrationUpdated",
+  RabbitMqIntegrationDeleted = "RabbitMqIntegrationDeleted",
+  PostgreSqlIntegrationCreated = "PostgreSqlIntegrationCreated",
+  PostgreSqlIntegrationUpdated = "PostgreSqlIntegrationUpdated",
+  PostgreSqlIntegrationDeleted = "PostgreSqlIntegrationDeleted",
+  MongoDbIntegrationCreated = "MongoDbIntegrationCreated",
+  MongoDbIntegrationUpdated = "MongoDbIntegrationUpdated",
+  MongoDbIntegrationDeleted = "MongoDbIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -19271,6 +22239,10 @@ export enum AuditArea {
   ResponsibilityType = "ResponsibilityType",
   ResponsibilityAssignment = "ResponsibilityAssignment",
   Risk = "Risk",
+  RedisIntegration = "RedisIntegration",
+  RabbitMqIntegration = "RabbitMqIntegration",
+  PostgreSqlIntegration = "PostgreSqlIntegration",
+  MongoDbIntegration = "MongoDbIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -19411,9 +22383,7 @@ export enum AuthKind {
   Other = "Other",
 }
 
-export class AzureDiscoveryAuthentication
-  implements IAzureDiscoveryAuthentication
-{
+export class AzureDiscoveryAuthentication implements IAzureDiscoveryAuthentication {
   authMode?: SecretProviderAuthMode;
 
   constructor(data?: IAzureDiscoveryAuthentication) {
@@ -19449,9 +22419,7 @@ export interface IAzureDiscoveryAuthentication {
   authMode?: SecretProviderAuthMode;
 }
 
-export class AzureDiscoveryExclusionsResponse
-  implements IAzureDiscoveryExclusionsResponse
-{
+export class AzureDiscoveryExclusionsResponse implements IAzureDiscoveryExclusionsResponse {
   resourceIds?: string[] | undefined;
 
   constructor(data?: IAzureDiscoveryExclusionsResponse) {
@@ -19547,9 +22515,7 @@ export interface IAzureImportResponse {
   warnings?: string[] | undefined;
 }
 
-export class AzureIntegrationManagerResponse
-  implements IAzureIntegrationManagerResponse
-{
+export class AzureIntegrationManagerResponse implements IAzureIntegrationManagerResponse {
   hasClientSecretCredentials?: boolean;
   tenantId?: string | undefined;
   clientId?: string | undefined;
@@ -20247,9 +23213,7 @@ export interface IBulkResolveSummary {
   failed?: number;
 }
 
-export class CachedAccountSqlStatusResponse
-  implements ICachedAccountSqlStatusResponse
-{
+export class CachedAccountSqlStatusResponse implements ICachedAccountSqlStatusResponse {
   status?: AccountSqlStatusResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -20299,9 +23263,7 @@ export interface ICachedAccountSqlStatusResponse {
   isCached?: boolean;
 }
 
-export class CachedPermissionsOverviewResponse
-  implements ICachedPermissionsOverviewResponse
-{
+export class CachedPermissionsOverviewResponse implements ICachedPermissionsOverviewResponse {
   overview?: SqlIntegrationPermissionsOverviewResponse;
   cachedAt?: Date | undefined;
   isCached?: boolean;
@@ -20762,9 +23724,7 @@ export interface ICreateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class CreateApplicationDependency
-  implements ICreateApplicationDependency
-{
+export class CreateApplicationDependency implements ICreateApplicationDependency {
   applicationId?: string;
   instanceId?: string;
   targetId?: string;
@@ -21413,6 +24373,66 @@ export interface ICreateMessageBroker {
   tagIds?: string[] | undefined;
 }
 
+export class CreateMongoDbIntegration implements ICreateMongoDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: ICreateMongoDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): CreateMongoDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateMongoDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface ICreateMongoDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
 export class CreatePlatform implements ICreatePlatform {
   displayName?: string | undefined;
   dnsName?: string | undefined;
@@ -21547,9 +24567,167 @@ export interface ICreatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class CreateResponsibilityAssignment
-  implements ICreateResponsibilityAssignment
-{
+export class CreatePostgreSqlIntegration implements ICreatePostgreSqlIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreatePostgreSqlIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreatePostgreSqlIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreatePostgreSqlIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreatePostgreSqlIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class CreateRabbitMqIntegration implements ICreateRabbitMqIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreateRabbitMqIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreateRabbitMqIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateRabbitMqIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreateRabbitMqIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class CreateRedisIntegration implements ICreateRedisIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: ICreateRedisIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): CreateRedisIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateRedisIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface ICreateRedisIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class CreateResponsibilityAssignment implements ICreateResponsibilityAssignment {
   positionId?: string;
   responsibilityTypeId?: string;
   applicationId?: string;
@@ -23326,9 +26504,7 @@ export interface IImportAzureResources {
   kinds?: string[] | undefined;
 }
 
-export class ImportOrphanPrincipalRequest
-  implements IImportOrphanPrincipalRequest
-{
+export class ImportOrphanPrincipalRequest implements IImportOrphanPrincipalRequest {
   principalName?: string | undefined;
   authKind?: AuthKind;
   secretBinding?: SecretBinding;
@@ -23376,9 +26552,7 @@ export interface IImportOrphanPrincipalRequest {
   secretBinding?: SecretBinding;
 }
 
-export class ImportOrphanPrincipalResponse
-  implements IImportOrphanPrincipalResponse
-{
+export class ImportOrphanPrincipalResponse implements IImportOrphanPrincipalResponse {
   accountId?: string;
   principalName?: string | undefined;
   success?: boolean;
@@ -24180,6 +27354,616 @@ export interface IMessageBroker {
   topics?: BrokerTopic[] | undefined;
 }
 
+export class MongoDbAccountMatchResponse implements IMongoDbAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IMongoDbAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IMongoDbAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+}
+
+export class MongoDbConnectionTestResult implements IMongoDbConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IMongoDbConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IMongoDbConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class MongoDbDiscoveryResponse implements IMongoDbDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  collectionsStatus?: string | undefined;
+  collections?: string[] | undefined;
+  rolesStatus?: string | undefined;
+  roles?: MongoDbRoleResponse[] | undefined;
+  userScopes?: MongoDbUserScopeResponse[] | undefined;
+  users?: MongoDbUserResponse[] | undefined;
+  accounts?: MongoDbAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IMongoDbDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.database = _data["database"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.collectionsStatus = _data["collectionsStatus"];
+      if (Array.isArray(_data["collections"])) {
+        this.collections = [] as any;
+        for (let item of _data["collections"]) this.collections!.push(item);
+      }
+      this.rolesStatus = _data["rolesStatus"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["userScopes"])) {
+        this.userScopes = [] as any;
+        for (let item of _data["userScopes"])
+          this.userScopes!.push(MongoDbUserScopeResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"])
+          this.users!.push(MongoDbUserResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(MongoDbAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["database"] = this.database;
+    data["connectionStatus"] = this.connectionStatus;
+    data["collectionsStatus"] = this.collectionsStatus;
+    if (Array.isArray(this.collections)) {
+      data["collections"] = [];
+      for (let item of this.collections) data["collections"].push(item);
+    }
+    data["rolesStatus"] = this.rolesStatus;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.userScopes)) {
+      data["userScopes"] = [];
+      for (let item of this.userScopes)
+        data["userScopes"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users)
+        data["users"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  collectionsStatus?: string | undefined;
+  collections?: string[] | undefined;
+  rolesStatus?: string | undefined;
+  roles?: MongoDbRoleResponse[] | undefined;
+  userScopes?: MongoDbUserScopeResponse[] | undefined;
+  users?: MongoDbUserResponse[] | undefined;
+  accounts?: MongoDbAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class MongoDbIntegrationResponse implements IMongoDbIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IMongoDbIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IMongoDbIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
+export class MongoDbPrivilegeResponse implements IMongoDbPrivilegeResponse {
+  scope?: string | undefined;
+  database?: string | undefined;
+  collection?: string | undefined;
+  actions?: string[] | undefined;
+
+  constructor(data?: IMongoDbPrivilegeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.scope = _data["scope"];
+      this.database = _data["database"];
+      this.collection = _data["collection"];
+      if (Array.isArray(_data["actions"])) {
+        this.actions = [] as any;
+        for (let item of _data["actions"]) this.actions!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbPrivilegeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbPrivilegeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["scope"] = this.scope;
+    data["database"] = this.database;
+    data["collection"] = this.collection;
+    if (Array.isArray(this.actions)) {
+      data["actions"] = [];
+      for (let item of this.actions) data["actions"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbPrivilegeResponse {
+  scope?: string | undefined;
+  database?: string | undefined;
+  collection?: string | undefined;
+  actions?: string[] | undefined;
+}
+
+export class MongoDbRoleReference implements IMongoDbRoleReference {
+  name?: string | undefined;
+  database?: string | undefined;
+
+  constructor(data?: IMongoDbRoleReference) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.database = _data["database"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbRoleReference {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbRoleReference();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["database"] = this.database;
+    return data;
+  }
+}
+
+export interface IMongoDbRoleReference {
+  name?: string | undefined;
+  database?: string | undefined;
+}
+
+export class MongoDbRoleResponse implements IMongoDbRoleResponse {
+  name?: string | undefined;
+  database?: string | undefined;
+  isBuiltin?: boolean;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+
+  constructor(data?: IMongoDbRoleResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.database = _data["database"];
+      this.isBuiltin = _data["isBuiltin"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["inheritedRoles"])) {
+        this.inheritedRoles = [] as any;
+        for (let item of _data["inheritedRoles"])
+          this.inheritedRoles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"])
+          this.privileges!.push(MongoDbPrivilegeResponse.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbRoleResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbRoleResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["database"] = this.database;
+    data["isBuiltin"] = this.isBuiltin;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.inheritedRoles)) {
+      data["inheritedRoles"] = [];
+      for (let item of this.inheritedRoles)
+        data["inheritedRoles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges)
+        data["privileges"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbRoleResponse {
+  name?: string | undefined;
+  database?: string | undefined;
+  isBuiltin?: boolean;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+}
+
+export class MongoDbUserResponse implements IMongoDbUserResponse {
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+  privilegesStatus?: string | undefined;
+  matchedAccountIds?: string[] | undefined;
+
+  constructor(data?: IMongoDbUserResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["inheritedRoles"])) {
+        this.inheritedRoles = [] as any;
+        for (let item of _data["inheritedRoles"])
+          this.inheritedRoles!.push(MongoDbRoleReference.fromJS(item));
+      }
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"])
+          this.privileges!.push(MongoDbPrivilegeResponse.fromJS(item));
+      }
+      this.privilegesStatus = _data["privilegesStatus"];
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbUserResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbUserResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.inheritedRoles)) {
+      data["inheritedRoles"] = [];
+      for (let item of this.inheritedRoles)
+        data["inheritedRoles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges)
+        data["privileges"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["privilegesStatus"] = this.privilegesStatus;
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbUserResponse {
+  username?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  roles?: MongoDbRoleReference[] | undefined;
+  inheritedRoles?: MongoDbRoleReference[] | undefined;
+  privileges?: MongoDbPrivilegeResponse[] | undefined;
+  privilegesStatus?: string | undefined;
+  matchedAccountIds?: string[] | undefined;
+}
+
+export class MongoDbUserScopeResponse implements IMongoDbUserScopeResponse {
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IMongoDbUserScopeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbUserScopeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbUserScopeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IMongoDbUserScopeResponse {
+  authenticationDatabase?: string | undefined;
+  status?: string | undefined;
+}
+
 export enum MonitorStatus {
   Down = "Down",
   Up = "Up",
@@ -24590,6 +28374,474 @@ export interface IPosition {
   updatedAt?: Date;
 }
 
+export class PostgreSqlAccountMatchResponse implements IPostgreSqlAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IPostgreSqlAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IPostgreSqlAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+}
+
+export class PostgreSqlConnectionTestResult implements IPostgreSqlConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IPostgreSqlConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IPostgreSqlConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class PostgreSqlDiscoveryResponse implements IPostgreSqlDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  rolesStatus?: string | undefined;
+  membershipsStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  roles?: PostgreSqlRoleResponse[] | undefined;
+  memberships?: PostgreSqlMembershipResponse[] | undefined;
+  permissions?: PostgreSqlPrivilegeResponse[] | undefined;
+  accounts?: PostgreSqlAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.database = _data["database"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.rolesStatus = _data["rolesStatus"];
+      this.membershipsStatus = _data["membershipsStatus"];
+      this.permissionsStatus = _data["permissionsStatus"];
+      if (Array.isArray(_data["roles"])) {
+        this.roles = [] as any;
+        for (let item of _data["roles"])
+          this.roles!.push(PostgreSqlRoleResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["memberships"])) {
+        this.memberships = [] as any;
+        for (let item of _data["memberships"])
+          this.memberships!.push(PostgreSqlMembershipResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["permissions"])) {
+        this.permissions = [] as any;
+        for (let item of _data["permissions"])
+          this.permissions!.push(PostgreSqlPrivilegeResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(PostgreSqlAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["database"] = this.database;
+    data["connectionStatus"] = this.connectionStatus;
+    data["rolesStatus"] = this.rolesStatus;
+    data["membershipsStatus"] = this.membershipsStatus;
+    data["permissionsStatus"] = this.permissionsStatus;
+    if (Array.isArray(this.roles)) {
+      data["roles"] = [];
+      for (let item of this.roles)
+        data["roles"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.memberships)) {
+      data["memberships"] = [];
+      for (let item of this.memberships)
+        data["memberships"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.permissions)) {
+      data["permissions"] = [];
+      for (let item of this.permissions)
+        data["permissions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  database?: string | undefined;
+  connectionStatus?: string | undefined;
+  rolesStatus?: string | undefined;
+  membershipsStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  roles?: PostgreSqlRoleResponse[] | undefined;
+  memberships?: PostgreSqlMembershipResponse[] | undefined;
+  permissions?: PostgreSqlPrivilegeResponse[] | undefined;
+  accounts?: PostgreSqlAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class PostgreSqlIntegrationResponse implements IPostgreSqlIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IPostgreSqlIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IPostgreSqlIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class PostgreSqlMembershipResponse implements IPostgreSqlMembershipResponse {
+  member?: string | undefined;
+  role?: string | undefined;
+  direct?: boolean;
+  inherited?: boolean;
+  canSetRole?: boolean;
+
+  constructor(data?: IPostgreSqlMembershipResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.member = _data["member"];
+      this.role = _data["role"];
+      this.direct = _data["direct"];
+      this.inherited = _data["inherited"];
+      this.canSetRole = _data["canSetRole"];
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlMembershipResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlMembershipResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["member"] = this.member;
+    data["role"] = this.role;
+    data["direct"] = this.direct;
+    data["inherited"] = this.inherited;
+    data["canSetRole"] = this.canSetRole;
+    return data;
+  }
+}
+
+export interface IPostgreSqlMembershipResponse {
+  member?: string | undefined;
+  role?: string | undefined;
+  direct?: boolean;
+  inherited?: boolean;
+  canSetRole?: boolean;
+}
+
+export class PostgreSqlPrivilegeResponse implements IPostgreSqlPrivilegeResponse {
+  role?: string | undefined;
+  kind?: string | undefined;
+  name?: string | undefined;
+  privileges?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlPrivilegeResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.role = _data["role"];
+      this.kind = _data["kind"];
+      this.name = _data["name"];
+      if (Array.isArray(_data["privileges"])) {
+        this.privileges = [] as any;
+        for (let item of _data["privileges"]) this.privileges!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlPrivilegeResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlPrivilegeResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["role"] = this.role;
+    data["kind"] = this.kind;
+    data["name"] = this.name;
+    if (Array.isArray(this.privileges)) {
+      data["privileges"] = [];
+      for (let item of this.privileges) data["privileges"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlPrivilegeResponse {
+  role?: string | undefined;
+  kind?: string | undefined;
+  name?: string | undefined;
+  privileges?: string[] | undefined;
+}
+
+export class PostgreSqlRoleResponse implements IPostgreSqlRoleResponse {
+  name?: string | undefined;
+  canLogin?: boolean;
+  inherit?: boolean;
+  superuser?: boolean;
+  createRole?: boolean;
+  createDatabase?: boolean;
+  bypassRowSecurity?: boolean;
+  canConnect?: boolean;
+  matchedAccountIds?: string[] | undefined;
+
+  constructor(data?: IPostgreSqlRoleResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.canLogin = _data["canLogin"];
+      this.inherit = _data["inherit"];
+      this.superuser = _data["superuser"];
+      this.createRole = _data["createRole"];
+      this.createDatabase = _data["createDatabase"];
+      this.bypassRowSecurity = _data["bypassRowSecurity"];
+      this.canConnect = _data["canConnect"];
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): PostgreSqlRoleResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new PostgreSqlRoleResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["canLogin"] = this.canLogin;
+    data["inherit"] = this.inherit;
+    data["superuser"] = this.superuser;
+    data["createRole"] = this.createRole;
+    data["createDatabase"] = this.createDatabase;
+    data["bypassRowSecurity"] = this.bypassRowSecurity;
+    data["canConnect"] = this.canConnect;
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IPostgreSqlRoleResponse {
+  name?: string | undefined;
+  canLogin?: boolean;
+  inherit?: boolean;
+  superuser?: boolean;
+  createRole?: boolean;
+  createDatabase?: boolean;
+  bypassRowSecurity?: boolean;
+  canConnect?: boolean;
+  matchedAccountIds?: string[] | undefined;
+}
+
 export enum Privilege {
   Select = "Select",
   Insert = "Insert",
@@ -24661,6 +28913,968 @@ export interface IProblemDetails {
   instance?: string | undefined;
 
   [key: string]: any;
+}
+
+export class RabbitMqAccountMatch implements IRabbitMqAccountMatch {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRabbitMqAccountMatch) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqAccountMatch {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqAccountMatch();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRabbitMqAccountMatch {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+}
+
+export class RabbitMqConnectionTestResult implements IRabbitMqConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IRabbitMqConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IRabbitMqConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class RabbitMqDiscoveryResponse implements IRabbitMqDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  virtualHost?: string | undefined;
+  connectionStatus?: string | undefined;
+  topologyStatus?: string | undefined;
+  usersStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  resources?: RabbitMqResource[] | undefined;
+  queues?: RabbitMqQueueMatch[] | undefined;
+  users?: string[] | undefined;
+  permissions?: RabbitMqPermission[] | undefined;
+  accounts?: RabbitMqAccountMatch[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IRabbitMqDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.virtualHost = _data["virtualHost"];
+      this.connectionStatus = _data["connectionStatus"];
+      this.topologyStatus = _data["topologyStatus"];
+      this.usersStatus = _data["usersStatus"];
+      this.permissionsStatus = _data["permissionsStatus"];
+      if (Array.isArray(_data["resources"])) {
+        this.resources = [] as any;
+        for (let item of _data["resources"])
+          this.resources!.push(RabbitMqResource.fromJS(item));
+      }
+      if (Array.isArray(_data["queues"])) {
+        this.queues = [] as any;
+        for (let item of _data["queues"])
+          this.queues!.push(RabbitMqQueueMatch.fromJS(item));
+      }
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"]) this.users!.push(item);
+      }
+      if (Array.isArray(_data["permissions"])) {
+        this.permissions = [] as any;
+        for (let item of _data["permissions"])
+          this.permissions!.push(RabbitMqPermission.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(RabbitMqAccountMatch.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): RabbitMqDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["virtualHost"] = this.virtualHost;
+    data["connectionStatus"] = this.connectionStatus;
+    data["topologyStatus"] = this.topologyStatus;
+    data["usersStatus"] = this.usersStatus;
+    data["permissionsStatus"] = this.permissionsStatus;
+    if (Array.isArray(this.resources)) {
+      data["resources"] = [];
+      for (let item of this.resources)
+        data["resources"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.queues)) {
+      data["queues"] = [];
+      for (let item of this.queues)
+        data["queues"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users) data["users"].push(item);
+    }
+    if (Array.isArray(this.permissions)) {
+      data["permissions"] = [];
+      for (let item of this.permissions)
+        data["permissions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IRabbitMqDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  virtualHost?: string | undefined;
+  connectionStatus?: string | undefined;
+  topologyStatus?: string | undefined;
+  usersStatus?: string | undefined;
+  permissionsStatus?: string | undefined;
+  resources?: RabbitMqResource[] | undefined;
+  queues?: RabbitMqQueueMatch[] | undefined;
+  users?: string[] | undefined;
+  permissions?: RabbitMqPermission[] | undefined;
+  accounts?: RabbitMqAccountMatch[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class RabbitMqIntegrationResponse implements IRabbitMqIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IRabbitMqIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): RabbitMqIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IRabbitMqIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class RabbitMqPermission implements IRabbitMqPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  configure?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
+
+  constructor(data?: IRabbitMqPermission) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.virtualHost = _data["virtualHost"];
+      this.configure = _data["configure"];
+      this.write = _data["write"];
+      this.read = _data["read"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqPermission {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqPermission();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["virtualHost"] = this.virtualHost;
+    data["configure"] = this.configure;
+    data["write"] = this.write;
+    data["read"] = this.read;
+    return data;
+  }
+}
+
+export interface IRabbitMqPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  configure?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
+}
+
+export class RabbitMqQueueMatch implements IRabbitMqQueueMatch {
+  name?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRabbitMqQueueMatch) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqQueueMatch {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqQueueMatch();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRabbitMqQueueMatch {
+  name?: string | undefined;
+  status?: string | undefined;
+}
+
+export class RabbitMqResource implements IRabbitMqResource {
+  name?: string | undefined;
+  kind?: string | undefined;
+  virtualHost?: string | undefined;
+  type?: string | undefined;
+  destination?: string | undefined;
+  routingKey?: string | undefined;
+
+  constructor(data?: IRabbitMqResource) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.kind = _data["kind"];
+      this.virtualHost = _data["virtualHost"];
+      this.type = _data["type"];
+      this.destination = _data["destination"];
+      this.routingKey = _data["routingKey"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqResource {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqResource();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["kind"] = this.kind;
+    data["virtualHost"] = this.virtualHost;
+    data["type"] = this.type;
+    data["destination"] = this.destination;
+    data["routingKey"] = this.routingKey;
+    return data;
+  }
+}
+
+export interface IRabbitMqResource {
+  name?: string | undefined;
+  kind?: string | undefined;
+  virtualHost?: string | undefined;
+  type?: string | undefined;
+  destination?: string | undefined;
+  routingKey?: string | undefined;
+}
+
+export class RedisAccountMatchResponse implements IRedisAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+  redisUsername?: string | undefined;
+
+  constructor(data?: IRedisAccountMatchResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.username = _data["username"];
+      this.status = _data["status"];
+      this.redisUsername = _data["redisUsername"];
+    }
+  }
+
+  static fromJS(data: any): RedisAccountMatchResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAccountMatchResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["username"] = this.username;
+    data["status"] = this.status;
+    data["redisUsername"] = this.redisUsername;
+    return data;
+  }
+}
+
+export interface IRedisAccountMatchResponse {
+  accountId?: string;
+  username?: string | undefined;
+  status?: string | undefined;
+  redisUsername?: string | undefined;
+}
+
+export class RedisAclSelectorResponse implements IRedisAclSelectorResponse {
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+
+  constructor(data?: IRedisAclSelectorResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.commands = _data["commands"];
+      this.keyPatterns = _data["keyPatterns"];
+      this.channelPatterns = _data["channelPatterns"];
+    }
+  }
+
+  static fromJS(data: any): RedisAclSelectorResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAclSelectorResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["commands"] = this.commands;
+    data["keyPatterns"] = this.keyPatterns;
+    data["channelPatterns"] = this.channelPatterns;
+    return data;
+  }
+}
+
+export interface IRedisAclSelectorResponse {
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+}
+
+export class RedisAclUserResponse implements IRedisAclUserResponse {
+  username?: string | undefined;
+  enabled?: boolean | undefined;
+  flags?: string[] | undefined;
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+  selectors?: RedisAclSelectorResponse[] | undefined;
+  matchedAccountIds?: string[] | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IRedisAclUserResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.enabled = _data["enabled"];
+      if (Array.isArray(_data["flags"])) {
+        this.flags = [] as any;
+        for (let item of _data["flags"]) this.flags!.push(item);
+      }
+      this.commands = _data["commands"];
+      this.keyPatterns = _data["keyPatterns"];
+      this.channelPatterns = _data["channelPatterns"];
+      if (Array.isArray(_data["selectors"])) {
+        this.selectors = [] as any;
+        for (let item of _data["selectors"])
+          this.selectors!.push(RedisAclSelectorResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["matchedAccountIds"])) {
+        this.matchedAccountIds = [] as any;
+        for (let item of _data["matchedAccountIds"])
+          this.matchedAccountIds!.push(item);
+      }
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): RedisAclUserResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisAclUserResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["enabled"] = this.enabled;
+    if (Array.isArray(this.flags)) {
+      data["flags"] = [];
+      for (let item of this.flags) data["flags"].push(item);
+    }
+    data["commands"] = this.commands;
+    data["keyPatterns"] = this.keyPatterns;
+    data["channelPatterns"] = this.channelPatterns;
+    if (Array.isArray(this.selectors)) {
+      data["selectors"] = [];
+      for (let item of this.selectors)
+        data["selectors"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.matchedAccountIds)) {
+      data["matchedAccountIds"] = [];
+      for (let item of this.matchedAccountIds)
+        data["matchedAccountIds"].push(item);
+    }
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IRedisAclUserResponse {
+  username?: string | undefined;
+  enabled?: boolean | undefined;
+  flags?: string[] | undefined;
+  commands?: string | undefined;
+  keyPatterns?: string | undefined;
+  channelPatterns?: string | undefined;
+  selectors?: RedisAclSelectorResponse[] | undefined;
+  matchedAccountIds?: string[] | undefined;
+  status?: string | undefined;
+}
+
+export class RedisConnectionTestResult implements IRedisConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+
+  constructor(data?: IRedisConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.authenticated = _data["authenticated"];
+      this.status = _data["status"];
+      this.errorMessage = _data["errorMessage"];
+    }
+  }
+
+  static fromJS(data: any): RedisConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["authenticated"] = this.authenticated;
+    data["status"] = this.status;
+    data["errorMessage"] = this.errorMessage;
+    return data;
+  }
+}
+
+export interface IRedisConnectionTestResult {
+  isSuccessful?: boolean;
+  authenticated?: boolean;
+  status?: string | undefined;
+  errorMessage?: string | undefined;
+}
+
+export class RedisDiscoveryResponse implements IRedisDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  connectionStatus?: string | undefined;
+  serverStatus?: string | undefined;
+  aclStatus?: string | undefined;
+  aclComplete?: boolean;
+  server?: RedisServerInfo;
+  users?: RedisAclUserResponse[] | undefined;
+  accounts?: RedisAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+
+  constructor(data?: IRedisDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.integrationId = _data["integrationId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.connectionStatus = _data["connectionStatus"];
+      this.serverStatus = _data["serverStatus"];
+      this.aclStatus = _data["aclStatus"];
+      this.aclComplete = _data["aclComplete"];
+      this.server = _data["server"]
+        ? RedisServerInfo.fromJS(_data["server"])
+        : (undefined as any);
+      if (Array.isArray(_data["users"])) {
+        this.users = [] as any;
+        for (let item of _data["users"])
+          this.users!.push(RedisAclUserResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["accounts"])) {
+        this.accounts = [] as any;
+        for (let item of _data["accounts"])
+          this.accounts!.push(RedisAccountMatchResponse.fromJS(item));
+      }
+      if (Array.isArray(_data["warnings"])) {
+        this.warnings = [] as any;
+        for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): RedisDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["integrationId"] = this.integrationId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["connectionStatus"] = this.connectionStatus;
+    data["serverStatus"] = this.serverStatus;
+    data["aclStatus"] = this.aclStatus;
+    data["aclComplete"] = this.aclComplete;
+    data["server"] = this.server ? this.server.toJSON() : (undefined as any);
+    if (Array.isArray(this.users)) {
+      data["users"] = [];
+      for (let item of this.users)
+        data["users"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.accounts)) {
+      data["accounts"] = [];
+      for (let item of this.accounts)
+        data["accounts"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.warnings)) {
+      data["warnings"] = [];
+      for (let item of this.warnings) data["warnings"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IRedisDiscoveryResponse {
+  integrationId?: string;
+  observedAt?: Date;
+  connectionStatus?: string | undefined;
+  serverStatus?: string | undefined;
+  aclStatus?: string | undefined;
+  aclComplete?: boolean;
+  server?: RedisServerInfo;
+  users?: RedisAclUserResponse[] | undefined;
+  accounts?: RedisAccountMatchResponse[] | undefined;
+  warnings?: string[] | undefined;
+}
+
+export class RedisIntegrationResponse implements IRedisIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IRedisIntegrationResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.hasPassword = _data["hasPassword"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): RedisIntegrationResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisIntegrationResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["hasPassword"] = this.hasPassword;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IRedisIntegrationResponse {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  hasPassword?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class RedisKeyspaceInfo implements IRedisKeyspaceInfo {
+  database?: number;
+  keys?: number;
+  expires?: number;
+
+  constructor(data?: IRedisKeyspaceInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.database = _data["database"];
+      this.keys = _data["keys"];
+      this.expires = _data["expires"];
+    }
+  }
+
+  static fromJS(data: any): RedisKeyspaceInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisKeyspaceInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["database"] = this.database;
+    data["keys"] = this.keys;
+    data["expires"] = this.expires;
+    return data;
+  }
+}
+
+export interface IRedisKeyspaceInfo {
+  database?: number;
+  keys?: number;
+  expires?: number;
+}
+
+export class RedisServerInfo implements IRedisServerInfo {
+  version?: string | undefined;
+  mode?: string | undefined;
+  role?: string | undefined;
+  uptimeSeconds?: number | undefined;
+  usedMemoryBytes?: number | undefined;
+  connectedClients?: number | undefined;
+  keyspaces?: RedisKeyspaceInfo[] | undefined;
+
+  constructor(data?: IRedisServerInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.version = _data["version"];
+      this.mode = _data["mode"];
+      this.role = _data["role"];
+      this.uptimeSeconds = _data["uptimeSeconds"];
+      this.usedMemoryBytes = _data["usedMemoryBytes"];
+      this.connectedClients = _data["connectedClients"];
+      if (Array.isArray(_data["keyspaces"])) {
+        this.keyspaces = [] as any;
+        for (let item of _data["keyspaces"])
+          this.keyspaces!.push(RedisKeyspaceInfo.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): RedisServerInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new RedisServerInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["version"] = this.version;
+    data["mode"] = this.mode;
+    data["role"] = this.role;
+    data["uptimeSeconds"] = this.uptimeSeconds;
+    data["usedMemoryBytes"] = this.usedMemoryBytes;
+    data["connectedClients"] = this.connectedClients;
+    if (Array.isArray(this.keyspaces)) {
+      data["keyspaces"] = [];
+      for (let item of this.keyspaces)
+        data["keyspaces"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IRedisServerInfo {
+  version?: string | undefined;
+  mode?: string | undefined;
+  role?: string | undefined;
+  uptimeSeconds?: number | undefined;
+  usedMemoryBytes?: number | undefined;
+  connectedClients?: number | undefined;
+  keyspaces?: RedisKeyspaceInfo[] | undefined;
 }
 
 export class ResetPasswordRequest implements IResetPasswordRequest {
@@ -24767,9 +29981,7 @@ export interface IResolveDriftResponse {
   errorMessage?: string | undefined;
 }
 
-export class ResolvedAppConfigurationReferenceSecretResponse
-  implements IResolvedAppConfigurationReferenceSecretResponse
-{
+export class ResolvedAppConfigurationReferenceSecretResponse implements IResolvedAppConfigurationReferenceSecretResponse {
   secretName?: string | undefined;
   secretVersion?: string | undefined;
   value?: string | undefined;
@@ -25282,9 +30494,7 @@ export interface IRotateSecret {
   newSecretValue?: string | undefined;
 }
 
-export class ScrumPokerAutoRevealRequest
-  implements IScrumPokerAutoRevealRequest
-{
+export class ScrumPokerAutoRevealRequest implements IScrumPokerAutoRevealRequest {
   participantToken?: string | undefined;
   enabled?: boolean;
 
@@ -25424,9 +30634,7 @@ export interface IScrumPokerJoinRequest {
   avatarColor?: string | undefined;
 }
 
-export class ScrumPokerLockVotesAfterRevealRequest
-  implements IScrumPokerLockVotesAfterRevealRequest
-{
+export class ScrumPokerLockVotesAfterRevealRequest implements IScrumPokerLockVotesAfterRevealRequest {
   participantToken?: string | undefined;
   enabled?: boolean;
 
@@ -25466,9 +30674,7 @@ export interface IScrumPokerLockVotesAfterRevealRequest {
   enabled?: boolean;
 }
 
-export class ScrumPokerParticipantRequest
-  implements IScrumPokerParticipantRequest
-{
+export class ScrumPokerParticipantRequest implements IScrumPokerParticipantRequest {
   participantToken?: string | undefined;
 
   constructor(data?: IScrumPokerParticipantRequest) {
@@ -25504,9 +30710,7 @@ export interface IScrumPokerParticipantRequest {
   participantToken?: string | undefined;
 }
 
-export class ScrumPokerParticipantResponse
-  implements IScrumPokerParticipantResponse
-{
+export class ScrumPokerParticipantResponse implements IScrumPokerParticipantResponse {
   id?: string;
   displayName?: string | undefined;
   avatarColor?: string | undefined;
@@ -25807,9 +31011,7 @@ export interface ISecretMetadataResponse {
   contentType?: string | undefined;
 }
 
-export class SecretProviderAccessCheckResponse
-  implements ISecretProviderAccessCheckResponse
-{
+export class SecretProviderAccessCheckResponse implements ISecretProviderAccessCheckResponse {
   success?: boolean;
   checkedAt?: Date;
   message?: string | undefined;
@@ -26356,9 +31558,7 @@ export interface ISetUserDisabled {
   disabled?: boolean;
 }
 
-export class SqlAccountCreationOperation
-  implements ISqlAccountCreationOperation
-{
+export class SqlAccountCreationOperation implements ISqlAccountCreationOperation {
   operationType?: string | undefined;
   database?: string | undefined;
   success?: boolean;
@@ -26406,9 +31606,7 @@ export interface ISqlAccountCreationOperation {
   errorMessage?: string | undefined;
 }
 
-export class SqlAccountPermissionsStatus
-  implements ISqlAccountPermissionsStatus
-{
+export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus {
   accountId?: string;
   accountName?: string | undefined;
   principalName?: string | undefined;
@@ -26612,9 +31810,7 @@ export interface ISqlDatabasesResponse {
   databases?: string[] | undefined;
 }
 
-export class SqlIntegrationPermissionsOverviewResponse
-  implements ISqlIntegrationPermissionsOverviewResponse
-{
+export class SqlIntegrationPermissionsOverviewResponse implements ISqlIntegrationPermissionsOverviewResponse {
   integrationId?: string;
   integrationName?: string | undefined;
   accounts?: SqlAccountPermissionsStatus[] | undefined;
@@ -26906,9 +32102,7 @@ export enum SqlPermissions {
   Create = "Create",
 }
 
-export class SqlPermissionsOverviewSummary
-  implements ISqlPermissionsOverviewSummary
-{
+export class SqlPermissionsOverviewSummary implements ISqlPermissionsOverviewSummary {
   totalAccounts?: number;
   inSyncCount?: number;
   driftCount?: number;
@@ -27214,9 +32408,7 @@ export enum TargetKind {
   MessageBroker = "MessageBroker",
 }
 
-export class TestSecretProviderConnection
-  implements ITestSecretProviderConnection
-{
+export class TestSecretProviderConnection implements ITestSecretProviderConnection {
   vaultUri?: string | undefined;
   authMode?: SecretProviderAuthMode;
   credentials?: SecretProviderCredentials;
@@ -27589,9 +32781,7 @@ export interface IUpdateApplication {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateApplicationDependency
-  implements IUpdateApplicationDependency
-{
+export class UpdateApplicationDependency implements IUpdateApplicationDependency {
   applicationId?: string;
   instanceId?: string;
   dependencyId?: string;
@@ -27799,9 +32989,7 @@ export interface IUpdateApplicationPipeline {
   pipelineUri?: string | undefined;
 }
 
-export class UpdateAzureDiscoveryExclusions
-  implements IUpdateAzureDiscoveryExclusions
-{
+export class UpdateAzureDiscoveryExclusions implements IUpdateAzureDiscoveryExclusions {
   resourceIds?: string[] | undefined;
   excluded?: boolean;
 
@@ -27847,9 +33035,7 @@ export interface IUpdateAzureDiscoveryExclusions {
   excluded?: boolean;
 }
 
-export class UpdateAzureIntegrationManager
-  implements IUpdateAzureIntegrationManager
-{
+export class UpdateAzureIntegrationManager implements IUpdateAzureIntegrationManager {
   credentials?: SecretProviderCredentials;
 
   constructor(data?: IUpdateAzureIntegrationManager) {
@@ -28498,9 +33684,71 @@ export interface IUpdateMessageBroker {
   tagIds?: string[] | undefined;
 }
 
-export class UpdatePasswordGeneratorConfig
-  implements IUpdatePasswordGeneratorConfig
-{
+export class UpdateMongoDbIntegration implements IUpdateMongoDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IUpdateMongoDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): UpdateMongoDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateMongoDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IUpdateMongoDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
+export class UpdatePasswordGeneratorConfig implements IUpdatePasswordGeneratorConfig {
   allowedCharacters?: string | undefined;
   length?: number;
 
@@ -28682,9 +33930,179 @@ export interface IUpdatePosition {
   tagIds?: string[] | undefined;
 }
 
-export class UpdateResponsibilityAssignment
-  implements IUpdateResponsibilityAssignment
-{
+export class UpdatePostgreSqlIntegration implements IUpdatePostgreSqlIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdatePostgreSqlIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdatePostgreSqlIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdatePostgreSqlIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdatePostgreSqlIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class UpdateRabbitMqIntegration implements IUpdateRabbitMqIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdateRabbitMqIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdateRabbitMqIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateRabbitMqIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdateRabbitMqIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class UpdateRedisIntegration implements IUpdateRedisIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IUpdateRedisIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): UpdateRedisIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateRedisIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IUpdateRedisIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class UpdateResponsibilityAssignment implements IUpdateResponsibilityAssignment {
   id?: string;
   positionId?: string;
   responsibilityTypeId?: string;
@@ -29242,6 +34660,194 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidateMongoDbConnection implements IValidateMongoDbConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+
+  constructor(data?: IValidateMongoDbConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+      this.authenticationDatabase = _data["authenticationDatabase"];
+      this.useTls = _data["useTls"];
+    }
+  }
+
+  static fromJS(data: any): ValidateMongoDbConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateMongoDbConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    data["authenticationDatabase"] = this.authenticationDatabase;
+    data["useTls"] = this.useTls;
+    return data;
+  }
+}
+
+export interface IValidateMongoDbConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  authenticationDatabase?: string | undefined;
+  useTls?: boolean;
+}
+
+export class ValidatePostgreSqlConnection implements IValidatePostgreSqlConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidatePostgreSqlConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidatePostgreSqlConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidatePostgreSqlConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidatePostgreSqlConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class ValidateRabbitMqConnection implements IValidateRabbitMqConnection {
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidateRabbitMqConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.virtualHost = _data["virtualHost"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidateRabbitMqConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateRabbitMqConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["virtualHost"] = this.virtualHost;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidateRabbitMqConnection {
+  virtualHost?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+}
+
+export class ValidateRedisConnection implements IValidateRedisConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+
+  constructor(data?: IValidateRedisConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.password = _data["password"];
+    }
+  }
+
+  static fromJS(data: any): ValidateRedisConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateRedisConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["password"] = this.password;
+    return data;
+  }
+}
+
+export interface IValidateRedisConnection {
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
 }
 
 export interface FileParameter {

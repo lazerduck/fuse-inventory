@@ -81,6 +81,16 @@ public class DataStoreService : IDataStoreService
         if (existing is null)
             return Result<Models.DataStore>.Failure($"Data store with ID '{command.Id}' not found.", ErrorType.NotFound);
 
+        if (!string.Equals(command.Kind, "redis", StringComparison.OrdinalIgnoreCase)
+            && store.RedisIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result<Models.DataStore>.Failure("Remove the Redis integrations before changing this data store's kind.", ErrorType.Conflict);
+        if (!string.Equals(command.Kind, "postgresql", StringComparison.OrdinalIgnoreCase)
+            && store.PostgreSqlIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result<Models.DataStore>.Failure("Remove the PostgreSql integrations before changing this data store's kind.", ErrorType.Conflict);
+        if (!string.Equals(command.Kind, "mongodb", StringComparison.OrdinalIgnoreCase)
+            && store.MongoDbIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result<Models.DataStore>.Failure("Remove the MongoDb integrations before changing this data store's kind.", ErrorType.Conflict);
+
         if (!store.Environments.Any(e => e.Id == command.EnvironmentId))
             return Result<Models.DataStore>.Failure($"Environment with ID '{command.EnvironmentId}' not found.", ErrorType.Validation);
 
@@ -129,6 +139,13 @@ public class DataStoreService : IDataStoreService
         var store = await _fuseStore.GetAsync();
         if (!store.DataStores.Any(d => d.Id == command.Id))
             return Result.Failure($"Data store with ID '{command.Id}' not found.", ErrorType.NotFound);
+
+        if (store.RedisIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result.Failure("Remove the Redis integrations before deleting this data store.", ErrorType.Conflict);
+        if (store.PostgreSqlIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result.Failure("Remove the PostgreSql integrations before deleting this data store.", ErrorType.Conflict);
+        if (store.MongoDbIntegrations.Any(i => i.DataStoreId == command.Id))
+            return Result.Failure("Remove the MongoDb integrations before deleting this data store.", ErrorType.Conflict);
 
         await _fuseStore.UpdateAsync(s => s with { DataStores = s.DataStores.Where(x => x.Id != command.Id).ToList() });
         return Result.Success();

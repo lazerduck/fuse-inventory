@@ -161,6 +161,19 @@ const router = createRouter({
       name: 'sqlPermissionsOverview',
       component: () => import('./pages/SqlPermissionsOverviewPage.vue')
     },
+    { path: '/rabbitmq-integrations', name: 'rabbitMqIntegrations', component: () => import('./pages/RabbitMqIntegrationsPage.vue') },
+    { path: '/postgresql-integrations', name: 'postgreSqlIntegrations', component: () => import('./pages/PostgreSqlIntegrationsPage.vue') },
+    { path: '/mongodb-integrations', name: 'mongoDbIntegrations', component: () => import('./pages/MongoDbIntegrationsPage.vue') },
+    {
+      path: '/redis-integrations',
+      name: 'redisIntegrations',
+      component: () => import('./pages/RedisIntegrationsPage.vue')
+    },
+    {
+      path: '/redis-integrations/:id/access',
+      name: 'redisIntegrationAccess',
+      component: () => import('./pages/RedisIntegrationAccessPage.vue')
+    },
     {
       path: '/password-generator',
       name: 'passwordGenerator',

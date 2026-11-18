@@ -329,7 +329,13 @@ public class ConfigService : IConfigService
                 PasswordGeneratorConfig: current.PasswordGeneratorConfig,
                 AzureIntegrationManager: current.AzureIntegrationManager,
                 License: current.License
-            );
+            )
+            {
+                RedisIntegrations = current.RedisIntegrations,
+                PostgreSqlIntegrations = current.PostgreSqlIntegrations,
+                MongoDbIntegrations = current.MongoDbIntegrations,
+                RabbitMqIntegrations = current.RabbitMqIntegrations
+            };
         }, ct);
 
         await _auditService.LogAsync(AuditHelper.CreateLog(

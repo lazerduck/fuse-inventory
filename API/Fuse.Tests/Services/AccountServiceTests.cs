@@ -114,6 +114,29 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task MongoDbAccounts_DistinguishAuthDatabasesAndRejectUpdateAndCloneCollisions()
+    {
+        var ds = new DataStore(Guid.NewGuid(), "Mongo", null, "MongoDB", Guid.NewGuid(), null, null, [], DateTime.UtcNow, DateTime.UtcNow);
+        var other = ds with { Id = Guid.NewGuid() };
+        var sql = ds with { Id = Guid.NewGuid(), Kind = "SQL" };
+        var store = NewStore(ds: [ds, other, sql]);
+        var service = CreateService(store);
+        var command = new CreateAccount(ds.Id, TargetKind.DataStore, AuthKind.UserPassword,
+            new(SecretBindingKind.None,null,null), "same", new() { ["authSource"] = "app" }, []);
+        var app = (await service.CreateAccountAsync(command)).Value!;
+        var report = (await service.CreateAccountAsync(command with { Parameters = new() { ["authSource"] = "reporting" } })).Value!;
+        Assert.NotNull(report);Assert.NotEqual(app.Id,report.Id);
+        Assert.Equal(ErrorType.Conflict,(await service.CreateAccountAsync(command)).ErrorType);
+        Assert.Equal(ErrorType.Conflict,(await service.UpdateAccountAsync(new(report.Id,report.TargetId,report.TargetKind,report.AuthKind,report.SecretBinding,report.UserName,app.Parameters,[]))).ErrorType);
+        Assert.Equal("reporting",(await service.GetAccountByIdAsync(report.Id))!.Parameters!["authSource"]);
+        Assert.True((await service.CloneAccountAsync(new(app.Id,[other.Id]))).IsSuccess);
+        Assert.True((await service.CloneAccountAsync(new(report.Id,[other.Id]))).IsSuccess);
+        Assert.Equal(ErrorType.Conflict,(await service.CloneAccountAsync(new(app.Id,[other.Id]))).ErrorType);
+        Assert.True((await service.CreateAccountAsync(command with { TargetId = sql.Id })).IsSuccess);
+        Assert.Equal(ErrorType.Conflict,(await service.CreateAccountAsync(command with { TargetId = sql.Id, Parameters = report.Parameters })).ErrorType);
+    }
+
+    [Fact]
     public async Task CreateAccount_TargetMustExist()
     {
         var store = NewStore();
