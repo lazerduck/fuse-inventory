@@ -111,7 +111,9 @@ describe('Redis connection form', () => {
     await flushPromises()
     expect(wrapper.emitted('submit')?.slice(-1)[0]?.[0]).toMatchObject({ password: '' })
     expect(localStorage.length).toBe(0)
-    expect(sessionStorage.length).toBe(0)
+    // Vue Router 5.5 stores scroll positions even for memory history.
+    // Allow only that empty router entry; form data must never be persisted.
+    expect(Object.fromEntries(Object.entries(sessionStorage))).toEqual({ 'vue-router:scroll': '{}' })
   })
 
   it('tests saved credentials only for the unchanged connection and clears stale success', async () => {
