@@ -26,6 +26,12 @@ public record Snapshot(
     LicenseState? License = null
 )
 {
+    public IReadOnlyList<RabbitMqIntegration> RabbitMqIntegrations { get; init; } = Array.Empty<RabbitMqIntegration>();
+
+    public IReadOnlyList<RedisIntegration> RedisIntegrations { get; init; } = Array.Empty<RedisIntegration>();
+    public IReadOnlyList<PostgreSqlIntegration> PostgreSqlIntegrations { get; init; } = Array.Empty<PostgreSqlIntegration>();
+    public IReadOnlyList<MongoDbIntegration> MongoDbIntegrations { get; init; } = Array.Empty<MongoDbIntegration>();
+
     public Snapshot(
         IReadOnlyList<Application> Applications,
         IReadOnlyList<DataStore> DataStores,

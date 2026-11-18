@@ -73,6 +73,42 @@ public static class SnapshotValidator
             TagsMustExist(ds.TagIds, $"DataStore {ds.Id}");
         }
 
+        if (s.RedisIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate Redis integration Ids detected");
+        foreach (var integration in s.RedisIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"Redis integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "redis", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"Redis integration {integration.Id}: data store must have kind Redis");
+        }
+
+        if (s.PostgreSqlIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate PostgreSql integration Ids detected");
+        foreach (var integration in s.PostgreSqlIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"PostgreSql integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "postgresql", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"PostgreSql integration {integration.Id}: data store must have kind PostgreSql");
+        }
+
+        if (s.PostgreSqlIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate PostgreSQL integration data stores.");
+        if (s.MongoDbIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate MongoDb integration Ids detected");
+        foreach (var integration in s.MongoDbIntegrations)
+        {
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var dataStore))
+                errs.Add($"MongoDb integration {integration.Id}: data store {integration.DataStoreId} not found");
+            else if (!string.Equals(dataStore.Kind, "mongodb", StringComparison.OrdinalIgnoreCase))
+                errs.Add($"MongoDb integration {integration.Id}: data store must have kind MongoDb");
+        }
+
+        if (s.MongoDbIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate MongoDB integration data stores.");
+        foreach(var integration in s.RabbitMqIntegrations)
+            if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
+                errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");
+        if(s.RabbitMqIntegrations.GroupBy(x=>x.MessageBrokerId).Any(x=>x.Count()>1) || s.RabbitMqIntegrations.GroupBy(x=>x.Id).Any(x=>x.Count()>1)) errs.Add("Duplicate RabbitMQ integration.");
         // Applications and Instances
         foreach (var app in s.Applications)
         {

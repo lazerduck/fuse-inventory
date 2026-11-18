@@ -24,6 +24,14 @@
           </template>
         </q-input>
       </template>
+      <template #body-cell-userName="props">
+        <q-td :props="props">
+          <div>{{ props.row.userName }}</div>
+          <div v-if="props.row.parameters?.authSource" class="text-caption auth-source">
+            authSource: {{ props.row.parameters.authSource }}
+          </div>
+        </q-td>
+      </template>
       <template #body-cell-target="props">
         <q-td :props="props">
           {{ targetResolver(props.row) }}
@@ -106,7 +114,7 @@ const rows = computed(() => props.accounts ?? [])
 const columns: QTableColumn<Account>[] = [
   { name: 'target', label: 'Target', field: 'targetId', align: 'left', sortable: true },
   { name: 'authKind', label: 'Auth Kind', field: 'authKind', align: 'left' },
-  { name: 'userName', label: 'Username', field: 'userName', align: 'left' },
+  { name: 'userName', label: 'Username', field: (row) => [row.userName, row.parameters?.authSource].filter(Boolean).join(' / '), align: 'left' },
   { name: 'grants', label: 'Grants', field: 'grants', align: 'left' },
   { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
@@ -114,6 +122,10 @@ const columns: QTableColumn<Account>[] = [
 </script>
 
 <style scoped>
+.auth-source {
+  color: var(--fuse-text-muted);
+}
+
 .content-card {
   flex: 1;
 }

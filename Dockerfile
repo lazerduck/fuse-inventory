@@ -15,7 +15,7 @@ COPY UI/Fuse.Web/ ./
 RUN npm run build
 
 # Run the SDK natively and cross-publish the API for the requested runtime.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0 AS backend-build
 ARG TARGETARCH
 
 WORKDIR /app

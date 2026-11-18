@@ -128,7 +128,19 @@ public enum AuditAction
     IdentityDeleted,
 
     // Undo actions
-    ChangeReverted
+    ChangeReverted,
+    RedisIntegrationCreated,
+    RedisIntegrationUpdated,
+    RedisIntegrationDeleted,
+    RabbitMqIntegrationCreated,
+    RabbitMqIntegrationUpdated,
+    RabbitMqIntegrationDeleted,
+    PostgreSqlIntegrationCreated,
+    PostgreSqlIntegrationUpdated,
+    PostgreSqlIntegrationDeleted,
+    MongoDbIntegrationCreated,
+    MongoDbIntegrationUpdated,
+    MongoDbIntegrationDeleted
 }
 
 /// <summary>
@@ -152,7 +164,11 @@ public enum AuditArea
     Position,
     ResponsibilityType,
     ResponsibilityAssignment,
-    Risk
+    Risk,
+    RedisIntegration,
+    RabbitMqIntegration,
+    PostgreSqlIntegration,
+    MongoDbIntegration
 }
 
 /// <summary>
