@@ -33,6 +33,7 @@ public record Snapshot(
     public IReadOnlyList<MongoDbIntegration> MongoDbIntegrations { get; init; } = Array.Empty<MongoDbIntegration>();
     public IReadOnlyList<KeycloakIntegration> KeycloakIntegrations { get; init; } = Array.Empty<KeycloakIntegration>();
     public IReadOnlyList<ServiceBusConnection> ServiceBusIntegrations { get; init; } = Array.Empty<ServiceBusConnection>();
+    public IReadOnlyList<CosmosDbConnection> CosmosDbIntegrations { get; init; } = Array.Empty<CosmosDbConnection>();
 
     public Snapshot(
         IReadOnlyList<Application> Applications,

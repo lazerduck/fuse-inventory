@@ -27,6 +27,7 @@ using Fuse.Core.Areas.PostgreSqlIntegration;
 using Fuse.Core.Areas.MongoDbIntegration;
 using Fuse.Core.Areas.KeycloakIntegration;
 using Fuse.Core.Areas.ServiceBusIntegration;
+using Fuse.Core.Areas.CosmosDbIntegration;
 using Fuse.Core.Areas.RabbitMqIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
@@ -160,6 +161,10 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, ServiceBusIntegrationPermissions>();
         services.AddScoped<IServiceBusIntegrationService, ServiceBusIntegrationService>();
         services.AddHttpClient<ServiceBusInspector>(client => client.MaxResponseContentBufferSize = 2 * 1024 * 1024)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+        services.AddSingleton<AreaPermissions, CosmosDbIntegrationPermissions>();
+        services.AddScoped<ICosmosDbIntegrationService, CosmosDbIntegrationService>();
+        services.AddHttpClient<CosmosDbInspector>(client => client.MaxResponseContentBufferSize = 2 * 1024 * 1024)
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddScoped<IKeycloakIntegrationService, KeycloakIntegrationService>();
         services.AddScoped<IRedisInspector, RedisInspector>();

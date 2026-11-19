@@ -146,7 +146,10 @@ public enum AuditAction
     KeycloakIntegrationDeleted,
     ServiceBusIntegrationCreated,
     ServiceBusIntegrationUpdated,
-    ServiceBusIntegrationDeleted
+    ServiceBusIntegrationDeleted,
+    CosmosDbIntegrationCreated,
+    CosmosDbIntegrationUpdated,
+    CosmosDbIntegrationDeleted
 }
 
 /// <summary>
@@ -176,7 +179,8 @@ public enum AuditArea
     PostgreSqlIntegration,
     MongoDbIntegration,
     KeycloakIntegration,
-    ServiceBusIntegration
+    ServiceBusIntegration,
+    CosmosDbIntegration
 }
 
 /// <summary>

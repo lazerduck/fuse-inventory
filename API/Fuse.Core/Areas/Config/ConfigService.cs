@@ -336,6 +336,7 @@ public class ConfigService : IConfigService
                 MongoDbIntegrations = current.MongoDbIntegrations,
                 KeycloakIntegrations = current.KeycloakIntegrations,
                 ServiceBusIntegrations = current.ServiceBusIntegrations,
+                CosmosDbIntegrations = current.CosmosDbIntegrations,
                 RabbitMqIntegrations = current.RabbitMqIntegrations
             };
         }, ct);
