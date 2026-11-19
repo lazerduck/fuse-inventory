@@ -91,6 +91,9 @@ public class MessageBrokerService : IMessageBrokerService
         if (store.MessageBrokers.Any(m => m.Id != command.Id && string.Equals(m.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
             return Result<Models.MessageBroker>.Failure($"Message broker with name '{command.Name}' already exists.", ErrorType.Conflict);
 
+        if (!string.Equals(command.Kind, "Azure Service Bus", StringComparison.OrdinalIgnoreCase) && store.ServiceBusIntegrations.Any(i => i.MessageBrokerId == command.Id))
+            return Result<Models.MessageBroker>.Failure("Remove the Service Bus integration before changing broker kind.", ErrorType.Conflict);
+
         if (!string.Equals(command.Kind, "RabbitMQ", StringComparison.OrdinalIgnoreCase) && store.RabbitMqIntegrations.Any(i => i.MessageBrokerId == command.Id))
             return Result<Models.MessageBroker>.Failure("Remove the RabbitMQ integration before changing broker kind.", ErrorType.Conflict);
 
@@ -124,6 +127,9 @@ public class MessageBrokerService : IMessageBrokerService
         var store = await _fuseStore.GetAsync();
         if (!store.MessageBrokers.Any(m => m.Id == command.Id))
             return Result.Failure($"Message broker with ID '{command.Id}' not found.", ErrorType.NotFound);
+
+        if (store.ServiceBusIntegrations.Any(i => i.MessageBrokerId == command.Id))
+            return Result.Failure("Remove the Service Bus integration before deleting this broker.", ErrorType.Conflict);
 
         if (store.RabbitMqIntegrations.Any(i => i.MessageBrokerId == command.Id))
             return Result.Failure("Remove the RabbitMQ integration before deleting this broker.", ErrorType.Conflict);

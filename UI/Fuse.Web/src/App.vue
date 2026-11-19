@@ -313,6 +313,7 @@
             <q-item clickable :to="{ name: 'postgreSqlIntegrations' }" v-if="fuseStore.hasPermission('postgresqlintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>PostgreSQL</q-item-section></q-item>
             <q-item clickable :to="{ name: 'mongoDbIntegrations' }" v-if="fuseStore.hasPermission('mongodbintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>MongoDB</q-item-section></q-item>
             <q-item clickable :to="{ name: 'keycloakIntegrations' }" v-if="fuseStore.hasPermission('keycloakintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>Keycloak</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'serviceBusIntegrations' }" v-if="fuseStore.hasPermission('servicebusintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>Azure Service Bus</q-item-section></q-item>
             <q-item clickable v-ripple :to="{ name: 'redisIntegrations' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.RedisIntegrationsRead)"
               data-tour-id="nav-redis-integrations">

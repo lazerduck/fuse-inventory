@@ -1,0 +1,11 @@
+# Read-only Azure Service Bus integration
+
+Create a message broker with kind **Azure Service Bus**. Under **Integrations → Azure Service Bus**, select that broker and paste the full Azure Resource Manager ID of its namespace. Choose the shared Azure client secret configured in Fuse, or the deployment's managed identity. A saved integration stores the resource ID and authentication mode. It uses the Azure public cloud management endpoint.
+
+**Test connection** reads the first page of queues. **Inspect** lists queues, reads authorization-rule metadata at the namespace and queue scopes, and compares the queues with the selected broker's inventory. A Reader assignment on the namespace allows metadata inspection. An identity with Reader on one queue can inspect that queue directly when it is named in the broker inventory, even when namespace enumeration is denied.
+
+Namespace policies apply across the namespace. Queue policies apply to the named queue. Send, Listen and Manage are configured SAS rights. Fuse performs metadata GETs using Entra authentication. It does not retrieve SAS keys, send or consume messages, or infer an application's effective access from a policy name. Policies may remain configured when SAS authentication is disabled. Topics, subscriptions and Entra role-assignment discovery are outside this release.
+
+Visibility is reported independently for the queue listing, namespace policies and each queue's policies. Azure can return a filtered list with HTTP 200. Fuse reports limited queue visibility when an inventoried queue outside that list denies a direct read. An empty policy list has unknown visibility because Azure may have hidden existing rules. If a later page fails, earlier observations are retained. An inventory queue absent from the visible results stays unknown. Inspections have a 45-second deadline and a 300-request budget, with up to 100 pages or 1,000 entries per listing.
+
+[Azure queue discovery](https://learn.microsoft.com/en-us/rest/api/servicebus/controlplane/queues/list-by-namespace?view=rest-servicebus-controlplane-2024-01-01) and [queue authorization rules](https://learn.microsoft.com/en-us/rest/api/servicebus/controlplane/queues/list-authorization-rules?view=rest-servicebus-controlplane-2024-01-01) describe the underlying resource metadata.

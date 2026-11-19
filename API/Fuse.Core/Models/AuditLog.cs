@@ -143,7 +143,10 @@ public enum AuditAction
     MongoDbIntegrationDeleted,
     KeycloakIntegrationCreated,
     KeycloakIntegrationUpdated,
-    KeycloakIntegrationDeleted
+    KeycloakIntegrationDeleted,
+    ServiceBusIntegrationCreated,
+    ServiceBusIntegrationUpdated,
+    ServiceBusIntegrationDeleted
 }
 
 /// <summary>
@@ -172,7 +175,8 @@ public enum AuditArea
     RabbitMqIntegration,
     PostgreSqlIntegration,
     MongoDbIntegration,
-    KeycloakIntegration
+    KeycloakIntegration,
+    ServiceBusIntegration
 }
 
 /// <summary>

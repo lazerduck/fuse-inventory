@@ -107,6 +107,13 @@ public static class SnapshotValidator
         }
 
         if (s.MongoDbIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate MongoDB integration data stores.");
+        if (s.ServiceBusIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1)
+            || s.ServiceBusIntegrations.GroupBy(i => i.MessageBrokerId).Any(g => g.Count() > 1))
+            errs.Add("Duplicate Azure Service Bus integration.");
+        foreach (var integration in s.ServiceBusIntegrations)
+            if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker)
+                || !string.Equals(broker.Kind, "Azure Service Bus", StringComparison.OrdinalIgnoreCase))
+                errs.Add("Service Bus integration requires an Azure Service Bus message broker.");
         foreach(var integration in s.RabbitMqIntegrations)
             if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
                 errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");

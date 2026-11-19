@@ -165,6 +165,7 @@ const router = createRouter({
     { path: '/postgresql-integrations', name: 'postgreSqlIntegrations', component: () => import('./pages/PostgreSqlIntegrationsPage.vue') },
     { path: '/mongodb-integrations', name: 'mongoDbIntegrations', component: () => import('./pages/MongoDbIntegrationsPage.vue') },
     { path: '/keycloak-integrations', name: 'keycloakIntegrations', component: () => import('./pages/KeycloakIntegrationsPage.vue') },
+    { path: '/servicebus-integrations', name: 'serviceBusIntegrations', component: () => import('./pages/ServiceBusIntegrationsPage.vue') },
     {
       path: '/redis-integrations',
       name: 'redisIntegrations',
