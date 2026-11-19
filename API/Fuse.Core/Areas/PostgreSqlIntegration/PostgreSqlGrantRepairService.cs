@@ -24,6 +24,8 @@ public sealed class PostgreSqlGrantRepairService(IFuseStore store, IAuditService
         var review = snapshot.IntegrationReviews.FirstOrDefault(r => r.Id == reviewId && r.Input.IntegrationId == integrationId &&
             r.Input.Provider == "postgresql" && r.Input.Kind == "table-access" && r.Input.Fields.GetValueOrDefault("expected") == "allow");
         if (review is null) return Failure("Select a saved required PostgreSQL table privilege.", ErrorType.NotFound);
+        if (review.ScopeFingerprint != ReviewSources.Scope(snapshot, review.Input))
+            return Failure("The connection or documented principal changed. Save the expectation for its current scope before repairing.", ErrorType.Conflict);
         if (new PostgreSqlReviewProvider().Validate(snapshot, review.Input) is { } invalid) return Failure(invalid);
         var node = snapshot.PostgreSqlIntegrations.Single(n => n.Id == integrationId);
         var credential = await IntegrationPasswords.ForUse(node, passwords, ct);

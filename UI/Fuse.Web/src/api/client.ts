@@ -402,7 +402,7 @@ export interface IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPOST(
+  azureCredentialProfilesPOSTPOST(
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
   ): Promise<AzureProfileInfo>;
@@ -5951,7 +5951,7 @@ export class FuseApiClient implements IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPOST(
+  azureCredentialProfilesPOSTPOST(
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
   ): Promise<AzureProfileInfo> {
@@ -5971,11 +5971,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAzureCredentialProfilesPOST(_response);
+      return this.processAzureCredentialProfilesPOSTPOST(_response);
     });
   }
 
-  protected processAzureCredentialProfilesPOST(
+  protected processAzureCredentialProfilesPOSTPOST(
     response: Response,
   ): Promise<AzureProfileInfo> {
     const status = response.status;
@@ -24897,6 +24897,7 @@ export class Account implements IAccount {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  importedFrom?: InventoryOrigin;
   readonly secretRef?: string | undefined;
 
   constructor(data?: IAccount) {
@@ -24938,6 +24939,9 @@ export class Account implements IAccount {
         : (undefined as any);
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+      this.importedFrom = _data["importedFrom"]
+        ? InventoryOrigin.fromJS(_data["importedFrom"])
         : (undefined as any);
       (this as any).secretRef = _data["secretRef"];
     }
@@ -24982,6 +24986,9 @@ export class Account implements IAccount {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["importedFrom"] = this.importedFrom
+      ? this.importedFrom.toJSON()
+      : (undefined as any);
     data["secretRef"] = this.secretRef;
     return data;
   }
@@ -24999,6 +25006,7 @@ export interface IAccount {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  importedFrom?: InventoryOrigin;
   secretRef?: string | undefined;
 }
 
@@ -27016,6 +27024,7 @@ export class BrokerQueue implements IBrokerQueue {
   id?: string;
   name?: string | undefined;
   description?: string | undefined;
+  importedFrom?: InventoryOrigin;
 
   constructor(data?: IBrokerQueue) {
     if (data) {
@@ -27031,6 +27040,9 @@ export class BrokerQueue implements IBrokerQueue {
       this.id = _data["id"];
       this.name = _data["name"];
       this.description = _data["description"];
+      this.importedFrom = _data["importedFrom"]
+        ? InventoryOrigin.fromJS(_data["importedFrom"])
+        : (undefined as any);
     }
   }
 
@@ -27046,6 +27058,9 @@ export class BrokerQueue implements IBrokerQueue {
     data["id"] = this.id;
     data["name"] = this.name;
     data["description"] = this.description;
+    data["importedFrom"] = this.importedFrom
+      ? this.importedFrom.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -27054,6 +27069,7 @@ export interface IBrokerQueue {
   id?: string;
   name?: string | undefined;
   description?: string | undefined;
+  importedFrom?: InventoryOrigin;
 }
 
 export class BrokerQueueInput implements IBrokerQueueInput {
@@ -31629,6 +31645,13 @@ export class ImportPreview implements IImportPreview {
   existingId?: string | undefined;
   destination?: string | undefined;
   linkDependency?: boolean;
+  destinationId?: string;
+  resourceFingerprint?: string | undefined;
+  recordOrigin?: boolean;
+  application?: string | undefined;
+  applicationId?: string | undefined;
+  environmentId?: string | undefined;
+  confirmationToken?: string | undefined;
 
   constructor(data?: IImportPreview) {
     if (data) {
@@ -31650,6 +31673,13 @@ export class ImportPreview implements IImportPreview {
       this.existingId = _data["existingId"];
       this.destination = _data["destination"];
       this.linkDependency = _data["linkDependency"];
+      this.destinationId = _data["destinationId"];
+      this.resourceFingerprint = _data["resourceFingerprint"];
+      this.recordOrigin = _data["recordOrigin"];
+      this.application = _data["application"];
+      this.applicationId = _data["applicationId"];
+      this.environmentId = _data["environmentId"];
+      this.confirmationToken = _data["confirmationToken"];
     }
   }
 
@@ -31671,6 +31701,13 @@ export class ImportPreview implements IImportPreview {
     data["existingId"] = this.existingId;
     data["destination"] = this.destination;
     data["linkDependency"] = this.linkDependency;
+    data["destinationId"] = this.destinationId;
+    data["resourceFingerprint"] = this.resourceFingerprint;
+    data["recordOrigin"] = this.recordOrigin;
+    data["application"] = this.application;
+    data["applicationId"] = this.applicationId;
+    data["environmentId"] = this.environmentId;
+    data["confirmationToken"] = this.confirmationToken;
     return data;
   }
 }
@@ -31681,6 +31718,13 @@ export interface IImportPreview {
   existingId?: string | undefined;
   destination?: string | undefined;
   linkDependency?: boolean;
+  destinationId?: string;
+  resourceFingerprint?: string | undefined;
+  recordOrigin?: boolean;
+  application?: string | undefined;
+  applicationId?: string | undefined;
+  environmentId?: string | undefined;
+  confirmationToken?: string | undefined;
 }
 
 export class ImportReceipt implements IImportReceipt {
@@ -31973,6 +32017,66 @@ export interface IInstanceHealthTransition {
   monitorName?: string | undefined;
   responseTruncated?: boolean;
   responseRedacted?: boolean;
+}
+
+export class InventoryOrigin implements IInventoryOrigin {
+  provider?: string | undefined;
+  integrationId?: string;
+  resourceFingerprint?: string | undefined;
+  scope?: string | undefined;
+  externalName?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
+
+  constructor(data?: IInventoryOrigin) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      this.integrationId = _data["integrationId"];
+      this.resourceFingerprint = _data["resourceFingerprint"];
+      this.scope = _data["scope"];
+      this.externalName = _data["externalName"];
+      this.coverage = _data["coverage"];
+      this.nativeId = _data["nativeId"];
+    }
+  }
+
+  static fromJS(data: any): InventoryOrigin {
+    data = typeof data === "object" ? data : {};
+    let result = new InventoryOrigin();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    data["integrationId"] = this.integrationId;
+    data["resourceFingerprint"] = this.resourceFingerprint;
+    data["scope"] = this.scope;
+    data["externalName"] = this.externalName;
+    data["coverage"] = this.coverage;
+    data["nativeId"] = this.nativeId;
+    return data;
+  }
+}
+
+export interface IInventoryOrigin {
+  provider?: string | undefined;
+  integrationId?: string;
+  resourceFingerprint?: string | undefined;
+  scope?: string | undefined;
+  externalName?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
 }
 
 export class KeyVaultVersion implements IKeyVaultVersion {
@@ -33694,6 +33798,8 @@ export class ObservedItem implements IObservedItem {
   kind?: string | undefined;
   name?: string | undefined;
   scope?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
 
   constructor(data?: IObservedItem) {
     if (data) {
@@ -33709,6 +33815,8 @@ export class ObservedItem implements IObservedItem {
       this.kind = _data["kind"];
       this.name = _data["name"];
       this.scope = _data["scope"];
+      this.coverage = _data["coverage"];
+      this.nativeId = _data["nativeId"];
     }
   }
 
@@ -33724,6 +33832,8 @@ export class ObservedItem implements IObservedItem {
     data["kind"] = this.kind;
     data["name"] = this.name;
     data["scope"] = this.scope;
+    data["coverage"] = this.coverage;
+    data["nativeId"] = this.nativeId;
     return data;
   }
 }
@@ -33732,6 +33842,8 @@ export interface IObservedItem {
   kind?: string | undefined;
   name?: string | undefined;
   scope?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
 }
 
 export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
@@ -42429,6 +42541,50 @@ export interface IValidateServiceBusConnection {
   credentialProfileId?: string | undefined;
 }
 
+export class WorkloadApplication implements IWorkloadApplication {
+  applicationId?: string;
+  name?: string | undefined;
+  instanceId?: string;
+
+  constructor(data?: IWorkloadApplication) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationId = _data["applicationId"];
+      this.name = _data["name"];
+      this.instanceId = _data["instanceId"];
+    }
+  }
+
+  static fromJS(data: any): WorkloadApplication {
+    data = typeof data === "object" ? data : {};
+    let result = new WorkloadApplication();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
+    data["name"] = this.name;
+    data["instanceId"] = this.instanceId;
+    return data;
+  }
+}
+
+export interface IWorkloadApplication {
+  applicationId?: string;
+  name?: string | undefined;
+  instanceId?: string;
+}
+
 export class WorkloadCredential implements IWorkloadCredential {
   source?: string | undefined;
   kind?: string | undefined;
@@ -42490,6 +42646,7 @@ export class WorkloadObservation implements IWorkloadObservation {
   appId?: string | undefined;
   credentials?: WorkloadCredential[] | undefined;
   checkedAt?: Date;
+  applications?: WorkloadApplication[] | undefined;
 
   constructor(data?: IWorkloadObservation) {
     if (data) {
@@ -42516,6 +42673,11 @@ export class WorkloadObservation implements IWorkloadObservation {
       this.checkedAt = _data["checkedAt"]
         ? new Date(_data["checkedAt"].toString())
         : (undefined as any);
+      if (Array.isArray(_data["applications"])) {
+        this.applications = [] as any;
+        for (let item of _data["applications"])
+          this.applications!.push(WorkloadApplication.fromJS(item));
+      }
     }
   }
 
@@ -42542,6 +42704,11 @@ export class WorkloadObservation implements IWorkloadObservation {
     data["checkedAt"] = this.checkedAt
       ? this.checkedAt.toISOString()
       : (undefined as any);
+    if (Array.isArray(this.applications)) {
+      data["applications"] = [];
+      for (let item of this.applications)
+        data["applications"].push(item ? item.toJSON() : (undefined as any));
+    }
     return data;
   }
 }
@@ -42555,6 +42722,7 @@ export interface IWorkloadObservation {
   appId?: string | undefined;
   credentials?: WorkloadCredential[] | undefined;
   checkedAt?: Date;
+  applications?: WorkloadApplication[] | undefined;
 }
 
 export interface FileParameter {

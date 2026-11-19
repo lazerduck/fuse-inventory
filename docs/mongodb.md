@@ -106,4 +106,8 @@ From a saved connection, select **Reviews** to document a required or forbidden 
 
 Inspect a collection to see its type and index inventory. The inspector needs the MongoDB `listIndexes` action on that collection. An index expectation records its name, ordered key document, uniqueness, and expiry in seconds (or `none`). For example, `{"customerId":1,"status":1}` describes two ascending fields in that order. Reversing them changes the index. A partial listing can confirm an index it contains. An index absent from a partial or inaccessible listing has **Unknown** status.
 
+To compare environments directly, choose **Compare a MongoDB index across environments**, select the second saved connection and enter the shared index name. The second collection can have a different name. The result identifies both databases and reports key order, uniqueness and expiry differences. Each inspection identity needs index visibility on its own collection.
+
 Use `GET /api/MongoDbIntegration/{id}/indexes?collection=orders` to retrieve the same metadata with `mongodbintegrations:read`. The response projects index key fields, types, uniqueness and expiry.
+
+For vault-backed inspection passwords and rotation, see [Connector passwords in Azure Key Vault](connector-passwords.md).

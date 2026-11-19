@@ -15,8 +15,10 @@ internal sealed class AzureReview
         if (actual is null) { Unknown(label + " was not visible."); return; }
         bool matches = string.Equals(expected, actual, StringComparison.Ordinal);
         if (!matches) drift = true;
-        details.Add(matches ? $"{label}: {actual}" : $"{label}: expected {expected}, observed {actual}");
+        details.Add(matches ? $"{label}: {Display(actual)}" : $"{label}: expected {Display(expected)}, observed {Display(actual)}");
     }
+
+    private static string Display(string value) => value.Length <= 1000 ? value : value[..997] + "...";
 
     public void Unknown(string reason)
     {

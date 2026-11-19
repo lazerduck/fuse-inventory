@@ -47,6 +47,14 @@ public sealed class IntegrationPasswords(IFuseStore store, IAzureKeyVaultClient 
         if (connection.PasswordBinding is not {} binding) return Result<T>.Success(connection);
         if (resolver is null || binding.Destination != Destination(connection)) return Result<T>.Failure(Unavailable);
         var snapshot = await resolver.Store.GetAsync(ct);
+        var provider = connection switch
+        {
+            Models.RedisIntegration => "redis", Models.MongoDbIntegration => "mongodb",
+            Models.PostgreSqlIntegration => "postgresql", Models.RabbitMqIntegration => "rabbitmq",
+            _ => throw new ArgumentException()
+        };
+        var current = Find(snapshot, provider, connection.Id);
+        if (current?.PasswordBinding != binding || Destination(current) != binding.Destination) return Result<T>.Failure(Unavailable);
         var vault = Available(snapshot, binding.Reference);
         if (vault is null || vault.VaultUri != binding.VaultUri) return Result<T>.Failure(Unavailable);
         var value = await resolver.Read(vault, binding.Reference, ct);

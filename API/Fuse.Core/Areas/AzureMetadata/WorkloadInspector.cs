@@ -7,8 +7,12 @@ using Fuse.Core.Models;
 namespace Fuse.Core.Areas.AzureMetadata;
 
 public record WorkloadCredential(string Source, string Kind, Guid KeyId, DateTimeOffset? ExpiresAt);
+public record WorkloadApplication(Guid ApplicationId, string Name, Guid InstanceId);
 public record WorkloadObservation(string PrincipalVisibility, string ApplicationVisibility, string? Name, string? Kind,
-    bool? Enabled, Guid? AppId, IReadOnlyList<WorkloadCredential> Credentials, DateTimeOffset CheckedAt);
+    bool? Enabled, Guid? AppId, IReadOnlyList<WorkloadCredential> Credentials, DateTimeOffset CheckedAt)
+{
+    public IReadOnlyList<WorkloadApplication> Applications { get; init; } = [];
+}
 
 public sealed class WorkloadInspector(HttpClient http, IAzureIntegrationManagerService manager, ITokenCredentialFactory? factory = null)
 {

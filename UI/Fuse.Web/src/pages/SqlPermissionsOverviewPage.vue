@@ -30,6 +30,8 @@
         {{ data.overview.errorMessage }}
       </q-banner>
 
+      <q-btn v-if="fuseStore.hasPermission('integrationreviews:read')" flat class="q-mb-sm" icon="history"
+        label="Access reviews" :to="{ name: 'integrationReviews', query: { provider: 'sql', integration: integrationId } }" />
       <SqlPermissionsSummaryCard class="q-mb-md" :summary="data.overview?.summary" />
 
       <div v-if="hasResolvableAccounts && canBulkResolve" class="q-mb-md">

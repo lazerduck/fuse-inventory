@@ -52,7 +52,8 @@ public partial class SqlIntegrationService
             }
             if (row.Status == SyncStatus.DriftDetected)
             {
-                operations.AddRange(PrivilegeOperations(account.Id, user, row.PermissionComparisons));
+                if (InheritedExtra(account.Id, user, row.PermissionComparisons) is {} inheritedSkip) operations.Add(inheritedSkip);
+                else operations.AddRange(PrivilegeOperations(account.Id, user, row.PermissionComparisons));
                 continue;
             }
             if (!HasSecretProviderBinding(account))
@@ -66,6 +67,11 @@ public partial class SqlIntegrationService
             if (baseline is null)
                 return Result<SqlBulkPlan>.Failure("The new user's database privileges cannot be verified. Review the account separately.", ErrorType.Conflict);
             var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, baseline);
+            if (InheritedExtra(account.Id, user, comparisons) is {} fromPublic)
+            {
+                operations.Add(fromPublic);
+                continue;
+            }
             operations.Add(new(account.Id, user, "Create login"));
             operations.AddRange(databases.Select(d => new SqlBulkOperation(account.Id, user, "Create user", d)));
             operations.AddRange(PrivilegeOperations(account.Id, user, comparisons));
@@ -74,6 +80,15 @@ public partial class SqlIntegrationService
             accounts = accounts.Values.OrderBy(a => a.Id).Select(a => new { a.Id, a.UpdatedAt }) };
         var revision = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(fingerprint)));
         return Result<SqlBulkPlan>.Success(new(revision, operations));
+    }
+
+    private static SqlBulkOperation? InheritedExtra(Guid id, string user, IReadOnlyList<SqlPermissionComparison> comparisons)
+    {
+        foreach (var comparison in comparisons.OrderBy(g => g.Database, StringComparer.Ordinal).ThenBy(g => g.Schema, StringComparer.Ordinal))
+            foreach (var privilege in comparison.ExtraPrivileges.Intersect(comparison.Inherited).Order())
+                return new(id, user, "Skip", comparison.Database, comparison.Schema, privilege,
+                    "An inherited privilege requires review of its role or PUBLIC grant.");
+        return null;
     }
 
     private static IEnumerable<SqlBulkOperation> PrivilegeOperations(Guid id, string user, IReadOnlyList<SqlPermissionComparison> comparisons) =>

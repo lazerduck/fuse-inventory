@@ -23,7 +23,11 @@ public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory, Integr
             new("collection", "Collection"), new("index", "Index name"),
             new("keys", "Ordered key document", Hint: "For example {\"tenantId\":1,\"createdAt\":-1}"),
             new("unique", "Unique", Choices: ["yes", "no"]),
-            new("ttl", "Time to live in seconds", Hint: "Enter none for an index without expiry.")])
+            new("ttl", "Time to live in seconds", Hint: "Enter none for an index without expiry.")]),
+        new("index-agreement", "Compare a MongoDB index across environments", [
+            new("collection", "Collection"), new("index", "Index name"),
+            new("peerIntegrationId", "Second MongoDB integration"),
+            new("peerCollection", "Collection in second database", Required: false, Hint: "Leave empty to use the same collection.")])
     ];
 
     internal static bool ValidCollection(string? value) => !string.IsNullOrWhiteSpace(value) && value.Length <= 200 &&
@@ -33,6 +37,14 @@ public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory, Integr
         var item = snapshot.MongoDbIntegrations.FirstOrDefault(i => i.Id == input.IntegrationId);
         if (ValidateScope(snapshot, item?.DataStoreId, "MongoDB", input, Checks) is { } error) return error;
         if (!ValidCollection(input.Fields["collection"])) return "Choose a named application collection.";
+        if (input.Kind == "index-agreement")
+        {
+            if (!Guid.TryParse(input.Fields["peerIntegrationId"], out var peerId)
+                || !snapshot.MongoDbIntegrations.Any(i => i.Id == peerId && i.Endpoint != item!.Endpoint))
+                return "Choose a registered MongoDB integration for another database or server.";
+            if (input.Fields.GetValueOrDefault("peerCollection") is { Length: > 0 } other && !ValidCollection(other))
+                return "Choose a named application collection in the second database.";
+        }
         if (input.Kind == "collection-action" && !MongoDbConnectionSettings.ValidDatabase(MongoDbIdentity.AuthSource(
                 ScopedAccount(snapshot, input.AccountId, item!.DataStoreId)!.Parameters)))
             return "Set the account’s authSource parameter to its authentication database.";
@@ -72,6 +84,31 @@ public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory, Integr
         item = credential.Value!;
         var database = MongoDbConnectionSettings.Database(item.Endpoint);
         var collection = input.Fields["collection"];
+        if (input.Kind == "index-agreement")
+        {
+            var peer = snapshot.MongoDbIntegrations.Single(n => n.Id == Guid.Parse(input.Fields["peerIntegrationId"]));
+            var credentials = await IntegrationPasswords.ForUse(peer, passwords, ct);
+            if (!credentials.IsSuccess) return Unknown(IntegrationPasswords.Unavailable);
+            peer = credentials.Value!;
+            var otherCollection = input.Fields.GetValueOrDefault("peerCollection") is { Length: > 0 } other ? other : collection;
+            var inspector = new MongoDbInspector(factory);
+            var left = await inspector.IndexesAsync(item, collection, ct);
+            var right = await inspector.IndexesAsync(peer, otherCollection, ct);
+            var name = input.Fields["index"];
+            var first = left.Indexes.FirstOrDefault(i => i.Name == name);
+            var second = right.Indexes.FirstOrDefault(i => i.Name == name);
+            var scopes = new[] { $"{item.Name} / {database}.{collection}: {left.Status}.",
+                $"{peer.Name} / {MongoDbConnectionSettings.Database(peer.Endpoint)}.{otherCollection}: {right.Status}." };
+            if (first is null && left.Status is not ("complete" or "not-found")
+                || second is null && right.Status is not ("complete" or "not-found"))
+                return Unknown("The named index could not be verified in both environments.", scopes);
+            if (first is null || second is null) return Compare(false, $"Index {name} is missing from at least one collection.", scopes);
+            var differences = new List<string>(scopes);
+            if (!first.Keys.SequenceEqual(second.Keys)) differences.Add("Index keys or their order differ.");
+            if (first.Unique != second.Unique) differences.Add("Uniqueness differs.");
+            if (first.ExpireAfterSeconds != second.ExpireAfterSeconds) differences.Add("Index expiry differs.");
+            return Compare(differences.Count == scopes.Length, differences.Count == scopes.Length ? "Both indexes agree." : "The index definitions differ.", differences.ToArray());
+        }
         if (input.Kind == "collection-index")
         {
             var result = await new MongoDbInspector(factory).IndexesAsync(item, collection, ct);
@@ -83,7 +120,8 @@ public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory, Integr
             var changes = new List<string>();
             if (!index.Keys.SequenceEqual(ParseKeys(input.Fields["keys"])!)) changes.Add("Index keys or their order differ.");
             if (index.Unique != (input.Fields["unique"] == "yes")) changes.Add("Uniqueness differs.");
-            if ((index.ExpireAfterSeconds?.ToString(CultureInfo.InvariantCulture) ?? "none") != input.Fields["ttl"]) changes.Add("Index expiry differs.");
+            var expectedTtl = int.TryParse(input.Fields["ttl"], NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) ? (long?)seconds : null;
+            if (index.ExpireAfterSeconds != expectedTtl) changes.Add("Index expiry differs.");
             return Compare(changes.Count == 0, changes.Count == 0 ? "Index matches the documented definition." : "Index definition differs.",
                 [$"{database}.{collection} / {name}", string.Join(", ", index.Keys.Select(k => $"{k.Field} {k.Order}")),
                  $"Unique: {index.Unique}. TTL: {index.ExpireAfterSeconds?.ToString(CultureInfo.InvariantCulture) ?? "none"}.", ..changes]);

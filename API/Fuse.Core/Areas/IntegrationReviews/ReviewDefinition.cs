@@ -45,6 +45,11 @@ public static class ReviewSources
             var peer = s.RedisIntegrations.FirstOrDefault(r => r.Id == peerId);
             resource = [..resource, peer?.DataStoreId.ToString(), peer?.Endpoint.AbsoluteUri];
         }
+        if (input.Provider == "mongodb" && input.Kind == "index-agreement" && Guid.TryParse(input.Fields.GetValueOrDefault("peerIntegrationId"), out var mongoPeerId))
+        {
+            var peer = s.MongoDbIntegrations.FirstOrDefault(m => m.Id == mongoPeerId);
+            resource = [..resource, peer?.DataStoreId.ToString(), peer?.Endpoint.AbsoluteUri];
+        }
         var account = s.Accounts.FirstOrDefault(x => x.Id == input.AccountId);
         if (Guid.TryParse(input.Fields.GetValueOrDefault("identityId"), out var identityId))
         {

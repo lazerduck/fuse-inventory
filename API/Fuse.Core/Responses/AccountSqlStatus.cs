@@ -15,7 +15,10 @@ public record SqlPermissionComparison(
     HashSet<Privilege> ActualPrivileges,
     HashSet<Privilege> MissingPrivileges,
     HashSet<Privilege> ExtraPrivileges
-);
+)
+{
+    internal HashSet<Privilege> Inherited { get; init; } = [];
+}
 
 /// <summary>
 /// Status indicating if permissions are in sync between Fuse configuration and SQL.

@@ -22,7 +22,10 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
         new("data-role", "Entra queue data-role assignment", [new("queue", "Queue"), new("identityId", "Fuse identity"),
             new("role", "Built-in data role", Choices: ["Sender", "Receiver", "Owner"])]),
         new("subscription-filter", "Topic subscription SQL filter", [new("topic", "Topic"), new("subscription", "Subscription"), new("rule", "Rule"),
-            new("filter", "Expected SQL expression")])
+            new("filter", "Expected SQL expression")]),
+        new("topic-fan-out", "Topic fan-out across named rules", [new("topic", "Topic"), new("property", "Example application property"),
+            new("value", "Example string value", Hint: "Use a synthetic example. The expectation is saved."),
+            new("rules", "Subscription/rule expectations", Hint: """JSON object such as {"all-events/$Default":true,"orders-only/order":true}""")])
     ];
 
     public string? Validate(Snapshot snapshot, ReviewInput input)
@@ -30,6 +33,11 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
         var item = snapshot.ServiceBusIntegrations.FirstOrDefault(s => s.Id == input.IntegrationId);
         if (item is null || !ServiceBusInspector.Valid(item.NamespaceResourceId, item.AuthMode)) return "Select a Service Bus integration.";
         if (input.AccountId is not null) return "Service Bus checks use a broker entity or a bound Fuse identity.";
+        if (input.Kind == "topic-fan-out")
+            return Field(input, "topic") is {} t && ServiceBusInspector.ValidQueueSegment(t) &&
+                Field(input, "property") is { Length: <= 128 } && Field(input, "value") is { Length: <= 256 } &&
+                Field(input, "rules") is {} rules && ServiceBusFanOut.Rules(rules) is not null
+                ? null : "Specify a topic, example property/value, and up to twelve unique subscription/rule boolean expectations.";
         if (input.Kind == "subscription-filter")
             return new[] { "topic", "subscription", "rule" }.All(k => Field(input, k) is { } v &&
                 (ServiceBusInspector.ValidQueueSegment(v) || k == "rule" && v == "$Default")) ? null : "Specify valid topic, subscription and rule names.";
@@ -61,11 +69,13 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
         var item = snapshot.ServiceBusIntegrations.Single(s => s.Id == input.IntegrationId);
         var queue = Field(input, "queue");
         var result = new AzureReview();
-        if (input.Kind is "data-role" or "subscription-filter")
+        if (input.Kind is "data-role" or "subscription-filter" or "topic-fan-out")
         {
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
             deadline.CancelAfter(TimeSpan.FromSeconds(30));
             var session = await inspector.Open(item, ct, deadline.Token);
+            if (input.Kind == "topic-fan-out")
+                return await ServiceBusFanOut.Check(session, item.NamespaceResourceId + "/topics/" + input.Fields["topic"], input);
             if (input.Kind == "data-role") return await AzureRoleReview.Bus(session, item.NamespaceResourceId + "/queues/" + queue!.Replace('/', '~'),
                 AzureRoleReview.Identity(snapshot, input)!, input.Fields["role"]);
             var entity = "/topics/" + input.Fields["topic"] + "/subscriptions/" + input.Fields["subscription"] + "/rules/" + Uri.EscapeDataString(input.Fields["rule"]);
@@ -106,7 +116,7 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
                 {
                     int limit = int.Parse(threshold, CultureInfo.InvariantCulture);
                     result.Compare("Dead-letter count", $"≤ {limit}", count <= limit ? $"≤ {limit}" : count.ToString());
-                    return result.Result($"{queue} · {count} dead letters observed");
+                    return result.Result($"{queue} · {count} dead {(count == 1 ? "letter" : "letters")} observed");
                 }
             }
         }

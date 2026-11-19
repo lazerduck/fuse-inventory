@@ -16,10 +16,16 @@ public sealed class AzureWorkloadsController(IFuseStore store, WorkloadInspector
         var snapshot = await store.GetAsync(ct);
         if (!permissions.Allows(User, snapshot, IdentityPermissions.ReadKey) || !permissions.Allows(User, snapshot, SecretProviderPermissions.ReadKey))
             return StatusCode(403);
-        var binding = snapshot.Identities.FirstOrDefault(i => i.Id == identityId)?.AzurePrincipal;
+        var identity = snapshot.Identities.FirstOrDefault(i => i.Id == identityId);
+        var binding = identity?.AzurePrincipal;
         var profile = snapshot.AzureIntegrationManager?.CredentialProfiles?.FirstOrDefault(p =>
             p.Id == profileId && p.DirectoryLookup && p.TenantId == binding?.TenantId);
         if (binding is null || profile is null) return NotFound();
-        return Ok(await inspector.Inspect(profile, binding, ct));
+        var observation = await inspector.Inspect(profile, binding, ct);
+        if (permissions.Allows(User, snapshot, "applications:read"))
+            observation = observation with { Applications = snapshot.Applications.SelectMany(app => app.Instances
+                .Where(i => i.Id == identity!.OwnerInstanceId || i.Dependencies.Any(d => d.IdentityId == identity.Id))
+                .Select(i => new WorkloadApplication(app.Id, app.Name, i.Id))).ToArray() };
+        return Ok(observation);
     }
 }

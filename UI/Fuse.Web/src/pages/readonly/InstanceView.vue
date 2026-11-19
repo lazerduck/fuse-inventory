@@ -266,11 +266,13 @@
           </q-item>
         </q-list>
       </section>
+      <IntegrationFindings :instance-id="id" />
     </div>
   </ReadOnlyShell>
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../../components/integrations/IntegrationFindings.vue'
 import SecretReferenceButton from "../../components/secretProvider/SecretReferenceButton.vue"
 import { useRoute, useRouter } from 'vue-router'
 import { computed, ref, watch } from 'vue'

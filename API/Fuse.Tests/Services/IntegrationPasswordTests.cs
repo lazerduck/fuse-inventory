@@ -3,6 +3,8 @@ using System.Text.Json;
 using Fuse.API.Controllers;
 using Fuse.API.Middleware;
 using Fuse.Core.Areas.SecretProvider;
+using Fuse.Core.Areas.RedisIntegration;
+using Fuse.Core.Responses;
 using Fuse.Core.Helpers;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
@@ -66,6 +68,44 @@ public class IntegrationPasswordTests
         var detached = (await store.GetAsync()).MongoDbIntegrations.Single();
         Assert.Null(detached.PasswordBinding);
         Assert.Null(detached.Password);
+    }
+
+    [Fact]
+    public async Task SavedValidationUsesRotatedSecretAndRejectsEndpointChangesThroughOrdinaryEdits()
+    {
+        var store = new InMemoryFuseStore();
+        var node = new DataStore(Guid.NewGuid(), "cache", null, "Redis", Guid.NewGuid(), null, null, [], Now, Now);
+        var conn = new RedisIntegration(Guid.NewGuid(), "cache", node.Id, new("rediss://cache.test:6380"), "reader", "previous", Now, Now);
+        var vault = new SecretProvider(Guid.NewGuid(), "keys", new("https://sample.vault.azure.net/"),
+            SecretProviderAuthMode.ManagedIdentity, null, SecretProviderCapabilities.Read, Now, Now);
+        await store.UpdateAsync(s => s with { SecretProviders = [vault], RedisIntegrations = [conn], DataStores = [node] });
+        var user = Mock.Of<ICurrentUser>();
+        var audit = new FakeAuditService();
+        var azure = new Mock<IAzureKeyVaultClient>();
+        var value = "rotating-one";
+        azure.Setup(v => v.ReadSecretAsync(vault, "connector", null)).ReturnsAsync(() =>
+            value == "" ? Result<string>.Failure("denied") : Result<string>.Success(value));
+        var resolver = new IntegrationPasswords(store, azure.Object, audit, user);
+        Assert.True((await resolver.BindAsync("redis", conn.Id, new(IntegrationPasswords.View(conn).Revision,
+            new(vault.Id, "connector", null)), _ => true, default)).IsSuccess);
+        var inspected = new List<string?>();
+        var inspector = new Mock<IRedisInspector>(MockBehavior.Strict);
+        inspector.Setup(i => i.ValidateAsync(conn.Endpoint, "reader", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<Uri, string, string?, CancellationToken>((_, _, pw, _) => inspected.Add(pw))
+            .ReturnsAsync(new RedisConnectionTestResult(true, true, "connected", null));
+        var service = new RedisIntegrationService(store, inspector.Object, audit, user, resolver);
+        Assert.False((await service.UpdateAsync(new(conn.Id, "cache", node.Id, new("redis://other:6379"), "reader", null))).IsSuccess);
+        Assert.True((await service.ValidateSavedAsync(conn.Id)).IsSuccess);
+        value = "rotating-two";
+        Assert.True((await service.ValidateSavedAsync(conn.Id)).IsSuccess);
+        value = "";
+        var failed = await service.ValidateSavedAsync(conn.Id);
+        Assert.False(failed.IsSuccess);
+        Assert.Equal(IntegrationPasswords.Unavailable, failed.Error);
+        Assert.Equal(new[] { "rotating-one", "rotating-two" }, inspected);
+        var saved = await service.GetByIdAsync(conn.Id);
+        Assert.True(saved!.HasPassword);
+        Assert.Equal(conn.Endpoint, saved.Endpoint);
     }
 
     [Theory]

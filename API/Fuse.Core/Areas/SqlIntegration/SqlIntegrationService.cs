@@ -643,6 +643,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
 
         if (command.Guard is {} guard && (guard.Principal != principalName ||
             guard.ConnectionUpdated != integration.UpdatedAt || guard.AccountUpdated != account.UpdatedAt ||
+            InheritedExtra(account.Id, principalName, comparisons) is not null ||
             PrivilegeOperations(account.Id, principalName, comparisons).Except(guard.Operations).Any()))
             return Result<ResolveDriftResponse>.Failure("The account or its privileges changed after preview. Preview again.", ErrorType.Conflict);
 

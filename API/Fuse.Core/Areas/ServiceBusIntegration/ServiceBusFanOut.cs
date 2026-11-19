@@ -7,6 +7,7 @@ namespace Fuse.Core.Areas.ServiceBusIntegration;
 
 internal static partial class ServiceBusFanOut
 {
+    private record SqlRule(string? Expression);
     internal record Rule(string Subscription, string Name, bool Expected);
     [GeneratedRegex("""\A(?:user\.)?([a-z_][a-z0-9_]*)\s*=\s*'((?:[^']|'')*)'\z""",
         RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking)]
@@ -42,10 +43,10 @@ internal static partial class ServiceBusFanOut
             var result = await session.Resource(topic + "/subscriptions/" + rule.Subscription + "/rules/" + Uri.EscapeDataString(rule.Name), row =>
             {
                 var props = row.GetProperty("properties");
-                return props.TryGetProperty("sqlFilter", out var filter) && filter.ValueKind == JsonValueKind.Object
-                    ? ArmMetadataSession.Text(filter, "sqlExpression") : null;
+                return new SqlRule(props.TryGetProperty("sqlFilter", out var filter) && filter.ValueKind == JsonValueKind.Object
+                    ? ArmMetadataSession.Text(filter, "sqlExpression") : null);
             });
-            var actual = Evaluate(result.Value, input.Fields["property"], input.Fields["value"]);
+            var actual = Evaluate(result.Value?.Expression, input.Fields["property"], input.Fields["value"]);
             if (actual is null) evidence.Unknown(label + ": rule unavailable or expression outside supported SQL examples (" + result.Status + ").");
             else evidence.Compare(label, rule.Expected ? "matches" : "does not match", actual.Value ? "matches" : "does not match");
         }

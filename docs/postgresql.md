@@ -70,3 +70,5 @@ Open **Reviews** on a saved connection and choose a named account. Table, column
 A saved required table privilege can be repaired from its review. Preview requires an authenticated user with `postgresqlintegrations:grants:apply` and read access to accounts, PostgreSQL integrations and reviews. Application read access displays the linked consumers. The PostgreSQL inspection identity must own the selected table, and the application role must already have LOGIN, CONNECT and schema USAGE. Prefer a dedicated owner for a lab table where repair is intended.
 
 The preview names the principal, database, schema, table and privilege. Its approval expires after five minutes. Applying re-reads the catalog under a brief table lock, rejects a changed target or privilege state, then verifies the direct grant before committing. An already satisfied expectation returns without an additional grant. Requested and completed repairs appear in the audit log.
+
+For vault-backed inspection passwords and rotation, see [Connector passwords in Azure Key Vault](connector-passwords.md).

@@ -4,7 +4,10 @@ public record BrokerQueue(
     Guid Id,
     string Name,
     string? Description
-);
+)
+{
+    public InventoryOrigin? ImportedFrom { get; init; }
+}
 
 public record BrokerTopic(
     Guid Id,

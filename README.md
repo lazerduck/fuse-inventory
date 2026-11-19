@@ -33,6 +33,7 @@ Fuse Inventory lets development and DevOps teams:
 * Track risks, responsibilities, and documentation completeness
 * Browse inventory in read-only documentation mode
 * Track changes with comprehensive audits
+* Review documented access and configuration across services, track drift, and see which applications are affected. See the [integration review guide](docs/integration-reviews.md).
 * Detect account and permissions drift with SQL integration
 * Optionally resolve account drift by creating accounts and applying permissions
 
@@ -42,7 +43,7 @@ Fuse Inventory can also integrate with:
 * **Azure Key Vault** so you can assign, create, update, and view secrets based on your permissions
 * **Azure App Configuration** to explore configuration alongside your inventory
 * **RabbitMQ** to inspect virtual-host topology and compare documented queues and users. See the [RabbitMQ guide](docs/rabbitmq.md).
-- **[PostgreSQL integration](docs/postgresql.md)** — Read-only role discovery, inherited access, database-scoped privileges and account matching.
+- **[PostgreSQL integration](docs/postgresql.md)** — Role discovery, inherited access and scoped privilege reviews, with separately authorized repair of a direct table grant.
 - **[MongoDB integration](docs/mongodb.md)** — Read-only discovery, inherited roles and account matching by username and authentication database.
 - **[Keycloak integration](docs/keycloak.md)** — Realm-scoped clients, service-account roles and OAuth account matching.
 - **[Azure Cosmos DB integration](docs/cosmosdb.md)** — NoSQL container discovery, partition keys and indexing policies.

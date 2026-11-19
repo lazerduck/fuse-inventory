@@ -65,6 +65,8 @@ internal static class AzureRoleReview
                 var definition = row.GetProperty("properties");
                 var name = ArmMetadataSession.Required(definition, "roleName");
                 var actions = definition.GetProperty("permissions").EnumerateArray()
+                    .Where(p => !p.TryGetProperty("notDataActions", out var exceptions) || exceptions.ValueKind == JsonValueKind.Null ||
+                        exceptions.ValueKind == JsonValueKind.Array && exceptions.GetArrayLength() == 0)
                     .SelectMany(p => p.GetProperty("dataActions").EnumerateArray()).Select(a => a.GetString() ?? "").ToArray();
                 return new { name, actions };
             });

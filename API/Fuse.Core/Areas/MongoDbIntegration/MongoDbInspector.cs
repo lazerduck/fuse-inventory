@@ -54,11 +54,11 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
         MongoCommandException { Code: 50 } => "timeout",
         TimeoutException or OperationCanceledException => "timeout",
         ResponseLimitException => "truncated",
-        FormatException or InvalidCastException or KeyNotFoundException => "invalid-response",
+        FormatException or InvalidCastException or KeyNotFoundException or OverflowException => "invalid-response",
         _ => "unavailable"
     };
     internal static bool Expected(Exception e) => e is MongoException or TimeoutException or OperationCanceledException
-        or ResponseLimitException or FormatException or InvalidCastException or KeyNotFoundException;
+        or ResponseLimitException or FormatException or InvalidCastException or KeyNotFoundException or OverflowException;
     internal static async Task<BsonDocument> Run(IMongoDbSession session, string database, BsonDocument command, CancellationToken ct)
     {
         command["maxTimeMS"] = 5000;

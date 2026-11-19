@@ -199,7 +199,8 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
             return new(versions.Count > 0 ? "visible" : "none-observed", versions);
         }
         catch (RequestFailedException ex) { return new(ex.Status switch { 403 => "denied", 404 => "not-found-or-hidden", _ => "unavailable" }, versions); }
-        catch (AuthenticationFailedException) { return new("authentication-failed", versions); }
+        catch (Exception ex) when (ex is AuthenticationFailedException or ArgumentException) { return new("authentication-failed", versions); }
+        catch (HttpRequestException) { return new("unavailable", versions); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return new("timeout", versions); }
     }
 

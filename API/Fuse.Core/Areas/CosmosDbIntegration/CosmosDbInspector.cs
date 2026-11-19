@@ -51,8 +51,13 @@ public sealed partial class CosmosDbInspector(HttpClient http, IAzureIntegration
         if (resource.TryGetProperty("indexingPolicy", out var policy) && policy.ValueKind == JsonValueKind.Object)
             indexing = new(Text(policy, "indexingMode"), policy.TryGetProperty("automatic", out var automatic) && automatic.ValueKind != JsonValueKind.Null
                 ? automatic.GetBoolean() : null, IndexPaths(policy, "includedPaths"), IndexPaths(policy, "excludedPaths"), policy.GetRawText());
-        int? ttl = resource.TryGetProperty("defaultTtl", out var ttlValue) && ttlValue.ValueKind == JsonValueKind.Number
-            ? ttlValue.GetInt32() : null;
+        int? ttl = null;
+        if (resource.TryGetProperty("defaultTtl", out var ttlValue) && ttlValue.ValueKind != JsonValueKind.Null)
+        {
+            if (ttlValue.ValueKind != JsonValueKind.Number || !ttlValue.TryGetInt32(out var seconds) || seconds != -1 && seconds <= 0)
+                throw new InspectionError("invalid-response");
+            ttl = seconds;
+        }
         return new(Name(row), partition, indexing, ttl);
     }
 

@@ -50,3 +50,5 @@ Publisher and consumer reviews use the documented broker account’s username. A
 Queue configuration reviews compare queue type and durability. A dead-letter review follows the queue’s configured dead-letter exchange, its routing key override or the supplied original message key, and the expected destination. Set the expectation from the consuming application instance to include the resulting finding in that application’s inventory.
 
 [RabbitMQ topic permissions](https://www.rabbitmq.com/docs/access-control#topic-authorisation) · [Dead-letter exchanges](https://www.rabbitmq.com/docs/dlx)
+
+For vault-backed inspection passwords and rotation, see [Connector passwords in Azure Key Vault](connector-passwords.md).

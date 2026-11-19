@@ -107,6 +107,28 @@ public sealed class AzureIntegrationReviewTests
         Assert.Equal(expected, (await provider.InspectAsync(State, input, default)).Status);
     }
 
+    [Theory]
+    [InlineData("order", "user.Kind = 'order'", ReviewStatus.Matched)]
+    [InlineData("Order", "user.Kind = 'order'", ReviewStatus.Drift)]
+    [InlineData("order", "kind LIKE 'ord%'", ReviewStatus.Unknown)]
+    public async Task FanOutReportsEachNamedRuleAndKeepsUnsupportedFiltersUnknown(string example, string expression, ReviewStatus expected)
+    {
+        using var http = Http(url =>
+        {
+            Assert.StartsWith(Bus.NamespaceResourceId + "/topics/events/subscriptions/", url.AbsolutePath);
+            var all = Uri.UnescapeDataString(url.AbsolutePath).EndsWith("all/rules/$Default");
+            Assert.True(all || url.AbsolutePath.EndsWith("orders/rules/order"));
+            return Json(new { properties = new { sqlFilter = new { sqlExpression = all ? "1=1" : expression } } });
+        });
+        var provider = new ServiceBusReviewProvider(new(http, Mock.Of<IAzureIntegrationManagerService>(), Factory()));
+        var input = new ReviewInput("servicebus", Bus.Id, "topic-fan-out", null, new() { ["topic"] = "events",
+            ["rules"] = """{"all/$Default":true,"orders/order":true}""", ["property"] = "kind", ["value"] = example });
+        Assert.Null(provider.Validate(State, input));
+        var result = await provider.InspectAsync(State, input, default);
+        Assert.Equal(expected, result.Status);
+        Assert.Equal(2, result.Details.Count);
+    }
+
     [Fact]
     public async Task IndexPathSetsIgnoreOrderingInsideDeclarationsButPreserveCompositeIndexOrder()
     {

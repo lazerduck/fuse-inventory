@@ -12,8 +12,10 @@
       <template v-else>
         <h3 class="text-subtitle1">Preview</h3>
         <p>{{ preview.existingId ? 'Reuse existing inventory' : 'Create inventory record' }} · {{ itemLabel(preview.selection?.item) }}</p>
-        <p>Destination: {{ preview.destination }}</p>
-        <p v-if="preview.linkDependency">Add an application dependency.</p>
+        <p>Inventory destination · {{ preview.destination }}</p>
+        <p v-if="preview.recordOrigin">Record the observed identity on the existing inventory record.</p>
+        <p v-if="preview.selection?.item?.coverage === 'limited'">The inspector observed this item with limited visibility.</p>
+        <p v-if="preview.linkDependency">Add a dependency on this inventory target to {{ preview.application }}.</p>
       </template>
       <p v-if="receipt" role="status">{{ receipt }}</p>
     </q-card-section>

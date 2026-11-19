@@ -145,11 +145,13 @@
           </div>
         </div>
       </section>
+      <IntegrationFindings :account-id="id" />
     </div>
   </ReadOnlyShell>
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../../components/integrations/IntegrationFindings.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'

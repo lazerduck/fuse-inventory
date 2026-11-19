@@ -29,6 +29,8 @@ public static class SqlPermissionDiff
                 g => g.SelectMany(x => x.Privileges).ToHashSet()
             );
 
+        var inherited = actualPermissions.Grants.GroupBy(g => (NormalizeKey(g.Database), NormalizeKey(g.Schema)))
+            .ToDictionary(g => g.Key, g => g.SelectMany(p => p.Inherited).ToHashSet());
         var processedKeys = new HashSet<(string?, string?)>();
         foreach (var configured in configuredGrants)
         {
@@ -49,7 +51,7 @@ public static class SqlPermissionDiff
                 ActualPrivileges: actualPrivileges,
                 MissingPrivileges: missing,
                 ExtraPrivileges: extra
-            ));
+            ) { Inherited = inherited.GetValueOrDefault(key) ?? [] });
         }
 
         foreach (var actualKey in actualGrantsLookup.Keys)
@@ -63,7 +65,7 @@ public static class SqlPermissionDiff
                     ActualPrivileges: actualGrantsLookup[actualKey],
                     MissingPrivileges: new HashSet<Privilege>(),
                     ExtraPrivileges: actualGrantsLookup[actualKey]
-                ));
+                ) { Inherited = inherited.GetValueOrDefault(actualKey) ?? [] });
             }
         }
 

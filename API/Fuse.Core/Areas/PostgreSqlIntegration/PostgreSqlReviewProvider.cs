@@ -144,7 +144,8 @@ public sealed class PostgreSqlReviewProvider(IntegrationPasswords? passwords = n
                              CASE WHEN x.grantee=0 THEN true ELSE pg_has_role(u.oid,x.grantee,'USAGE') END
                         UNION ALL SELECT 'superuser' WHERE u.rolsuper
                    ) s ORDER BY reason LIMIT 32),
-                   ARRAY(SELECT r.rolname::text FROM pg_roles r WHERE NOT {{access.Replace("R,", "u.oid,")}}
+                   ARRAY(SELECT r.rolname::text FROM pg_roles r WHERE u.rolcanlogin AND has_database_privilege(u.oid,current_database(),'CONNECT')
+                         AND NOT ({{access.Replace("R,", "u.oid,")}} AND has_schema_privilege(u.oid,c.namespace,'USAGE'))
                          AND r.oid<>u.oid AND pg_has_role(u.oid,r.oid,'SET') AND has_schema_privilege(r.oid,c.namespace,'USAGE')
                          AND {{access.Replace("R,", "r.oid,")}} ORDER BY r.rolname LIMIT 32)
             FROM obj c CROSS JOIN pg_roles u

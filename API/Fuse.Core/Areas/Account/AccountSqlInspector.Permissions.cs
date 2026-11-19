@@ -46,7 +46,7 @@ public partial class AccountSqlInspector
                 ObjectName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
                 ColumnName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
                 PermissionName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
-                PermissionState CHAR(1), PermissionClass INT
+                PermissionState CHAR(1), PermissionClass INT, Inherited BIT
             );
             IF @limited=1 AND EXISTS(SELECT 1 FROM #RequestedDatabases WHERE DB_ID(Name) IS NULL OR ISNULL(HAS_DBACCESS(Name),0) <> 1)
                 THROW 50001, 'One or more requested databases are unavailable.', 1;
@@ -91,7 +91,7 @@ public partial class AccountSqlInspector
 
                     INSERT INTO #PermissionRows
                     SELECT c.PrincipalName, DB_NAME(), s.name, o.name, col.name,
-                           p.permission_name, p.state, p.class
+                           p.permission_name, p.state, p.class, CASE WHEN grantee.name=c.PrincipalName THEN 0 ELSE 1 END
                     FROM #RoleClosure c
                     JOIN sys.database_permissions p ON p.grantee_principal_id = c.MemberId
                     JOIN sys.database_principals grantee ON grantee.principal_id = c.MemberId
@@ -106,7 +106,7 @@ public partial class AccountSqlInspector
                       AND NOT (grantee.name = ''public'' AND p.class = 1 AND p.major_id < 0 AND p.state IN (''G'', ''W''))
                     UNION ALL
                     SELECT c.PrincipalName, DB_NAME(), NULL, NULL, NULL,
-                           perms.PermissionName, perms.PermissionState, 0
+                           perms.PermissionName, perms.PermissionState, 0, 1
                     FROM #RoleClosure c
                     JOIN sys.database_principals r ON r.principal_id = c.MemberId AND r.is_fixed_role = 1
                     CROSS APPLY (SELECT PermissionName, PermissionState FROM (VALUES
@@ -134,12 +134,14 @@ public partial class AccountSqlInspector
             CLOSE databases;
             DEALLOCATE databases;
             SELECT PrincipalName, DatabaseName, SchemaName, ObjectName, ColumnName,
-                   PermissionName, PermissionState, PermissionClass FROM #PermissionRows;
+                   PermissionName, PermissionState, PermissionClass, Inherited FROM #PermissionRows;
             SELECT sp.name FROM sys.server_principals sp JOIN #Principals pr ON sp.name = pr.Name
             WHERE sp.type IN ('S', 'U', 'G', 'E', 'X');
             """;
 
         var grants = principalNames.ToDictionary(name => name,
+            _ => new Dictionary<(string Database, string? Schema), HashSet<Privilege>>(), StringComparer.OrdinalIgnoreCase);
+        var inherited = principalNames.ToDictionary(name => name,
             _ => new Dictionary<(string Database, string? Schema), HashSet<Privilege>>(), StringComparer.OrdinalIgnoreCase);
         var errors = principalNames.ToDictionary(name => name,
             _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
@@ -181,6 +183,11 @@ public partial class AccountSqlInspector
                 if (!grants[principal].TryGetValue(key, out var privileges))
                     grants[principal][key] = privileges = new HashSet<Privilege>();
                 privileges.Add(privilege.Value);
+                if (reader.GetBoolean(8))
+                {
+                    if (!inherited[principal].TryGetValue(key, out var fromRoles)) inherited[principal][key] = fromRoles = [];
+                    fromRoles.Add(privilege.Value);
+                }
             }
             await reader.NextResultAsync(ct);
             while (await reader.ReadAsync(ct))
@@ -189,7 +196,8 @@ public partial class AccountSqlInspector
 
         return principalNames.ToDictionary(name => name, name => new SqlPrincipalPermissions(
             name, existing.Contains(name),
-            grants[name].Select(grant => new SqlActualGrant(grant.Key.Database, grant.Key.Schema, grant.Value)).ToList(),
+            grants[name].Select(grant => new SqlActualGrant(grant.Key.Database, grant.Key.Schema, grant.Value)
+                { Inherited = inherited[name].GetValueOrDefault(grant.Key) ?? [] }).ToList(),
             errors[name].Count == 0 ? null : "Unsupported SQL permissions cannot be represented safely by database/schema grants: "
                 + string.Join("; ", errors[name].Order(StringComparer.Ordinal))
                 + ". Permission comparison, import and resolution are disabled for this principal."), StringComparer.OrdinalIgnoreCase);

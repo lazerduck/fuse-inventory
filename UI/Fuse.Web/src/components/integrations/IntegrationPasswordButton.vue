@@ -31,24 +31,22 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useQueryClient } from '@tanstack/vue-query'
 import { useQuasar } from 'quasar'
-import { azureRequest } from '../../api/azureDiscovery'
+import { AzureKeyVaultBinding, BindIntegrationPassword, type PasswordReferenceView } from '../../api/client'
+import { getErrorMessage } from '../../utils/error'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useFuseStore } from '../../stores/FuseStore'
 
 const props = defineProps<{ provider: string; integrationId?: string }>()
 const emit = defineEmits<{ saved: [] }>()
-interface Target { revision: string; endpoint: string; username: string; scope: string; reference?: {providerId: string; secretName: string; version?: string} }
-const store = useFuseStore(), api = useFuseClient(), queries = useQueryClient(), q = useQuasar()
+const store = useFuseStore(), api = useFuseClient(), q = useQuasar()
 const canBind = computed(() => !!props.integrationId && !!store.currentUser && (store.isAdmin ||
   ['secretproviders:secrets:bindintegration','secretproviders:secrets:reveal',props.provider + 'integrations:update'].every(k => store.userPermissions?.includes(k))))
-const path = computed(() => '/api/integration-credentials/' + props.provider + '/' + props.integrationId)
-const visible = ref(false), busy = ref(false), error = ref(''), target = ref<Target>()
+const visible = ref(false), busy = ref(false), error = ref(''), target = ref<PasswordReferenceView>()
 const vaults = ref<{value:string;label:string}[]>([]), names = ref<string[]>([])
 const providerId = ref(''), secretName = ref(''), version = ref('')
 const required = (s: string) => !!s || 'Select a Key Vault provider.'
-function message(e: unknown) { return (e as {error?: string})?.error || 'Unable to update the credential reference.' }
+function message(e: unknown) { return getErrorMessage(e, 'Unable to update the credential reference.') }
 async function suggestions(id: string) {
   names.value = []
   if (!id || !store.hasPermission('secretproviders:read')) return
@@ -62,7 +60,7 @@ async function open() {
   visible.value = true; busy.value = true; error.value = ''; target.value = undefined
   vaults.value = []; names.value = []; providerId.value = ''; secretName.value = ''; version.value = ''
   try {
-    const current = await azureRequest<Target>(path.value, undefined, 'GET')
+    const current = await api.integrationCredentialGet(props.provider, props.integrationId!)
     target.value = current
     providerId.value = current.reference?.providerId ?? ''; secretName.value = current.reference?.secretName ?? ''; version.value = current.reference?.version ?? ''
     if (store.hasPermission('secretproviders:read')) {
@@ -77,10 +75,14 @@ async function save(detach: boolean) {
   if (!target.value || busy.value) return
   busy.value = true; error.value = ''
   try {
-    await azureRequest(path.value, {expectedRevision: target.value.revision, reference: detach ? null :
-      {providerId: providerId.value, secretName: secretName.value, version: version.value || null}}, 'PUT')
+    await api.integrationCredentialBind(props.provider, props.integrationId!, new BindIntegrationPassword({
+      expectedRevision: target.value.revision,
+      reference: detach ? undefined : new AzureKeyVaultBinding({
+        providerId: providerId.value, secretName: secretName.value, version: version.value || undefined
+      })
+    }))
     visible.value = false
-    emit('saved'); void queries.invalidateQueries({queryKey:['redisIntegrations']})
+    emit('saved')
     q.notify({type:'positive', message: detach ? 'Password reference detached.' : 'Password reference saved.'})
   } catch(e) { error.value = message(e) } finally { busy.value = false }
 }

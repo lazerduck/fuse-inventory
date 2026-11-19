@@ -113,7 +113,8 @@ public class MessageBrokerService : IMessageBrokerService
                     ConnectionUri = command.ConnectionUri,
                     TagIds = tagIds,
                     UpdatedAt = DateTime.UtcNow,
-                    Queues = command.Queues?.Select(q => new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
+                    Queues = command.Queues?.Select(q => m.Queues?.FirstOrDefault(old => old.Name == q.Name && old.ImportedFrom is not null) is { } imported
+                        ? imported with { Description = q.Description } : new BrokerQueue(Guid.NewGuid(), q.Name, q.Description)).ToList(),
                     Topics = command.Topics?.Select(t => new BrokerTopic(Guid.NewGuid(), t.Name, t.Description, t.Subscribers ?? new List<string>())).ToList()
                 };
                 return updated;

@@ -20,7 +20,10 @@ public record SqlActualGrant(
     string? Database,
     string? Schema,
     HashSet<Privilege> Privileges
-);
+)
+{
+    internal HashSet<Privilege> Inherited { get; init; } = [];
+}
 
 /// <summary>
 /// Abstraction for inspecting SQL principals and their permissions.

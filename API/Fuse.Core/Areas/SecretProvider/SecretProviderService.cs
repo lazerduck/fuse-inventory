@@ -137,11 +137,17 @@ public class SecretProviderService : ISecretProviderService
         await _fuseStore.UpdateAsync(s =>
         {
             if (!s.SecretProviders.Any(p => p.Id == command.Id)) return s;
-            if (s.Accounts.Any(a => a.SecretBinding.AzureKeyVault?.ProviderId == command.Id) ||
-                s.RedisIntegrations.Cast<IPasswordConnection>().Concat(s.MongoDbIntegrations).Concat(s.PostgreSqlIntegrations)
+            var accounts = s.Accounts.Count(a => a.SecretBinding.Kind == SecretBindingKind.AzureKeyVault &&
+                a.SecretBinding.AzureKeyVault?.ProviderId == command.Id);
+            if (accounts > 0)
+            {
+                result = Result.Failure($"Cannot delete secret provider: {accounts} account(s) are using it.");
+                return s;
+            }
+            if (s.RedisIntegrations.Cast<IPasswordConnection>().Concat(s.MongoDbIntegrations).Concat(s.PostgreSqlIntegrations)
                     .Concat(s.RabbitMqIntegrations).Any(c => c.PasswordBinding?.Reference.ProviderId == command.Id))
             {
-                result = Result.Failure("Cannot delete a secret provider used by accounts or integration credentials.");
+                result = Result.Failure("Detach integration credentials before deleting their secret provider.");
                 return s;
             }
             result = Result.Success();

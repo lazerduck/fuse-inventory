@@ -172,7 +172,7 @@ public class AzureDiscoveryClient : IAzureDiscoveryClient
         if (command.ResourceGroups is { Count: > 0 })
             query += $" | where resourceGroup in~ ({string.Join(",", command.ResourceGroups.Select(g => JsonSerializer.Serialize(g)))})";
         if (kinds.Contains("CosmosDb"))
-            query += " | where type !~ 'microsoft.documentdb/databaseaccounts' or (kind =~ 'GlobalDocumentDB' and tostring(properties.capabilities) !has_any ('EnableCassandra','EnableTable','EnableGremlin','EnableMongo'))";
+            query += " | where type !~ 'microsoft.documentdb/databaseaccounts' or (kind =~ 'GlobalDocumentDB' and not(tostring(properties.capabilities) has_any ('EnableCassandra','EnableTable','EnableGremlin','EnableMongo')))";
         return query + " | project id, name, type, subscriptionId, resourceGroup, location, endpoint = case(type =~ 'microsoft.keyvault/vaults', tostring(properties.vaultUri), type =~ 'microsoft.servicebus/namespaces', strcat('https://', name, '.servicebus.windows.net'), type =~ 'microsoft.documentdb/databaseaccounts', strcat('https://', name, '.documents.azure.com'), tostring(properties.endpoint)) | order by id asc";
     }
 
