@@ -1007,7 +1007,7 @@ export interface IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  progressPUT(
+  progressPUTPUT(
     body: UpdateGuideProgress | undefined,
     signal?: AbortSignal,
   ): Promise<UserGuideProgress>;
@@ -1800,6 +1800,70 @@ export interface IFuseApiClient {
     body: ResetPasswordRequest | undefined,
     signal?: AbortSignal,
   ): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  serviceBusIntegrationPOST(
+    body: CreateServiceBusIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection>;
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  serviceBusIntegrationPUT(
+    id: string,
+    body: UpdateServiceBusIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection>;
+
+  /**
+   * @return No Content
+   */
+  serviceBusIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  serviceBusIntegrationValidate(
+    body: ValidateServiceBusConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusDiscoveryResponse>;
 
   /**
    * @return OK
@@ -11605,7 +11669,7 @@ export class FuseApiClient implements IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  progressPUT(
+  progressPUTPUT(
     body: UpdateGuideProgress | undefined,
     signal?: AbortSignal,
   ): Promise<UserGuideProgress> {
@@ -11625,11 +11689,13 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressPUT(_response);
+      return this.processProgressPUTPUT(_response);
     });
   }
 
-  protected processProgressPUT(response: Response): Promise<UserGuideProgress> {
+  protected processProgressPUTPUT(
+    response: Response,
+  ): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -19814,6 +19880,671 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
+  serviceBusIntegrationAll(
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection[]> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationAll(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationAll(
+    response: Response,
+  ): Promise<ServiceBusConnection[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(ServiceBusConnection.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnection[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  serviceBusIntegrationPOST(
+    body: CreateServiceBusIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationPOST(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationPOST(
+    response: Response,
+  ): Promise<ServiceBusConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = ServiceBusConnection.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnection>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationGET(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationGET(
+    response: Response,
+  ): Promise<ServiceBusConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ServiceBusConnection.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnection>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  serviceBusIntegrationPUT(
+    id: string,
+    body: UpdateServiceBusIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnection> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationPUT(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationPUT(
+    response: Response,
+  ): Promise<ServiceBusConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ServiceBusConnection.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnection>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  serviceBusIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationDELETE(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  serviceBusIntegrationValidate(
+    body: ValidateServiceBusConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationValidate(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationValidate(
+    response: Response,
+  ): Promise<ServiceBusConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ServiceBusConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationValidateSaved(
+    response: Response,
+  ): Promise<ServiceBusConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ServiceBusConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  serviceBusIntegrationDiscovery(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<ServiceBusDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/ServiceBusIntegration/{id}/discovery";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processServiceBusIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processServiceBusIntegrationDiscovery(
+    response: Response,
+  ): Promise<ServiceBusDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ServiceBusDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ServiceBusDiscoveryResponse>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
   sqlIntegrationAll(signal?: AbortSignal): Promise<SqlIntegrationResponse[]> {
     let url_ = this.baseUrl + "/api/SqlIntegration";
     url_ = url_.replace(/[?&]$/, "");
@@ -22947,6 +23678,9 @@ export enum AuditAction {
   KeycloakIntegrationCreated = "KeycloakIntegrationCreated",
   KeycloakIntegrationUpdated = "KeycloakIntegrationUpdated",
   KeycloakIntegrationDeleted = "KeycloakIntegrationDeleted",
+  ServiceBusIntegrationCreated = "ServiceBusIntegrationCreated",
+  ServiceBusIntegrationUpdated = "ServiceBusIntegrationUpdated",
+  ServiceBusIntegrationDeleted = "ServiceBusIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -22972,6 +23706,7 @@ export enum AuditArea {
   PostgreSqlIntegration = "PostgreSqlIntegration",
   MongoDbIntegration = "MongoDbIntegration",
   KeycloakIntegration = "KeycloakIntegration",
+  ServiceBusIntegration = "ServiceBusIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -25928,6 +26663,54 @@ export interface ICreateSecurityUser {
   roleIds?: string[] | undefined;
   isAdmin?: boolean;
   initialSecurityPosture?: SecurityPosture;
+}
+
+export class CreateServiceBusIntegration implements ICreateServiceBusIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: ICreateServiceBusIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.namespaceResourceId = _data["namespaceResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): CreateServiceBusIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateServiceBusIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["namespaceResourceId"] = this.namespaceResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface ICreateServiceBusIntegration {
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
 }
 
 export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
@@ -32563,6 +33346,380 @@ export interface ISecurityUserInfo {
   effectiveRoleIds?: string[] | undefined;
 }
 
+export class ServiceBusConnection implements IServiceBusConnection {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: IServiceBusConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.namespaceResourceId = _data["namespaceResourceId"];
+      this.authMode = _data["authMode"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): ServiceBusConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["namespaceResourceId"] = this.namespaceResourceId;
+    data["authMode"] = this.authMode;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IServiceBusConnection {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class ServiceBusConnectionTestResult implements IServiceBusConnectionTestResult {
+  isSuccessful?: boolean;
+  status?: string | undefined;
+
+  constructor(data?: IServiceBusConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): ServiceBusConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IServiceBusConnectionTestResult {
+  isSuccessful?: boolean;
+  status?: string | undefined;
+}
+
+export class ServiceBusDiscoveryResponse implements IServiceBusDiscoveryResponse {
+  namespaceResourceId?: string | undefined;
+  observedAt?: Date;
+  queueVisibility?: string | undefined;
+  queues?: ServiceBusQueue[] | undefined;
+  namespaceAuthorizationRules?: ServiceBusPolicyList;
+  inventory?: ServiceBusQueueMatch[] | undefined;
+
+  constructor(data?: IServiceBusDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.namespaceResourceId = _data["namespaceResourceId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.queueVisibility = _data["queueVisibility"];
+      if (Array.isArray(_data["queues"])) {
+        this.queues = [] as any;
+        for (let item of _data["queues"])
+          this.queues!.push(ServiceBusQueue.fromJS(item));
+      }
+      this.namespaceAuthorizationRules = _data["namespaceAuthorizationRules"]
+        ? ServiceBusPolicyList.fromJS(_data["namespaceAuthorizationRules"])
+        : (undefined as any);
+      if (Array.isArray(_data["inventory"])) {
+        this.inventory = [] as any;
+        for (let item of _data["inventory"])
+          this.inventory!.push(ServiceBusQueueMatch.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ServiceBusDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["namespaceResourceId"] = this.namespaceResourceId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["queueVisibility"] = this.queueVisibility;
+    if (Array.isArray(this.queues)) {
+      data["queues"] = [];
+      for (let item of this.queues)
+        data["queues"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["namespaceAuthorizationRules"] = this.namespaceAuthorizationRules
+      ? this.namespaceAuthorizationRules.toJSON()
+      : (undefined as any);
+    if (Array.isArray(this.inventory)) {
+      data["inventory"] = [];
+      for (let item of this.inventory)
+        data["inventory"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IServiceBusDiscoveryResponse {
+  namespaceResourceId?: string | undefined;
+  observedAt?: Date;
+  queueVisibility?: string | undefined;
+  queues?: ServiceBusQueue[] | undefined;
+  namespaceAuthorizationRules?: ServiceBusPolicyList;
+  inventory?: ServiceBusQueueMatch[] | undefined;
+}
+
+export class ServiceBusPolicy implements IServiceBusPolicy {
+  name?: string | undefined;
+  rights?: string[] | undefined;
+
+  constructor(data?: IServiceBusPolicy) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      if (Array.isArray(_data["rights"])) {
+        this.rights = [] as any;
+        for (let item of _data["rights"]) this.rights!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): ServiceBusPolicy {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusPolicy();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    if (Array.isArray(this.rights)) {
+      data["rights"] = [];
+      for (let item of this.rights) data["rights"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IServiceBusPolicy {
+  name?: string | undefined;
+  rights?: string[] | undefined;
+}
+
+export class ServiceBusPolicyList implements IServiceBusPolicyList {
+  visibility?: string | undefined;
+  policies?: ServiceBusPolicy[] | undefined;
+
+  constructor(data?: IServiceBusPolicyList) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.visibility = _data["visibility"];
+      if (Array.isArray(_data["policies"])) {
+        this.policies = [] as any;
+        for (let item of _data["policies"])
+          this.policies!.push(ServiceBusPolicy.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ServiceBusPolicyList {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusPolicyList();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["visibility"] = this.visibility;
+    if (Array.isArray(this.policies)) {
+      data["policies"] = [];
+      for (let item of this.policies)
+        data["policies"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IServiceBusPolicyList {
+  visibility?: string | undefined;
+  policies?: ServiceBusPolicy[] | undefined;
+}
+
+export class ServiceBusQueue implements IServiceBusQueue {
+  name?: string | undefined;
+  status?: string | undefined;
+  authorizationRules?: ServiceBusPolicyList;
+
+  constructor(data?: IServiceBusQueue) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.status = _data["status"];
+      this.authorizationRules = _data["authorizationRules"]
+        ? ServiceBusPolicyList.fromJS(_data["authorizationRules"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): ServiceBusQueue {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusQueue();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["status"] = this.status;
+    data["authorizationRules"] = this.authorizationRules
+      ? this.authorizationRules.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IServiceBusQueue {
+  name?: string | undefined;
+  status?: string | undefined;
+  authorizationRules?: ServiceBusPolicyList;
+}
+
+export class ServiceBusQueueMatch implements IServiceBusQueueMatch {
+  queueId?: string;
+  name?: string | undefined;
+  status?: string | undefined;
+
+  constructor(data?: IServiceBusQueueMatch) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.queueId = _data["queueId"];
+      this.name = _data["name"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): ServiceBusQueueMatch {
+    data = typeof data === "object" ? data : {};
+    let result = new ServiceBusQueueMatch();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["queueId"] = this.queueId;
+    data["name"] = this.name;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface IServiceBusQueueMatch {
+  queueId?: string;
+  name?: string | undefined;
+  status?: string | undefined;
+}
+
 export class SetAppConfigurationValue implements ISetAppConfigurationValue {
   providerId?: string;
   key?: string | undefined;
@@ -35667,6 +36824,58 @@ export interface IUpdateSecuritySettings {
   requestedBy?: string | undefined;
 }
 
+export class UpdateServiceBusIntegration implements IUpdateServiceBusIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: IUpdateServiceBusIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.messageBrokerId = _data["messageBrokerId"];
+      this.namespaceResourceId = _data["namespaceResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): UpdateServiceBusIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateServiceBusIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["messageBrokerId"] = this.messageBrokerId;
+    data["namespaceResourceId"] = this.namespaceResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface IUpdateServiceBusIntegration {
+  id?: string;
+  name?: string | undefined;
+  messageBrokerId?: string;
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+}
+
 export class UpdateSqlIntegration implements IUpdateSqlIntegration {
   id?: string;
   name?: string | undefined;
@@ -36073,6 +37282,46 @@ export interface IValidateRedisConnection {
   endpoint?: string | undefined;
   username?: string | undefined;
   password?: string | undefined;
+}
+
+export class ValidateServiceBusConnection implements IValidateServiceBusConnection {
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: IValidateServiceBusConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.namespaceResourceId = _data["namespaceResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): ValidateServiceBusConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateServiceBusConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["namespaceResourceId"] = this.namespaceResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface IValidateServiceBusConnection {
+  namespaceResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
 }
 
 export interface FileParameter {

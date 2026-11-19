@@ -32,6 +32,7 @@ public record Snapshot(
     public IReadOnlyList<PostgreSqlIntegration> PostgreSqlIntegrations { get; init; } = Array.Empty<PostgreSqlIntegration>();
     public IReadOnlyList<MongoDbIntegration> MongoDbIntegrations { get; init; } = Array.Empty<MongoDbIntegration>();
     public IReadOnlyList<KeycloakIntegration> KeycloakIntegrations { get; init; } = Array.Empty<KeycloakIntegration>();
+    public IReadOnlyList<ServiceBusConnection> ServiceBusIntegrations { get; init; } = Array.Empty<ServiceBusConnection>();
 
     public Snapshot(
         IReadOnlyList<Application> Applications,
