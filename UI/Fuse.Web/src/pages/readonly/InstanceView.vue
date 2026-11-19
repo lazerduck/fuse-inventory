@@ -228,7 +228,7 @@
                 </q-item-section>
                 <q-item-section side top>
                   <SecretReferenceButton v-if="entry.isKeyVaultReference && entry.key && appConfigurationProviderId && store.hasPermission('secretproviders:read')"
-                    :provider="appConfigurationProviderId" :name="entry.key" :label="entry.label" from-config />
+                    :provider="appConfigurationProviderId" :name="entry.key" :label="entry.label ?? undefined" from-config />
                   <q-item-label caption>{{ formatAppConfigurationEntryValue(entry.value) }}</q-item-label>
                   <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
                 </q-item-section>

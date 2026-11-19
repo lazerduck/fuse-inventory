@@ -185,7 +185,7 @@
                       </q-item-section>
                       <q-item-section side top>
                         <SecretReferenceButton v-if="entry.isKeyVaultReference && entry.key && form.appConfigurationProviderId && fuseStore.hasPermission('secretproviders:read') && fuseStore.hasPermission('secretproviders:appconfig:read')"
-                          :provider="form.appConfigurationProviderId" :name="entry.key" :label="entry.label" from-config />
+                          :provider="form.appConfigurationProviderId" :name="entry.key" :label="entry.label ?? undefined" from-config />
                         <q-item-label caption>{{ truncate(entry.value) }}</q-item-label>
                         <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
                       </q-item-section>

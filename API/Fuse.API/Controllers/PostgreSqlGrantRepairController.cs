@@ -1,5 +1,5 @@
+using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.Application;
-using Fuse.Core.Areas.Security;
 using System.Security.Cryptography;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.IntegrationReviews;
@@ -29,7 +29,7 @@ public sealed class PostgreSqlGrantRepairController(PostgreSqlGrantRepairService
         var snapshot = await store.GetAsync(ct);
         if (!permissions.Allows(User, snapshot, IntegrationReviewPermissions.ReadKey) ||
             !permissions.Allows(User, snapshot, PostgreSqlIntegrationPermissions.ReadKey) ||
-            !permissions.Allows(User, snapshot, AreaPermissions.ReadKey))
+            !permissions.Allows(User, snapshot, AccountPermissions.ReadKey))
             return StatusCode(403);
         var signer = protection.CreateProtector("Fuse.PostgreSqlGrantRepair.v1", id.ToString("D"), request.ReviewId.ToString("D"))
             .ToTimeLimitedDataProtector();

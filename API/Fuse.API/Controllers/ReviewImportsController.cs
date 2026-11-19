@@ -2,7 +2,6 @@ using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.Application;
 using Fuse.Core.Areas.DataStore;
 using Fuse.Core.Areas.MessageBroker;
-using Fuse.Core.Areas.Security;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Helpers;
@@ -23,8 +22,8 @@ public sealed class ReviewImportsController(ReviewImportService imports, IFuseSt
     {
         "queue" => Can(s, MessageBrokerPermissions.ReadKey) && Can(s, MessageBrokerPermissions.UpdateKey)
                 && (instance is null || Can(s, ApplicationPermissions.ReadKey) && Can(s, ApplicationPermissions.UpdateKey)),
-        "client" => Can(s, AreaPermissions.ReadKey) && Can(s, AccountPermissions.CreateKey) && Can(s, ApplicationPermissions.ReadKey),
-        "account" => Can(s, AreaPermissions.ReadKey) && Can(s, AccountPermissions.CreateKey)
+        "client" => Can(s, AccountPermissions.ReadKey) && Can(s, AccountPermissions.CreateKey) && Can(s, ApplicationPermissions.ReadKey),
+        "account" => Can(s, AccountPermissions.ReadKey) && Can(s, AccountPermissions.CreateKey)
                 && (instance is null || Can(s, ApplicationPermissions.ReadKey) && Can(s, ApplicationPermissions.UpdateKey)),
         _ => false
     };

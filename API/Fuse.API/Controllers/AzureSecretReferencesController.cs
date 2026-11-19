@@ -1,5 +1,5 @@
+using Fuse.Core.Areas.Account;
 using Fuse.Core.Areas.Application;
-using Fuse.Core.Areas.Security;
 using System.Text.RegularExpressions;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.SecretProvider;
@@ -52,7 +52,7 @@ public sealed class AzureSecretReferencesController(IFuseStore store, IAzureKeyV
         if (!vault.Capabilities.HasFlag(SecretProviderCapabilities.Check)) return StatusCode(403);
         var metadata = await vaults.VersionsAsync(vault, name, ct);
         var consumers = permissions.Allows(User, snapshot, ApplicationPermissions.ReadKey)
-            ? SecretReferenceConsumers.Find(snapshot, vault.Id, name, permissions.Allows(User, snapshot, AreaPermissions.ReadKey), configuration, key, version) : [];
+            ? SecretReferenceConsumers.Find(snapshot, vault.Id, name, permissions.Allows(User, snapshot, AccountPermissions.ReadKey), configuration, key, version) : [];
         return Ok(new SecretReferenceHealth(name, version, metadata, consumers));
     }
 }
