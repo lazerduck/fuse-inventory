@@ -25,6 +25,7 @@ using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.RedisIntegration;
 using Fuse.Core.Areas.PostgreSqlIntegration;
 using Fuse.Core.Areas.MongoDbIntegration;
+using Fuse.Core.Areas.KeycloakIntegration;
 using Fuse.Core.Areas.RabbitMqIntegration;
 using Fuse.Core.Areas.Tag;
 using Fuse.Core.Areas.Undo;
@@ -110,6 +111,7 @@ public static class FuseCodeModule
         services.AddSingleton<AreaPermissions, RedisIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, PostgreSqlIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, MongoDbIntegrationPermissions>();
+        services.AddSingleton<AreaPermissions, KeycloakIntegrationPermissions>();
         services.AddSingleton<AreaPermissions, TagPermissions>();
         services.AddSingleton<AreaPermissions, UndoPermissions>();
         services.AddSingleton<AreaPermissions, APIKeyPermissions>();
@@ -154,9 +156,12 @@ public static class FuseCodeModule
         services.AddScoped<IRedisIntegrationService, RedisIntegrationService>();
         services.AddScoped<IPostgreSqlIntegrationService, PostgreSqlIntegrationService>();
         services.AddScoped<IMongoDbIntegrationService, MongoDbIntegrationService>();
+        services.AddScoped<IKeycloakIntegrationService, KeycloakIntegrationService>();
         services.AddScoped<IRedisInspector, RedisInspector>();
         services.AddScoped<IPostgreSqlInspector, PostgreSqlInspector>();
         services.AddScoped<IMongoDbInspector, MongoDbInspector>();
+        services.AddHttpClient<KeycloakInspector>(client => client.MaxResponseContentBufferSize = 2 * 1024 * 1024)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddSingleton<IMongoDbSessionFactory, MongoDbSessionFactory>();
 
         // Register SQL Permissions Cache service as both hosted service and singleton for cache queries

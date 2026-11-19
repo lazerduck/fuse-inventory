@@ -94,6 +94,8 @@ public static class SnapshotValidator
         }
 
         if (s.PostgreSqlIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1)) errs.Add("Duplicate PostgreSQL integration data stores.");
+        if (s.KeycloakIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
+            errs.Add("Duplicate Keycloak integration IDs.");
         if (s.MongoDbIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1))
             errs.Add("Duplicate MongoDb integration Ids detected");
         foreach (var integration in s.MongoDbIntegrations)

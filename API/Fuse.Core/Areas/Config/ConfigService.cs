@@ -334,6 +334,7 @@ public class ConfigService : IConfigService
                 RedisIntegrations = current.RedisIntegrations,
                 PostgreSqlIntegrations = current.PostgreSqlIntegrations,
                 MongoDbIntegrations = current.MongoDbIntegrations,
+                KeycloakIntegrations = current.KeycloakIntegrations,
                 RabbitMqIntegrations = current.RabbitMqIntegrations
             };
         }, ct);
