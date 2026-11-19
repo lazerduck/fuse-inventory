@@ -1,10 +1,11 @@
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Models;
+using Fuse.Core.Areas.Account;
 using Fuse.Core.Responses;
 
 namespace Fuse.Core.Areas.SqlIntegration;
 
-public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector) : IIntegrationReviewProvider
+public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector, IAccountSqlInspector catalog) : IIntegrationReviewProvider
 {
     public string Provider => "sql";
     public IReadOnlyList<ReviewCheck> Checks { get; } = [new("account-grants", "Documented SQL Server grants", [], RequiresAccount: true)];
@@ -13,7 +14,8 @@ public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector) : IInt
     {
         var integration = s.SqlIntegrations.FirstOrDefault(i => i.Id == input.IntegrationId);
         var account = s.Accounts.FirstOrDefault(a => a.Id == input.AccountId);
-        return integration is not null && account is not null && account.TargetKind == TargetKind.DataStore
+        return input.Kind == "account-grants" && input.Fields.Count == 0 && integration is not null && account is not null &&
+            !string.IsNullOrWhiteSpace(account.UserName) && account.TargetKind == TargetKind.DataStore
             && account.TargetId == integration.DataStoreId ? null : "Select an account on this SQL data store.";
     }
 
@@ -21,6 +23,10 @@ public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector) : IInt
     {
         var integration = s.SqlIntegrations.Single(i => i.Id == input.IntegrationId);
         var account = s.Accounts.Single(i => i.Id == input.AccountId);
+        if (!integration.Permissions.HasFlag(SqlPermissions.Read))
+            return new(ReviewStatus.Unknown, "SQL Server read permission is unavailable.", []);
+        if (await catalog.InspectGrantCoverageAsync(integration, ct) is {} incomplete)
+            return new(ReviewStatus.Unknown, incomplete, []);
         var result = await inspector.GetAccountStatusAsync(account, integration, s, ct);
         var status = result.Status switch { SyncStatus.InSync => ReviewStatus.Matched,
             SyncStatus.DriftDetected or SyncStatus.MissingPrincipal => ReviewStatus.Drift, _ => ReviewStatus.Unknown };

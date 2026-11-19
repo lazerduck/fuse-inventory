@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using System.Globalization;
 using System.Text.Json;
 using Fuse.Core.Areas.IntegrationReviews;
@@ -9,7 +10,7 @@ using static Fuse.Core.Areas.IntegrationReviews.DataStoreReview;
 
 namespace Fuse.Core.Areas.MongoDbIntegration;
 
-public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory) : IIntegrationReviewProvider
+public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory, IntegrationPasswords? passwords = null) : IIntegrationReviewProvider
 {
     public string Provider => "mongodb";
     private static readonly string[] Actions = ["find", "insert", "update", "remove", "listIndexes", "createIndex", "dropIndex"];
@@ -66,6 +67,9 @@ public sealed class MongoDbReviewProvider(IMongoDbSessionFactory factory) : IInt
     {
         if (Validate(snapshot, input) is { } error) return Unknown(error);
         var item = snapshot.MongoDbIntegrations.Single(x => x.Id == input.IntegrationId);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return new(ReviewStatus.Unknown, IntegrationPasswords.Unavailable, []);
+        item = credential.Value!;
         var database = MongoDbConnectionSettings.Database(item.Endpoint);
         var collection = input.Fields["collection"];
         if (input.Kind == "collection-index")

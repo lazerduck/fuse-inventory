@@ -65,6 +65,8 @@ public sealed class ReviewImportService(IFuseStore store, IAuditService audit, I
             return Result<ImportPreview>.Failure("Select an existing application instance.");
         var target = item.Kind == "client" ? instance?.Id : source.TargetId;
         if (target is null) return Result<ImportPreview>.Failure("No inventory target is available.");
+        if (item.Kind == "queue" && s.MessageBrokers.All(b => b.Id != target))
+            return Result<ImportPreview>.Failure("Message broker no longer exists.", ErrorType.Conflict);
         var existing = Existing(s, selection, target.Value);
         if (existing.Length > 1) return Result<ImportPreview>.Failure("Several inventory accounts match this identity. Resolve the duplicates before importing.", ErrorType.Conflict);
         var link = instance is not null && item.Kind != "client" && !instance.Dependencies.Any(d =>
@@ -97,7 +99,7 @@ public sealed class ReviewImportService(IFuseStore store, IAuditService audit, I
             var source = Source(s, selection);
             if (source is null || source.UpdatedAt != preview.ConnectionVersion) return s;
             var current = Prepare(s, selection, source).Value;
-            if (current is null || preview.ExistingId.HasValue && current.ExistingId != preview.ExistingId) return s;
+            if (current is null || current.LinkDependency && !preview.LinkDependency || preview.ExistingId.HasValue && current.ExistingId != preview.ExistingId) return s;
             var item = selection.Item;
             var now = DateTime.UtcNow;
             var id = current.ExistingId ?? Guid.NewGuid();

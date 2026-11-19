@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.Identity;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.AzureMetadata;
 using Fuse.Core.Areas.SecretProvider;
@@ -13,7 +14,7 @@ public sealed class AzureWorkloadsController(IFuseStore store, WorkloadInspector
     public async Task<ActionResult<WorkloadObservation>> Get(Guid identityId, [FromQuery] Guid profileId, CancellationToken ct)
     {
         var snapshot = await store.GetAsync(ct);
-        if (!permissions.Allows(User, snapshot, "identities:read") || !permissions.Allows(User, snapshot, SecretProviderPermissions.ReadKey))
+        if (!permissions.Allows(User, snapshot, IdentityPermissions.ReadKey) || !permissions.Allows(User, snapshot, SecretProviderPermissions.ReadKey))
             return StatusCode(403);
         var binding = snapshot.Identities.FirstOrDefault(i => i.Id == identityId)?.AzurePrincipal;
         var profile = snapshot.AzureIntegrationManager?.CredentialProfiles?.FirstOrDefault(p =>

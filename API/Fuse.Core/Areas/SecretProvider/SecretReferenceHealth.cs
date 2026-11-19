@@ -14,6 +14,11 @@ public static class SecretReferenceConsumers
     {
         bool Matches(SecretBinding? binding) => binding is { Kind: SecretBindingKind.AzureKeyVault, AzureKeyVault: {} b } &&
             b.ProviderId == vault && b.SecretName.Equals(name, StringComparison.OrdinalIgnoreCase);
+        static bool InKeyScope(string key, string? scope)
+        {
+            var filter = scope?.Trim() ?? "";
+            return filter.StartsWith(':') ? key.EndsWith(filter, StringComparison.OrdinalIgnoreCase) : key.Contains(filter, StringComparison.OrdinalIgnoreCase);
+        }
         var accounts = canReadAccounts ? s.Accounts.Where(a => Matches(a.SecretBinding)).ToDictionary(a => a.Id) : [];
         var rows = new List<SecretConsumer>();
         foreach (var app in s.Applications)
@@ -23,7 +28,7 @@ public static class SecretReferenceConsumers
                 foreach (var id in instance.Dependencies.Select(d => d.AccountId).OfType<Guid>().Distinct())
                     if (accounts.TryGetValue(id, out var account)) Add("Dependency account " + (account.UserName ?? id.ToString()), account.SecretBinding.AzureKeyVault!.Version);
                 if (configuration.HasValue && instance.AppConfigurationProviderId == configuration && key is not null &&
-                    key.EndsWith(instance.AppConfigurationKeySuffix?.Trim() ?? "", StringComparison.OrdinalIgnoreCase))
+                    InKeyScope(key, instance.AppConfigurationKeySuffix))
                     Add("Configured key scope: " + key, version);
 
                 void Add(string source, string? pinned) => rows.Add(new(app.Id, app.Name, instance.Id, source, pinned));

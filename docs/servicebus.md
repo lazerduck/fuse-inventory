@@ -9,3 +9,13 @@ Namespace policies apply across the namespace. Queue policies apply to the named
 Visibility is reported independently for the queue listing, namespace policies and each queue's policies. Azure can return a filtered list with HTTP 200. Fuse reports limited queue visibility when an inventoried queue outside that list denies a direct read. An empty policy list has unknown visibility because Azure may have hidden existing rules. If a later page fails, earlier observations are retained. An inventory queue absent from the visible results stays unknown. Inspections have a 45-second deadline and a 300-request budget, with up to 100 pages or 1,000 entries per listing.
 
 [Azure queue discovery](https://learn.microsoft.com/en-us/rest/api/servicebus/controlplane/queues/list-by-namespace?view=rest-servicebus-controlplane-2024-01-01) and [queue authorization rules](https://learn.microsoft.com/en-us/rest/api/servicebus/controlplane/queues/list-authorization-rules?view=rest-servicebus-controlplane-2024-01-01) describe the underlying resource metadata.
+
+## Saved reviews
+
+Open **Reviews** beside a namespace. A queue-settings review reads the named queue directly. Enter an ISO 8601 duration such as `PT30M`, an expected maximum delivery count, or an upper bound for dead letters. The dead-letter count comes from ARM queue metadata. Fuse never opens the queue or reads a message. A missing property or inaccessible queue yields unknown.
+
+A SAS policy review compares the exact Send, Listen and Manage rights returned at the selected queue or namespace. Optionally require namespace SAS authentication to be enabled or disabled. A queue Reader can inspect queue rights while the namespace authentication setting remains unknown.
+
+For an Entra role review, bind a Fuse identity to its tenant and service-principal object IDs, select a queue, then choose Sender, Receiver or Owner. Fuse reports a matching unconditional built-in role and its assignment scope. Conditional assignments, absence of a visible assignment, custom roles and groups leave authorization unknown. This check does not send or receive a message. A topic subscription rule review reads one named SQL filter on a namespace that supports topics. Basic namespaces support queues.
+
+Connection setup accepts an explicit resource ID or a selection from Azure resource discovery. In **Azure integrations**, add a named credential for one namespace to compare different Reader scopes side by side. The shared credential remains available in the connection form. [Service Bus queue metadata](https://learn.microsoft.com/en-us/rest/api/servicebus/controlplane/queues/get) · [Azure built-in roles](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/integration)

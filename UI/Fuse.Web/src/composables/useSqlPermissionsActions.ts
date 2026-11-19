@@ -161,7 +161,7 @@ export function useSqlPermissionsActions(integrationId: MaybeRef<string | null |
     }
   }
 
-  async function bulkResolveAll(): Promise<BulkResolveResponse> {
+  async function bulkResolveAll(previewRevision: string): Promise<BulkResolveResponse> {
     if (!integrationKey.value) {
       throw new Error('Integration ID missing')
     }
@@ -170,6 +170,7 @@ export function useSqlPermissionsActions(integrationId: MaybeRef<string | null |
     try {
       const result = await bulkResolve({
         integrationId: integrationKey.value,
+        previewRevision,
         passwordSource: BulkPasswordSource.SecretProvider
       })
       const affectedAccountIds = (result.results ?? []).map((r) => r.accountId)
@@ -183,6 +184,7 @@ export function useSqlPermissionsActions(integrationId: MaybeRef<string | null |
         errorMessage:
           err?.status === 401
             ? 'Authentication required. Please log in as an admin to perform bulk resolve.'
+            : err?.status === 409 ? 'The plan changed. Open Bulk Resolve again to review current operations.'
             : err?.message || 'An error occurred during bulk resolve.'
       })
     } finally {

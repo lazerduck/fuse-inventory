@@ -19,7 +19,8 @@ namespace Fuse.API.Controllers
         IFuseUserService fuseUserService,
         IFuseUserSessionService fuseUserSessionService,
         IFuseRoleService fuseRoleService,
-        IFuseStore store
+        IFuseStore store,
+        IEnumerable<AreaPermissions> catalogs
         ) : ControllerBase
     {
 
@@ -57,9 +58,15 @@ namespace Fuse.API.Controllers
                 }
             }
 
+            var posture = await fuseSecurityService.GetSecurityPosture();
+            var posturePermissions = catalogs.SelectMany(area => area.GetPermissionDescriptors())
+                .Where(d => !d.IgnorePosture && (posture == SecurityPosture.Unrestricted ||
+                    posture == SecurityPosture.RestrictedEditing && d.IsAllowedInRestrictedEditing))
+                .Select(d => d.Key).Distinct(StringComparer.OrdinalIgnoreCase).Order().ToArray();
             var response = new SecurityStateResponse
             {
-                Posture = await fuseSecurityService.GetSecurityPosture(),
+                Posture = posture,
+                PosturePermissions = posturePermissions,
                 RequiresSetup = await fuseSecurityService.RequiresSetup(),
                 CurrentUser = userInfo,
                 Permissions = permissions
@@ -283,6 +290,7 @@ namespace Fuse.API.Controllers
             public SecurityPosture Posture { get; set; }
             public bool RequiresSetup { get; set; }
             public SecurityUserInfo? CurrentUser { get; set; }
+            public IReadOnlyList<string> PosturePermissions { get; set; } = [];
             public IReadOnlyList<string> Permissions { get; set; } = Array.Empty<string>();
         }
 

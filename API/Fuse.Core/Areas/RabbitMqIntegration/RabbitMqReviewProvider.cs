@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using System.Text.RegularExpressions;
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Models;
@@ -5,7 +6,7 @@ using Fuse.Core.Responses;
 
 namespace Fuse.Core.Areas.RabbitMqIntegration;
 
-public sealed class RabbitMqReviewProvider(IRabbitMqInspector inspector) : IIntegrationReviewProvider
+public sealed class RabbitMqReviewProvider(IRabbitMqInspector inspector, IntegrationPasswords? passwords = null) : IIntegrationReviewProvider
 {
     private static readonly ReviewField Queue = new("queue", "Queue");
     private static readonly ReviewField Exchange = new("exchange", "Publisher exchange", false, Hint: "Leave blank for the default exchange.");
@@ -37,6 +38,9 @@ public sealed class RabbitMqReviewProvider(IRabbitMqInspector inspector) : IInte
     public async Task<ReviewEvidence> InspectAsync(Snapshot snapshot, ReviewInput input, CancellationToken ct)
     {
         var connection = snapshot.RabbitMqIntegrations.Single(i => i.Id == input.IntegrationId);
+        var credential = await IntegrationPasswords.ForUse(connection, passwords, ct);
+        if (!credential.IsSuccess) return new(ReviewStatus.Unknown, IntegrationPasswords.Unavailable, []);
+        connection = credential.Value!;
         var discovery = await inspector.DiscoverAsync(connection, [], [], ct);
         var fields = input.Fields;
         var account = snapshot.Accounts.FirstOrDefault(a => a.Id == input.AccountId);

@@ -38,7 +38,7 @@
           :resolvable-drift-count="resolvableDriftCount"
           :skipped-accounts-count="skippedAccountsCount"
           :is-bulk-resolving="permissionStates.isBulkResolving?.value ?? false"
-          @bulk-resolve="showBulkResolveDialog = true"
+          @bulk-resolve="openBulkPreview"
         />
       </div>
 
@@ -93,10 +93,11 @@
 
     <BulkResolveDialog
       v-model="showBulkResolveDialog"
-      :planned-operations="plannedOperations"
-      :resolvable-missing-count="resolvableMissingCount"
-      :resolvable-drift-count="resolvableDriftCount"
-      :skipped-accounts-count="skippedAccountsCount"
+      :operations="bulkPreview?.operations ?? []"
+      :can-confirm="!!bulkPreview?.revision"
+      :loading="loadingPreview"
+      :error="previewError"
+      @refresh="openBulkPreview"
       :is-bulk-resolving="permissionStates.isBulkResolving?.value ?? false"
       @confirm="handleBulkResolveConfirm"
     />
@@ -137,6 +138,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useSqlPermissionsActions } from '../composables/useSqlPermissionsActions'
+import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { PasswordSource, SyncStatus } from 'api/client'
 import { Permission } from 'permissions'
@@ -144,6 +146,7 @@ import type {
   AuthKind,
   SecretBindingKind,
   BulkResolveResponse,
+  SqlBulkPlan,
   CreateSqlAccountResponse,
   ImportOrphanPrincipalResponse,
   ImportPermissionsResponse,
@@ -264,22 +267,26 @@ const skippedAccountsCount = computed(() => {
   ).length
 })
 
-const plannedOperations = computed(() => {
-  const operations: string[] = []
-  for (const account of data.value?.overview?.accounts ?? []) {
-    const principal = account.principalName ?? account.accountName ?? 'Unknown principal'
-    if (account.status === SyncStatus.MissingPrincipal) {
-      if (account.accountId && hasSecretProvider(account.accountId)) operations.push('Create login and database user · ' + principal)
-      else { operations.push('Skip · ' + principal + ' · no linked secret provider'); continue }
-    } else if (account.status !== SyncStatus.DriftDetected) continue
-    for (const diff of account.permissionComparisons ?? []) {
-      const scope = [diff.database, diff.schema].filter(Boolean).join(' / ') || 'Database scope'
-      for (const privilege of diff.missingPrivileges ?? []) operations.push(`Grant ${privilege} · ${principal} · ${scope}`)
-      for (const privilege of diff.extraPrivileges ?? []) operations.push(`Revoke ${privilege} · ${principal} · ${scope}`)
-    }
+const bulkPreview = ref<SqlBulkPlan | null>(null)
+const loadingPreview = ref(false)
+const previewError = ref('')
+const sqlClient = useFuseClient()
+
+async function openBulkPreview() {
+  showBulkResolveDialog.value = true
+  bulkPreview.value = null
+  previewError.value = ''
+  loadingPreview.value = true
+  const requestedId = integrationId.value
+  try {
+    const result = await sqlClient.previewSqlBulkResolve(requestedId)
+    if (integrationId.value === requestedId) bulkPreview.value = result
+  } catch {
+    previewError.value = 'Could not verify a current plan. Refresh to inspect SQL Server again.'
+  } finally {
+    loadingPreview.value = false
   }
-  return operations
-})
+}
 
 const hasResolvableAccounts = computed(() => resolvableMissingCount.value > 0 || resolvableDriftCount.value > 0)
 
@@ -335,7 +342,9 @@ async function handleImportConfirm() {
 }
 
 async function handleBulkResolveConfirm() {
-  const result = await bulkResolveAll()
+  if (!bulkPreview.value?.revision) return
+  const result = await bulkResolveAll(bulkPreview.value.revision)
+  bulkPreview.value = null
   bulkResolveResult.value = result
   showBulkResolveDialog.value = false
   showBulkResolveResultDialog.value = true

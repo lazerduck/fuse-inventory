@@ -39,6 +39,7 @@ async function render(create = false) {
   let editor!: ReturnType<typeof useAccountEdit>
   const pinia = createPinia()
   useFuseStore(pinia).securityPosture = SecurityPosture.Unrestricted
+  useFuseStore(pinia).posturePermissions = ['accounts:read', 'accounts:create', 'accounts:update']
   wrapper = mount(defineComponent({ setup() { editor = useAccountEdit(); return () => null } }), {
     global: { plugins: [pinia, router, [VueQueryPlugin, { queryClient: client }]] }
   })
@@ -79,6 +80,7 @@ it('does not save when edit permissions are revoked', async () => {
   const { editor } = await render()
   editor.form.value.userName = 'Edited'
   editor.fuseStore.securityPosture = SecurityPosture.RestrictedEditing
+  editor.fuseStore.posturePermissions = ['accounts:read']
   editor.handleSave()
   await flushPromises()
   expect(api.accountPUT).not.toHaveBeenCalled()

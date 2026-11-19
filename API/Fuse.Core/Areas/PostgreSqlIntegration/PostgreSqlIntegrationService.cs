@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.Audit;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
@@ -8,10 +9,10 @@ using Fuse.Core.Responses;
 namespace Fuse.Core.Areas.PostgreSqlIntegration;
 
 public sealed class PostgreSqlIntegrationService(IFuseStore store, IPostgreSqlInspector inspector,
-    IAuditService audit, ICurrentUser currentUser) : IPostgreSqlIntegrationService
+    IAuditService audit, ICurrentUser currentUser, IntegrationPasswords? passwords = null) : IPostgreSqlIntegrationService
 {
     private static PostgreSqlIntegrationResponse Public(Models.PostgreSqlIntegration item) => new(item.Id, item.Name,
-        item.DataStoreId, item.Endpoint, item.Username, !string.IsNullOrEmpty(item.Password), item.CreatedAt, item.UpdatedAt);
+        item.DataStoreId, item.Endpoint, item.Username, (item.PasswordBinding is not null || !string.IsNullOrEmpty(item.Password)), item.CreatedAt, item.UpdatedAt);
 
     public async Task<IReadOnlyList<PostgreSqlIntegrationResponse>> GetAllAsync(CancellationToken ct = default) =>
         (await store.GetAsync(ct)).PostgreSqlIntegrations.Select(Public).ToArray();
@@ -72,6 +73,11 @@ public sealed class PostgreSqlIntegrationService(IFuseStore store, IPostgreSqlIn
             updated = found with { Name = command.Name.Trim(), DataStoreId = command.DataStoreId, Endpoint = command.Endpoint,
                 Username = PostgreSqlConnectionSettings.Username(command.Username), Password = command.Password ?? found.Password,
                 UpdatedAt = DateTime.UtcNow };
+            if (IntegrationPasswords.InvalidEdit(found, updated, command.Password))
+            {
+                failure = Result.Failure("Detach the Key Vault password before changing its destination or supplying a password.");
+                return current;
+            }
             return current with { PostgreSqlIntegrations = current.PostgreSqlIntegrations.Select(x => x.Id == command.Id ? updated : x).ToArray() };
         }, ct);
         if (failure is not null) return Result<PostgreSqlIntegrationResponse>.Failure(failure.Error!, failure.ErrorType!.Value);
@@ -104,6 +110,9 @@ public sealed class PostgreSqlIntegrationService(IFuseStore store, IPostgreSqlIn
     {
         var item = (await store.GetAsync(ct)).PostgreSqlIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<PostgreSqlConnectionTestResult>.Failure("PostgreSql integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<PostgreSqlConnectionTestResult>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         return await ValidateAsync(new(item.Endpoint, item.Username, item.Password), ct);
     }
 
@@ -112,6 +121,9 @@ public sealed class PostgreSqlIntegrationService(IFuseStore store, IPostgreSqlIn
         var snapshot = await store.GetAsync(ct);
         var item = snapshot.PostgreSqlIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<PostgreSqlDiscoveryResponse>.Failure("PostgreSql integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<PostgreSqlDiscoveryResponse>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         var validation = PostgreSqlConnectionSettings.Validate(item.Endpoint, item.Username, item.Password);
         if (!validation.IsSuccess) return Result<PostgreSqlDiscoveryResponse>.Failure(validation.Error!);
         if (!snapshot.DataStores.Any(x => x.Id == item.DataStoreId && string.Equals(x.Kind, "postgresql", StringComparison.OrdinalIgnoreCase)))

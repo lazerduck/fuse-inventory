@@ -1,3 +1,9 @@
+using Fuse.Core.Areas.Application;
+using Fuse.Core.Areas.Environment;
+using Fuse.Core.Areas.Identity;
+using Fuse.Core.Areas.Position;
+using Fuse.Core.Areas.Responsibility;
+using Fuse.Core.Areas.Security;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Helpers;
@@ -14,11 +20,12 @@ public sealed class IntegrationReviewsController(IFuseStore store, IntegrationRe
 {
     private bool Can(Snapshot snapshot, string key) => permissions.Allows(User, snapshot, key);
     private bool CanRead(Snapshot s, ReviewInput input) => Can(s, ReadKey) && Can(s, input.Provider + "integrations:read")
-        && (input.AccountId is null || Can(s, "accounts:read"))
-        && (input.Fields?.ContainsKey("identityId") != true || Can(s, "identities:read"));
-    private ReviewDefinition Public(Snapshot s, ReviewDefinition row) => Can(s, "applications:read") ? row : row with { ApplicationInstanceIds = [] };
+        && (input.AccountId is null || Can(s, AreaPermissions.ReadKey))
+        && (input.Fields?.ContainsKey("identityId") != true || Can(s, IdentityPermissions.ReadKey));
+    private ReviewDefinition Public(Snapshot s, ReviewDefinition row) => Can(s, ApplicationPermissions.ReadKey) ? row : row with { ApplicationInstanceIds = [] };
     private IReadOnlyList<ReviewApplication> Applications(Snapshot s, ReviewDefinition row) =>
-        Can(s, "applications:read") ? ReviewSources.Applications(s, row) : [];
+        Can(s, ApplicationPermissions.ReadKey) ? ReviewSources.Applications(s, row, Can(s, EnvironmentPermissions.ReadKey),
+            Can(s, ResponsibilityPermissions.ReadKey) && Can(s, PositionPermissions.ReadKey)) : [];
     private ObjectResult Failed(Fuse.Core.Helpers.IResult result) => StatusCode(result.ErrorType switch
     {
         ErrorType.NotFound => 404, ErrorType.Conflict => 409, ErrorType.Unauthorized => 403, _ => 400
@@ -38,8 +45,8 @@ public sealed class IntegrationReviewsController(IFuseStore store, IntegrationRe
         [FromQuery] Guid? instanceId, [FromQuery] Guid? targetId, CancellationToken ct)
     {
         var s = await store.GetAsync(ct);
-        if ((applicationId.HasValue || instanceId.HasValue) && !Can(s, "applications:read")
-            || accountId.HasValue && !Can(s, "accounts:read")) return StatusCode(403);
+        if ((applicationId.HasValue || instanceId.HasValue) && !Can(s, ApplicationPermissions.ReadKey)
+            || accountId.HasValue && !Can(s, AreaPermissions.ReadKey)) return StatusCode(403);
         var rows = s.IntegrationReviews.Where(r => CanRead(s, r.Input) && (!accountId.HasValue || r.Input.AccountId == accountId)
             && (!targetId.HasValue || ReviewSources.Find(s, r.Input)?.TargetId == targetId))
             .Select(r => new ReviewView(Public(s, r), Applications(s, r)))
@@ -70,7 +77,7 @@ public sealed class IntegrationReviewsController(IFuseStore store, IntegrationRe
         if (!CanRead(s, body.Input)) return StatusCode(403);
         var old = id.HasValue ? s.IntegrationReviews.FirstOrDefault(x => x.Id == id) : null;
         if (id.HasValue && (old is null || !CanRead(s, old.Input))) return NotFound();
-        if ((body.ApplicationInstanceIds is { Length: > 0 } || old?.ApplicationInstanceIds.Length > 0) && !Can(s, "applications:read")
+        if ((body.ApplicationInstanceIds is { Length: > 0 } || old?.ApplicationInstanceIds.Length > 0) && !Can(s, ApplicationPermissions.ReadKey)
             || body.RefreshMinutes > 0 && !Can(s, RefreshKey)) return StatusCode(403);
         var result = await service.SaveAsync(id, body, ct);
         if (!result.IsSuccess) return Failed(result);

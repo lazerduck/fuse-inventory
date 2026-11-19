@@ -9,10 +9,12 @@ export function useBulkResolve() {
   const mutation = useMutation({
     mutationFn: (params: { 
       integrationId: string
+      previewRevision?: string
       passwordSource: BulkPasswordSource
     }): Promise<BulkResolveResponse> => {
       const request = new BulkResolveRequest()
       request.passwordSource = params.passwordSource
+      request.previewRevision = params.previewRevision
       return client.bulkResolve(params.integrationId, request)
     },
     onSuccess: (_data, variables) => {

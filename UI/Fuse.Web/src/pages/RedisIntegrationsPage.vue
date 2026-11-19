@@ -17,7 +17,8 @@
           <span v-else class="text-grey-7">Not checked this session</span>
         </q-td></template>
         <template #body-cell-actions="props"><q-td :props="props" class="text-right">
-          <q-btn v-if="store.hasPermission('integrationreviews:read')" flat dense round color="secondary" icon="rule" aria-label="Redis reviews"
+          <IntegrationPasswordButton provider="redis" :integration-id="props.row.id" @saved="query.refetch()" />
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat dense round color="secondary" icon="rule" aria-label="Redis reviews"
             :to="{ name: 'integrationReviews', query: { provider: 'redis', integration: props.row.id } }"><q-tooltip>Reviews</q-tooltip></q-btn>
           <q-btn flat dense round color="secondary" icon="manage_search" aria-label="Inspect Redis access"
             :to="{ name: 'redisIntegrationAccess', params: { id: props.row.id } }"><q-tooltip>Inspect access</q-tooltip></q-btn>
@@ -42,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Dialog, Notify, type QTableColumn } from 'quasar'

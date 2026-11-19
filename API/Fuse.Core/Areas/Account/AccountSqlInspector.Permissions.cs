@@ -8,9 +8,9 @@ public partial class AccountSqlInspector
     // Single-account, batch and orphan inspection use the same query so their scope
     // and inherited-permission semantics cannot diverge.
     private static async Task<IReadOnlyDictionary<string, SqlPrincipalPermissions>> ReadPrincipalPermissionsAsync(
-        SqlConnection connection, IReadOnlyList<string> principalNames, CancellationToken ct)
+        SqlConnection connection, IReadOnlyList<string> principalNames, CancellationToken ct, IReadOnlyList<string>? databases = null)
     {
-        const string createPrincipals = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY);";
+        const string createPrincipals = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY); CREATE TABLE #RequestedDatabases (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY);";
         await using (var command = new SqlCommand(createPrincipals, connection))
             await command.ExecuteNonQueryAsync(ct);
 
@@ -26,6 +26,17 @@ public partial class AccountSqlInspector
             await insert.ExecuteNonQueryAsync(ct);
         }
 
+        // A new user inherits public only in the databases where a user is created.
+        if (databases is not null)
+        {
+            foreach (var names in databases.Chunk(500))
+            {
+                var values = string.Join(", ", names.Select((_, i) => $"(@d{i})"));
+                await using var insert = new SqlCommand($"INSERT INTO #RequestedDatabases (Name) VALUES {values}", connection);
+                for (var index = 0; index < names.Length; index++) insert.Parameters.AddWithValue($"@d{index}", names[index]);
+                await insert.ExecuteNonQueryAsync(ct);
+            }
+        }
         const string query = """
             SET NOCOUNT ON;
             CREATE TABLE #PermissionRows (
@@ -37,9 +48,12 @@ public partial class AccountSqlInspector
                 PermissionName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
                 PermissionState CHAR(1), PermissionClass INT
             );
+            IF @limited=1 AND EXISTS(SELECT 1 FROM #RequestedDatabases WHERE DB_ID(Name) IS NULL OR ISNULL(HAS_DBACCESS(Name),0) <> 1)
+                THROW 50001, 'One or more requested databases are unavailable.', 1;
             DECLARE @Database SYSNAME, @Sql NVARCHAR(MAX);
             DECLARE databases CURSOR LOCAL FAST_FORWARD FOR
-                SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND HAS_DBACCESS(name) = 1;
+                SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND HAS_DBACCESS(name) = 1
+                AND (@limited=0 OR name IN (SELECT Name FROM #RequestedDatabases));
             OPEN databases;
             FETCH NEXT FROM databases INTO @Database;
             WHILE @@FETCH_STATUS = 0
@@ -130,8 +144,9 @@ public partial class AccountSqlInspector
         var errors = principalNames.ToDictionary(name => name,
             _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await using (var command = new SqlCommand(query, connection))
-        await using (var reader = await command.ExecuteReaderAsync(ct))
+        await using var inspectionCommand = new SqlCommand(query, connection);
+        inspectionCommand.Parameters.Add("@limited", System.Data.SqlDbType.Bit).Value = databases is not null;
+        await using (var reader = await inspectionCommand.ExecuteReaderAsync(ct))
         {
             while (await reader.ReadAsync(ct))
             {

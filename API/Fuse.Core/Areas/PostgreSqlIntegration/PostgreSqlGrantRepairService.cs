@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Fuse.Core.Areas.Audit;
@@ -14,7 +15,7 @@ public sealed record GrantRepairPlan(string Database, string Schema, string Tabl
     bool ChangeRequired, bool Applied, string Status, IReadOnlyList<ReviewApplication> Applications, string? Token = null);
 public sealed record GrantRepairState(GrantRepairPlan Plan, string Target, string State);
 
-public sealed class PostgreSqlGrantRepairService(IFuseStore store, IAuditService audit, ICurrentUser user)
+public sealed class PostgreSqlGrantRepairService(IFuseStore store, IAuditService audit, ICurrentUser user, IntegrationPasswords? passwords = null)
 {
     public async Task<Result<GrantRepairState>> RunAsync(Guid integrationId, Guid reviewId,
         string? approvedTarget, string? approvedState, bool showApplications, CancellationToken ct)
@@ -25,6 +26,9 @@ public sealed class PostgreSqlGrantRepairService(IFuseStore store, IAuditService
         if (review is null) return Failure("Select a saved required PostgreSQL table privilege.", ErrorType.NotFound);
         if (new PostgreSqlReviewProvider().Validate(snapshot, review.Input) is { } invalid) return Failure(invalid);
         var node = snapshot.PostgreSqlIntegrations.Single(n => n.Id == integrationId);
+        var credential = await IntegrationPasswords.ForUse(node, passwords, ct);
+        if (!credential.IsSuccess) return Failure(IntegrationPasswords.Unavailable);
+        node = credential.Value!;
         var account = DataStoreReview.ScopedAccount(snapshot, review.Input.AccountId, node.DataStoreId)!;
         var principal = account.UserName!;
         var schema = review.Input.Fields["schema"];

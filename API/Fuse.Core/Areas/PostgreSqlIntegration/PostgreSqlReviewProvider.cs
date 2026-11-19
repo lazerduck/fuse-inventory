@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using System.Text;
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Models;
@@ -6,7 +7,7 @@ using static Fuse.Core.Areas.IntegrationReviews.DataStoreReview;
 
 namespace Fuse.Core.Areas.PostgreSqlIntegration;
 
-public sealed class PostgreSqlReviewProvider : IIntegrationReviewProvider
+public sealed class PostgreSqlReviewProvider(IntegrationPasswords? passwords = null) : IIntegrationReviewProvider
 {
     public string Provider => "postgresql";
     internal static readonly string[] TablePrivileges = ["SELECT", "INSERT", "UPDATE", "DELETE"];
@@ -41,6 +42,9 @@ public sealed class PostgreSqlReviewProvider : IIntegrationReviewProvider
     {
         if (Validate(snapshot, input) is { } error) return Unknown(error);
         var item = snapshot.PostgreSqlIntegrations.Single(i => i.Id == input.IntegrationId);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return new(ReviewStatus.Unknown, IntegrationPasswords.Unavailable, []);
+        item = credential.Value!;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(12));
         try

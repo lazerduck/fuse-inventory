@@ -1,4 +1,5 @@
 using Fuse.Core.Models;
+using Fuse.Core.Areas.SqlIntegration;
 
 namespace Fuse.Core.Commands;
 
@@ -25,10 +26,11 @@ public record TestSqlConnection(
     string ConnectionString
 );
 
-public record ResolveDrift(
-    Guid IntegrationId,
-    Guid AccountId
-);
+internal sealed record SqlBulkGuard(DateTime ConnectionUpdated, DateTime AccountUpdated, string Principal, IReadOnlyList<SqlBulkOperation> Operations);
+public record ResolveDrift(Guid IntegrationId, Guid AccountId)
+{
+    internal SqlBulkGuard? Guard { get; init; }
+}
 
 /// <summary>
 /// Command to import actual SQL permissions into Fuse account grants.
@@ -90,12 +92,10 @@ public record CreateSqlAccountRequest(
 /// <summary>
 /// Command to create a SQL login and user for an account that exists in Fuse but not in SQL.
 /// </summary>
-public record CreateSqlAccount(
-    Guid IntegrationId,
-    Guid AccountId,
-    PasswordSource PasswordSource,
-    string? Password
-);
+public record CreateSqlAccount(Guid IntegrationId, Guid AccountId, PasswordSource PasswordSource, string? Password)
+{
+    internal SqlBulkGuard? Guard { get; init; }
+}
 
 /// <summary>
 /// Specifies how the password is obtained for bulk SQL account creation.
@@ -113,7 +113,8 @@ public enum BulkPasswordSource
 /// Request body for bulk resolve operations (creating missing accounts and resolving drift).
 /// </summary>
 public record BulkResolveRequest(
-    BulkPasswordSource PasswordSource
+    BulkPasswordSource PasswordSource,
+    string? PreviewRevision = null
 );
 
 /// <summary>
@@ -122,5 +123,6 @@ public record BulkResolveRequest(
 /// </summary>
 public record BulkResolve(
     Guid IntegrationId,
-    BulkPasswordSource PasswordSource
+    BulkPasswordSource PasswordSource,
+    string? PreviewRevision = null
 );

@@ -8,11 +8,11 @@
       <q-card-section v-if="busy"><q-spinner color="primary"/></q-card-section>
       <q-card-section v-else-if="error" role="alert">{{ error }}</q-card-section>
       <q-card-section v-else-if="data">
-        <p>{{ data.name }} · {{ data.metadata.visibility }} <span v-if="fromConfig">· {{ data.pinnedVersion || 'Version follows latest' }}</span></p>
+        <p>{{ data.name }} · {{ data.metadata.visibility }} <span v-if="fromConfig || version">· {{ data.pinnedVersion || version || 'Version follows latest' }}</span></p>
         <q-list bordered separator>
           <q-item v-for="v in data.metadata.versions" :key="v.version">
-            <q-item-section><q-item-label>{{ v.version }}</q-item-label><q-item-label caption>{{ v.enabled === false ? 'Disabled' : v.enabled === true ? 'Enabled' : 'Enabled state unknown' }}</q-item-label></q-item-section>
-            <q-item-section side>{{ v.expires ? 'Expires ' + new Date(v.expires).toLocaleDateString() : 'No expiry recorded' }}</q-item-section>
+            <q-item-section><q-item-label>{{ v.version }} <q-badge v-if="v.version === (data.pinnedVersion || version)" outline color="primary" label="Pinned" /></q-item-label><q-item-label caption>{{ v.enabled === false ? 'Disabled' : v.enabled === true ? 'Enabled' : 'Enabled state unknown' }}</q-item-label></q-item-section>
+            <q-item-section side>{{ v.expires ? (Date.parse(v.expires) < Date.now() ? 'Expired ' : 'Expires ') + new Date(v.expires).toLocaleDateString() : 'No expiry recorded' }}</q-item-section>
           </q-item>
         </q-list>
         <div class="text-subtitle1 q-mt-md">Documented application usage</div>
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { azureRequest } from '../../api/azureDiscovery'
-const props = defineProps<{ provider: string, name: string, label?: string, fromConfig?: boolean }>()
+const props = defineProps<{ provider: string, name: string, label?: string, version?: string, fromConfig?: boolean }>()
 type Health = { name: string, pinnedVersion?: string, metadata: {visibility: string, versions: {version: string, expires?: string, enabled?: boolean}[]},
   consumers: {applicationId:string,application:string,instanceId:string,source:string,pinnedVersion?:string}[] }
 const open=ref(false), busy=ref(false), error=ref(''), data=ref<Health|null>(null)

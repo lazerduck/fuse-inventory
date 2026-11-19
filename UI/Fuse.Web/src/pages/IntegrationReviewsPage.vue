@@ -34,8 +34,9 @@
             <p v-if="review?.input?.accountId"><router-link :to="{name:'accountEdit',params:{id:review.input.accountId}}">View inventory account</router-link></p>
             <div v-if="applications?.length"><h3>Affected applications</h3>
               <ul><li v-for="app in applications" :key="app.instanceId">
-                <router-link :to="{name:'instanceEdit',params:{applicationId:app.applicationId,instanceId:app.instanceId}}">{{ app.name }} · {{ app.environment }}</router-link>
+                <router-link :to="{name:'instanceEdit',params:{applicationId:app.applicationId,instanceId:app.instanceId}}">{{ app.name }}<template v-if="app.environment"> · {{ app.environment }}</template></router-link>
                 <span v-if="app.owner"> · {{ app.owner }}</span>
+                <div v-for="role in app.responsibilities" :key="role" class="text-caption">{{ role }}</div>
               </li></ul>
             </div>
             <details v-if="review?.history?.length"><summary>Inspection history ({{ review.history.length }})</summary>
@@ -48,7 +49,7 @@
               <q-btn v-if="canManage" flat label="Delete" icon="delete_outline" :disable="busy" @click="remove(review!)" />
             </div>
             <PostgreSqlGrantRepair v-if="review?.input?.provider==='postgresql' && review.input.kind==='table-access' && review.input.fields?.expected==='allow'"
-              :integration-id="review.input.integrationId!" :review-id="review.id!" @applied="refresh(review!)" />
+              :integration-id="review.input.integrationId!" :review-id="review.id!" @applied="canRefresh ? refresh(review!) : run(load)" />
           </div>
         </q-expansion-item>
       </q-list>
@@ -94,7 +95,7 @@ const ctl=new AbortController()
 onBeforeUnmount(()=>ctl.abort())
 const canRead=computed(()=>store.hasPermission('integrationreviews:read')), canManage=computed(()=>store.hasPermission('integrationreviews:manage'))
 const canRefresh=computed(()=>store.hasPermission('integrationreviews:refresh')), canImport=computed(()=>store.hasPermission('integrationreviews:import'))
-const canApps=computed(()=>store.hasPermission('applications:read'))
+const canApps=computed(()=>store.hasPermission('application:read'))
 const catalog=ref<ReviewCatalog[]>([]),rows=ref<ReviewView[]>([]), accounts=ref<Account[]>([]), apps=ref<Application[]>([]), environments=ref<EnvironmentInfo[]>([])
 const sources=computed(()=>catalog.value.flatMap(s=>s.sources ?? []))
 const providerOptions=computed(()=>catalog.value.map(c=>({value:c.provider,label:providerNames[c.provider!] || c.provider})))

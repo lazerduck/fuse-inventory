@@ -8,7 +8,7 @@ public sealed record ReviewAttempt(DateTimeOffset CheckedAt, ReviewEvidence Evid
 public sealed record ReviewDefinition(Guid Id, Guid Revision, string Name, ReviewInput Input, int RefreshMinutes,
     Guid[] ApplicationInstanceIds, ReviewAttempt? LastAttempt, ReviewAttempt? LastVerified, IReadOnlyList<ReviewAttempt> History, string? ScopeFingerprint = null);
 public sealed record ReviewSource(string Provider, Guid Id, string Name, Guid? TargetId, DateTime UpdatedAt);
-public sealed record ReviewApplication(Guid ApplicationId, Guid InstanceId, string Name, string? Environment, string? Owner);
+public sealed record ReviewApplication(Guid ApplicationId, Guid InstanceId, string Name, string? Environment, string? Owner, IReadOnlyList<string>? Responsibilities = null);
 public sealed record ReviewCatalog(string Provider, IReadOnlyList<ReviewCheck> Checks, IReadOnlyList<ReviewSource> Sources);
 public sealed record ReviewView(ReviewDefinition Review, IReadOnlyList<ReviewApplication> Applications);
 
@@ -46,6 +46,17 @@ public static class ReviewSources
             resource = [..resource, peer?.DataStoreId.ToString(), peer?.Endpoint.AbsoluteUri];
         }
         var account = s.Accounts.FirstOrDefault(x => x.Id == input.AccountId);
+        if (Guid.TryParse(input.Fields.GetValueOrDefault("identityId"), out var identityId))
+        {
+            var principal = s.Identities.FirstOrDefault(i => i.Id == identityId)?.AzurePrincipal;
+            resource = [..resource, principal?.TenantId.ToString(), principal?.ObjectId.ToString()];
+        }
+        if (input.Provider == "sql" && account is not null)
+        {
+            var grants = account.Grants.Select(g => System.Text.Json.JsonSerializer.Serialize(
+                new { g.Database, g.Schema, Privileges = g.Privileges.Order().ToArray() })).Order(StringComparer.Ordinal);
+            resource = [..resource, ..grants];
+        }
         string?[] scope = [..resource, Find(s, input)?.TargetId?.ToString(), account?.TargetId.ToString(), account?.UserName,
             account?.Parameters?.GetValueOrDefault("authSource"), account?.Parameters?.GetValueOrDefault("keycloakIssuer"),
             account?.Parameters?.GetValueOrDefault("keycloakClientId")];
@@ -64,17 +75,29 @@ public static class ReviewSources
     public static ReviewSource? Find(Snapshot snapshot, ReviewInput input) =>
         All(snapshot).FirstOrDefault(x => x.Id == input.IntegrationId && x.Provider == input.Provider);
 
-    public static IReadOnlyList<ReviewApplication> Applications(Snapshot s, ReviewDefinition review)
+    public static IReadOnlyList<ReviewApplication> Applications(Snapshot s, ReviewDefinition review,
+        bool includeEnvironment = false, bool includeResponsibilities = false)
     {
         var target = Find(s, review.Input)?.TargetId;
         var account = s.Accounts.FirstOrDefault(x => x.Id == review.Input.AccountId);
+        var identity = Guid.TryParse(review.Input.Fields.GetValueOrDefault("identityId"), out var identityId)
+            ? s.Identities.FirstOrDefault(i => i.Id == identityId) : null;
         return (from app in s.Applications
                 from instance in app.Instances
                 where review.ApplicationInstanceIds.Contains(instance.Id)
                     || (account?.TargetKind == TargetKind.Application && (account.TargetId == app.Id || account.TargetId == instance.Id))
-                    || instance.Dependencies.Any(d => account is not null ? d.AccountId == account.Id
+                    || identity?.OwnerInstanceId == instance.Id
+                    || instance.Dependencies.Any(d => identity is not null ? d.IdentityId == identity.Id
+                        : account is not null ? d.AccountId == account.Id
                         : review.ApplicationInstanceIds.Length == 0 && target.HasValue && d.TargetId == target.Value)
                 select new ReviewApplication(app.Id, instance.Id, app.Name,
-                    s.Environments.FirstOrDefault(e => e.Id == instance.EnvironmentId)?.Name, app.Owner)).ToArray();
+                    includeEnvironment ? s.Environments.FirstOrDefault(e => e.Id == instance.EnvironmentId)?.Name : null,
+                    app.Owner, includeResponsibilities ? (from assignment in s.ResponsibilityAssignments
+                        where assignment.ApplicationId == app.Id && (assignment.Scope == ResponsibilityScope.All ||
+                            assignment.EnvironmentId == instance.EnvironmentId)
+                        join position in s.Positions on assignment.PositionId equals position.Id
+                        join type in s.ResponsibilityTypes on assignment.ResponsibilityTypeId equals type.Id
+                        orderby assignment.Primary descending, type.Name, position.Name
+                        select type.Name + " · " + position.Name).Distinct().ToArray() : null)).ToArray();
     }
 }

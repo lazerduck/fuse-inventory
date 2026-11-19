@@ -1,3 +1,5 @@
+using Fuse.Core.Areas.Application;
+using Fuse.Core.Areas.Security;
 using System.Security.Cryptography;
 using Fuse.API.CurrentUser;
 using Fuse.Core.Areas.IntegrationReviews;
@@ -27,7 +29,7 @@ public sealed class PostgreSqlGrantRepairController(PostgreSqlGrantRepairService
         var snapshot = await store.GetAsync(ct);
         if (!permissions.Allows(User, snapshot, IntegrationReviewPermissions.ReadKey) ||
             !permissions.Allows(User, snapshot, PostgreSqlIntegrationPermissions.ReadKey) ||
-            !permissions.Allows(User, snapshot, "accounts:read"))
+            !permissions.Allows(User, snapshot, AreaPermissions.ReadKey))
             return StatusCode(403);
         var signer = protection.CreateProtector("Fuse.PostgreSqlGrantRepair.v1", id.ToString("D"), request.ReviewId.ToString("D"))
             .ToTimeLimitedDataProtector();
@@ -43,7 +45,7 @@ public sealed class PostgreSqlGrantRepairController(PostgreSqlGrantRepairService
             }
             catch (CryptographicException) { return Conflict(new { error = "The preview is invalid or expired. Preview the repair again." }); }
         }
-        var result = await repair.RunAsync(id, request.ReviewId, target, state, permissions.Allows(User, snapshot, "applications:read"), ct);
+        var result = await repair.RunAsync(id, request.ReviewId, target, state, permissions.Allows(User, snapshot, ApplicationPermissions.ReadKey), ct);
         if (!result.IsSuccess)
             return StatusCode(result.ErrorType switch { ErrorType.NotFound => 404, ErrorType.Conflict => 409, _ => 400 }, new { error = result.Error });
         var value = result.Value!;

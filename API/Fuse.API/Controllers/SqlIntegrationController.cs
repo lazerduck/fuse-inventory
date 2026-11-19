@@ -177,15 +177,28 @@ namespace Fuse.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPost("{id}/bulk-resolve/preview")]
+        [SwaggerOperation(OperationId = "previewSqlBulkResolve")]
+        [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
+        [ProducesResponseType(200, Type = typeof(SqlBulkPlan)), ProducesResponseType(400), ProducesResponseType(404), ProducesResponseType(409)]
+        public async Task<ActionResult<SqlBulkPlan>> PreviewBulkResolve(Guid id, CancellationToken ct)
+        {
+            var result = await _service.PreviewBulkAsync(id, ct);
+            return result.IsSuccess ? Ok(result.Value) : StatusCode(result.ErrorType switch
+            {
+                ErrorType.NotFound => 404, ErrorType.Conflict => 409, _ => 400
+            }, new { error = result.Error });
+        }
+
         [HttpPost("{id}/bulk-resolve")]
         [SwaggerOperation(OperationId = "bulkResolve")]
         [RequirePermissionKey(SqlIntegrationPermissions.ApplyGrantsKey)]
         [ProducesResponseType(200, Type = typeof(BulkResolveResponse))]
-        [ProducesResponseType(400)]
+        [ProducesResponseType(400), ProducesResponseType(409)]
         [ProducesResponseType(404)]
         public async Task<ActionResult<BulkResolveResponse>> BulkResolve([FromRoute] Guid id, [FromBody] BulkResolveRequest request, CancellationToken ct)
         {
-            var command = new BulkResolve(id, request.PasswordSource);
+            var command = new BulkResolve(id, request.PasswordSource, request.PreviewRevision);
             var (userName, userId) = GetUserInfo();
             var result = await _service.BulkResolveAsync(command, userName, userId, ct);
             if (!result.IsSuccess)
@@ -193,6 +206,7 @@ namespace Fuse.API.Controllers
                 return result.ErrorType switch
                 {
                     ErrorType.NotFound => NotFound(new { error = result.Error }),
+                    ErrorType.Conflict => Conflict(new { error = result.Error }),
                     _ => BadRequest(new { error = result.Error })
                 };
             }

@@ -867,6 +867,26 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
+  integrationCredentialGet(
+    provider: string,
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  integrationCredentialBind(
+    provider: string,
+    id: string,
+    body: BindIntegrationPassword | undefined,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView>;
+
+  /**
+   * @return OK
+   */
   reviewsCatalog(signal?: AbortSignal): Promise<ReviewCatalog[]>;
 
   /**
@@ -2206,6 +2226,11 @@ export interface IFuseApiClient {
     body: CreateSqlAccountRequest | undefined,
     signal?: AbortSignal,
   ): Promise<CreateSqlAccountResponse>;
+
+  /**
+   * @return OK
+   */
+  previewSqlBulkResolve(id: string, signal?: AbortSignal): Promise<SqlBulkPlan>;
 
   /**
    * @param body (optional)
@@ -10425,6 +10450,134 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  integrationCredentialGet(
+    provider: string,
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView> {
+    let url_ = this.baseUrl + "/api/integration-credentials/{provider}/{id}";
+    if (provider === undefined || provider === null)
+      throw new globalThis.Error("The parameter 'provider' must be defined.");
+    url_ = url_.replace("{provider}", encodeURIComponent("" + provider));
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processIntegrationCredentialGet(_response);
+    });
+  }
+
+  protected processIntegrationCredentialGet(
+    response: Response,
+  ): Promise<PasswordReferenceView> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PasswordReferenceView.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PasswordReferenceView>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  integrationCredentialBind(
+    provider: string,
+    id: string,
+    body: BindIntegrationPassword | undefined,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView> {
+    let url_ = this.baseUrl + "/api/integration-credentials/{provider}/{id}";
+    if (provider === undefined || provider === null)
+      throw new globalThis.Error("The parameter 'provider' must be defined.");
+    url_ = url_.replace("{provider}", encodeURIComponent("" + provider));
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processIntegrationCredentialBind(_response);
+    });
+  }
+
+  protected processIntegrationCredentialBind(
+    response: Response,
+  ): Promise<PasswordReferenceView> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PasswordReferenceView.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PasswordReferenceView>(null as any);
   }
 
   /**
@@ -23827,6 +23980,111 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @return OK
+   */
+  previewSqlBulkResolve(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<SqlBulkPlan> {
+    let url_ = this.baseUrl + "/api/SqlIntegration/{id}/bulk-resolve/preview";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPreviewSqlBulkResolve(_response);
+    });
+  }
+
+  protected processPreviewSqlBulkResolve(
+    response: Response,
+  ): Promise<SqlBulkPlan> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = SqlBulkPlan.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SqlBulkPlan>(null as any);
+  }
+
+  /**
    * @param body (optional)
    * @return OK
    */
@@ -23906,6 +24164,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -26005,6 +26279,7 @@ export enum AuditAction {
   IntegrationReviewImported = "IntegrationReviewImported",
   PostgreSqlGrantRepairRequested = "PostgreSqlGrantRepairRequested",
   PostgreSqlGrantRepairApplied = "PostgreSqlGrantRepairApplied",
+  IntegrationPasswordBindingChanged = "IntegrationPasswordBindingChanged",
 }
 
 export enum AuditArea {
@@ -26693,6 +26968,50 @@ export interface IAzureSubscriptionsResponse {
   warnings?: string[] | undefined;
 }
 
+export class BindIntegrationPassword implements IBindIntegrationPassword {
+  expectedRevision?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+
+  constructor(data?: IBindIntegrationPassword) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.expectedRevision = _data["expectedRevision"];
+      this.reference = _data["reference"]
+        ? AzureKeyVaultBinding.fromJS(_data["reference"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): BindIntegrationPassword {
+    data = typeof data === "object" ? data : {};
+    let result = new BindIntegrationPassword();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["expectedRevision"] = this.expectedRevision;
+    data["reference"] = this.reference
+      ? this.reference.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IBindIntegrationPassword {
+  expectedRevision?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+}
+
 export class BrokerQueue implements IBrokerQueue {
   id?: string;
   name?: string | undefined;
@@ -26951,6 +27270,7 @@ export interface IBulkResolveAccountResult {
 
 export class BulkResolveRequest implements IBulkResolveRequest {
   passwordSource?: BulkPasswordSource;
+  previewRevision?: string | undefined;
 
   constructor(data?: IBulkResolveRequest) {
     if (data) {
@@ -26964,6 +27284,7 @@ export class BulkResolveRequest implements IBulkResolveRequest {
   init(_data?: any) {
     if (_data) {
       this.passwordSource = _data["passwordSource"];
+      this.previewRevision = _data["previewRevision"];
     }
   }
 
@@ -26977,12 +27298,14 @@ export class BulkResolveRequest implements IBulkResolveRequest {
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
     data["passwordSource"] = this.passwordSource;
+    data["previewRevision"] = this.previewRevision;
     return data;
   }
 }
 
 export interface IBulkResolveRequest {
   passwordSource?: BulkPasswordSource;
+  previewRevision?: string | undefined;
 }
 
 export class BulkResolveResponse implements IBulkResolveResponse {
@@ -33451,6 +33774,62 @@ export interface IPasswordGeneratorConfig {
   length?: number;
 }
 
+export class PasswordReferenceView implements IPasswordReferenceView {
+  revision?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  scope?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+
+  constructor(data?: IPasswordReferenceView) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.revision = _data["revision"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.scope = _data["scope"];
+      this.reference = _data["reference"]
+        ? AzureKeyVaultBinding.fromJS(_data["reference"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): PasswordReferenceView {
+    data = typeof data === "object" ? data : {};
+    let result = new PasswordReferenceView();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["revision"] = this.revision;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["scope"] = this.scope;
+    data["reference"] = this.reference
+      ? this.reference.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IPasswordReferenceView {
+  revision?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  scope?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+}
+
 export enum PasswordSource {
   SecretProvider = "SecretProvider",
   Manual = "Manual",
@@ -35706,6 +36085,7 @@ export class ReviewApplication implements IReviewApplication {
   name?: string | undefined;
   environment?: string | undefined;
   owner?: string | undefined;
+  responsibilities?: string[] | undefined;
 
   constructor(data?: IReviewApplication) {
     if (data) {
@@ -35723,6 +36103,11 @@ export class ReviewApplication implements IReviewApplication {
       this.name = _data["name"];
       this.environment = _data["environment"];
       this.owner = _data["owner"];
+      if (Array.isArray(_data["responsibilities"])) {
+        this.responsibilities = [] as any;
+        for (let item of _data["responsibilities"])
+          this.responsibilities!.push(item);
+      }
     }
   }
 
@@ -35740,6 +36125,11 @@ export class ReviewApplication implements IReviewApplication {
     data["name"] = this.name;
     data["environment"] = this.environment;
     data["owner"] = this.owner;
+    if (Array.isArray(this.responsibilities)) {
+      data["responsibilities"] = [];
+      for (let item of this.responsibilities)
+        data["responsibilities"].push(item);
+    }
     return data;
   }
 }
@@ -35750,6 +36140,7 @@ export interface IReviewApplication {
   name?: string | undefined;
   environment?: string | undefined;
   owner?: string | undefined;
+  responsibilities?: string[] | undefined;
 }
 
 export class ReviewAttempt implements IReviewAttempt {
@@ -37616,6 +38007,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  posturePermissions?: string[] | undefined;
   permissions?: string[] | undefined;
 
   constructor(data?: ISecurityStateResponse) {
@@ -37634,6 +38026,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
       this.currentUser = _data["currentUser"]
         ? SecurityUserInfo.fromJS(_data["currentUser"])
         : (undefined as any);
+      if (Array.isArray(_data["posturePermissions"])) {
+        this.posturePermissions = [] as any;
+        for (let item of _data["posturePermissions"])
+          this.posturePermissions!.push(item);
+      }
       if (Array.isArray(_data["permissions"])) {
         this.permissions = [] as any;
         for (let item of _data["permissions"]) this.permissions!.push(item);
@@ -37655,6 +38052,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
     data["currentUser"] = this.currentUser
       ? this.currentUser.toJSON()
       : (undefined as any);
+    if (Array.isArray(this.posturePermissions)) {
+      data["posturePermissions"] = [];
+      for (let item of this.posturePermissions)
+        data["posturePermissions"].push(item);
+    }
     if (Array.isArray(this.permissions)) {
       data["permissions"] = [];
       for (let item of this.permissions) data["permissions"].push(item);
@@ -37667,6 +38069,7 @@ export interface ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  posturePermissions?: string[] | undefined;
   permissions?: string[] | undefined;
 }
 
@@ -38474,6 +38877,114 @@ export interface ISqlActualGrant {
   database?: string | undefined;
   schema?: string | undefined;
   privileges?: Privilege[] | undefined;
+}
+
+export class SqlBulkOperation implements ISqlBulkOperation {
+  accountId?: string;
+  principal?: string | undefined;
+  operation?: string | undefined;
+  database?: string | undefined;
+  schema?: string | undefined;
+  privilege?: Privilege;
+  reason?: string | undefined;
+
+  constructor(data?: ISqlBulkOperation) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.principal = _data["principal"];
+      this.operation = _data["operation"];
+      this.database = _data["database"];
+      this.schema = _data["schema"];
+      this.privilege = _data["privilege"];
+      this.reason = _data["reason"];
+    }
+  }
+
+  static fromJS(data: any): SqlBulkOperation {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlBulkOperation();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["principal"] = this.principal;
+    data["operation"] = this.operation;
+    data["database"] = this.database;
+    data["schema"] = this.schema;
+    data["privilege"] = this.privilege;
+    data["reason"] = this.reason;
+    return data;
+  }
+}
+
+export interface ISqlBulkOperation {
+  accountId?: string;
+  principal?: string | undefined;
+  operation?: string | undefined;
+  database?: string | undefined;
+  schema?: string | undefined;
+  privilege?: Privilege;
+  reason?: string | undefined;
+}
+
+export class SqlBulkPlan implements ISqlBulkPlan {
+  revision?: string | undefined;
+  operations?: SqlBulkOperation[] | undefined;
+
+  constructor(data?: ISqlBulkPlan) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.revision = _data["revision"];
+      if (Array.isArray(_data["operations"])) {
+        this.operations = [] as any;
+        for (let item of _data["operations"])
+          this.operations!.push(SqlBulkOperation.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): SqlBulkPlan {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlBulkPlan();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["revision"] = this.revision;
+    if (Array.isArray(this.operations)) {
+      data["operations"] = [];
+      for (let item of this.operations)
+        data["operations"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface ISqlBulkPlan {
+  revision?: string | undefined;
+  operations?: SqlBulkOperation[] | undefined;
 }
 
 export class SqlConnectionTestResult implements ISqlConnectionTestResult {

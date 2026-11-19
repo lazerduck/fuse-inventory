@@ -123,6 +123,10 @@
                   />
                   <q-input v-model="form.apiKeyVaultSecretName" label="Secret Name" dense outlined />
                   <q-input v-model="form.apiKeyVaultVersion" label="Version (optional)" dense outlined />
+                  <div v-if="form.apiKeyVaultProviderId && form.apiKeyVaultSecretName && fuseStore.hasPermission('secretproviders:read')">
+                    <SecretReferenceButton :provider="form.apiKeyVaultProviderId" :name="form.apiKeyVaultSecretName" :version="form.apiKeyVaultVersion || undefined" />
+                    <span class="text-caption">Version expiry and applications</span>
+                  </div>
                 </template>
               </div>
 
@@ -180,6 +184,8 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section side top>
+                        <SecretReferenceButton v-if="entry.isKeyVaultReference && entry.key && form.appConfigurationProviderId && fuseStore.hasPermission('secretproviders:read') && fuseStore.hasPermission('secretproviders:appconfig:read')"
+                          :provider="form.appConfigurationProviderId" :name="entry.key" :label="entry.label" from-config />
                         <q-item-label caption>{{ truncate(entry.value) }}</q-item-label>
                         <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
                       </q-item-section>
@@ -228,6 +234,7 @@
 </template>
 
 <script setup lang="ts">
+import SecretReferenceButton from "../components/secretProvider/SecretReferenceButton.vue"
 import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
 import type { QForm } from 'quasar'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'

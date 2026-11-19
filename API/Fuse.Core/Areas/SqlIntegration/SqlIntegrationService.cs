@@ -9,7 +9,7 @@ using Fuse.Core.Responses;
 
 namespace Fuse.Core.Areas.SqlIntegration;
 
-public class SqlIntegrationService : ISqlIntegrationService
+public partial class SqlIntegrationService : ISqlIntegrationService
 {
     private readonly IFuseStore _store;
     private readonly ISqlConnectionValidator _validator;
@@ -641,6 +641,11 @@ public class SqlIntegrationService : ISqlIntegrationService
         // Build permission comparisons to see what needs to change
         var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
 
+        if (command.Guard is {} guard && (guard.Principal != principalName ||
+            guard.ConnectionUpdated != integration.UpdatedAt || guard.AccountUpdated != account.UpdatedAt ||
+            PrivilegeOperations(account.Id, principalName, comparisons).Except(guard.Operations).Any()))
+            return Result<ResolveDriftResponse>.Failure("The account or its privileges changed after preview. Preview again.", ErrorType.Conflict);
+
         // Check if there's any drift to resolve
         var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
         if (!hasDrift)
@@ -1124,6 +1129,11 @@ public class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.Conflict);
         }
 
+        if (command.Guard is {} guard && (guard.Principal != principalName || guard.ConnectionUpdated != integration.UpdatedAt
+            || guard.AccountUpdated != account.UpdatedAt || !guard.Operations.Any(o => o.Operation == "Create login")
+            || existingPermissions is null || existingPermissions.InspectionError is not null))
+            return Result<CreateSqlAccountResponse>.Failure("The principal changed after preview. Preview again.", ErrorType.Conflict);
+
         // Get the password based on the source
         string? password;
         PasswordSourceUsed passwordSourceUsed;
@@ -1352,6 +1362,17 @@ public class SqlIntegrationService : ISqlIntegrationService
         }
 
         var overview = overviewResult.Value;
+        SqlBulkPlan? plan = null;
+        if (command.PreviewRevision is not null)
+        {
+            if (await _sqlInspector.InspectGrantCoverageAsync(integration, ct) is { } incomplete)
+                return Result<BulkResolveResponse>.Failure(incomplete, ErrorType.Conflict);
+            var fresh = await BuildBulkPlan(integration, snapshot, overview, ct);
+            if (!fresh.IsSuccess || fresh.Value?.Revision != command.PreviewRevision)
+                return Result<BulkResolveResponse>.Failure("The SQL plan changed. Preview the operations again.", ErrorType.Conflict);
+            plan = fresh.Value;
+        }
+
         var results = new List<BulkResolveAccountResult>();
         var accountsCreated = 0;
         var driftsResolved = 0;
@@ -1360,11 +1381,26 @@ public class SqlIntegrationService : ISqlIntegrationService
 
         foreach (var accountStatus in overview.Accounts)
         {
+            SqlBulkGuard? guard = null;
+            if (plan is not null)
+            {
+                var selected = plan.Operations.Where(o => o.AccountId == accountStatus.AccountId).ToArray();
+                if (selected.Length == 0) continue;
+                if (selected[0].Operation == "Skip")
+                {
+                    results.Add(new(accountStatus.AccountId, accountStatus.AccountName, accountStatus.PrincipalName, "Skip", false,
+                        selected[0].Reason, null));
+                    skipped++;
+                    continue;
+                }
+                guard = new(integration.UpdatedAt, snapshot.Accounts.Single(a => a.Id == accountStatus.AccountId).UpdatedAt,
+                    selected[0].Principal, selected);
+            }
             if (accountStatus.Status == SyncStatus.MissingPrincipal)
             {
                 // Try to create the account
                 var createResult = await TryCreateAccountForBulkResolve(
-                    integration, accountStatus, snapshot, userName, userId, ct);
+                    integration, accountStatus, snapshot, userName, userId, ct, guard);
                 
                 results.Add(createResult);
                 
@@ -1377,7 +1413,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                     {
                         var driftResult = await TryResolveDriftForBulkResolve(
                             integration, accountStatus.AccountId, accountStatus.AccountName, 
-                            accountStatus.PrincipalName, snapshot, userName, userId, ct);
+                            accountStatus.PrincipalName, snapshot, userName, userId, ct, guard);
                         
                         results.Add(driftResult);
                         
@@ -1401,7 +1437,7 @@ public class SqlIntegrationService : ISqlIntegrationService
                 // Try to resolve drift
                 var resolveResult = await TryResolveDriftForBulkResolve(
                     integration, accountStatus.AccountId, accountStatus.AccountName, 
-                    accountStatus.PrincipalName, snapshot, userName, userId, ct);
+                    accountStatus.PrincipalName, snapshot, userName, userId, ct, guard);
                 
                 results.Add(resolveResult);
                 
@@ -1466,7 +1502,7 @@ public class SqlIntegrationService : ISqlIntegrationService
         Snapshot snapshot,
         string userName,
         Guid? userId,
-        CancellationToken ct)
+        CancellationToken ct, SqlBulkGuard? guard)
     {
         var account = snapshot.Accounts.FirstOrDefault(a => a.Id == accountStatus.AccountId);
         if (account is null)
@@ -1500,7 +1536,7 @@ public class SqlIntegrationService : ISqlIntegrationService
             integration.Id,
             account.Id,
             PasswordSource.SecretProvider,
-            null);
+            null) { Guard = guard };
 
         var result = await CreateSqlAccountAsync(createCommand, userName, userId, ct);
 
@@ -1534,9 +1570,9 @@ public class SqlIntegrationService : ISqlIntegrationService
         Snapshot snapshot,
         string userName,
         Guid? userId,
-        CancellationToken ct)
+        CancellationToken ct, SqlBulkGuard? guard)
     {
-        var resolveCommand = new ResolveDrift(integration.Id, accountId);
+        var resolveCommand = new ResolveDrift(integration.Id, accountId) { Guard = guard };
         var result = await ResolveDriftAsync(resolveCommand, userName, userId, ct);
 
         if (result.IsSuccess && result.Value is not null)

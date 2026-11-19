@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.Audit;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
@@ -8,10 +9,10 @@ using Fuse.Core.Responses;
 namespace Fuse.Core.Areas.MongoDbIntegration;
 
 public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspector inspector,
-    IAuditService audit, ICurrentUser currentUser) : IMongoDbIntegrationService
+    IAuditService audit, ICurrentUser currentUser, IntegrationPasswords? passwords = null) : IMongoDbIntegrationService
 {
     private static MongoDbIntegrationResponse Public(Models.MongoDbIntegration item) => new(item.Id, item.Name,
-        item.DataStoreId, item.Endpoint, item.Username, !string.IsNullOrEmpty(item.Password), item.CreatedAt, item.UpdatedAt, item.AuthenticationDatabase, item.UseTls);
+        item.DataStoreId, item.Endpoint, item.Username, (item.PasswordBinding is not null || !string.IsNullOrEmpty(item.Password)), item.CreatedAt, item.UpdatedAt, item.AuthenticationDatabase, item.UseTls);
 
     public async Task<IReadOnlyList<MongoDbIntegrationResponse>> GetAllAsync(CancellationToken ct = default) =>
         (await store.GetAsync(ct)).MongoDbIntegrations.Select(Public).ToArray();
@@ -72,6 +73,11 @@ public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspecto
             updated = found with { Name = command.Name.Trim(), DataStoreId = command.DataStoreId, Endpoint = command.Endpoint,
                 Username = MongoDbConnectionSettings.Username(command.Username), Password = command.Password ?? found.Password,
                 AuthenticationDatabase = command.AuthenticationDatabase, UseTls = command.UseTls, UpdatedAt = DateTime.UtcNow };
+            if (IntegrationPasswords.InvalidEdit(found, updated, command.Password))
+            {
+                failure = Result.Failure("Detach the Key Vault password before changing its destination or supplying a password.");
+                return current;
+            }
             return current with { MongoDbIntegrations = current.MongoDbIntegrations.Select(x => x.Id == command.Id ? updated : x).ToArray() };
         }, ct);
         if (failure is not null) return Result<MongoDbIntegrationResponse>.Failure(failure.Error!, failure.ErrorType!.Value);
@@ -103,6 +109,9 @@ public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspecto
     {
         var item = (await store.GetAsync(ct)).MongoDbIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<MongoDbConnectionTestResult>.Failure("MongoDb integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<MongoDbConnectionTestResult>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         return await ValidateAsync(new(item.Endpoint, item.Username, item.Password, item.AuthenticationDatabase, item.UseTls), ct);
     }
 
@@ -111,6 +120,9 @@ public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspecto
         if (!MongoDbReviewProvider.ValidCollection(collection)) return Result<MongoDbIndexInventory>.Failure("Select an application collection.");
         var item = (await store.GetAsync(ct)).MongoDbIntegrations.FirstOrDefault(i => i.Id == id);
         if (item is null) return Result<MongoDbIndexInventory>.Failure("MongoDB integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<MongoDbIndexInventory>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         return Result<MongoDbIndexInventory>.Success(await inspector.IndexesAsync(item, collection, ct));
     }
 
@@ -119,6 +131,9 @@ public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspecto
         var snapshot = await store.GetAsync(ct);
         var item = snapshot.MongoDbIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<MongoDbDiscoveryResponse>.Failure("MongoDb integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<MongoDbDiscoveryResponse>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         var validation = MongoDbConnectionSettings.Validate(item.Endpoint, item.Username, item.Password, item.AuthenticationDatabase);
         if (!validation.IsSuccess) return Result<MongoDbDiscoveryResponse>.Failure(validation.Error!);
         if (!snapshot.DataStores.Any(x => x.Id == item.DataStoreId && string.Equals(x.Kind, "mongodb", StringComparison.OrdinalIgnoreCase)))

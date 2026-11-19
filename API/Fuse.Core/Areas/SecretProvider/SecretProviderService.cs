@@ -133,29 +133,21 @@ public class SecretProviderService : ISecretProviderService
 
     public async Task<Result> DeleteSecretProviderAsync(DeleteSecretProvider command)
     {
-        var store = await _fuseStore.GetAsync();
-        if (!store.SecretProviders.Any(p => p.Id == command.Id))
-            return Result.Failure($"Secret provider with ID '{command.Id}' not found.", ErrorType.NotFound);
-
-        // Check if any accounts are using this provider
-        var accountsUsingProvider = store.Accounts.Where(a => 
-            a.SecretBinding.Kind == SecretBindingKind.AzureKeyVault &&
-            a.SecretBinding.AzureKeyVault?.ProviderId == command.Id
-        ).ToList();
-
-        if (accountsUsingProvider.Any())
+        var result = Result.Failure("Secret provider not found.", ErrorType.NotFound);
+        await _fuseStore.UpdateAsync(s =>
         {
-            return Result.Failure(
-                $"Cannot delete secret provider: {accountsUsingProvider.Count} account(s) are using it.", 
-                ErrorType.Validation
-            );
-        }
-
-        await _fuseStore.UpdateAsync(s => s with 
-        { 
-            SecretProviders = s.SecretProviders.Where(p => p.Id != command.Id).ToList() 
+            if (!s.SecretProviders.Any(p => p.Id == command.Id)) return s;
+            if (s.Accounts.Any(a => a.SecretBinding.AzureKeyVault?.ProviderId == command.Id) ||
+                s.RedisIntegrations.Cast<IPasswordConnection>().Concat(s.MongoDbIntegrations).Concat(s.PostgreSqlIntegrations)
+                    .Concat(s.RabbitMqIntegrations).Any(c => c.PasswordBinding?.Reference.ProviderId == command.Id))
+            {
+                result = Result.Failure("Cannot delete a secret provider used by accounts or integration credentials.");
+                return s;
+            }
+            result = Result.Success();
+            return s with { SecretProviders = s.SecretProviders.Where(p => p.Id != command.Id).ToArray() };
         });
-        return Result.Success();
+        return result;
     }
 
     public async Task<Result> TestConnectionAsync(TestSecretProviderConnection command)

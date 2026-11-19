@@ -29,6 +29,7 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <IntegrationPasswordButton provider="rabbitmq" :integration-id="item.id" @saved="load" />
             <q-btn
               v-if="store.hasPermission('integrationreviews:read')"
               flat
@@ -217,6 +218,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { ref, watch, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { useAuthToken } from "../composables/useAuthToken";

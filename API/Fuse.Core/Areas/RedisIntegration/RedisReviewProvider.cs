@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.IntegrationReviews;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
@@ -6,7 +7,7 @@ using static Fuse.Core.Areas.IntegrationReviews.DataStoreReview;
 
 namespace Fuse.Core.Areas.RedisIntegration;
 
-public sealed class RedisReviewProvider(IRedisConnectionFactory? factory = null) : IIntegrationReviewProvider
+public sealed class RedisReviewProvider(IRedisConnectionFactory? factory = null, IntegrationPasswords? passwords = null) : IIntegrationReviewProvider
 {
     private readonly IRedisConnectionFactory connections = factory ?? new RedisConnectionFactory();
     public string Provider => "redis";
@@ -36,6 +37,9 @@ public sealed class RedisReviewProvider(IRedisConnectionFactory? factory = null)
     {
         if (Validate(snapshot, input) is { } error) return Unknown(error);
         var node = snapshot.RedisIntegrations.Single(i => i.Id == input.IntegrationId);
+        var credential = await IntegrationPasswords.ForUse(node, passwords, ct);
+        if (!credential.IsSuccess) return new(ReviewStatus.Unknown, IntegrationPasswords.Unavailable, []);
+        node = credential.Value!;
         var username = ScopedAccount(snapshot, input.AccountId, node.DataStoreId)!.UserName!;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(12));
@@ -44,6 +48,9 @@ public sealed class RedisReviewProvider(IRedisConnectionFactory? factory = null)
             if (input.Kind == "node-acl")
             {
                 var peer = snapshot.RedisIntegrations.Single(i => i.Id == Guid.Parse(input.Fields["peerIntegrationId"]));
+                var peerCredential = await IntegrationPasswords.ForUse(peer, passwords, deadline.Token);
+                if (!peerCredential.IsSuccess) return Unknown(IntegrationPasswords.Unavailable);
+                peer = peerCredential.Value!;
                 var primary = await ReadUser(node, username, deadline.Token);
                 var secondary = await ReadUser(peer, username, deadline.Token);
                 if (primary is null || secondary is null)

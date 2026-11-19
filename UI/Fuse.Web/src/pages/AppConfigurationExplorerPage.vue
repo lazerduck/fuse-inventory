@@ -85,7 +85,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <SecretReferenceButton :provider="providerId" v-if="props.row.isKeyVaultReference" from-config :name="props.row.key" :label="props.row.label" />
+            <SecretReferenceButton :provider="providerId" v-if="props.row.isKeyVaultReference && fuseStore.hasPermission('secretproviders:read')" from-config :name="props.row.key" :label="props.row.label" />
             <q-btn aria-label="Reveal secret"
               v-if="props.row.isKeyVaultReference && canRevealReferencedSecret"
               flat

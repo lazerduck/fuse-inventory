@@ -29,6 +29,7 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <IntegrationPasswordButton provider="mongodb" :integration-id="item.id" @saved="load" />
             <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
               :to="{ name: 'integrationReviews', query: { provider: 'mongodb', integration: item.id } }" />
             <q-btn
@@ -265,6 +266,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { useAuthToken } from "../composables/useAuthToken";
