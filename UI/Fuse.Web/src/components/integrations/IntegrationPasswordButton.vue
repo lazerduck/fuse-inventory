@@ -34,6 +34,7 @@ import { computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { AzureKeyVaultBinding, BindIntegrationPassword, type PasswordReferenceView } from '../../api/client'
 import { getErrorMessage } from '../../utils/error'
+import { hasCapability } from '../../utils/secretProviders'
 import { useFuseClient } from '../../composables/useFuseClient'
 import { useFuseStore } from '../../stores/FuseStore'
 
@@ -65,7 +66,7 @@ async function open() {
     providerId.value = current.reference?.providerId ?? ''; secretName.value = current.reference?.secretName ?? ''; version.value = current.reference?.version ?? ''
     if (store.hasPermission('secretproviders:read')) {
       const all = await api.secretProviderAll()
-      vaults.value = all.filter(v => v.id && !v.vaultUri?.includes('.azconfig.io') && String(v.capabilities).includes('Read'))
+      vaults.value = all.filter(v => v.id && v.integrationKind === 'KeyVault' && hasCapability(v, 'Read'))
         .map(v => ({value:v.id!, label:v.name || v.id!}))
       await suggestions(providerId.value)
     }
