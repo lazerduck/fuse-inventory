@@ -59,6 +59,7 @@ builder.Services.AddCors(options =>
 });
 
 Fuse.API.Entra.EntraAuthentication.Register(builder.Services);
+builder.Services.AddSingleton<Fuse.Core.Areas.KeycloakIntegration.IKeycloakSecretProtector, Fuse.API.Services.KeycloakSecretProtector>();
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 

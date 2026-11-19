@@ -44,6 +44,7 @@ Fuse Inventory can also integrate with:
 * **RabbitMQ** to inspect virtual-host topology and compare documented queues and users. See the [RabbitMQ guide](docs/rabbitmq.md).
 - **[PostgreSQL integration](docs/postgresql.md)** — Read-only role discovery, inherited access, database-scoped privileges and account matching.
 - **[MongoDB integration](docs/mongodb.md)** — Read-only discovery, inherited roles and account matching by username and authentication database.
+- **[Keycloak integration](docs/keycloak.md)** — Realm-scoped clients, service-account roles and OAuth account matching.
 * **Redis** to validate connections, discover ACL users and match them to documented accounts without changing Redis. See the [Redis integration guide](docs/redis.md).
 
 Fuse Inventory treats applications as first-class objects, with environments, dependencies, and infrastructure supporting them.
