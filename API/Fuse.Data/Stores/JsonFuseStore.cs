@@ -89,6 +89,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
 
         )
         {
+            IntegrationReviews = await ReadAsync<Fuse.Core.Areas.IntegrationReviews.ReviewDefinition>("integrationreviews.json", ct),
             RedisIntegrations = await ReadAsync<RedisIntegration>("redisintegrations.json", ct),
             PostgreSqlIntegrations = await ReadAsync<PostgreSqlIntegration>("postgresqlintegrations.json", ct),
             MongoDbIntegrations = await ReadAsync<MongoDbIntegration>("mongodbintegrations.json", ct),
@@ -149,6 +150,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             writeTasks.Add(WriteAsync("secretproviders.json", snapshot.SecretProviders, ct));
         if (_cache is null || !ReferenceEquals(_cache.SqlIntegrations, snapshot.SqlIntegrations))
             writeTasks.Add(WriteAsync("sqlintegrations.json", snapshot.SqlIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.IntegrationReviews, snapshot.IntegrationReviews))
+            writeTasks.Add(WriteAsync("integrationreviews.json", snapshot.IntegrationReviews, ct));
         if (_cache is null || !ReferenceEquals(_cache.RedisIntegrations, snapshot.RedisIntegrations))
             writeTasks.Add(WriteAsync("redisintegrations.json", snapshot.RedisIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.PostgreSqlIntegrations, snapshot.PostgreSqlIntegrations))

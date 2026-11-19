@@ -28,6 +28,8 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'postgresql', integration: item.id } }" />
             <q-btn
               flat
               label="Inspect"

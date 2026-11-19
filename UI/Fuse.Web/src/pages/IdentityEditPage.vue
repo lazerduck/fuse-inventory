@@ -77,6 +77,9 @@
         />
       </q-card-section>
 
+      <AzureWorkloadPanel v-if="identityId && identity?.azurePrincipal?.tenantId && fuseStore.hasPermission('secretproviders:directory:read') && fuseStore.hasPermission('secretproviders:read')"
+        :identity="identityId" :tenant="identity.azurePrincipal.tenantId" />
+
       <template v-if="isEditMode && identityId">
         <q-separator />
         <q-card-section>
@@ -196,6 +199,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import {
+  AzurePrincipalBinding,
   IdentityKind,
   IdentityAssignment,
   CreateIdentity,
@@ -213,6 +217,7 @@ import {
 } from 'api/client'
 import { Permission } from 'permissions'
 import EntityHistoryTab from '../components/activity/EntityHistoryTab.vue'
+import AzureWorkloadPanel from '../components/identities/AzureWorkloadPanel.vue'
 import IdentityForm from '../components/identities/IdentityForm.vue'
 import IdentityAssignmentsSection from '../components/identities/IdentityAssignmentsSection.vue'
 import type {
@@ -363,6 +368,8 @@ watch(
     if (ident && !draft.isDirty.value) {
       Object.assign(form.value, {
         name: ident.name ?? '',
+        azureTenantId: ident.azurePrincipal?.tenantId ?? '',
+        azureObjectId: ident.azurePrincipal?.objectId ?? '',
         kind: ident.kind ?? IdentityKind.AzureManagedIdentity,
         notes: ident.notes ?? '',
         ownerInstanceId: ident.ownerInstanceId ?? null,
@@ -682,8 +689,16 @@ function handleSave(close: boolean | Event = false) {
     return
   }
 
+  const tenantId = form.value.azureTenantId?.trim();
+  const objectId = form.value.azureObjectId?.trim();
+  if (!!tenantId !== !!objectId) {
+    Notify.create({ type: 'warning', message: 'Supply both Azure IDs or clear both fields.' });
+    return;
+  }
+  const azurePrincipal = tenantId && objectId ? new AzurePrincipalBinding({ tenantId, objectId }) : undefined;
   if (isEditMode.value && identityId.value) {
     const payload = Object.assign(new UpdateIdentity(), {
+      azurePrincipal, clearAzurePrincipal: !azurePrincipal,
       name: form.value.name.trim(),
       kind: form.value.kind,
       notes: form.value.notes || undefined,
@@ -694,6 +709,7 @@ function handleSave(close: boolean | Event = false) {
     updateMutation.mutate({ id: identityId.value, payload })
   } else {
     const payload = Object.assign(new CreateIdentity(), {
+      azurePrincipal,
       name: form.value.name.trim(),
       kind: form.value.kind,
       notes: form.value.notes || undefined,

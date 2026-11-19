@@ -106,6 +106,14 @@ public sealed class MongoDbIntegrationService(IFuseStore store, IMongoDbInspecto
         return await ValidateAsync(new(item.Endpoint, item.Username, item.Password, item.AuthenticationDatabase, item.UseTls), ct);
     }
 
+    public async Task<Result<MongoDbIndexInventory>> IndexesAsync(Guid id, string collection, CancellationToken ct = default)
+    {
+        if (!MongoDbReviewProvider.ValidCollection(collection)) return Result<MongoDbIndexInventory>.Failure("Select an application collection.");
+        var item = (await store.GetAsync(ct)).MongoDbIntegrations.FirstOrDefault(i => i.Id == id);
+        if (item is null) return Result<MongoDbIndexInventory>.Failure("MongoDB integration not found.", ErrorType.NotFound);
+        return Result<MongoDbIndexInventory>.Success(await inspector.IndexesAsync(item, collection, ct));
+    }
+
     public async Task<Result<MongoDbDiscoveryResponse>> DiscoverAsync(Guid id, CancellationToken ct = default)
     {
         var snapshot = await store.GetAsync(ct);

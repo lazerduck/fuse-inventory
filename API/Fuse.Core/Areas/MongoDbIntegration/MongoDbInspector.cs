@@ -8,9 +8,45 @@ namespace Fuse.Core.Areas.MongoDbIntegration;
 /// <summary>Fixed metadata commands only, with allowlisted output and explicit per-database coverage.</summary>
 public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbInspector
 {
+    public async Task<MongoDbIndexInventory> IndexesAsync(Models.MongoDbIntegration item, string collection, CancellationToken ct)
+    {
+        var database = MongoDbConnectionSettings.Database(item.Endpoint);
+        var indexes = new List<MongoDbIndexDefinition>();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(10));
+        try
+        {
+            using var session = factory.Open(new(item.Endpoint, item.Username, item.Password, item.AuthenticationDatabase, item.UseTls));
+            var reply = await Run(session, database, new() { { "listIndexes", collection },
+                { "cursor", new BsonDocument("batchSize", Limit + 1) } }, deadline.Token);
+            var cursor = reply["cursor"].AsBsonDocument;
+            var id = cursor["id"].ToInt64();
+            try
+            {
+                var batch = cursor["firstBatch"].AsBsonArray;
+                foreach (var value in batch.Take(Limit))
+                {
+                    var row = value.AsBsonDocument;
+                    var keys = row["key"].AsBsonDocument.Elements.Select(k => new MongoDbIndexField(k.Name,
+                        k.Value.IsString ? k.Value.AsString : k.Value.ToInt64().ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray();
+                    var name = row["name"].AsString;
+                    indexes.Add(new(name, keys, row.GetValue("unique", false).AsBoolean || name == "_id_",
+                        row.TryGetValue("expireAfterSeconds", out var ttl) ? ttl.ToInt64() : null));
+                }
+                return new(collection, id != 0 || batch.Count > Limit ? "truncated" : "complete", indexes);
+            }
+            finally
+            {
+                if (id != 0) await Run(session, database, new() { { "killCursors", collection }, { "cursors", new BsonArray { id } } }, deadline.Token);
+            }
+        }
+        catch (Exception e) when (!ct.IsCancellationRequested && Expected(e))
+        { return new(collection, e is MongoCommandException { Code: 26 } ? "not-found" : Status(e), indexes); }
+    }
+
     private const int Limit = 200, ScopeLimit = 16;
     private sealed class ResponseLimitException : Exception { }
-    private static string Status(Exception e) => e switch
+    internal static string Status(Exception e) => e switch
     {
         MongoAuthenticationException => "authentication-failed",
         MongoCommandException { Code: 18 } => "authentication-failed",
@@ -21,9 +57,9 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
         FormatException or InvalidCastException or KeyNotFoundException => "invalid-response",
         _ => "unavailable"
     };
-    private static bool Expected(Exception e) => e is MongoException or TimeoutException or OperationCanceledException
+    internal static bool Expected(Exception e) => e is MongoException or TimeoutException or OperationCanceledException
         or ResponseLimitException or FormatException or InvalidCastException or KeyNotFoundException;
-    private static async Task<BsonDocument> Run(IMongoDbSession session, string database, BsonDocument command, CancellationToken ct)
+    internal static async Task<BsonDocument> Run(IMongoDbSession session, string database, BsonDocument command, CancellationToken ct)
     {
         command["maxTimeMS"] = 5000;
         var result = await session.RunAsync(database, command, ct);
@@ -73,6 +109,7 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
         var users = new List<MongoDbUserResponse>();
         var roles = new List<MongoDbRoleResponse>();
         var collections = new List<string>();
+        var collectionTypes = new Dictionary<string, string>();
         var warnings = new List<string> {
             "Users are identified by username and authentication database. Set each MongoDB account's authSource parameter explicitly; a match does not test its password.",
             "Privileges shown apply to the selected database or broader wildcard/cluster resources. Role definitions can belong to other databases. Authentication does not prove data access; no documents are read." };
@@ -94,7 +131,12 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
                     try
                     {
                         var batch = cursor["firstBatch"].AsBsonArray;
-                        collections.AddRange(batch.Take(Limit).Select(x => x["name"].AsString));
+                        foreach (var entry in batch.Take(Limit))
+                        {
+                            var name = entry["name"].AsString;
+                            collections.Add(name);
+                            collectionTypes[name] = entry.AsBsonDocument.GetValue("type", "unknown").AsString;
+                        }
                         return id != 0 || batch.Count > Limit ? "truncated" : "complete";
                     }
                     finally
@@ -165,7 +207,7 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
             .Concat(scopes.Select(s => ($"Users in {s.AuthenticationDatabase}", s.Status))))
             if (status != "complete") warnings.Add($"{section}: {status}. Unobserved entries are unknown, not absent.");
         return new(integration.Id, DateTime.UtcNow, database, connection, collectionsStatus, collections, rolesStatus, roles,
-            scopes, users, Match(accounts, users, scopes), warnings);
+            scopes, users, Match(accounts, users, scopes), warnings) { CollectionTypes = collectionTypes };
 
         async Task<string> Section(Func<Task<string>> read)
         {
@@ -174,7 +216,7 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
             catch (Exception e) when (Expected(e)) { return Status(e); }
         }
     }
-    private static BsonDocument UserCommand(BsonValue users, bool privileges) => new()
+    internal static BsonDocument UserCommand(BsonValue users, bool privileges) => new()
         { { "usersInfo", users }, { "showCredentials", false }, { "showCustomData", false }, { "showPrivileges", privileges } };
     private static BsonArray Array(BsonValue value, string key)
     {
@@ -182,9 +224,9 @@ public sealed class MongoDbInspector(IMongoDbSessionFactory factory) : IMongoDbI
         if (array.Count > 1000) throw new ResponseLimitException();
         return array;
     }
-    private static IReadOnlyList<MongoDbRoleReference> References(BsonValue row, string key) =>
+    internal static IReadOnlyList<MongoDbRoleReference> References(BsonValue row, string key) =>
         Array(row, key).Select(r => new MongoDbRoleReference(r["role"].AsString, r["db"].AsString)).ToArray();
-    private static IReadOnlyList<MongoDbPrivilegeResponse> Privileges(BsonValue row, string database) => Array(row, "inheritedPrivileges")
+    internal static IReadOnlyList<MongoDbPrivilegeResponse> Privileges(BsonValue row, string database) => Array(row, "inheritedPrivileges")
         .Where(p => p["resource"].AsBsonDocument.GetValue("anyResource", false) == true
             || p["resource"].AsBsonDocument.GetValue("cluster", false) == true
             || p["resource"].AsBsonDocument.GetValue("db", BsonNull.Value) is BsonString db && (db.AsString == database || db.AsString == ""))

@@ -207,4 +207,31 @@ public class RedisInspectorTests
         Assert.Equal("", options.ConfigurationChannel);
         Assert.Equal("default", RedisConnectionFactory.Options(new Uri("redis://localhost"), "", null).User);
     }
+
+    [Theory]
+    [InlineData("OK", "allow", "Matched")]
+    [InlineData("This user has no permissions to run the 'set' command", "deny", "Matched")]
+    [InlineData("This user has no permissions to run the 'set' command", "allow", "Drift")]
+    [InlineData("unexpected result", "deny", "Unknown")]
+    [InlineData("inspector-denied", "deny", "Unknown")]
+    public async Task ReviewSimulatesWriteAndSeparatesInspectorDenial(string reply, string expected, string status)
+    {
+        var node = Integration();
+        var account = Account("reader");
+        var store = new DataStore(DataStoreId, "Redis", null, "Redis", Guid.NewGuid(), null, node.Endpoint, [], DateTime.UtcNow, DateTime.UtcNow);
+        var snapshot = new Fuse.Tests.TestInfrastructure.InMemoryFuseStore().Current! with { RedisIntegrations = [node], Accounts = [account], DataStores = [store] };
+        var session = new Session((_, _) => reply == "inspector-denied"
+            ? throw new RedisServerException(RedisErrorKind.Unknown, CommandFlags.None, "NOPERM private-password")
+            : Text(reply));
+        var provider = new RedisReviewProvider(new Factory(session));
+        var input = new Fuse.Core.Areas.IntegrationReviews.ReviewInput("redis", node.Id, "command-access", account.Id,
+            new() { ["command"] = "SET", ["resource"] = "orders:example", ["expected"] = expected });
+        var result = await provider.InspectAsync(snapshot, input, default);
+        Assert.Equal(status, result.Status.ToString());
+        var call = Assert.Single(session.Calls);
+        Assert.Equal("ACL", call.Command);
+        Assert.Equal(new object[] { "DRYRUN", "reader", "SET", "orders:example", "fuse-review-example" }, call.Arguments);
+        Assert.DoesNotContain("private-password", JsonSerializer.Serialize(result));
+        Assert.NotNull(provider.Validate(snapshot, input with { AccountId = Guid.NewGuid() }));
+    }
 }

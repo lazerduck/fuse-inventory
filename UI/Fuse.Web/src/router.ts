@@ -162,6 +162,7 @@ const router = createRouter({
       component: () => import('./pages/SqlPermissionsOverviewPage.vue')
     },
     { path: '/rabbitmq-integrations', name: 'rabbitMqIntegrations', component: () => import('./pages/RabbitMqIntegrationsPage.vue') },
+    { path: '/integration-reviews', name: 'integrationReviews', component: () => import('./pages/IntegrationReviewsPage.vue') },
     { path: '/postgresql-integrations', name: 'postgreSqlIntegrations', component: () => import('./pages/PostgreSqlIntegrationsPage.vue') },
     { path: '/mongodb-integrations', name: 'mongoDbIntegrations', component: () => import('./pages/MongoDbIntegrationsPage.vue') },
     { path: '/keycloak-integrations', name: 'keycloakIntegrations', component: () => import('./pages/KeycloakIntegrationsPage.vue') },

@@ -3,11 +3,14 @@ import { useAuthToken } from '../composables/useAuthToken'
 
 export type AzureIntegrationKind = 'KeyVault' | 'AppConfiguration'
 
+export interface AzureProfile {
+  id: string; name: string; resourceId: string; tenantId: string; clientId: string; directoryLookup: boolean
+}
 export interface AzureSubscription { id: string; name: string }
 export interface DiscoveredAzureResource {
   resourceId: string
   name: string
-  kind: AzureIntegrationKind
+  kind: AzureIntegrationKind | 'ServiceBus' | 'CosmosDb'
   endpoint: string
   subscriptionId: string
   resourceGroup: string
@@ -19,7 +22,7 @@ export interface AzureDiscoveryScope {
   authMode: SecretProviderAuthMode
   subscriptionIds: string[]
   resourceGroups: string[]
-  kinds: AzureIntegrationKind[]
+  kinds: (AzureIntegrationKind | 'ServiceBus' | 'CosmosDb')[]
 }
 export interface AzureImportResult {
   resourceId: string
@@ -30,7 +33,7 @@ export interface AzureImportResult {
 export interface AzureAccessCheck { success: boolean; checkedAt: string; message: string }
 
 // Match the authenticated fetch behavior used by the generated API client.
-async function request<T>(path: string, body?: unknown, method = 'POST', signal?: AbortSignal): Promise<T> {
+export async function azureRequest<T>(path: string, body?: unknown, method = 'POST', signal?: AbortSignal): Promise<T> {
   const { getToken, clearToken } = useAuthToken()
   const headers = new Headers({ 'Content-Type': 'application/json' })
   const token = getToken()
@@ -48,17 +51,17 @@ async function request<T>(path: string, body?: unknown, method = 'POST', signal?
 }
 
 export function listAzureSubscriptions(authMode: SecretProviderAuthMode, signal?: AbortSignal) {
-  return request<{ subscriptions: AzureSubscription[]; warnings: string[] }>('/api/azure-discovery/subscriptions', { authMode }, 'POST', signal)
+  return azureRequest<{ subscriptions: AzureSubscription[]; warnings: string[] }>('/api/azure-discovery/subscriptions', { authMode }, 'POST', signal)
 }
 export function discoverAzureResources(scope: AzureDiscoveryScope, signal?: AbortSignal) {
-  return request<{ resources: DiscoveredAzureResource[]; warnings: string[] }>('/api/azure-discovery/resources', { ...scope, includeIgnored: true }, 'POST', signal)
+  return azureRequest<{ resources: DiscoveredAzureResource[]; warnings: string[] }>('/api/azure-discovery/resources', { ...scope, includeIgnored: true }, 'POST', signal)
 }
 export function setAzureDiscoveryExclusions(resourceIds: string[], excluded: boolean) {
-  return request<{ resourceIds: string[] }>('/api/azure-discovery/exclusions', { resourceIds, excluded }, 'PUT')
+  return azureRequest<{ resourceIds: string[] }>('/api/azure-discovery/exclusions', { resourceIds, excluded }, 'PUT')
 }
 export function importAzureResources(scope: AzureDiscoveryScope, resourceIds: string[]) {
-  return request<{ results: AzureImportResult[]; warnings: string[] }>('/api/azure-discovery/import', { ...scope, resourceIds })
+  return azureRequest<{ results: AzureImportResult[]; warnings: string[] }>('/api/azure-discovery/import', { ...scope, resourceIds })
 }
 export function testSavedIntegration(id: string) {
-  return request<AzureAccessCheck>(`/api/SecretProvider/${encodeURIComponent(id)}/test-connection`)
+  return azureRequest<AzureAccessCheck>(`/api/SecretProvider/${encodeURIComponent(id)}/test-connection`)
 }

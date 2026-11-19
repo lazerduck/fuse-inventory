@@ -4,6 +4,8 @@ namespace Fuse.Core.Areas.SecretProvider;
 
 public sealed class SecretProviderPermissions : AreaPermissions
 {
+    public const string ProfileManageKey = "secretproviders:credentialprofiles:manage";
+    public const string DirectoryReadKey = "secretproviders:directory:read";
     public const string ReadKey = "secretproviders:read";
     public const string CreateKey = "secretproviders:create";
     public const string UpdateKey = "secretproviders:update";
@@ -14,12 +16,15 @@ public sealed class SecretProviderPermissions : AreaPermissions
     public const string AppConfigDeleteKey = "secretproviders:appconfig:delete";
     public const string CreateSecretKey = "secretproviders:secrets:create";
     public const string RotateSecretKey = "secretproviders:secrets:rotate";
+    public const string BindIntegrationPasswordKey = "secretproviders:secrets:bindintegration";
     public const string RevealSecretKey = "secretproviders:secrets:reveal";
 
     public override string AreaName => "secretproviders";
 
     public override IReadOnlyList<PermissionDescriptor> GetPermissionDescriptors() =>
     [
+        new(ProfileManageKey, IsAllowedInRestrictedEditing: false, IgnorePosture: true),
+        new(DirectoryReadKey, IsAllowedInRestrictedEditing: false, IgnorePosture: true),
         new(ReadKey, IsAllowedInRestrictedEditing: true),
         new(CreateKey, IsAllowedInRestrictedEditing: false),
         new(UpdateKey, IsAllowedInRestrictedEditing: false),
@@ -30,6 +35,7 @@ public sealed class SecretProviderPermissions : AreaPermissions
         new(AppConfigDeleteKey, IsAllowedInRestrictedEditing: false),
         new(CreateSecretKey, IsAllowedInRestrictedEditing: false),
         new(RotateSecretKey, IsAllowedInRestrictedEditing: false),
+        new(BindIntegrationPasswordKey, IgnorePosture: true),
         new(RevealSecretKey, IsAllowedInRestrictedEditing: false)
     ];
 }

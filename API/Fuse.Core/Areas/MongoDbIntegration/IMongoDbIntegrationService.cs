@@ -13,5 +13,6 @@ public interface IMongoDbIntegrationService
     Task<Result> DeleteAsync(DeleteMongoDbIntegration command, CancellationToken ct = default);
     Task<Result<MongoDbConnectionTestResult>> ValidateAsync(ValidateMongoDbConnection command, CancellationToken ct = default);
     Task<Result<MongoDbConnectionTestResult>> ValidateSavedAsync(Guid id, CancellationToken ct = default);
+    Task<Result<MongoDbIndexInventory>> IndexesAsync(Guid id, string collection, CancellationToken ct = default);
     Task<Result<MongoDbDiscoveryResponse>> DiscoverAsync(Guid id, CancellationToken ct = default);
 }

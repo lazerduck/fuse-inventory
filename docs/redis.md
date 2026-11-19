@@ -105,3 +105,9 @@ cover enabled and disabled users, missing and untracked accounts, exact username
 matching, datastore isolation, denied ACL inspection, denied server information
 and failed credentials. Redis keys and ACL configuration are compared before and
 after the checks to verify that discovery leaves them unchanged.
+
+## Review application access
+
+Open **Reviews** on the connection and choose a documented Redis account. For a representative key, ask whether GET, SET or DEL should be allowed. For a representative channel, choose PUBLISH or SUBSCRIBE. For example, an orders reader might require GET on `orders:1001` and forbid SET on that same key. Redis 7 or newer evaluates the command with `ACL DRYRUN`. Grant the inspection identity `+acl|dryrun` for these checks. Fuse sends a fixed placeholder for the simulated message or value. The account’s enabled state is visible in discovery.
+
+If Redis cannot simulate the command, the review records **Unknown**. A simulation denial is an observed restriction that can satisfy a forbidden-access expectation. To compare ACLs across nodes, register each endpoint separately, select the primary account and supply the peer integration ID. Both inspectors need `+acl|getuser`. The result compares the exact username, user flags, command rules, key and channel patterns, and selectors.

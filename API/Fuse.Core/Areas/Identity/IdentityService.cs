@@ -26,6 +26,8 @@ public class IdentityService : IIdentityService
 
     public async Task<Result<Models.Identity>> CreateIdentityAsync(CreateIdentity command)
     {
+        if (command.AzurePrincipal is { } azure && (azure.TenantId == Guid.Empty || azure.ObjectId == Guid.Empty))
+            return Result<Models.Identity>.Failure("Specify the Azure tenant ID and principal object ID together.");
         var tagIds = command.TagIds ?? new HashSet<Guid>();
 
         var validation = await ValidateIdentityCommand(command.Name, command.OwnerInstanceId, tagIds);
@@ -47,7 +49,8 @@ public class IdentityService : IIdentityService
             Assignments: normalizedAssignments,
             TagIds: tagIds,
             CreatedAt: now,
-            UpdatedAt: now
+            UpdatedAt: now,
+            AzurePrincipal: command.AzurePrincipal
         );
 
         await _fuseStore.UpdateAsync(s => s with { Identities = s.Identities.Append(identity).ToList() });
@@ -57,6 +60,8 @@ public class IdentityService : IIdentityService
     public async Task<Result<Models.Identity>> UpdateIdentityAsync(UpdateIdentity command)
     {
         var store = await _fuseStore.GetAsync();
+        if (command.AzurePrincipal is { } azure && (azure.TenantId == Guid.Empty || azure.ObjectId == Guid.Empty))
+            return Result<Models.Identity>.Failure("Specify the Azure tenant ID and principal object ID together.");
         var tagIds = command.TagIds ?? new HashSet<Guid>();
         var existing = store.Identities.FirstOrDefault(i => i.Id == command.Id);
         if (existing is null)
@@ -82,6 +87,7 @@ public class IdentityService : IIdentityService
                 {
                     Name = command.Name,
                     Kind = command.Kind,
+                    AzurePrincipal = command.ClearAzurePrincipal ? null : command.AzurePrincipal ?? x.AzurePrincipal,
                     Notes = command.Notes,
                     OwnerInstanceId = command.OwnerInstanceId,
                     Assignments = normalizedAssignments,

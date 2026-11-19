@@ -8,7 +8,8 @@ public record CreateIdentity(
     string? Notes,
     Guid? OwnerInstanceId,
     IReadOnlyList<IdentityAssignment>? Assignments,
-    HashSet<Guid>? TagIds = null
+    HashSet<Guid>? TagIds = null,
+    AzurePrincipalBinding? AzurePrincipal = null
 );
 
 public record UpdateIdentity(
@@ -18,7 +19,9 @@ public record UpdateIdentity(
     string? Notes,
     Guid? OwnerInstanceId,
     IReadOnlyList<IdentityAssignment>? Assignments,
-    HashSet<Guid>? TagIds = null
+    HashSet<Guid>? TagIds = null,
+    AzurePrincipalBinding? AzurePrincipal = null,
+    bool ClearAzurePrincipal = false
 );
 
 public record DeleteIdentity(

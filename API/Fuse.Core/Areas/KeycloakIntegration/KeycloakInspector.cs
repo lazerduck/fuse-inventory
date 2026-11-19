@@ -6,7 +6,7 @@ using static Fuse.Core.Areas.KeycloakIntegration.KeycloakSession;
 
 namespace Fuse.Core.Areas.KeycloakIntegration;
 
-public sealed class KeycloakInspector(HttpClient http)
+public sealed partial class KeycloakInspector(HttpClient http)
 {
     private static string? Failure(Exception error, CancellationToken caller) => error switch
     {

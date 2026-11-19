@@ -14,4 +14,11 @@ public record MongoDbAccountMatchResponse(Guid AccountId, string? Username, stri
 public record MongoDbDiscoveryResponse(Guid IntegrationId, DateTime ObservedAt, string Database, string ConnectionStatus,
     string CollectionsStatus, IReadOnlyList<string> Collections, string RolesStatus, IReadOnlyList<MongoDbRoleResponse> Roles,
     IReadOnlyList<MongoDbUserScopeResponse> UserScopes, IReadOnlyList<MongoDbUserResponse> Users,
-    IReadOnlyList<MongoDbAccountMatchResponse> Accounts, IReadOnlyList<string> Warnings);
+    IReadOnlyList<MongoDbAccountMatchResponse> Accounts, IReadOnlyList<string> Warnings)
+{
+    public IReadOnlyDictionary<string, string> CollectionTypes { get; init; } = new Dictionary<string, string>();
+}
+
+public record MongoDbIndexField(string Field, string Order);
+public record MongoDbIndexDefinition(string Name, IReadOnlyList<MongoDbIndexField> Keys, bool Unique, long? ExpireAfterSeconds);
+public record MongoDbIndexInventory(string Collection, string Status, IReadOnlyList<MongoDbIndexDefinition> Indexes);

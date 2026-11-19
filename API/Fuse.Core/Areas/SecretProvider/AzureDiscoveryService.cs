@@ -41,7 +41,9 @@ public class AzureDiscoveryService : IAzureDiscoveryService
             var excluded = new HashSet<string>(snapshot.AzureIntegrationManager?.ExcludedResourceIds ?? [], StringComparer.OrdinalIgnoreCase);
             var resources = response.Resources.Select(r => r with
             {
-                AlreadyAdded = snapshot.SecretProviders.Any(p => Matches(p, r)),
+                AlreadyAdded = snapshot.SecretProviders.Any(p => Matches(p, r)) ||
+                    snapshot.ServiceBusIntegrations.Any(i => i.NamespaceResourceId.Equals(r.ResourceId, StringComparison.OrdinalIgnoreCase)) ||
+                    snapshot.CosmosDbIntegrations.Any(i => i.AccountResourceId.Equals(r.ResourceId, StringComparison.OrdinalIgnoreCase)),
                 Ignored = excluded.Contains(r.ResourceId)
             }).Where(r => command.IncludeIgnored || !r.Ignored).ToList();
             return Result<AzureResourcesResponse>.Success(response with { Resources = resources });
@@ -52,6 +54,8 @@ public class AzureDiscoveryService : IAzureDiscoveryService
 
     public async Task<Result<AzureImportResponse>> ImportAsync(ImportAzureResources command, string userName, Guid? userId, CancellationToken ct = default)
     {
+        if (command.Kinds?.Any(k => k is not ("KeyVault" or "AppConfiguration")) == true)
+            return Result<AzureImportResponse>.Failure("Select the resource in its service integration editor.");
         if (command.ResourceIds is not { Count: > 0 and <= 5000 } || command.ResourceIds.Any(id => !IsResourceId(id)))
             return Result<AzureImportResponse>.Failure("Select between 1 and 5,000 valid Azure resources to add.");
         var discovery = await DiscoverAsync(new(command.AuthMode, command.SubscriptionIds, command.ResourceGroups, command.Kinds, true), ct);
@@ -120,8 +124,8 @@ public class AzureDiscoveryService : IAzureDiscoveryService
             return "Select between 1 and 100 valid subscription IDs.";
         if (command.ResourceGroups is { Count: > 100 } || command.ResourceGroups?.Any(g => string.IsNullOrWhiteSpace(g) || g.Length > 90) == true)
             return "Provide up to 100 resource-group names of 1 to 90 characters.";
-        if (command.Kinds is { Count: 0 } || command.Kinds?.Any(k => k is not ("KeyVault" or "AppConfiguration")) == true)
-            return "Select Key Vault, App Configuration, or both.";
+        if (command.Kinds is { Count: 0 } || command.Kinds?.Any(k => k is not ("KeyVault" or "AppConfiguration" or "CosmosDb" or "ServiceBus")) == true)
+            return "Select a supported Azure resource kind.";
         return null;
     }
 
@@ -130,13 +134,14 @@ public class AzureDiscoveryService : IAzureDiscoveryService
         string.Equals(provider.VaultUri.AbsoluteUri.TrimEnd('/'), resource.Endpoint.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
     internal static bool IsResourceId(string? value) => value is not null && value.Length <= 2048 &&
-        Regex.IsMatch(value, @"^/subscriptions/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/resourceGroups/[^/\s]+/providers/(Microsoft\.KeyVault/vaults|Microsoft\.AppConfiguration/configurationStores)/[a-zA-Z0-9-]+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        Regex.IsMatch(value, @"^/subscriptions/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/resourceGroups/[^/\s]+/providers/(Microsoft\.KeyVault/vaults|Microsoft\.AppConfiguration/configurationStores|Microsoft\.DocumentDB/databaseAccounts|Microsoft\.ServiceBus/namespaces)/[a-zA-Z0-9-]+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     internal static bool IsEndpoint(string? value, string kind)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != "https" || !uri.IsDefaultPort ||
             !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment) || uri.AbsolutePath != "/") return false;
-        var suffix = kind == "KeyVault" ? ".vault.azure.net" : kind == "AppConfiguration" ? ".azconfig.io" : null;
+        var suffix = kind switch { "KeyVault" => ".vault.azure.net", "AppConfiguration" => ".azconfig.io",
+            "ServiceBus" => ".servicebus.windows.net", "CosmosDb" => ".documents.azure.com", _ => null };
         if (suffix is null || !uri.Host.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) return false;
         return Regex.IsMatch(uri.Host[..^suffix.Length], "^[a-zA-Z0-9-]+$");
     }

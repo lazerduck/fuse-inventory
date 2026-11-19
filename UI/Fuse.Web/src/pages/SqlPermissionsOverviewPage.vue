@@ -93,6 +93,7 @@
 
     <BulkResolveDialog
       v-model="showBulkResolveDialog"
+      :planned-operations="plannedOperations"
       :resolvable-missing-count="resolvableMissingCount"
       :resolvable-drift-count="resolvableDriftCount"
       :skipped-accounts-count="skippedAccountsCount"
@@ -261,6 +262,23 @@ const skippedAccountsCount = computed(() => {
       account.accountId &&
       !hasSecretProvider(account.accountId)
   ).length
+})
+
+const plannedOperations = computed(() => {
+  const operations: string[] = []
+  for (const account of data.value?.overview?.accounts ?? []) {
+    const principal = account.principalName ?? account.accountName ?? 'Unknown principal'
+    if (account.status === SyncStatus.MissingPrincipal) {
+      if (account.accountId && hasSecretProvider(account.accountId)) operations.push('Create login and database user · ' + principal)
+      else { operations.push('Skip · ' + principal + ' · no linked secret provider'); continue }
+    } else if (account.status !== SyncStatus.DriftDetected) continue
+    for (const diff of account.permissionComparisons ?? []) {
+      const scope = [diff.database, diff.schema].filter(Boolean).join(' / ') || 'Database scope'
+      for (const privilege of diff.missingPrivileges ?? []) operations.push(`Grant ${privilege} · ${principal} · ${scope}`)
+      for (const privilege of diff.extraPrivileges ?? []) operations.push(`Revoke ${privilege} · ${principal} · ${scope}`)
+    }
+  }
+  return operations
 })
 
 const hasResolvableAccounts = computed(() => resolvableMissingCount.value > 0 || resolvableDriftCount.value > 0)

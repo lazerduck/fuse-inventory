@@ -164,7 +164,9 @@ const columns: QTableColumn<DiscoveredAzureResource>[] = [
   { name: 'location', label: 'Region', field: 'location', align: 'left' },
   { name: 'state', label: 'Status', field: r => r.alreadyAdded ? 'Already added' : r.ignored ? 'Ignored' : 'New', align: 'left' }
 ]
-function kindLabel(kind: AzureIntegrationKind) { return kind === 'KeyVault' ? 'Key Vault' : 'App Configuration' }
+function kindLabel(kind: DiscoveredAzureResource['kind']) {
+  return { KeyVault: 'Key Vault', AppConfiguration: 'App Configuration', ServiceBus: 'Service Bus', CosmosDb: 'Cosmos DB' }[kind]
+}
 function toggleAll(value: boolean) {
   const ids = new Set(selectableRows.value.map(r => r.resourceId))
   selected.value = [...selected.value.filter(r => !ids.has(r.resourceId)), ...(value ? selectableRows.value : [])]

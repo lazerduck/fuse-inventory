@@ -36,6 +36,8 @@
               :disable="busy"
               @click="inspect(item)"
             />
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'cosmosdb', integration: item.id } }" />
             <q-btn
               v-if="allowed('validate')"
               flat
@@ -100,6 +102,10 @@
       </p>
       <section v-for="db in discovery.databases" :key="db.name">
         <h3>{{ db.name }}</h3>
+        <p v-if="db.sharedThroughput">Shared database throughput:
+          {{ db.sharedThroughput.autoscaleMaxRu != null ? db.sharedThroughput.autoscaleMaxRu + ' RU/s autoscale maximum' :
+             db.sharedThroughput.manualRu != null ? db.sharedThroughput.manualRu + ' RU/s manual' : db.sharedThroughput.visibility }}
+        </p>
         <p>Container visibility: {{ db.containerVisibility }}</p>
         <q-list bordered separator v-if="db.containers?.length">
           <q-expansion-item
@@ -118,6 +124,7 @@
                   · Version {{ row.partitionKey.version }}</span
                 >
               </p>
+              <p>Default TTL: {{ row.defaultTtl == null ? 'Disabled' : row.defaultTtl === -1 ? 'No default expiry' : row.defaultTtl + ' seconds' }}</p>
               <template v-if="row.indexingPolicy">
                 <p>
                   Indexing mode: {{ row.indexingPolicy.mode ?? "Unknown" }} ·
@@ -193,6 +200,8 @@
               emit-value
               map-options
             />
+            <AzureResourceSelection v-model:resource-id="form.accountResourceId" v-model:profile-id="form.credentialProfileId"
+              :auth-mode="form.authMode" kind="CosmosDb" />
             <q-banner v-if="formError" class="error q-mt-md" role="alert">{{
               formError
             }}</q-banner>
@@ -210,6 +219,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from "vue";
+import AzureResourceSelection from "../components/secretProvider/AzureResourceSelection.vue";
 import { useQuasar } from "quasar";
 import {
   CreateCosmosDbIntegration,
@@ -252,6 +262,7 @@ const empty = () => ({
   name: "",
   dataStoreId: "",
   accountResourceId: "",
+  credentialProfileId: null as string | null,
   authMode: SecretProviderAuthMode.ClientSecret,
 });
 const form = ref(empty());
@@ -347,6 +358,7 @@ async function edit(item?: CosmosDbConnection) {
         dataStoreId: item.dataStoreId!,
         accountResourceId: item.accountResourceId!,
         authMode: item.authMode!,
+        credentialProfileId: item.credentialProfileId ?? null,
       }
     : empty();
   dialog.value = true;
@@ -372,6 +384,8 @@ async function save() {
           dataStoreId,
           accountResourceId,
           authMode,
+          credentialProfileId: form.value.credentialProfileId ?? undefined,
+          useSharedCredential: !form.value.credentialProfileId,
         }),
         signal,
       );
@@ -382,6 +396,7 @@ async function save() {
           dataStoreId,
           accountResourceId,
           authMode,
+          credentialProfileId: form.value.credentialProfileId ?? undefined,
         }),
         signal,
       );

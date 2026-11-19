@@ -91,6 +91,8 @@ public class AzureDiscoveryClient : IAzureDiscoveryClient
                         {
                             "microsoft.keyvault/vaults" => "KeyVault",
                             "microsoft.appconfiguration/configurationstores" => "AppConfiguration",
+                            "microsoft.servicebus/namespaces" => "ServiceBus",
+                            "microsoft.documentdb/databaseaccounts" => "CosmosDb",
                             _ => null
                         };
                         var id = Text(item, "id");
@@ -158,11 +160,20 @@ public class AzureDiscoveryClient : IAzureDiscoveryClient
     private static string BuildQuery(DiscoverAzureResources command)
     {
         var kinds = command.Kinds is { Count: > 0 } ? command.Kinds : new[] { "KeyVault", "AppConfiguration" };
-        var types = kinds.Select(k => k == "KeyVault" ? "microsoft.keyvault/vaults" : "microsoft.appconfiguration/configurationstores");
+        var types = kinds.Select(k => k switch
+        {
+            "KeyVault" => "microsoft.keyvault/vaults",
+            "AppConfiguration" => "microsoft.appconfiguration/configurationstores",
+            "ServiceBus" => "microsoft.servicebus/namespaces",
+            "CosmosDb" => "microsoft.documentdb/databaseaccounts",
+            _ => throw new ArgumentException("Unknown Azure resource kind.")
+        });
         var query = $"Resources | where type in~ ({string.Join(",", types.Select(t => JsonSerializer.Serialize(t)))})";
         if (command.ResourceGroups is { Count: > 0 })
             query += $" | where resourceGroup in~ ({string.Join(",", command.ResourceGroups.Select(g => JsonSerializer.Serialize(g)))})";
-        return query + " | project id, name, type, subscriptionId, resourceGroup, location, endpoint = iff(type =~ 'microsoft.keyvault/vaults', tostring(properties.vaultUri), tostring(properties.endpoint)) | order by id asc";
+        if (kinds.Contains("CosmosDb"))
+            query += " | where type !~ 'microsoft.documentdb/databaseaccounts' or (kind =~ 'GlobalDocumentDB' and tostring(properties.capabilities) !has_any ('EnableCassandra','EnableTable','EnableGremlin','EnableMongo'))";
+        return query + " | project id, name, type, subscriptionId, resourceGroup, location, endpoint = case(type =~ 'microsoft.keyvault/vaults', tostring(properties.vaultUri), type =~ 'microsoft.servicebus/namespaces', strcat('https://', name, '.servicebus.windows.net'), type =~ 'microsoft.documentdb/databaseaccounts', strcat('https://', name, '.documents.azure.com'), tostring(properties.endpoint)) | order by id asc";
     }
 
     private static bool IsArmUrl(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri) &&

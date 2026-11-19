@@ -11,12 +11,40 @@ namespace Fuse.Core.Areas.AzureMetadata;
 internal class ArmMetadataSession(HttpClient http, string token, CancellationToken caller, CancellationToken deadline,
     string version, StringComparison pathComparison = StringComparison.OrdinalIgnoreCase)
 {
+    // Used only to correlate directory object IDs. The credential supplied this token for ARM.
+    internal Guid? TenantId { get; } = TokenTenant(token);
+
+    private static Guid? TokenTenant(string bearer)
+    {
+        var parts = bearer.Split('.');
+        if (parts.Length != 3 || parts[1].Length > 65536) return null;
+        try
+        {
+            var data = parts[1].Replace('-', '+').Replace('_', '/');
+            using var document = JsonDocument.Parse(Convert.FromBase64String(data.PadRight((data.Length + 3) / 4 * 4, '=')));
+            return document.RootElement.TryGetProperty("tid", out var tid) && tid.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(tid.GetString(), out var value) ? value : null;
+        }
+        catch (Exception error) when (error is FormatException or JsonException or InvalidOperationException) { return null; }
+    }
+
     internal const string Arm = "https://management.azure.com";
     private static readonly TokenRequestContext TokenScope = new(["https://management.azure.com/.default"]);
 
-    internal static async Task<string> GetToken(IAzureIntegrationManagerService manager, ITokenCredentialFactory credentials, SecretProviderAuthMode mode, CancellationToken ct)
+    internal static async Task<string> GetToken(IAzureIntegrationManagerService manager, ITokenCredentialFactory credentials, SecretProviderAuthMode mode, CancellationToken ct, Guid? profileId = null, string? resourceId = null)
     {
-        var shared = mode == SecretProviderAuthMode.ClientSecret ? await manager.GetClientSecretCredentialsAsync() : null;
+        SecretProviderCredentials? shared = null;
+        if (profileId is { } id)
+        {
+            if (mode != SecretProviderAuthMode.ClientSecret || resourceId is null)
+                throw new InspectionError("credential-profile-unavailable");
+            shared = await manager.GetProfileCredentialsAsync(id, resourceId);
+            if (shared is null) throw new InspectionError("credential-profile-unavailable");
+        }
+        else if (mode == SecretProviderAuthMode.ClientSecret)
+        {
+            shared = await manager.GetClientSecretCredentialsAsync();
+        }
         if (mode == SecretProviderAuthMode.ClientSecret && (string.IsNullOrWhiteSpace(shared?.TenantId) ||
             string.IsNullOrWhiteSpace(shared.ClientId) || string.IsNullOrWhiteSpace(shared.ClientSecret)))
             throw new InspectionError("credentials-not-configured");
@@ -59,10 +87,22 @@ internal class ArmMetadataSession(HttpClient http, string token, CancellationTok
         return JsonDocument.Parse(await response.Content.ReadAsByteArrayAsync(deadline));
     }
 
-    public async Task<PageList<T>> List<T>(string path, Func<JsonElement, T> project, bool firstPageOnly = false)
+    public async Task<(T? Value, string Status)> Resource<T>(string path, Func<JsonElement, T> project) where T : class
+    {
+        try
+        {
+            using var json = await Read(new Uri(Arm + path + "?api-version=" + version));
+            return (project(json.RootElement), "visible");
+        }
+        catch (Exception e) when (Failure(e, Caller) is { } status) { return (null, status); }
+    }
+
+    public async Task<PageList<T>> List<T>(string path, Func<JsonElement, T> project, bool firstPageOnly = false,
+        string? apiVersion = null, string? filter = null)
     {
         var rows = new List<T>();
-        var first = new Uri(Arm + path + "?api-version=" + version);
+        var first = new Uri(Arm + path + "?api-version=" + (apiVersion ?? version) +
+            (filter is null ? "" : "&$filter=" + Uri.EscapeDataString(filter)));
         Uri? next = first;
         var visited = new HashSet<string>(StringComparer.Ordinal);
         try

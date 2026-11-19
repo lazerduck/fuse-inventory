@@ -85,6 +85,7 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
+            <SecretReferenceButton :provider="providerId" v-if="props.row.isKeyVaultReference" from-config :name="props.row.key" :label="props.row.label" />
             <q-btn aria-label="Reveal secret"
               v-if="props.row.isKeyVaultReference && canRevealReferencedSecret"
               flat
@@ -179,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import SecretReferenceButton from "../components/secretProvider/SecretReferenceButton.vue"
 import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

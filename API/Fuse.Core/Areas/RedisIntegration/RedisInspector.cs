@@ -136,7 +136,7 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory
             TieBreaker = "", ConfigurationChannel = "", BacklogPolicy = BacklogPolicy.FailFast,
             // In particular, exclude SET/GET (client tie-breaker probes), CONFIG,
             // cluster topology expansion and subscriptions. ACL calls below are
-            // restricted to USERS/GETUSER; no ACL LIST password hashes are used.
+            // restricted to metadata and explicit DRYRUN examples.
             CommandMap = CommandMap.Create(new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 { "AUTH", "ECHO", "PING", "INFO", "ACL", "QUIT" }, available: true)
         };
@@ -168,7 +168,9 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory
         public Task<RedisResult> ExecuteAsync(string command, object[] arguments, CancellationToken ct)
         {
             if (!(command == "PING" && arguments.Length == 0 || command == "INFO" && arguments.Length == 0
-                  || command == "ACL" && (arguments is ["USERS"] || arguments is ["GETUSER", string])))
+                  || command == "ACL" && (arguments is ["USERS"] or ["GETUSER", string]
+                      or ["DRYRUN", string, "GET" or "DEL" or "SUBSCRIBE", string]
+                      or ["DRYRUN", string, "SET" or "PUBLISH", string, "fuse-review-example"])))
                 throw new InvalidOperationException("Only fixed Redis metadata commands are supported.");
             return server.ExecuteAsync(command, arguments).WaitAsync(ct);
         }

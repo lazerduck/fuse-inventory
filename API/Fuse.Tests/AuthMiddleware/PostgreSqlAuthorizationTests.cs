@@ -82,4 +82,30 @@ public class PostgreSqlAuthorizationTests(ApiIntegrationFixture fixture) : IAsyn
             await _admin.ApiSecuritySettingsAsync(new UpdateSecuritySettings { Posture = SecurityPosture.FullyRestricted });
         }
     }
+
+    [Theory]
+    [InlineData(SecurityPosture.Unrestricted)]
+    [InlineData(SecurityPosture.RestrictedEditing)]
+    [InlineData(SecurityPosture.FullyRestricted)]
+    public async Task DirectGrantRepairRequiresAnAuthenticatedExplicitWriter(SecurityPosture posture)
+    {
+        var reader = await UserWith(PostgreSqlIntegrationPermissions.ReadKey, "integrationreviews:read", "accounts:read");
+        using var anonymous = fixture.CreateUnauthenticatedHttpClient();
+        await _admin.ApiSecuritySettingsAsync(new UpdateSecuritySettings { Posture = posture });
+        try
+        {
+            foreach (var operation in new[] { "preview", "apply" })
+            {
+                var path = $"/api/PostgreSqlIntegration/{Guid.NewGuid()}/grant-repair/{operation}";
+                var body = new { reviewId = Guid.NewGuid(), token = "invalid" };
+                Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsJsonAsync(path, body)).StatusCode);
+                Assert.Equal(HttpStatusCode.Forbidden, (await reader.PostAsJsonAsync(path, body)).StatusCode);
+            }
+        }
+        finally
+        {
+            reader.Dispose();
+            await _admin.ApiSecuritySettingsAsync(new UpdateSecuritySettings { Posture = SecurityPosture.FullyRestricted });
+        }
+    }
 }

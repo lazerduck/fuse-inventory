@@ -149,7 +149,13 @@ public enum AuditAction
     ServiceBusIntegrationDeleted,
     CosmosDbIntegrationCreated,
     CosmosDbIntegrationUpdated,
-    CosmosDbIntegrationDeleted
+    CosmosDbIntegrationDeleted,
+    IntegrationReviewCreated,
+    IntegrationReviewUpdated,
+    IntegrationReviewDeleted,
+    IntegrationReviewImported,
+    PostgreSqlGrantRepairRequested,
+    PostgreSqlGrantRepairApplied
 }
 
 /// <summary>
@@ -180,7 +186,8 @@ public enum AuditArea
     MongoDbIntegration,
     KeycloakIntegration,
     ServiceBusIntegration,
-    CosmosDbIntegration
+    CosmosDbIntegration,
+    IntegrationReview
 }
 
 /// <summary>

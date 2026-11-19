@@ -16,6 +16,7 @@
     </q-banner>
 
     <q-card v-if="fuseStore.canRead" class="content-card">
+      <AzureProfilePanel v-if="fuseStore.hasPermission('secretproviders:read')" />
       <q-expansion-item icon="key" label="Shared Azure credentials" :caption="hasSharedClientSecretCredentials ? 'Configured · available to both services' : 'Not configured · managed identity is also supported'">
         <q-card-section>
           <q-banner v-if="azureManagerError" dense class="bg-red-1 text-negative q-mb-md">{{ azureManagerError }}</q-banner>
@@ -113,6 +114,7 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
+import AzureProfilePanel from '../components/secretProvider/AzureProfilePanel.vue'
 import { useRouter } from 'vue-router'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useLocalStorage } from '@vueuse/core'

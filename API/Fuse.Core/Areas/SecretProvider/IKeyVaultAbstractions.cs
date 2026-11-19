@@ -11,6 +11,7 @@ public interface IKeyVaultSecretClient
     Task<Response<KeyVaultSecret>> GetSecretAsync(string name, CancellationToken ct = default);
     Task<Response<KeyVaultSecret>> GetSecretVersionAsync(string name, string version, CancellationToken ct = default);
     Task<Response<KeyVaultSecret>> SetSecretAsync(string name, string value, CancellationToken ct = default);
+    AsyncPageable<SecretProperties> GetPropertiesOfSecretVersionsAsync(string name, CancellationToken ct = default);
     AsyncPageable<SecretProperties> GetPropertiesOfSecretsAsync(CancellationToken ct = default);
 }
 

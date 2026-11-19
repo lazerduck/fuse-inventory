@@ -5,6 +5,7 @@ namespace Fuse.Core.Areas.SecretProvider;
 
 public interface IAzureKeyVaultClient
 {
+    Task<KeyVaultVersions> VersionsAsync(Models.SecretProvider provider, string name, CancellationToken ct);
     Task<Result> TestConnectionAsync(Uri vaultUri, SecretProviderAuthMode authMode, SecretProviderCredentials? credentials);
     Task<Result> CheckSecretExistsAsync(Models.SecretProvider provider, string secretName);
     Task<Result> CreateSecretAsync(Models.SecretProvider provider, string secretName, string secretValue);

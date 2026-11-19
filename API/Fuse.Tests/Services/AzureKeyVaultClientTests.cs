@@ -80,6 +80,9 @@ public class AzureKeyVaultClientTests
             return Task.FromResult(Response.FromValue(secret, new TestResponse(200)));
         }
 
+        public AsyncPageable<SecretProperties> GetPropertiesOfSecretVersionsAsync(string name, CancellationToken ct = default) =>
+            AsyncPageable<SecretProperties>.FromPages([Page<SecretProperties>.FromValues([], null, new TestResponse(200))]);
+
         public AsyncPageable<SecretProperties> GetPropertiesOfSecretsAsync(CancellationToken ct = default)
         {
             if (ThrowAuth) throw new AuthenticationFailedException("auth failed");

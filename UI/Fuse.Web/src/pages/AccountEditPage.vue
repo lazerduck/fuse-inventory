@@ -51,6 +51,7 @@
         />
       </q-card-section>
 
+      <q-card-section v-if="isEditMode && accountId"><IntegrationFindings :account-id="accountId" /></q-card-section>
       <q-separator v-if="showSqlStatus" />
 
       <q-card-section v-if="showSqlStatus">
@@ -153,6 +154,7 @@
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
 import { useSaveShortcut } from '../composables/useSaveShortcut'
 import { computed, ref, watch } from 'vue'
 import { Notify, Dialog } from 'quasar'

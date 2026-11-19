@@ -31,9 +31,11 @@
 
     <q-tabs v-model="activeTab" align="left" narrow-indicator class="text-primary">
       <q-tab name="details" label="Details" />
+      <q-tab v-if="fuseStore.hasPermission('integrationreviews:read')" name="integration-reviews" label="Integration findings" />
       <q-tab name="dependencies" :label="`Dependencies (${instance?.dependencies?.length ?? 0})`" />
     </q-tabs>
     <q-tab-panels v-model="activeTab" keep-alive class="bg-transparent">
+      <q-tab-panel name="integration-reviews"><IntegrationFindings :instance-id="instanceId" /></q-tab-panel>
       <q-tab-panel name="details" class="q-pa-none">
         <q-card class="content-card q-mb-md">
           <q-card-section class="dialog-header">
@@ -226,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
 import type { QForm } from 'quasar'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { usePersistedFilter } from '../composables/usePersistedTableState'

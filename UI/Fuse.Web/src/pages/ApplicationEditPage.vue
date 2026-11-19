@@ -38,6 +38,7 @@
 
     <q-tabs v-model="activeTab" class="text-primary q-mb-md" align="left" narrow-indicator>
       <q-tab name="details" label="Details" />
+      <q-tab v-if="fuseStore.hasPermission('integrationreviews:read')" name="integration-reviews" label="Integration findings" />
       <q-tab name="instances" label="Instances" />
       <q-tab name="ownership" label="Ownership" />
       <q-tab name="pipelines" label="Pipelines" />
@@ -46,6 +47,7 @@
     </q-tabs>
 
     <q-tab-panels keep-alive v-model="activeTab" animated class="application-tab-panels">
+      <q-tab-panel name="integration-reviews"><IntegrationFindings :application-id="applicationId" /></q-tab-panel>
       <q-tab-panel name="details" class="q-pa-none">
         <ApplicationDetailsForm
           ref="detailsForm"
@@ -245,6 +247,7 @@
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
 import { useOnboardingStore } from '../stores/OnboardingStore'
 import { usePersistedFilter } from '../composables/usePersistedTableState'
 import { computed, ref, watch } from 'vue'

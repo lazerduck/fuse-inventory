@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="dialogModel" persistent>
-    <q-card style="min-width: 500px">
+    <q-card style="width: 38rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="auto_fix_high" color="primary" size="2em" class="q-mr-sm" />
         <span class="text-h6">Bulk Resolve All</span>
@@ -27,7 +27,11 @@
           </div>
         </div>
 
-        <q-banner dense class="bg-blue-1 text-blue-9 q-mt-md">
+        <div v-if="plannedOperations?.length" class="q-mt-md">
+          <h3 class="text-subtitle2">Operations from the last inspection</h3>
+          <ul><li v-for="(operation, index) in plannedOperations" :key="index">{{ operation }}</li></ul>
+        </div>
+        <q-banner dense class="q-mt-md" style="background: var(--fuse-surface); color: var(--fuse-text)">
           <template #avatar>
             <q-icon name="info" color="primary" />
           </template>
@@ -55,6 +59,7 @@ import { computed } from 'vue'
 
 interface Props {
   modelValue: boolean
+  plannedOperations?: string[]
   resolvableMissingCount: number
   resolvableDriftCount: number
   skippedAccountsCount: number

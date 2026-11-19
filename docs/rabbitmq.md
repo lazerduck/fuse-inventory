@@ -10,8 +10,7 @@ Discovery reads queues, exchanges and bindings without importing or changing the
 Exchanges remain exchanges rather than being converted into generic Fuse topics.
 User matching is exact and limited to Fuse accounts targeting that broker. A
 matched user establishes existence, not permission to publish or consume messages.
-The permission table displays resource-name regexes; it does not evaluate topic
-permissions, external authentication providers or effective application access.
+The permission tables display resource and topic authorization expressions for the selected virtual host.
 
 Topology, users and permissions have independent statuses. Denied/partial results
 leave unobserved queues and accounts unknown. A connection test checks management
@@ -41,3 +40,13 @@ The private lab repository provides separate fixture preparation and a
 single-vhost credentials, duplicate queue names, denied management access and bad
 passwords. It verifies broker definitions remain unchanged and restores the saved
 Fuse inspection configuration after each run.
+
+## Reviewing an application dependency
+
+Select **Reviews** beside the saved connection. A message route review takes an exchange, a concrete routing key and a destination queue. The evidence shows the exchange chain and the final binding for direct, topic and fanout exchanges. An empty exchange selects RabbitMQ’s default exchange and matches the queue name. Header-based or plugin routing and alternate exchanges can leave an unobserved path unknown.
+
+Publisher and consumer reviews use the documented broker account’s username. A publisher requires a matching resource write grant and, on topic exchanges with a topic permission configured, a matching routing-key write grant. A consumer review evaluates the resource read grant on its queue. Evidence describes the broker’s configured internal rules. External authorization backends and connection-dependent regular expressions require independent verification. An unreadable grant or unsupported expression produces unknown.
+
+Queue configuration reviews compare queue type and durability. A dead-letter review follows the queue’s configured dead-letter exchange, its routing key override or the supplied original message key, and the expected destination. Set the expectation from the consuming application instance to include the resulting finding in that application’s inventory.
+
+[RabbitMQ topic permissions](https://www.rabbitmq.com/docs/access-control#topic-authorisation) · [Dead-letter exchanges](https://www.rabbitmq.com/docs/dlx)

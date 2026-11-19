@@ -67,6 +67,14 @@ public class MongoDbIntegrationController(IMongoDbIntegrationService service) : 
         return result.IsSuccess ? Ok(result.Value) : Failure(result);
     }
 
+    [HttpGet("{id:guid}/indexes"), SwaggerOperation(OperationId = "mongodbIntegrationIndexes"), RequirePermissionKey(MongoDbIntegrationPermissions.ReadKey)]
+    [ProducesResponseType(200, Type = typeof(MongoDbIndexInventory)), ProducesResponseType(400), ProducesResponseType(404)]
+    public async Task<ActionResult<MongoDbIndexInventory>> Indexes(Guid id, [FromQuery] string collection, CancellationToken ct)
+    {
+        var result = await service.IndexesAsync(id, collection, ct);
+        return result.IsSuccess ? Ok(result.Value) : Failure(result);
+    }
+
     private ObjectResult Failure(Fuse.Core.Helpers.IResult result) => StatusCode(result.ErrorType switch
     {
         ErrorType.NotFound => 404, ErrorType.Conflict => 409, ErrorType.Unauthorized => 403,
