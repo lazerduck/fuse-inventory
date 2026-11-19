@@ -82,13 +82,8 @@
       >
         {{ rule.name }} · {{ rule.rights?.join(", ") }}
       </p>
-      <p
-        v-if="
-          discovery.namespaceAuthorizationRules?.visibility === 'visible' &&
-          !discovery.namespaceAuthorizationRules?.policies?.length
-        "
-      >
-        No namespace policies observed.
+      <p v-if="discovery.namespaceAuthorizationRules?.visibility === 'unknown'">
+        No namespace policies were visible to this identity.
       </p>
       <h3>Queues</h3>
       <p>Queue listing: {{ discovery.queueVisibility }}</p>

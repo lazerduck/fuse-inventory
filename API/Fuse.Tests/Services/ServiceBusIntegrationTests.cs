@@ -62,6 +62,18 @@ public class ServiceBusIntegrationTests
     }
 
     [Fact]
+    public async Task FilteredSuccessAndDirectDenialReportLimitedVisibility()
+    {
+        var inspector = Inspector(url => url.AbsolutePath == Id + "/queues"
+            ? Json(new { value = new[] { Queue("orders") } })
+            : url.AbsolutePath.EndsWith("/authorizationRules") ? Json(new { value = Array.Empty<object>() }) : new(HttpStatusCode.Forbidden));
+        var result = await inspector.DiscoverAsync(Saved, [new(Guid.NewGuid(), "audit", null)], default);
+        Assert.Equal("limited", result.QueueVisibility);
+        Assert.Equal("unknown", result.NamespaceAuthorizationRules.Visibility);
+        Assert.Equal("unknown", Assert.Single(result.Inventory).Status);
+    }
+
+    [Fact]
     public async Task RetainsEmptyVisiblePageAndFollowsValidPaging()
     {
         var inspector = Inspector(url =>
@@ -77,7 +89,7 @@ public class ServiceBusIntegrationTests
         Assert.Equal("visible", result.QueueVisibility);
         Assert.Equal("second", Assert.Single(result.Queues).Name);
         Assert.Empty(result.NamespaceAuthorizationRules.Policies);
-        Assert.Equal("visible", result.NamespaceAuthorizationRules.Visibility);
+        Assert.Equal("unknown", result.NamespaceAuthorizationRules.Visibility);
     }
 
     [Fact]

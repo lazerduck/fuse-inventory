@@ -68,18 +68,18 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
             return JsonDocument.Parse(await response.Content.ReadAsByteArrayAsync(deadline));
         }
 
-        public async Task<QueueMetadata?> KnownQueue(string namespaceId, string name)
+        public async Task<(QueueMetadata? Queue, string Status)> KnownQueue(string namespaceId, string name)
         {
             var segment = name.Replace('/', '~');
-            if (!ValidQueueSegment(segment)) return null;
+            if (!ValidQueueSegment(segment)) return (null, "unknown");
             var path = namespaceId + "/queues/" + segment;
             try
             {
                 using var json = await Read(new Uri(Arm + path + "?api-version=" + Version));
                 var queue = Queue(namespaceId, json.RootElement);
-                return queue.Path.Equals(path, StringComparison.OrdinalIgnoreCase) ? queue : null;
+                return queue.Path.Equals(path, StringComparison.OrdinalIgnoreCase) ? (queue, "visible") : (null, "invalid-response");
             }
-            catch (Exception e) when (Failure(e, caller) is not null) { return null; }
+            catch (Exception e) when (Failure(e, caller) is { } reason) { return (null, reason); }
         }
 
         public async Task<PageList<T>> List<T>(string path, Func<JsonElement, T> project, bool firstPageOnly = false)
@@ -121,7 +121,9 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
                     .Select(r => r.GetString() ?? throw new InspectionError("invalid-response")).ToArray();
                 return new ServiceBusPolicy(Required(row, "name"), rights);
             });
-            return new(list.Status, list.Items.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToArray());
+            // ARM can return HTTP 200 with an empty authorization-rule list when the rules are hidden by RBAC.
+            var visibility = list.Status == "visible" && list.Items.Count == 0 ? "unknown" : list.Status;
+            return new(visibility, list.Items.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToArray());
         }
     }
 
@@ -177,8 +179,10 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
             {
                 ct.ThrowIfCancellationRequested();
                 var path = item.NamespaceResourceId + "/queues/" + name.Replace('/', '~');
-                if (!visible.ContainsKey(path) && await session.KnownQueue(item.NamespaceResourceId, name) is { } known)
-                    visible.TryAdd(known.Path, known);
+                if (visible.ContainsKey(path)) continue;
+                var lookup = await session.KnownQueue(item.NamespaceResourceId, name);
+                if (lookup.Queue is { } known) visible.TryAdd(known.Path, known);
+                if (queueVisibility == "visible" && lookup.Status == "denied") queueVisibility = "limited";
             }
             foreach (var queue in visible.Values.OrderBy(q => q.Name, StringComparer.OrdinalIgnoreCase))
                 queues.Add(new(queue.Name, queue.Status, await session.Policies(queue.Path)));
