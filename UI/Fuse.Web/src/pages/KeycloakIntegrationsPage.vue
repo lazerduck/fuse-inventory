@@ -136,8 +136,7 @@
                   name: 'applicationEdit',
                   params: { id: match.applicationId },
                 }"
-                >{{ match.applicationName }}</router-link
-              ><span v-else>—</span>
+                >{{ match.applicationName }}</router-link><span v-else>—</span>
             </td>
             <td>{{ match.status }}</td>
           </tr>
@@ -359,7 +358,19 @@ function remove(item: KeycloakIntegrationResponse) {
 }
 </script>
 
+<style scoped src="../styles/pages.css"></style>
 <style scoped>
+h2,
+h3 {
+  margin: 1.5rem 0 0.75rem;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.2rem;
+}
 .editor {
   width: 34rem;
   max-width: 95vw;
