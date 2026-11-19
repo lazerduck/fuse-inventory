@@ -281,7 +281,7 @@
               v-if="fuseStore.canRead"
               data-tour-id="nav-kuma-integrations">
               <q-item-section avatar>
-                <q-icon name="cloud_sync" />
+                <q-icon name="monitor_heart" />
               </q-item-section>
               <q-item-section>
                 Kuma Integrations
@@ -309,11 +309,12 @@
                 SQL Integrations
               </q-item-section>
             </q-item>
-            <q-item clickable :to="{ name: 'rabbitMqIntegrations' }" v-if="fuseStore.hasPermission('rabbitmqintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>RabbitMQ</q-item-section></q-item>
-            <q-item clickable :to="{ name: 'postgreSqlIntegrations' }" v-if="fuseStore.hasPermission('postgresqlintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>PostgreSQL</q-item-section></q-item>
-            <q-item clickable :to="{ name: 'mongoDbIntegrations' }" v-if="fuseStore.hasPermission('mongodbintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>MongoDB</q-item-section></q-item>
-            <q-item clickable :to="{ name: 'keycloakIntegrations' }" v-if="fuseStore.hasPermission('keycloakintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>Keycloak</q-item-section></q-item>
-            <q-item clickable :to="{ name: 'serviceBusIntegrations' }" v-if="fuseStore.hasPermission('servicebusintegrations:read')"><q-item-section avatar><q-icon name="hub" /></q-item-section><q-item-section>Azure Service Bus</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'rabbitMqIntegrations' }" v-if="fuseStore.hasPermission('rabbitmqintegrations:read')"><q-item-section avatar><q-icon name="account_tree" /></q-item-section><q-item-section>RabbitMQ</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'postgreSqlIntegrations' }" v-if="fuseStore.hasPermission('postgresqlintegrations:read')"><q-item-section avatar><q-icon name="table_chart" /></q-item-section><q-item-section>PostgreSQL</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'mongoDbIntegrations' }" v-if="fuseStore.hasPermission('mongodbintegrations:read')"><q-item-section avatar><q-icon name="eco" /></q-item-section><q-item-section>MongoDB</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'keycloakIntegrations' }" v-if="fuseStore.hasPermission('keycloakintegrations:read')"><q-item-section avatar><q-icon name="vpn_key" /></q-item-section><q-item-section>Keycloak</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'serviceBusIntegrations' }" v-if="fuseStore.hasPermission('servicebusintegrations:read')"><q-item-section avatar><q-icon name="move_to_inbox" /></q-item-section><q-item-section>Azure Service Bus</q-item-section></q-item>
+            <q-item clickable :to="{ name: 'cosmosDbIntegrations' }" v-if="fuseStore.hasPermission('cosmosdbintegrations:read')"><q-item-section avatar><q-icon name="public" /></q-item-section><q-item-section>Azure Cosmos DB</q-item-section></q-item>
             <q-item clickable v-ripple :to="{ name: 'redisIntegrations' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.RedisIntegrationsRead)"
               data-tour-id="nav-redis-integrations">

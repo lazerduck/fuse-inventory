@@ -1,9 +1,7 @@
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Azure.Core;
-using Azure.Identity;
+using Fuse.Core.Areas.AzureMetadata;
+using static Fuse.Core.Areas.AzureMetadata.ArmMetadataSession;
 using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
@@ -12,9 +10,7 @@ namespace Fuse.Core.Areas.ServiceBusIntegration;
 
 public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrationManagerService manager, ITokenCredentialFactory? factory = null)
 {
-    private const string Arm = "https://management.azure.com";
     private const string Version = "2024-01-01";
-    private static readonly TokenRequestContext TokenScope = new(["https://management.azure.com/.default"]);
     private readonly ITokenCredentialFactory credentials = factory ?? new DefaultTokenCredentialFactory();
 
     [GeneratedRegex(@"\A/subscriptions/([a-f0-9-]{36})/resourceGroups/([\p{L}\p{N}_.()\-]{1,90})/providers/Microsoft\.ServiceBus/namespaces/[a-z][a-z0-9-]{4,48}[a-z0-9]/?\z",
@@ -25,49 +21,11 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         resourceId is { Length: < 512 } && Enum.IsDefined(mode) && NamespacePattern().Match(resourceId) is { Success: true } match
         && Guid.TryParseExact(match.Groups[1].Value, "D", out _) && !match.Groups[2].Value.EndsWith('.');
 
-    private async Task<string> GetToken(SecretProviderAuthMode mode, CancellationToken ct)
-    {
-        var shared = mode == SecretProviderAuthMode.ClientSecret ? await manager.GetClientSecretCredentialsAsync() : null;
-        if (mode == SecretProviderAuthMode.ClientSecret && (string.IsNullOrWhiteSpace(shared?.TenantId) ||
-            string.IsNullOrWhiteSpace(shared.ClientId) || string.IsNullOrWhiteSpace(shared.ClientSecret)))
-            throw new InspectionError("credentials-not-configured");
-        return (await credentials.Create(mode, shared).GetTokenAsync(TokenScope, ct)).Token;
-    }
-
-    private sealed class InspectionError(string status) : Exception { public string Status { get; } = status; }
-    private static string? Failure(Exception e, CancellationToken caller) => e switch
-    {
-        InspectionError failure => failure.Status,
-        AuthenticationFailedException or ArgumentException => "authentication-failed",
-        OperationCanceledException when !caller.IsCancellationRequested => "timeout",
-        HttpRequestException => "unavailable",
-        JsonException or InvalidOperationException or KeyNotFoundException => "invalid-response",
-        _ => null
-    };
-
-    private sealed record PageList<T>(List<T> Items, string Status);
     private sealed record QueueMetadata(string Path, string Name, string? Status);
 
     private sealed class ReadSession(HttpClient http, string token, CancellationToken caller, CancellationToken deadline)
+        : ArmMetadataSession(http, token, caller, deadline, Version)
     {
-        private int remaining = 300;
-
-        private async Task<JsonDocument> Read(Uri next)
-        {
-            deadline.ThrowIfCancellationRequested();
-            if (remaining-- <= 0) throw new InspectionError("limit-reached");
-            using var request = new HttpRequestMessage(HttpMethod.Get, next);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            using var response = await http.SendAsync(request, deadline);
-            if (!response.IsSuccessStatusCode) throw new InspectionError(response.StatusCode switch
-            {
-                HttpStatusCode.Unauthorized => "authentication-failed", HttpStatusCode.Forbidden => "denied",
-                HttpStatusCode.NotFound => "not-found-or-hidden", HttpStatusCode.TooManyRequests => "throttled",
-                _ => "request-failed"
-            });
-            return JsonDocument.Parse(await response.Content.ReadAsByteArrayAsync(deadline));
-        }
-
         public async Task<(QueueMetadata? Queue, string Status)> KnownQueue(string namespaceId, string name)
         {
             var segment = name.Replace('/', '~');
@@ -79,38 +37,7 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
                 var queue = Queue(namespaceId, json.RootElement);
                 return queue.Path.Equals(path, StringComparison.OrdinalIgnoreCase) ? (queue, "visible") : (null, "invalid-response");
             }
-            catch (Exception e) when (Failure(e, caller) is { } reason) { return (null, reason); }
-        }
-
-        public async Task<PageList<T>> List<T>(string path, Func<JsonElement, T> project, bool firstPageOnly = false)
-        {
-            var rows = new List<T>();
-            var first = new Uri(Arm + path + "?api-version=" + Version);
-            Uri? next = first;
-            var visited = new HashSet<string>(StringComparer.Ordinal);
-            try
-            {
-                while (next is not null)
-                {
-                    deadline.ThrowIfCancellationRequested();
-                    if (visited.Count >= 100) throw new InspectionError("limit-reached");
-                    if (next.Scheme != first.Scheme || next.Authority != first.Authority || next.UserInfo.Length != 0 ||
-                        next.Fragment.Length != 0 || !next.AbsolutePath.Equals(first.AbsolutePath, StringComparison.OrdinalIgnoreCase)
-                        || !visited.Add(next.AbsoluteUri)) throw new InspectionError("invalid-continuation");
-                    using var json = await Read(next);
-                    var root = json.RootElement;
-                    foreach (var entry in root.GetProperty("value").EnumerateArray())
-                    {
-                        if (rows.Count >= 1000) throw new InspectionError("limit-reached");
-                        rows.Add(project(entry));
-                    }
-                    var link = Text(root, "nextLink");
-                    if (firstPageOnly || string.IsNullOrEmpty(link)) break;
-                    if (!Uri.TryCreate(link, UriKind.Absolute, out next)) throw new InspectionError("invalid-continuation");
-                }
-                return new(rows, "visible");
-            }
-            catch (Exception e) when (Failure(e, caller) is { } status) { return new(rows, status); }
+            catch (Exception e) when (Failure(e, Caller) is { } reason) { return (null, reason); }
         }
 
         public async Task<ServiceBusPolicyList> Policies(string path)
@@ -126,11 +53,6 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
             return new(visibility, list.Items.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToArray());
         }
     }
-
-    private static string? Text(JsonElement row, string key) =>
-        row.TryGetProperty(key, out var v) && v.ValueKind != JsonValueKind.Null ? v.GetString() : null;
-    private static string Required(JsonElement row, string key) =>
-        Text(row, key) is { Length: > 0 } s ? s : throw new InspectionError("invalid-response");
 
     private static bool ValidQueueSegment(string segment) => segment.Length is > 0 and <= 260
         && segment is not ("." or "..") && segment.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.' or '~');
@@ -152,7 +74,7 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         deadline.CancelAfter(TimeSpan.FromSeconds(20));
         try
         {
-            var session = new ReadSession(http, await GetToken(mode, deadline.Token), ct, deadline.Token);
+            var session = new ReadSession(http, await GetToken(manager, credentials, mode, deadline.Token), ct, deadline.Token);
             var result = await session.List(namespaceId + "/queues", row => Queue(namespaceId, row), firstPageOnly: true);
             return new(result.Status == "visible", result.Status);
         }
@@ -169,7 +91,7 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         string queueVisibility;
         try
         {
-            var session = new ReadSession(http, await GetToken(item.AuthMode, deadline.Token), ct, deadline.Token);
+            var session = new ReadSession(http, await GetToken(manager, credentials, item.AuthMode, deadline.Token), ct, deadline.Token);
             var list = await session.List(item.NamespaceResourceId + "/queues", row => Queue(item.NamespaceResourceId, row));
             queueVisibility = list.Status;
             namespacePolicies = await session.Policies(item.NamespaceResourceId);

@@ -45,6 +45,7 @@ Fuse Inventory can also integrate with:
 - **[PostgreSQL integration](docs/postgresql.md)** — Read-only role discovery, inherited access, database-scoped privileges and account matching.
 - **[MongoDB integration](docs/mongodb.md)** — Read-only discovery, inherited roles and account matching by username and authentication database.
 - **[Keycloak integration](docs/keycloak.md)** — Realm-scoped clients, service-account roles and OAuth account matching.
+- **[Azure Cosmos DB integration](docs/cosmosdb.md)** — NoSQL container discovery, partition keys and indexing policies.
 - **[Azure Service Bus integration](docs/servicebus.md)** — Queue discovery and namespace- and queue-scoped shared access policies.
 * **Redis** to validate connections, discover ACL users and match them to documented accounts without changing Redis. See the [Redis integration guide](docs/redis.md).
 

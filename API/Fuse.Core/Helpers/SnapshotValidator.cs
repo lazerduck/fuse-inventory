@@ -114,6 +114,13 @@ public static class SnapshotValidator
             if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker)
                 || !string.Equals(broker.Kind, "Azure Service Bus", StringComparison.OrdinalIgnoreCase))
                 errs.Add("Service Bus integration requires an Azure Service Bus message broker.");
+        if (s.CosmosDbIntegrations.GroupBy(i => i.Id).Any(g => g.Count() > 1)
+            || s.CosmosDbIntegrations.GroupBy(i => i.DataStoreId).Any(g => g.Count() > 1))
+            errs.Add("Duplicate Azure Cosmos DB integration.");
+        foreach (var integration in s.CosmosDbIntegrations)
+            if (!dataStores.TryGetValue(integration.DataStoreId, out var cosmosStore)
+                || !string.Equals(cosmosStore.Kind, "Azure Cosmos DB", StringComparison.OrdinalIgnoreCase))
+                errs.Add("Cosmos DB integration requires an Azure Cosmos DB data store.");
         foreach(var integration in s.RabbitMqIntegrations)
             if (!messageBrokers.TryGetValue(integration.MessageBrokerId, out var broker) || !string.Equals(broker.Kind,"RabbitMQ",StringComparison.OrdinalIgnoreCase))
                 errs.Add("RabbitMQ integration requires an existing RabbitMQ message broker.");

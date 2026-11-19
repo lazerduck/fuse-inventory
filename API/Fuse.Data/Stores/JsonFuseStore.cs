@@ -94,6 +94,7 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             MongoDbIntegrations = await ReadAsync<MongoDbIntegration>("mongodbintegrations.json", ct),
             KeycloakIntegrations = await ReadAsync<KeycloakIntegration>("keycloakintegrations.json", ct),
             ServiceBusIntegrations = await ReadAsync<ServiceBusConnection>("servicebusintegrations.json", ct),
+            CosmosDbIntegrations = await ReadAsync<CosmosDbConnection>("cosmosdbintegrations.json", ct),
             RabbitMqIntegrations = await ReadAsync<RabbitMqIntegration>("rabbitmqintegrations.json", ct)
         };
 
@@ -158,6 +159,8 @@ public sealed class JsonFuseStore : IFuseStore, IBackupCapableFuseStore, IDispos
             writeTasks.Add(WriteAsync("keycloakintegrations.json", snapshot.KeycloakIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.ServiceBusIntegrations, snapshot.ServiceBusIntegrations))
             writeTasks.Add(WriteAsync("servicebusintegrations.json", snapshot.ServiceBusIntegrations, ct));
+        if (_cache is null || !ReferenceEquals(_cache.CosmosDbIntegrations, snapshot.CosmosDbIntegrations))
+            writeTasks.Add(WriteAsync("cosmosdbintegrations.json", snapshot.CosmosDbIntegrations, ct));
         if (_cache is null || !ReferenceEquals(_cache.Positions, snapshot.Positions))
             writeTasks.Add(WriteAsync("positions.json", snapshot.Positions, ct));
         if (_cache is null || !ReferenceEquals(_cache.ResponsibilityTypes, snapshot.ResponsibilityTypes))

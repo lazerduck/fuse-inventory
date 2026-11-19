@@ -459,6 +459,72 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
+  cosmosDbIntegrationAll(signal?: AbortSignal): Promise<CosmosDbConnection[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  cosmosDbIntegrationPOST(
+    body: CreateCosmosDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection>;
+
+  /**
+   * @return OK
+   */
+  cosmosDbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationPUT(
+    id: string,
+    body: UpdateCosmosDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection>;
+
+  /**
+   * @return No Content
+   */
+  cosmosDbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationValidate(
+    body: ValidateCosmosDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnectionTestResult>;
+
+  /**
+   * @return OK
+   */
+  cosmosDbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnectionTestResult>;
+
+  /**
+   * @param database (optional)
+   * @param container (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationDiscovery(
+    id: string,
+    database: string | undefined,
+    container: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbDiscoveryResponse>;
+
+  /**
+   * @return OK
+   */
   dataStoreAll(signal?: AbortSignal): Promise<DataStore[]>;
 
   /**
@@ -6177,6 +6243,681 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  cosmosDbIntegrationAll(signal?: AbortSignal): Promise<CosmosDbConnection[]> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationAll(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationAll(
+    response: Response,
+  ): Promise<CosmosDbConnection[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(CosmosDbConnection.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnection[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  cosmosDbIntegrationPOST(
+    body: CreateCosmosDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationPOST(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationPOST(
+    response: Response,
+  ): Promise<CosmosDbConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = CosmosDbConnection.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnection>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  cosmosDbIntegrationGET(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationGET(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationGET(
+    response: Response,
+  ): Promise<CosmosDbConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CosmosDbConnection.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnection>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationPUT(
+    id: string,
+    body: UpdateCosmosDbIntegration | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnection> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationPUT(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationPUT(
+    response: Response,
+  ): Promise<CosmosDbConnection> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CosmosDbConnection.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnection>(null as any);
+  }
+
+  /**
+   * @return No Content
+   */
+  cosmosDbIntegrationDELETE(id: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationDELETE(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationValidate(
+    body: ValidateCosmosDbConnection | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/validate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationValidate(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationValidate(
+    response: Response,
+  ): Promise<CosmosDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CosmosDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  cosmosDbIntegrationValidateSaved(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbConnectionTestResult> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/{id}/validate";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationValidateSaved(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationValidateSaved(
+    response: Response,
+  ): Promise<CosmosDbConnectionTestResult> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CosmosDbConnectionTestResult.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbConnectionTestResult>(null as any);
+  }
+
+  /**
+   * @param database (optional)
+   * @param container (optional)
+   * @return OK
+   */
+  cosmosDbIntegrationDiscovery(
+    id: string,
+    database: string | undefined,
+    container: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<CosmosDbDiscoveryResponse> {
+    let url_ = this.baseUrl + "/api/CosmosDbIntegration/{id}/discovery?";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    if (database === null)
+      throw new globalThis.Error("The parameter 'database' cannot be null.");
+    else if (database !== undefined)
+      url_ += "database=" + encodeURIComponent("" + database) + "&";
+    if (container === null)
+      throw new globalThis.Error("The parameter 'container' cannot be null.");
+    else if (container !== undefined)
+      url_ += "container=" + encodeURIComponent("" + container) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCosmosDbIntegrationDiscovery(_response);
+    });
+  }
+
+  protected processCosmosDbIntegrationDiscovery(
+    response: Response,
+  ): Promise<CosmosDbDiscoveryResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CosmosDbDiscoveryResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<CosmosDbDiscoveryResponse>(null as any);
   }
 
   /**
@@ -23681,6 +24422,9 @@ export enum AuditAction {
   ServiceBusIntegrationCreated = "ServiceBusIntegrationCreated",
   ServiceBusIntegrationUpdated = "ServiceBusIntegrationUpdated",
   ServiceBusIntegrationDeleted = "ServiceBusIntegrationDeleted",
+  CosmosDbIntegrationCreated = "CosmosDbIntegrationCreated",
+  CosmosDbIntegrationUpdated = "CosmosDbIntegrationUpdated",
+  CosmosDbIntegrationDeleted = "CosmosDbIntegrationDeleted",
 }
 
 export enum AuditArea {
@@ -23707,6 +24451,7 @@ export enum AuditArea {
   MongoDbIntegration = "MongoDbIntegration",
   KeycloakIntegration = "KeycloakIntegration",
   ServiceBusIntegration = "ServiceBusIntegration",
+  CosmosDbIntegration = "CosmosDbIntegration",
 }
 
 export class AuditLog implements IAuditLog {
@@ -24917,6 +25662,392 @@ export interface ICloneTarget {
   environmentName?: string | undefined;
 }
 
+export class CosmosDbConnection implements ICosmosDbConnection {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  constructor(data?: ICosmosDbConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.accountResourceId = _data["accountResourceId"];
+      this.authMode = _data["authMode"];
+      this.createdAt = _data["createdAt"]
+        ? new Date(_data["createdAt"].toString())
+        : (undefined as any);
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): CosmosDbConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["accountResourceId"] = this.accountResourceId;
+    data["authMode"] = this.authMode;
+    data["createdAt"] = this.createdAt
+      ? this.createdAt.toISOString()
+      : (undefined as any);
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface ICosmosDbConnection {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class CosmosDbConnectionTestResult implements ICosmosDbConnectionTestResult {
+  isSuccessful?: boolean;
+  status?: string | undefined;
+
+  constructor(data?: ICosmosDbConnectionTestResult) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSuccessful = _data["isSuccessful"];
+      this.status = _data["status"];
+    }
+  }
+
+  static fromJS(data: any): CosmosDbConnectionTestResult {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbConnectionTestResult();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["isSuccessful"] = this.isSuccessful;
+    data["status"] = this.status;
+    return data;
+  }
+}
+
+export interface ICosmosDbConnectionTestResult {
+  isSuccessful?: boolean;
+  status?: string | undefined;
+}
+
+export class CosmosDbContainer implements ICosmosDbContainer {
+  name?: string | undefined;
+  partitionKey?: CosmosDbPartitionKey;
+  indexingPolicy?: CosmosDbIndexingPolicy;
+
+  constructor(data?: ICosmosDbContainer) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.partitionKey = _data["partitionKey"]
+        ? CosmosDbPartitionKey.fromJS(_data["partitionKey"])
+        : (undefined as any);
+      this.indexingPolicy = _data["indexingPolicy"]
+        ? CosmosDbIndexingPolicy.fromJS(_data["indexingPolicy"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): CosmosDbContainer {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbContainer();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["partitionKey"] = this.partitionKey
+      ? this.partitionKey.toJSON()
+      : (undefined as any);
+    data["indexingPolicy"] = this.indexingPolicy
+      ? this.indexingPolicy.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface ICosmosDbContainer {
+  name?: string | undefined;
+  partitionKey?: CosmosDbPartitionKey;
+  indexingPolicy?: CosmosDbIndexingPolicy;
+}
+
+export class CosmosDbDatabase implements ICosmosDbDatabase {
+  name?: string | undefined;
+  containerVisibility?: string | undefined;
+  containers?: CosmosDbContainer[] | undefined;
+
+  constructor(data?: ICosmosDbDatabase) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.containerVisibility = _data["containerVisibility"];
+      if (Array.isArray(_data["containers"])) {
+        this.containers = [] as any;
+        for (let item of _data["containers"])
+          this.containers!.push(CosmosDbContainer.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): CosmosDbDatabase {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbDatabase();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["containerVisibility"] = this.containerVisibility;
+    if (Array.isArray(this.containers)) {
+      data["containers"] = [];
+      for (let item of this.containers)
+        data["containers"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface ICosmosDbDatabase {
+  name?: string | undefined;
+  containerVisibility?: string | undefined;
+  containers?: CosmosDbContainer[] | undefined;
+}
+
+export class CosmosDbDiscoveryResponse implements ICosmosDbDiscoveryResponse {
+  accountResourceId?: string | undefined;
+  observedAt?: Date;
+  visibility?: string | undefined;
+  databases?: CosmosDbDatabase[] | undefined;
+
+  constructor(data?: ICosmosDbDiscoveryResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountResourceId = _data["accountResourceId"];
+      this.observedAt = _data["observedAt"]
+        ? new Date(_data["observedAt"].toString())
+        : (undefined as any);
+      this.visibility = _data["visibility"];
+      if (Array.isArray(_data["databases"])) {
+        this.databases = [] as any;
+        for (let item of _data["databases"])
+          this.databases!.push(CosmosDbDatabase.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): CosmosDbDiscoveryResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbDiscoveryResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountResourceId"] = this.accountResourceId;
+    data["observedAt"] = this.observedAt
+      ? this.observedAt.toISOString()
+      : (undefined as any);
+    data["visibility"] = this.visibility;
+    if (Array.isArray(this.databases)) {
+      data["databases"] = [];
+      for (let item of this.databases)
+        data["databases"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface ICosmosDbDiscoveryResponse {
+  accountResourceId?: string | undefined;
+  observedAt?: Date;
+  visibility?: string | undefined;
+  databases?: CosmosDbDatabase[] | undefined;
+}
+
+export class CosmosDbIndexingPolicy implements ICosmosDbIndexingPolicy {
+  mode?: string | undefined;
+  automatic?: boolean | undefined;
+  includedPaths?: string[] | undefined;
+  excludedPaths?: string[] | undefined;
+  policyJson?: string | undefined;
+
+  constructor(data?: ICosmosDbIndexingPolicy) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.mode = _data["mode"];
+      this.automatic = _data["automatic"];
+      if (Array.isArray(_data["includedPaths"])) {
+        this.includedPaths = [] as any;
+        for (let item of _data["includedPaths"]) this.includedPaths!.push(item);
+      }
+      if (Array.isArray(_data["excludedPaths"])) {
+        this.excludedPaths = [] as any;
+        for (let item of _data["excludedPaths"]) this.excludedPaths!.push(item);
+      }
+      this.policyJson = _data["policyJson"];
+    }
+  }
+
+  static fromJS(data: any): CosmosDbIndexingPolicy {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbIndexingPolicy();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["mode"] = this.mode;
+    data["automatic"] = this.automatic;
+    if (Array.isArray(this.includedPaths)) {
+      data["includedPaths"] = [];
+      for (let item of this.includedPaths) data["includedPaths"].push(item);
+    }
+    if (Array.isArray(this.excludedPaths)) {
+      data["excludedPaths"] = [];
+      for (let item of this.excludedPaths) data["excludedPaths"].push(item);
+    }
+    data["policyJson"] = this.policyJson;
+    return data;
+  }
+}
+
+export interface ICosmosDbIndexingPolicy {
+  mode?: string | undefined;
+  automatic?: boolean | undefined;
+  includedPaths?: string[] | undefined;
+  excludedPaths?: string[] | undefined;
+  policyJson?: string | undefined;
+}
+
+export class CosmosDbPartitionKey implements ICosmosDbPartitionKey {
+  kind?: string | undefined;
+  version?: number | undefined;
+  paths?: string[] | undefined;
+
+  constructor(data?: ICosmosDbPartitionKey) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.kind = _data["kind"];
+      this.version = _data["version"];
+      if (Array.isArray(_data["paths"])) {
+        this.paths = [] as any;
+        for (let item of _data["paths"]) this.paths!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): CosmosDbPartitionKey {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbPartitionKey();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["kind"] = this.kind;
+    data["version"] = this.version;
+    if (Array.isArray(this.paths)) {
+      data["paths"] = [];
+      for (let item of this.paths) data["paths"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface ICosmosDbPartitionKey {
+  kind?: string | undefined;
+  version?: number | undefined;
+  paths?: string[] | undefined;
+}
+
 export class CreateAccount implements ICreateAccount {
   targetId?: string;
   targetKind?: TargetKind;
@@ -25382,6 +26513,54 @@ export interface ICreateApplicationPipeline {
   applicationId?: string;
   name?: string | undefined;
   pipelineUri?: string | undefined;
+}
+
+export class CreateCosmosDbIntegration implements ICreateCosmosDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: ICreateCosmosDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.accountResourceId = _data["accountResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): CreateCosmosDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new CreateCosmosDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["accountResourceId"] = this.accountResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface ICreateCosmosDbIntegration {
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
 }
 
 export class CreateDataStore implements ICreateDataStore {
@@ -35369,6 +36548,58 @@ export enum UpdateCheckStatus {
   Unavailable = "Unavailable",
 }
 
+export class UpdateCosmosDbIntegration implements IUpdateCosmosDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: IUpdateCosmosDbIntegration) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.dataStoreId = _data["dataStoreId"];
+      this.accountResourceId = _data["accountResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): UpdateCosmosDbIntegration {
+    data = typeof data === "object" ? data : {};
+    let result = new UpdateCosmosDbIntegration();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["dataStoreId"] = this.dataStoreId;
+    data["accountResourceId"] = this.accountResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface IUpdateCosmosDbIntegration {
+  id?: string;
+  name?: string | undefined;
+  dataStoreId?: string;
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+}
+
 export class UpdateDataStore implements IUpdateDataStore {
   id?: string;
   name?: string | undefined;
@@ -37050,6 +38281,46 @@ export interface IUserGuideProgress {
   lastCompletedAt?: Date | undefined;
   updatedAt?: Date;
   applicationId?: string | undefined;
+}
+
+export class ValidateCosmosDbConnection implements IValidateCosmosDbConnection {
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
+
+  constructor(data?: IValidateCosmosDbConnection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountResourceId = _data["accountResourceId"];
+      this.authMode = _data["authMode"];
+    }
+  }
+
+  static fromJS(data: any): ValidateCosmosDbConnection {
+    data = typeof data === "object" ? data : {};
+    let result = new ValidateCosmosDbConnection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountResourceId"] = this.accountResourceId;
+    data["authMode"] = this.authMode;
+    return data;
+  }
+}
+
+export interface IValidateCosmosDbConnection {
+  accountResourceId?: string | undefined;
+  authMode?: SecretProviderAuthMode;
 }
 
 export class ValidateKeycloakConnection implements IValidateKeycloakConnection {
