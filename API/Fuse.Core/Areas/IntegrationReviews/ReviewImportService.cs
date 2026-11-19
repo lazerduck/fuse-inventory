@@ -116,8 +116,9 @@ public sealed class ReviewImportService(IFuseStore store, IAuditService audit, I
         var item = selection.Item;
         if (item.Kind == "queue") return s.MessageBrokers.First(b => b.Id == target).Queues?.Where(q => q.Name == item.Name).Select(q => q.Id).ToArray() ?? [];
         return s.Accounts.Where(a => a.TargetId == target && a.TargetKind == Kind(selection) && (item.Kind == "client"
-                ? a.AuthKind == AuthKind.OAuthClient && a.Parameters?.GetValueOrDefault("keycloakIssuer")?.TrimEnd('/') == item.Scope
-                  && a.Parameters.GetValueOrDefault("keycloakClientId") == item.Name
+                ? a.AuthKind == AuthKind.OAuthClient && Uri.TryCreate(a.Parameters?.GetValueOrDefault("keycloakIssuer"), UriKind.Absolute, out var issuer)
+                  && KeycloakRealm.Valid(issuer) && KeycloakRealm.Identity(issuer) == item.Scope
+                  && a.Parameters?.GetValueOrDefault("keycloakClientId") == item.Name
                 : a.AuthKind == AuthKind.UserPassword && a.UserName == item.Name && (selection.Provider != "mongodb" || a.Parameters?.GetValueOrDefault("authSource") == item.Scope)))
             .Select(a => a.Id).ToArray();
     }
@@ -160,7 +161,7 @@ public sealed class ReviewImportService(IFuseStore store, IAuditService audit, I
                     Dictionary<string, string>? parameters = isClient ? new() { ["keycloakIssuer"] = item.Scope, ["keycloakClientId"] = item.Name }
                         : selection.Provider == "mongodb" ? new() { ["authSource"] = item.Scope } : null;
                     var account = new Models.Account(id, target, kind, isClient ? AuthKind.OAuthClient : AuthKind.UserPassword,
-                        new(SecretBindingKind.None, null, null), item.Name, parameters, [], [], now, now) { ImportedFrom = Origin(s, selection) };
+                        new(SecretBindingKind.None, null, null), isClient ? null : item.Name, parameters, [], [], now, now) { ImportedFrom = Origin(s, selection) };
                     s = s with { Accounts = [.. s.Accounts, account] };
                 }
             }

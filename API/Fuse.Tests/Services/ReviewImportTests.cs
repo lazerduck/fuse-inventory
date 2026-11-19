@@ -167,6 +167,14 @@ public class ReviewImportTests
             }
             Assert.True((await service.ApplyAsync(preview, default)).Value!.Created);
         }
-        Assert.Equal(2, (await store.GetAsync()).Accounts.Select(a => a.ImportedFrom!.NativeId).Distinct().Count());
+        var saved = (await store.GetAsync()).Accounts;
+        Assert.Equal(2, saved.Select(a => a.ImportedFrom!.NativeId).Distinct().Count());
+        Assert.All(saved, a => Assert.Null(a.UserName));
+        var alpha = saved.Single(a => a.Parameters!["keycloakIssuer"] == realms[0].Issuer.AbsoluteUri);
+        await store.UpdateAsync(s => s with { Accounts = s.Accounts.Select(a => a.Id != alpha.Id ? a : a with {
+            Parameters = new(a.Parameters!) { ["keycloakIssuer"] = "https://KC.TEST/realms/alpha/" }
+        }).ToArray() });
+        var reused = await service.PreviewAsync(new("keycloak", realms[0].Id, new("client", "inventory", realms[0].Issuer.AbsoluteUri), instance), default);
+        Assert.Equal(alpha.Id, reused.Value!.ExistingId);
     }
 }

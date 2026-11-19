@@ -37,7 +37,7 @@ Open the SQL permissions overview and preview the proposed operations. The previ
 
 ## Importing observed inventory
 
-Select a saved connection in the reviews filter and choose **Import observed inventory**. Select a visible login, OAuth client or queue, choose an application instance if appropriate, and preview the destination. The confirmation rechecks the source and reuses matching inventory. An imported MongoDB account keeps its authentication database. A Keycloak client keeps its issuer. Redis and PostgreSQL users are linked to their registered data store, and queues to their message broker. Importing adds a Fuse record or dependency. Creating an ongoing expectation is a separate action.
+Select a saved connection in the reviews filter and choose **Import observed inventory**. Select a visible login, OAuth client or queue, choose an application instance if appropriate, and preview the destination. Each preview expires after ten minutes. Confirmation rechecks the source, destination, permissions and native identifier before creating or reusing inventory. An existing manual record can acquire a source identifier after explicit preview. Limited discovery is marked on the preview and its recorded origin. An imported MongoDB account keeps its authentication database. A Keycloak client keeps its issuer. Redis and PostgreSQL users are linked to their registered data store, and queues to their message broker. Importing adds a Fuse record or dependency. Creating an ongoing expectation is a separate action.
 
 ## Access
 
@@ -47,7 +47,7 @@ Select a saved connection in the reviews filter and choose **Import observed inv
 | See application impact | `application:read`. Environment and responsibility details also use the corresponding inventory permissions. |
 | Create, edit or delete expectations | `integrationreviews:manage` plus access to the source and selected inventory. |
 | Inspect now or enable scheduled inspection | `integrationreviews:refresh`. Scheduling also requires permission to edit the review. |
-| Import | `integrationreviews:import`, source and target read, and the account creation or broker update permission. Adding an application dependency also requires `application:instance:update`. |
+| Import | `integrationreviews:import`, source and target read, and account creation or broker update as appropriate. Recording the origin on an existing account requires account update. Adding an application dependency also requires `application:instance:update`. |
 | Repair a direct PostgreSQL table grant | Explicit authenticated `postgresqlintegrations:grants:apply`, review, account and PostgreSQL read permissions, and a PostgreSQL connection allowed to perform the narrow repair. Preview first and inspect after applying. |
 
 These actions follow the installation's configured security posture. The PostgreSQL repair and credential-binding actions additionally require explicit authenticated grants. Password connectors can follow an existing Key Vault secret or pin a version. Azure connectors can select a named credential profile. Separate controls govern optional directory queries and viewing secret metadata. [Connector passwords](connector-passwords.md) · [Azure secret references](azure-secret-references.md) · [Entra integration](entra.md)
