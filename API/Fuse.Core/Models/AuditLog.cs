@@ -155,7 +155,8 @@ public enum AuditAction
     IntegrationReviewDeleted,
     IntegrationReviewImported,
     PostgreSqlGrantRepairRequested,
-    PostgreSqlGrantRepairApplied
+    PostgreSqlGrantRepairApplied,
+    IntegrationPasswordBindingChanged
 }
 
 /// <summary>

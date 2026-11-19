@@ -12,6 +12,7 @@ public sealed record BindIntegrationPassword(string ExpectedRevision, AzureKeyVa
 
 public sealed class IntegrationPasswords(IFuseStore store, IAzureKeyVaultClient vaults, IAuditService audit, ICurrentUser user)
 {
+    private IFuseStore Store => store;
     public const string Unavailable = "The saved Key Vault password is unavailable. Check the integration’s credential reference.";
     public static IPasswordConnection? Find(Snapshot s, string provider, Guid id) => provider switch
     {
@@ -24,14 +25,14 @@ public sealed class IntegrationPasswords(IFuseStore store, IAzureKeyVaultClient 
 
     private static string Context(IPasswordConnection connection) => connection switch
     {
-        MongoDbIntegration m => $"Auth database {m.AuthenticationDatabase}, TLS {(m.UseTls ? "enabled" : "disabled")}",
-        RabbitMqIntegration r => $"Virtual host {r.VirtualHost}",
+        Models.MongoDbIntegration m => $"Auth database {m.AuthenticationDatabase}, TLS {(m.UseTls ? "enabled" : "disabled")}",
+        Models.RabbitMqIntegration r => $"Virtual host {r.VirtualHost}",
         _ => connection.Endpoint.Scheme
     };
     private static Guid Target(IPasswordConnection c) => c switch
     {
-        RedisIntegration r => r.DataStoreId, MongoDbIntegration m => m.DataStoreId,
-        PostgreSqlIntegration p => p.DataStoreId, RabbitMqIntegration b => b.MessageBrokerId, _ => throw new ArgumentException()
+        Models.RedisIntegration r => r.DataStoreId, Models.MongoDbIntegration m => m.DataStoreId,
+        Models.PostgreSqlIntegration p => p.DataStoreId, Models.RabbitMqIntegration b => b.MessageBrokerId, _ => throw new ArgumentException()
     };
     private static string Hash(object value) => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(value)));
     private static string Destination(IPasswordConnection c) =>
@@ -45,7 +46,7 @@ public sealed class IntegrationPasswords(IFuseStore store, IAzureKeyVaultClient 
     {
         if (connection.PasswordBinding is not {} binding) return Result<T>.Success(connection);
         if (resolver is null || binding.Destination != Destination(connection)) return Result<T>.Failure(Unavailable);
-        var snapshot = await resolver.store.GetAsync(ct);
+        var snapshot = await resolver.Store.GetAsync(ct);
         var vault = Available(snapshot, binding.Reference);
         if (vault is null || vault.VaultUri != binding.VaultUri) return Result<T>.Failure(Unavailable);
         var value = await resolver.Read(vault, binding.Reference, ct);
@@ -103,10 +104,10 @@ public sealed class IntegrationPasswords(IFuseStore store, IAzureKeyVaultClient 
             result = Result<PasswordReferenceView>.Success(View(updated));
             return updated switch
             {
-                RedisIntegration r => s with { RedisIntegrations = s.RedisIntegrations.Select(x => x.Id == id ? r : x).ToArray() },
-                MongoDbIntegration m => s with { MongoDbIntegrations = s.MongoDbIntegrations.Select(x => x.Id == id ? m : x).ToArray() },
-                PostgreSqlIntegration p => s with { PostgreSqlIntegrations = s.PostgreSqlIntegrations.Select(x => x.Id == id ? p : x).ToArray() },
-                RabbitMqIntegration b => s with { RabbitMqIntegrations = s.RabbitMqIntegrations.Select(x => x.Id == id ? b : x).ToArray() },
+                Models.RedisIntegration r => s with { RedisIntegrations = s.RedisIntegrations.Select(x => x.Id == id ? r : x).ToArray() },
+                Models.MongoDbIntegration m => s with { MongoDbIntegrations = s.MongoDbIntegrations.Select(x => x.Id == id ? m : x).ToArray() },
+                Models.PostgreSqlIntegration p => s with { PostgreSqlIntegrations = s.PostgreSqlIntegrations.Select(x => x.Id == id ? p : x).ToArray() },
+                Models.RabbitMqIntegration b => s with { RabbitMqIntegrations = s.RabbitMqIntegrations.Select(x => x.Id == id ? b : x).ToArray() },
                 _ => throw new ArgumentException()
             };
         }, ct);
