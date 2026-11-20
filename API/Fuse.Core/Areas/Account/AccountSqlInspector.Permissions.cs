@@ -50,10 +50,12 @@ public partial class AccountSqlInspector
             );
             IF @limited=1 AND EXISTS(SELECT 1 FROM #RequestedDatabases WHERE DB_ID(Name) IS NULL OR ISNULL(HAS_DBACCESS(Name),0) <> 1)
                 THROW 50001, 'One or more requested databases are unavailable.', 1;
+            -- Temp names use the initial database's collation. Resolve server-level names
+            -- to catalog IDs before comparing them with server metadata.
             DECLARE @Database SYSNAME, @Sql NVARCHAR(MAX);
             DECLARE databases CURSOR LOCAL FAST_FORWARD FOR
                 SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND HAS_DBACCESS(name) = 1
-                AND (@limited=0 OR name IN (SELECT Name FROM #RequestedDatabases));
+                AND (@limited=0 OR database_id IN (SELECT DB_ID(Name) FROM #RequestedDatabases));
             OPEN databases;
             FETCH NEXT FROM databases INTO @Database;
             WHILE @@FETCH_STATUS = 0
@@ -135,7 +137,8 @@ public partial class AccountSqlInspector
             DEALLOCATE databases;
             SELECT PrincipalName, DatabaseName, SchemaName, ObjectName, ColumnName,
                    PermissionName, PermissionState, PermissionClass, Inherited FROM #PermissionRows;
-            SELECT sp.name FROM sys.server_principals sp JOIN #Principals pr ON sp.name = pr.Name
+            SELECT pr.Name FROM #Principals pr
+            JOIN sys.server_principals sp ON sp.principal_id = SUSER_ID(pr.Name)
             WHERE sp.type IN ('S', 'U', 'G', 'E', 'X');
             """;
 
