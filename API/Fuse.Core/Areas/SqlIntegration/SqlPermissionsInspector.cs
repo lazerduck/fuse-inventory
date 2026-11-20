@@ -69,6 +69,7 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
             );
         }
 
+        actualPermissions = SqlPermissionDiff.CheckDatabaseNames(account.Grants, actualPermissions);
         var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
         var status = SqlPermissionDiff.ComputeStatus(actualPermissions, comparisons);
 
@@ -77,16 +78,19 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
             SqlIntegrationId: integration.Id,
             SqlIntegrationName: integration.Name,
             Status: status,
-            StatusSummary: GetStatusSummary(status, principalName),
+            StatusSummary: GetStatusSummaryStatic(status, principalName),
             PermissionComparisons: comparisons,
             ErrorMessage: null
-        );
+        ) { Coverage = actualPermissions.Coverage, CoverageWarning = actualPermissions.CoverageWarning };
     }
 
-    public async Task<SqlIntegrationPermissionsOverviewResponse> GetOverviewAsync(
+    public Task<SqlIntegrationPermissionsOverviewResponse> GetOverviewAsync(
         Models.SqlIntegration integration,
         Snapshot snapshot,
-        CancellationToken ct = default)
+        CancellationToken ct = default) => GetOverviewAsync(integration, snapshot, includeOrphans: true, ct);
+
+    internal async Task<SqlIntegrationPermissionsOverviewResponse> GetOverviewAsync(
+        Models.SqlIntegration integration, Snapshot snapshot, bool includeOrphans, CancellationToken ct)
     {
         if ((integration.Permissions & SqlPermissions.Read) == 0)
         {
@@ -103,22 +107,17 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
             .Where(a => a.TargetKind == TargetKind.DataStore && a.TargetId == integration.DataStoreId)
             .ToList();
 
-        var managedPrincipalNames = associatedAccounts
-            .Where(a => !string.IsNullOrWhiteSpace(a.UserName))
-            .Select(a => a.UserName!)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        // Collect all managed principal names for batch query
         var managedPrincipalList = associatedAccounts
             .Where(a => !string.IsNullOrWhiteSpace(a.UserName))
             .Select(a => a.UserName!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(StringComparer.Ordinal)
             .ToList();
+        var managedPrincipalNames = managedPrincipalList.ToHashSet(StringComparer.Ordinal);
 
         // Batch query: single SQL call fetches all principals' permissions at once
         // instead of N individual calls (one per principal). Each database is scanned
         // ONCE for all principals instead of N times.
-        IReadOnlyDictionary<string, SqlPrincipalPermissions> permissionsMap = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase);
+        IReadOnlyDictionary<string, SqlPrincipalPermissions> permissionsMap = new Dictionary<string, SqlPrincipalPermissions>(StringComparer.Ordinal);
         string? batchError = null;
 
         if (managedPrincipalList.Count > 0)
@@ -156,33 +155,10 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
 
             if (permissionsMap.TryGetValue(principalName, out var actualPermissions) && actualPermissions != null)
             {
-                // If batch query succeeded for this principal, use it
-                if (actualPermissions.Exists)
-                {
-                    var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
-                    var status = SqlPermissionDiff.ComputeStatus(actualPermissions, comparisons);
-
-                    accountStatuses.Add(new SqlAccountPermissionsStatus(
-                        AccountId: account.Id,
-                        AccountName: GetAccountDisplayName(account, snapshot),
-                        PrincipalName: principalName,
-                        Status: status,
-                        PermissionComparisons: comparisons,
-                        ErrorMessage: actualPermissions.InspectionError));
-                }
-                else
-                {
-                    // Principal doesn't exist in SQL
-                    accountStatuses.Add(new SqlAccountPermissionsStatus(
-                        AccountId: account.Id,
-                        AccountName: GetAccountDisplayName(account, snapshot),
-                        PrincipalName: principalName,
-                        Status: SyncStatus.MissingPrincipal,
-                        PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                        ErrorMessage: null));
-                }
+                if (actualPermissions.Exists && actualPermissions.PrincipalName is { } canonical) managedPrincipalNames.Add(canonical);
+                accountStatuses.Add(BuildStatus(account, snapshot, actualPermissions));
             }
-            else if (batchError != null)
+            else
             {
                 // Batch query failed for this principal
                 accountStatuses.Add(new SqlAccountPermissionsStatus(
@@ -191,37 +167,40 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
                     PrincipalName: principalName,
                     Status: SyncStatus.Error,
                     PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                    ErrorMessage: batchError));
+                    ErrorMessage: batchError ?? "The inspection did not return this principal."));
             }
         }
 
         // Orphan principals: query all SQL principals, then find those not in managedPrincipalNames
         // Also use batch query for orphans to keep it efficient
         var orphanPrincipals = new List<SqlOrphanPrincipal>();
-        var (principalNamesSuccess, principalNames, _) = await _sqlInspector.GetAllPrincipalNamesAsync(integration, ct);
-        if (principalNamesSuccess && principalNames is not null)
+        if (includeOrphans)
         {
-            var orphanNames = principalNames
-                .Where(name => !string.IsNullOrWhiteSpace(name) && !managedPrincipalNames.Contains(name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (orphanNames.Count > 0)
+            var (principalNamesSuccess, principalNames, _) = await _sqlInspector.GetAllPrincipalNamesAsync(integration, ct);
+            if (principalNamesSuccess && principalNames is not null)
             {
-                // Use batch query for orphans too
-                var (orphanOk, orphanMap, _) = await _sqlInspector.GetPrincipalPermissionsBatchAsync(
-                    integration, orphanNames, ct);
+                var orphanNames = principalNames
+                    .Where(name => !string.IsNullOrWhiteSpace(name) && !managedPrincipalNames.Contains(name))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
 
-                if (orphanOk && orphanMap != null)
+                if (orphanNames.Count > 0)
                 {
-                    foreach (var name in orphanNames)
+                    // Use batch query for orphans too
+                    var (orphanOk, orphanMap, _) = await _sqlInspector.GetPrincipalPermissionsBatchAsync(
+                        integration, orphanNames, ct);
+
+                    if (orphanOk && orphanMap != null)
                     {
-                        if (orphanMap.TryGetValue(name, out var orph) && orph.Exists && orph.PrincipalName is not null)
+                        foreach (var name in orphanNames)
                         {
-                            orphanPrincipals.Add(new SqlOrphanPrincipal(
-                                orph.PrincipalName!,
-                                orph.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList(),
-                                orph.InspectionError));
+                            if (orphanMap.TryGetValue(name, out var orph) && orph.Exists && orph.PrincipalName is not null)
+                            {
+                                orphanPrincipals.Add(new SqlOrphanPrincipal(
+                                    orph.PrincipalName!,
+                                    SqlPermissionDiff.ImportableGrants(orph), orph.InspectionError)
+                                    { Coverage = orph.Coverage, CoverageWarning = orph.CoverageWarning });
+                            }
                         }
                     }
                 }
@@ -245,7 +224,7 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
             ErrorMessage: null);
     }
 
-    private static string GetAccountDisplayName(Models.Account account, Snapshot snapshot)
+    internal static string GetAccountDisplayName(Models.Account account, Snapshot snapshot)
     {
         var targetName = account.TargetKind switch
         {
@@ -263,24 +242,24 @@ public class SqlPermissionsInspector : ISqlPermissionsInspector
         return account.UserName ?? targetName ?? account.Id.ToString();
     }
 
-    private static string GetStatusSummary(SyncStatus status, string? principalName) => status switch
+    internal static SqlAccountPermissionsStatus BuildStatus(Models.Account account, Snapshot snapshot, SqlPrincipalPermissions actual)
     {
-        SyncStatus.InSync => "Permissions are in sync.",
-        SyncStatus.MissingPrincipal => $"SQL principal '{principalName}' does not exist.",
-        SyncStatus.DriftDetected => "Permission drift detected between configured and actual grants.",
-        SyncStatus.Error => "An error occurred while checking permissions.",
-        SyncStatus.NotApplicable => "SQL status check is not applicable.",
-        _ => "Unknown status."
-    };
+        actual = SqlPermissionDiff.CheckDatabaseNames(account.Grants, actual);
+        var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actual);
+        return new SqlAccountPermissionsStatus(account.Id, GetAccountDisplayName(account, snapshot), account.UserName,
+            SqlPermissionDiff.ComputeStatus(actual, comparisons), comparisons, actual.InspectionError)
+            { Coverage = actual.Coverage, CoverageWarning = actual.CoverageWarning };
+    }
 
     /// <summary>
     /// Public static helper for external callers that need to generate status summaries.
     /// </summary>
     public static string GetStatusSummaryStatic(SyncStatus status, string? principalName) => status switch
     {
-        SyncStatus.InSync => "Permissions are in sync.",
+        SyncStatus.InSync => "Whole-database grants match the configuration.",
         SyncStatus.MissingPrincipal => $"SQL principal '{principalName}' does not exist.",
-        SyncStatus.DriftDetected => "Permission drift detected between configured and actual grants.",
+        SyncStatus.DriftDetected => "Configured and observed whole-database grants differ.",
+        SyncStatus.Unknown => "Database grant coverage is incomplete.",
         SyncStatus.Error => "An error occurred while checking permissions.",
         SyncStatus.NotApplicable => "SQL status check is not applicable.",
         _ => "Unknown status."

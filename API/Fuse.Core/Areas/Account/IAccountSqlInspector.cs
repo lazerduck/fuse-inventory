@@ -11,7 +11,12 @@ public record SqlPrincipalPermissions(
     bool Exists,
     IReadOnlyList<SqlActualGrant> Grants,
     string? InspectionError = null
-);
+)
+{
+    public IReadOnlyList<SqlPrivilegeCoverage> Coverage { get; init; } = [];
+    public string? CoverageWarning { get; init; }
+    internal IReadOnlySet<string>? CatalogDatabases { get; init; }
+}
 
 /// <summary>
 /// Represents a single actual grant found in SQL.
@@ -23,6 +28,7 @@ public record SqlActualGrant(
 )
 {
     internal HashSet<Privilege> Inherited { get; init; } = [];
+    internal HashSet<Privilege> Protected { get; init; } = [];
 }
 
 /// <summary>

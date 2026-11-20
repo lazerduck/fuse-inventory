@@ -4,7 +4,7 @@
       <div class="section-header">
         <div>
           <div class="text-subtitle1">Account Grants</div>
-          <div class="text-caption text-grey-7">Document permissions granted to this account.</div>
+          <div class="text-caption">{{ databaseGrantsOnly ? 'Document privileges across a whole SQL database.' : 'Document permissions granted to this account.' }}</div>
         </div>
         <q-btn
           color="primary"
@@ -40,7 +40,8 @@
         </template>
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn aria-label="Edit grant"
+            <span v-if="databaseGrantsOnly && (props.row.schema || !props.row.database?.trim())" class="legacy-grant">Inventory only</span>
+            <q-btn v-else aria-label="Edit grant"
               dense
               flat
               round
@@ -88,6 +89,7 @@ const props = withDefaults(
   defineProps<{
     grants: readonly Grant[]
     disableActions?: boolean
+    databaseGrantsOnly?: boolean
   }>(),
   {
     grants: () => [],
@@ -119,6 +121,7 @@ const rows = computed<GrantRow[]>(() =>
 </script>
 
 <style scoped>
+.legacy-grant { color: var(--fuse-text-muted); font-size: .78rem; }
 .section-header {
   display: flex;
   justify-content: space-between;

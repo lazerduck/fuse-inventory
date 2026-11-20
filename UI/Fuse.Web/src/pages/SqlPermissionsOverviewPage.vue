@@ -5,14 +5,17 @@
       :is-fetching="isFetching"
       @back="router.push({ name: 'sqlIntegrations' })"
       @refresh="() => refresh()"
-    />
+    >
+      <q-btn v-if="fuseStore.hasPermission('integrationreviews:read')" flat dense no-caps icon="history"
+        label="Access reviews" :to="{ name: 'integrationReviews', query: { provider: 'sql', integration: integrationId } }" />
+    </SqlPermissionsHeader>
 
     <div v-if="isLoading" class="q-pa-xl text-center">
       <q-spinner color="primary" size="3em" />
-      <div class="text-grey-7 q-mt-md">Loading permissions overview...</div>
+      <div class="muted q-mt-md">Loading permissions overview...</div>
     </div>
 
-    <q-banner v-else-if="error" dense class="bg-red-1 text-negative q-mb-md">
+    <q-banner v-else-if="error" dense class="notice q-mb-md">
       <template #avatar>
         <q-icon name="error" color="negative" />
       </template>
@@ -23,26 +26,17 @@
     </q-banner>
 
     <template v-else-if="data">
-      <q-banner v-if="data.overview?.errorMessage" dense class="bg-orange-1 text-orange-9 q-mb-md">
+      <q-banner v-if="data.overview?.errorMessage" dense class="notice q-mb-md">
         <template #avatar>
           <q-icon name="warning" color="orange" />
         </template>
         {{ data.overview.errorMessage }}
       </q-banner>
 
-      <q-btn v-if="fuseStore.hasPermission('integrationreviews:read')" flat class="q-mb-sm" icon="history"
-        label="Access reviews" :to="{ name: 'integrationReviews', query: { provider: 'sql', integration: integrationId } }" />
-      <SqlPermissionsSummaryCard class="q-mb-md" :summary="data.overview?.summary" />
-
-      <div v-if="hasResolvableAccounts && canBulkResolve" class="q-mb-md">
-        <SqlPermissionsBulkActions
-          :resolvable-missing-count="resolvableMissingCount"
-          :resolvable-drift-count="resolvableDriftCount"
-          :skipped-accounts-count="skippedAccountsCount"
-          :is-bulk-resolving="permissionStates.isBulkResolving?.value ?? false"
-          @bulk-resolve="openBulkPreview"
-        />
-      </div>
+      <SqlPermissionsSummaryCard :summary="data.overview?.summary" :unknown-count="unknownCount">
+        <q-btn v-if="hasResolvableAccounts && canBulkResolve" color="primary" no-caps unelevated
+          label="Bulk Resolve" :loading="permissionStates.isBulkResolving?.value ?? false" @click="openBulkPreview" />
+      </SqlPermissionsSummaryCard>
 
       <SqlPermissionsAccountsTable
         :accounts="data.overview?.accounts ?? []"
@@ -55,7 +49,6 @@
         :is-resolving-account-id="permissionStates.resolvingAccountId?.value ?? null"
         :is-importing-account-id="permissionStates.importingAccountId?.value ?? null"
         @update:statusFilter="(value: string) => (statusFilter = value)"
-        @view-account="(account) => router.push({ name: 'accountEdit', params: { id: account.accountId } })"
         @create-account="openCreateDialog"
         @resolve-account="openResolveDialog"
         @import-account="openImportDialog"
@@ -158,7 +151,6 @@ import type {
 } from 'api/client'
 import SqlPermissionsHeader from '../components/sqlPermissions/SqlPermissionsHeader.vue'
 import SqlPermissionsSummaryCard from '../components/sqlPermissions/SqlPermissionsSummaryCard.vue'
-import SqlPermissionsBulkActions from '../components/sqlPermissions/SqlPermissionsBulkActions.vue'
 import SqlPermissionsAccountsTable from '../components/sqlPermissions/SqlPermissionsAccountsTable.vue'
 import SqlPermissionsOrphanTable from '../components/sqlPermissions/SqlPermissionsOrphanTable.vue'
 import ResolveDriftDialog from '../components/sqlPermissions/dialogs/ResolveDriftDialog.vue'
@@ -259,15 +251,7 @@ const resolvableMissingCount = computed(() => {
 
 const resolvableDriftCount = computed(() => data.value?.overview?.summary?.driftCount ?? 0)
 
-const skippedAccountsCount = computed(() => {
-  if (!data.value?.overview?.accounts) return 0
-  return data.value.overview.accounts.filter(
-    (account) =>
-      account.status === SyncStatus.MissingPrincipal &&
-      account.accountId &&
-      !hasSecretProvider(account.accountId)
-  ).length
-})
+const unknownCount = computed(() => data.value?.overview?.accounts?.filter(a => a.status === SyncStatus.Unknown).length ?? 0)
 
 const bulkPreview = ref<SqlBulkPlan | null>(null)
 const loadingPreview = ref(false)
@@ -377,4 +361,6 @@ function handleViewAccount(accountId?: string | null) {
 
 <style scoped>
 @import '../styles/pages.css';
+.notice { background: var(--fuse-panel-bg); color: var(--fuse-text); border: 1px solid var(--fuse-panel-border); }
+.muted { color: var(--fuse-text-muted); }
 </style>

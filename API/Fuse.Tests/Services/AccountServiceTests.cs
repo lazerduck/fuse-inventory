@@ -61,7 +61,7 @@ public class AccountServiceTests
     {
         sqlInspector ??= Mock.Of<IAccountSqlInspector>();
         sqlCache ??= Mock.Of<ISqlPermissionsCache>();
-        return new AccountService(store, new TagLookupService(store), sqlInspector, new FakeAuditService(), Mock.Of<ICurrentUser>());
+        return new AccountService(store, new TagLookupService(store), new SqlPermissionsInspector(sqlInspector), new FakeAuditService(), Mock.Of<ICurrentUser>());
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class AccountServiceTests
         var audit = new FakeAuditService();
         var actorId = Guid.NewGuid();
         var actor = Mock.Of<ICurrentUser>(u => u.UserName == "automation-key" && u.UserId == actorId);
-        var service = new AccountService(store, new TagLookupService(store), Mock.Of<IAccountSqlInspector>(), audit, actor);
+        var service = new AccountService(store, new TagLookupService(store), new SqlPermissionsInspector(Mock.Of<IAccountSqlInspector>()), audit, actor);
         var command = new CreateAccount(target.Id, TargetKind.External, AuthKind.UserPassword,
             new SecretBinding(SecretBindingKind.PlainReference, "sensitive-reference", null), "test_acc_1",
             new Dictionary<string, string> { ["private"] = "do-not-log" }, []);
@@ -380,6 +380,35 @@ public class AccountServiceTests
     Assert.Single(updatedGrant.Privileges, p => p == Privilege.Select);
     }
 
+    [Theory]
+    [InlineData("SQL Server", false)]
+    [InlineData("Custom datastore", true)]
+    public async Task SqlAssignmentsPreserveLegacyScopeOnAccountSave(string kind, bool linkedIntegration)
+    {
+        var now = DateTime.UtcNow;
+        var db = new DataStore(Guid.NewGuid(), "Orders", null, kind, Guid.NewGuid(), null, null, [], now, now);
+        var legacy = new Grant(Guid.NewGuid(), "Orders", "billing", [Privilege.Select]);
+        var account = new Account(Guid.NewGuid(), db.Id, TargetKind.DataStore, AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.None, null, null), "reports", null, [legacy], [], now, now);
+        var integration = new SqlIntegration(Guid.NewGuid(), "SQL", db.Id, "Server=test;", null, SqlPermissions.Read, now, now);
+        var other = db with { Id = Guid.NewGuid(), Kind = "SQL Server" };
+        var store = NewStore(ds: [db, other], accounts: [account], sqlIntegrations: linkedIntegration ? [integration] : []);
+        var service = CreateService(store);
+
+        var edit = new UpdateAccount(account.Id, db.Id, account.TargetKind, account.AuthKind, account.SecretBinding,
+            account.UserName, null, [legacy]);
+        Assert.True((await service.UpdateAccountAsync(edit)).IsSuccess);
+        Assert.False((await service.UpdateAccountAsync(edit with { Grants = [legacy with { Schema = null }] })).IsSuccess);
+        Assert.False((await service.UpdateAccountAsync(edit with { Grants = [] })).IsSuccess);
+        Assert.False((await service.CloneAccountAsync(new(account.Id, [other.Id]))).IsSuccess);
+        Assert.False((await service.UpdateGrant(new(account.Id, legacy.Id, "Orders", null, [Privilege.Select]))).IsSuccess);
+        Assert.False((await service.CreateGrant(new(account.Id, "Orders", "sales", [Privilege.Execute]))).IsSuccess);
+        Assert.False((await service.CreateGrant(new(account.Id, null, null, [Privilege.Execute]))).IsSuccess);
+        var wholeDatabase = await service.CreateGrant(new(account.Id, "Orders", null, [Privilege.Execute]));
+        Assert.True(wholeDatabase.IsSuccess);
+        Assert.Contains((await service.GetAccountByIdAsync(account.Id))!.Grants, g => g.Id == legacy.Id && g.Schema == "billing");
+    }
+
     [Fact]
     public async Task CreateGrantOnAccount_Success()
     {
@@ -584,11 +613,11 @@ public class AccountServiceTests
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
-        var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var grants = new[] { new Grant(Guid.NewGuid(), "db1", null, new HashSet<Privilege> { Privilege.Select }) };
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
 
-        var actualGrants = new[] { new SqlActualGrant("db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var actualGrants = new[] { new SqlActualGrant("db1", null, new HashSet<Privilege> { Privilege.Select }) };
         var mockInspector = new Mock<IAccountSqlInspector>();
         mockInspector
             .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -600,7 +629,7 @@ public class AccountServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(SyncStatus.InSync, result.Value!.Status);
-        Assert.Contains("in sync", result.Value.StatusSummary);
+        Assert.Contains("Whole-database grants match", result.Value.StatusSummary);
     }
 
     [Fact]
@@ -610,12 +639,12 @@ public class AccountServiceTests
         var envId = Guid.NewGuid();
         var dataStore = new DataStore(dsId, "DS1", null, "sql", envId, null, null, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var sqlIntegration = new SqlIntegration(Guid.NewGuid(), "SQL1", dsId, "Server=test;", null, SqlPermissions.Read, DateTime.UtcNow, DateTime.UtcNow);
-        var grants = new[] { new Grant(Guid.NewGuid(), "db1", "dbo", new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) };
+        var grants = new[] { new Grant(Guid.NewGuid(), "db1", null, new HashSet<Privilege> { Privilege.Select, Privilege.Insert }) };
         var acc = new Account(Guid.NewGuid(), dsId, TargetKind.DataStore, AuthKind.UserPassword, new SecretBinding(SecretBindingKind.PlainReference, "sec", null), "testuser", null, grants, new HashSet<Guid>(), DateTime.UtcNow, DateTime.UtcNow);
         var store = NewStore(accounts: new[] { acc }, ds: new[] { dataStore }, sqlIntegrations: new[] { sqlIntegration });
 
         // Only SELECT is in SQL, INSERT is missing
-        var actualGrants = new[] { new SqlActualGrant("db1", "dbo", new HashSet<Privilege> { Privilege.Select }) };
+        var actualGrants = new[] { new SqlActualGrant("db1", null, new HashSet<Privilege> { Privilege.Select }) };
         var mockInspector = new Mock<IAccountSqlInspector>();
         mockInspector
             .Setup(i => i.GetPrincipalPermissionsAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))

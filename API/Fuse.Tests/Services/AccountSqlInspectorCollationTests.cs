@@ -58,10 +58,10 @@ public class AccountSqlInspectorCollationTests(SqlServerFixture fixture) : IAsyn
         Assert.True(single.IsSuccessful, single.ErrorMessage);
         Assert.NotNull(single.Permissions);
         Assert.True(single.Permissions.Exists);
-        Assert.Contains(single.Permissions.Grants, g => g.Database == _atlas && g.Schema == "atlas_marker"
-            && g.Privileges.Contains(Privilege.Select));
-        Assert.Contains(single.Permissions.Grants, g => g.Database == _liberate && g.Schema == "liberate_marker"
-            && g.Privileges.Contains(Privilege.Execute));
+        Assert.Contains(single.Permissions.Coverage, g => g.Database == _atlas && g.Permission == "SELECT"
+            && g.Evidence.Any(e => e.Scope == "Schema" && e.Schema == "atlas_marker" && e.Grantee == "public"));
+        Assert.Contains(single.Permissions.Coverage, g => g.Database == _liberate && g.Permission == "EXECUTE"
+            && g.Evidence.Any(e => e.Scope == "Schema" && e.Schema == "liberate_marker" && e.Grantee == "public"));
 
         var batch = await _inspector.GetPrincipalPermissionsBatchAsync(integration, [requested, missing]);
         Assert.True(batch.IsSuccessful, batch.ErrorMessage);
@@ -79,9 +79,9 @@ public class AccountSqlInspectorCollationTests(SqlServerFixture fixture) : IAsyn
 
         var baseline = await _inspector.GetNewUserBaselineAsync(integration, [_liberate.ToUpperInvariant()]);
         Assert.NotNull(baseline);
-        Assert.Contains(baseline.Grants, g => g.Database == _liberate && g.Schema == "liberate_marker"
-            && g.Privileges.Contains(Privilege.Execute));
-        Assert.DoesNotContain(baseline.Grants, g => g.Database == _atlas);
+        Assert.Contains(baseline.Coverage, g => g.Database == _liberate && g.Permission == "EXECUTE"
+            && g.Evidence.Any(e => e.Scope == "Schema" && e.Schema == "liberate_marker" && e.Grantee == "public"));
+        Assert.DoesNotContain(baseline.Coverage, g => g.Database == _atlas);
 
         Assert.Null(await _inspector.GetNewUserBaselineAsync(integration, [_liberate, _atlas + "_absent"]));
     }

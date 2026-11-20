@@ -12,8 +12,8 @@ public partial class AccountSqlInspector
             await connection.OpenAsync(ct);
             var rows = await ReadPrincipalPermissionsAsync(connection, ["public"], ct, databases);
             var publicGrants = rows["public"];
-            if (publicGrants.InspectionError is not null) return null;
-            return new(null, true, [.. publicGrants.Grants.Select(g => g with { Inherited = g.Privileges }), .. databases.Select(d => new SqlActualGrant(d, null, [Models.Privilege.Connect]))]);
+            if (publicGrants.InspectionError is not null || publicGrants.CoverageWarning is not null) return null;
+            return publicGrants with { PrincipalName = null, Exists = true, Grants = [.. publicGrants.Grants, .. publicGrants.CatalogDatabases!.Select(d => new SqlActualGrant(d, null, [Models.Privilege.Connect]))] };
         }
         catch (Exception e) when (!ct.IsCancellationRequested && e is SqlException or InvalidOperationException or ArgumentException or TimeoutException)
         { return null; }

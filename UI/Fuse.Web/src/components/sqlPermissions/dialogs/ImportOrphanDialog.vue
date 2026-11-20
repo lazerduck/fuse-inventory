@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="dialogModel" persistent>
-    <q-card style="min-width: 450px">
+    <q-card style="width: 32rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="person_add" color="primary" size="2em" class="q-mr-sm" />
         <span class="text-h6">Import SQL Account</span>
@@ -12,8 +12,8 @@
           <strong>{{ orphan.principalName }}</strong>?
         </p>
 
-        <q-banner v-if="orphan?.errorMessage" class="bg-negative text-white q-mb-md" role="alert">
-          {{ orphan.errorMessage }}
+        <q-banner v-if="orphan?.errorMessage || orphan?.coverageWarning" class="q-mb-md" role="alert">
+          {{ orphan.errorMessage || orphan.coverageWarning }}
         </q-banner>
 
         <div class="q-mt-md">
@@ -51,7 +51,7 @@
         </div>
 
         <div v-if="!orphan?.errorMessage && orphan?.actualPermissions?.length" class="q-mt-md">
-          <div class="text-subtitle2 q-mb-sm">Permissions to import:</div>
+          <div class="text-subtitle2 q-mb-sm">Whole-database grants to import</div>
           <div class="tag-list">
             <template v-for="grant in orphan.actualPermissions" :key="`${grant.database}-${grant.schema}`">
               <q-badge
@@ -73,7 +73,7 @@
           label="Import Account"
           color="primary"
           :loading="isImporting"
-          :disable="!!orphan?.errorMessage"
+          :disable="!!(orphan?.errorMessage || orphan?.coverageWarning)"
           @click="submit"
         />
       </q-card-actions>
@@ -135,7 +135,7 @@ const secretBindingOptions = [
 ]
 
 function submit() {
-  if (props.orphan?.errorMessage) return
+  if (props.orphan?.errorMessage || props.orphan?.coverageWarning) return
   emit('submit', {
     authKind: authKind.value,
     secretBindingKind: secretBindingKind.value,

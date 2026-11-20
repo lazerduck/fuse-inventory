@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="dialogModel" persistent>
-    <q-card style="min-width: 400px">
+    <q-card style="width: 32rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="download" color="secondary" size="2em" class="q-mr-sm" />
         <span class="text-h6">Import Permissions from SQL</span>
@@ -8,16 +8,9 @@
 
       <q-card-section>
         <p v-if="account">
-          Replace <strong>{{ account.principalName }}</strong>'s
-          Fuse configuration with actual SQL permissions?
+          Import the observed direct, whole-database grants for <strong>{{ account.principalName }}</strong> into Fuse?
         </p>
-        <q-banner dense class="bg-orange-1 text-orange-9 q-mt-md">
-          <template #avatar>
-            <q-icon name="warning" color="orange" />
-          </template>
-          This will overwrite the current permission configuration in Fuse with
-          the actual permissions found in SQL Server.
-        </q-banner>
+        <p class="text-caption">This updates the account’s documented database grants. Existing schema records are preserved.</p>
       </q-card-section>
 
       <q-card-actions align="right">

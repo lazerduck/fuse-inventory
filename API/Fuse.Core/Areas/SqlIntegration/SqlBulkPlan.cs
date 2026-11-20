@@ -23,8 +23,7 @@ public partial class SqlIntegrationService
         if (await _sqlInspector.InspectGrantCoverageAsync(integration, ct) is { } incomplete)
             return Result<SqlBulkPlan>.Failure(incomplete, ErrorType.Conflict);
 
-        var status = await GetPermissionsOverviewAsync(integrationId, ct);
-        if (status.Value is not {} overview) return Result<SqlBulkPlan>.Failure("Permissions could not be inspected.", status);
+        var overview = await _permissions.GetOverviewAsync(integration, snapshot, includeOrphans: false, ct);
         return await BuildBulkPlan(integration, snapshot, overview, ct);
     }
 
@@ -42,18 +41,19 @@ public partial class SqlIntegrationService
             if (row.Status == SyncStatus.InSync) continue;
             if (row.Status is not (SyncStatus.DriftDetected or SyncStatus.MissingPrincipal))
             {
-                operations.Add(new(account.Id, user, "Skip", Reason: "Incomplete privilege or principal coverage."));
-                continue;
-            }
-            if (account.Grants.Any(g => string.IsNullOrWhiteSpace(g.Database)))
-            {
-                operations.Add(new(account.Id, user, "Skip", Reason: "Choose an explicit database for every grant."));
+                operations.Add(new(account.Id, user, "Skip", Reason: row.CoverageWarning ?? row.ErrorMessage ?? "Incomplete privilege or principal coverage."));
                 continue;
             }
             if (row.Status == SyncStatus.DriftDetected)
             {
-                if (InheritedExtra(account.Id, user, row.PermissionComparisons) is {} inheritedSkip) operations.Add(inheritedSkip);
-                else operations.AddRange(PrivilegeOperations(account.Id, user, row.PermissionComparisons));
+                operations.AddRange(PrivilegeOperations(account.Id, user, row.PermissionComparisons));
+                continue;
+            }
+            var databases = account.Grants.Where(g => SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema))
+                .Select(g => g.Database!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+            if (account.Grants.Count != 0 && databases.Length == 0)
+            {
+                operations.Add(new(account.Id, user, "Skip", Reason: "This account has only legacy declarations outside whole-database scope."));
                 continue;
             }
             if (!HasSecretProviderBinding(account))
@@ -61,20 +61,26 @@ public partial class SqlIntegrationService
                 operations.Add(new(account.Id, user, "Skip", Reason: "No linked secret provider."));
                 continue;
             }
-            var databases = account.Grants.Select(g => g.Database!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
             var baseline = databases.Length == 0 ? new SqlPrincipalPermissions(user, true, [])
                 : await _sqlInspector.GetNewUserBaselineAsync(integration, databases, ct);
-            if (baseline is null)
+            if (baseline is null || baseline.CoverageWarning is not null || baseline.InspectionError is not null)
                 return Result<SqlBulkPlan>.Failure("The new user's database privileges cannot be verified. Review the account separately.", ErrorType.Conflict);
+            baseline = SqlPermissionDiff.CheckDatabaseNames(account.Grants, baseline);
+            if (baseline.CoverageWarning is { } warning)
+            {
+                operations.Add(new(account.Id, user, "Skip", Reason: warning));
+                continue;
+            }
             var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, baseline);
-            if (InheritedExtra(account.Id, user, comparisons) is {} fromPublic)
+            var privileges = PrivilegeOperations(account.Id, user, comparisons).ToArray();
+            if (privileges.FirstOrDefault(o => o.Operation == "Skip") is {} fromPublic)
             {
                 operations.Add(fromPublic);
                 continue;
             }
             operations.Add(new(account.Id, user, "Create login"));
             operations.AddRange(databases.Select(d => new SqlBulkOperation(account.Id, user, "Create user", d)));
-            operations.AddRange(PrivilegeOperations(account.Id, user, comparisons));
+            operations.AddRange(privileges);
         }
         var fingerprint = new { integration.Id, integration.DataStoreId, integration.UpdatedAt, operations,
             accounts = accounts.Values.OrderBy(a => a.Id).Select(a => new { a.Id, a.UpdatedAt }) };
@@ -82,17 +88,19 @@ public partial class SqlIntegrationService
         return Result<SqlBulkPlan>.Success(new(revision, operations));
     }
 
-    private static SqlBulkOperation? InheritedExtra(Guid id, string user, IReadOnlyList<SqlPermissionComparison> comparisons)
+    private static IEnumerable<SqlBulkOperation> PrivilegeOperations(Guid id, string user, IReadOnlyList<SqlPermissionComparison> comparisons)
     {
-        foreach (var comparison in comparisons.OrderBy(g => g.Database, StringComparer.Ordinal).ThenBy(g => g.Schema, StringComparer.Ordinal))
-            foreach (var privilege in comparison.ExtraPrivileges.Intersect(comparison.Inherited).Order())
-                return new(id, user, "Skip", comparison.Database, comparison.Schema, privilege,
-                    "An inherited privilege requires review of its role or PUBLIC grant.");
-        return null;
+        foreach (var comparison in comparisons.OrderBy(g => g.Database, StringComparer.Ordinal))
+        {
+            foreach (var privilege in comparison.MissingPrivileges.Concat(comparison.ExtraPrivileges).Order())
+            {
+                if (comparison.BlockedPrivileges.Contains(privilege))
+                    yield return new(id, user, "Skip", comparison.Database, null, privilege,
+                        $"Review {privilege} in {comparison.Database}: an inherited permission, DENY or grant option requires manual review.");
+                else
+                    yield return new(id, user, comparison.MissingPrivileges.Contains(privilege) ? "Grant" : "Revoke",
+                        comparison.Database, null, privilege);
+            }
+        }
     }
-
-    private static IEnumerable<SqlBulkOperation> PrivilegeOperations(Guid id, string user, IReadOnlyList<SqlPermissionComparison> comparisons) =>
-        comparisons.OrderBy(g => g.Database, StringComparer.Ordinal).ThenBy(g => g.Schema, StringComparer.Ordinal)
-            .SelectMany(g => g.MissingPrivileges.Order().Select(p => new SqlBulkOperation(id, user, "Grant", g.Database, g.Schema, p))
-                .Concat(g.ExtraPrivileges.Order().Select(p => new SqlBulkOperation(id, user, "Revoke", g.Database, g.Schema, p))));
 }

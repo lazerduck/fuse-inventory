@@ -141,6 +141,26 @@ public class ConcurrentEntityUpdateTests
     }
 
     [Fact]
+    public async Task SavingSqlAccountCannotRestoreAConcurrentlyRemovedLegacySchemaGrant()
+    {
+        var now = DateTime.UtcNow;
+        var database = new DataStore(Guid.NewGuid(), "Orders", null, "SQL Server", Guid.NewGuid(), null, null, [], now, now);
+        var legacy = new Grant(Guid.NewGuid(), "Orders", "billing", [Privilege.Select]);
+        var account = new Account(Guid.NewGuid(), database.Id, TargetKind.DataStore, AuthKind.UserPassword,
+            new SecretBinding(SecretBindingKind.None, null, null), "reporter", null, [legacy], [], now, now);
+        var snapshot = new InMemoryFuseStore().Current! with { Accounts = [account], DataStores = [database] };
+        var store = new InterleavingStore(snapshot, s => s with { Accounts = [account with { Grants = [] }] });
+        var service = new Fuse.Core.Areas.Account.AccountService(store, new FakeTagService(store),
+            Mock.Of<Fuse.Core.Areas.SqlIntegration.ISqlPermissionsInspector>(), new FakeAuditService(), Mock.Of<ICurrentUser>());
+
+        var result = await service.UpdateAccountAsync(new(account.Id, database.Id, account.TargetKind,
+            account.AuthKind, account.SecretBinding, account.UserName, null, [legacy]));
+
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Empty(Assert.Single(store.Current!.Accounts).Grants);
+    }
+
+    [Fact]
     public async Task UpdateAccount_UsesCurrentTargetWhenCleaningDependencyReferences()
     {
         var now = DateTime.UtcNow;
@@ -157,7 +177,7 @@ public class ConcurrentEntityUpdateTests
             Accounts = [account with { TargetId = otherTarget.Id }],
             Applications = [app with { Instances = [instance with { Dependencies = [dependency] }] }]
         });
-        var service = new Fuse.Core.Areas.Account.AccountService(store, new FakeTagService(store), Mock.Of<Fuse.Core.Areas.Account.IAccountSqlInspector>(), new FakeAuditService(), Mock.Of<ICurrentUser>());
+        var service = new Fuse.Core.Areas.Account.AccountService(store, new FakeTagService(store), Mock.Of<Fuse.Core.Areas.SqlIntegration.ISqlPermissionsInspector>(), new FakeAuditService(), Mock.Of<ICurrentUser>());
         var result = await service.UpdateAccountAsync(new UpdateAccount(account.Id, target.Id, TargetKind.External, account.AuthKind,
             account.SecretBinding, null, null, []));
 

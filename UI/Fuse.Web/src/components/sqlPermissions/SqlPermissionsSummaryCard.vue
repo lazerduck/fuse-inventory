@@ -1,34 +1,17 @@
 <template>
-  <div class="summary-section">
-    <q-card flat bordered class="summary-card">
-      <q-card-section class="row q-gutter-md">
-        <div class="summary-item">
-          <div class="summary-value">{{ summary?.totalAccounts ?? 0 }}</div>
-          <div class="summary-label">Total Accounts</div>
-        </div>
-        <q-separator vertical />
-        <div class="summary-item status-in-sync">
-          <div class="summary-value">{{ summary?.inSyncCount ?? 0 }}</div>
-          <div class="summary-label">In Sync</div>
-        </div>
-        <q-separator vertical />
-        <div class="summary-item status-drift">
-          <div class="summary-value">{{ summary?.driftCount ?? 0 }}</div>
-          <div class="summary-label">Drift Detected</div>
-        </div>
-        <q-separator vertical />
-        <div class="summary-item status-missing">
-          <div class="summary-value">{{ summary?.missingPrincipalCount ?? 0 }}</div>
-          <div class="summary-label">Missing Principal</div>
-        </div>
-        <q-separator vertical />
-        <div class="summary-item status-error">
-          <div class="summary-value">{{ summary?.errorCount ?? 0 }}</div>
-          <div class="summary-label">Errors</div>
-        </div>
-      </q-card-section>
-    </q-card>
-  </div>
+  <q-card flat bordered class="summary-card">
+    <q-card-section class="summary">
+      <dl>
+        <div><dt>Accounts</dt><dd>{{ summary?.totalAccounts ?? 0 }}</dd></div>
+        <div><dt>In sync</dt><dd>{{ summary?.inSyncCount ?? 0 }}</dd></div>
+        <div><dt>With drift</dt><dd>{{ summary?.driftCount ?? 0 }}</dd></div>
+        <div><dt>Missing principal</dt><dd>{{ summary?.missingPrincipalCount ?? 0 }}</dd></div>
+        <div v-if="unknownCount"><dt>Unknown</dt><dd>{{ unknownCount }}</dd></div>
+        <div><dt>Errors</dt><dd>{{ summary?.errorCount ?? 0 }}</dd></div>
+      </dl>
+      <slot />
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup lang="ts">
@@ -40,48 +23,13 @@ interface Summary {
   errorCount?: number | null
 }
 
-defineProps<{ summary?: Summary | null }>()
+defineProps<{ summary?: Summary | null; unknownCount?: number }>()
 </script>
 
 <style scoped>
-.summary-section {
-  display: flex;
-  gap: 1rem;
-}
-
-.summary-card {
-  flex: 1;
-}
-
-.summary-item {
-  text-align: center;
-  padding: 0 1rem;
-}
-
-.summary-value {
-  font-size: 2rem;
-  font-weight: bold;
-  line-height: 1.2;
-}
-
-.summary-label {
-  font-size: 0.85rem;
-  color: var(--fuse-text-muted);
-}
-
-.summary-item.status-in-sync .summary-value {
-  color: var(--q-positive);
-}
-
-.summary-item.status-drift .summary-value {
-  color: var(--q-warning);
-}
-
-.summary-item.status-missing .summary-value {
-  color: var(--q-orange);
-}
-
-.summary-item.status-error .summary-value {
-  color: var(--q-negative);
-}
+.summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+dl { display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: 0; }
+dl div { display: flex; flex-direction: column-reverse; }
+dt { font-size: .78rem; color: var(--fuse-text-muted); }
+dd { margin: 0; font-size: 1.45rem; font-weight: 650; line-height: 1.2; }
 </style>

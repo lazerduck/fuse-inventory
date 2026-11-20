@@ -4,6 +4,7 @@ using Fuse.Core.Interfaces;
 using Fuse.Core.Models;
 using Fuse.Core.Responses;
 using Fuse.Core.Areas.Tag;
+using Fuse.Core.Areas.SqlIntegration;
 using Fuse.Core.Areas.Audit;
 
 namespace Fuse.Core.Areas.Account;
@@ -12,11 +13,11 @@ public class AccountService : IAccountService
 {
     private readonly IFuseStore _fuseStore;
     private readonly ITagService _tagService;
-    private readonly IAccountSqlInspector _sqlInspector;
+    private readonly ISqlPermissionsInspector _sqlInspector;
     private readonly IAuditService _auditService;
     private readonly ICurrentUser _currentUser;
 
-    public AccountService(IFuseStore fuseStore, ITagService tagService, IAccountSqlInspector sqlInspector,
+    public AccountService(IFuseStore fuseStore, ITagService tagService, ISqlPermissionsInspector sqlInspector,
         IAuditService auditService, ICurrentUser currentUser)
     {
         _fuseStore = fuseStore;
@@ -34,12 +35,13 @@ public class AccountService : IAccountService
 
     public async Task<Result<Models.Account>> CreateAccountAsync(CreateAccount command)
     {
+        var store = await _fuseStore.GetAsync();
         var tagIds = command.TagIds ?? [];
 
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
+        var validation = await ValidateAccountCommand(store, command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;
 
-        var grantValidation = ValidateAndNormalizeGrants(command.Grants);
+        var grantValidation = ValidateAndNormalizeGrants(command.Grants, IsSqlTarget(store, command.TargetId, command.TargetKind));
         if (!grantValidation.IsSuccess)
             return Result<Models.Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
 
@@ -82,25 +84,33 @@ public class AccountService : IAccountService
         if (existing is null)
             return Result<Models.Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
 
-        var validation = await ValidateAccountCommand(command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
+        var validation = await ValidateAccountCommand(store, command.TargetId, command.TargetKind, command.AuthKind, command.SecretBinding, command.UserName, tagIds);
         if (validation is not null) return validation;
-
-        var grantValidation = ValidateAndNormalizeGrants(command.Grants);
-        if (!grantValidation.IsSuccess)
-            return Result<Models.Account>.Failure(grantValidation.Error!, grantValidation.ErrorType ?? ErrorType.Validation);
-
-        var normalizedGrants = grantValidation.Value!;
 
         var updated = existing;
         Models.Account? duplicate = null;
+        Result<Models.Account>? failed = null;
 
         await _fuseStore.UpdateAsync(s =>
         {
-            // Preserve edits to legacy duplicates unless the account's identity changes.
             var current = s.Accounts.FirstOrDefault(a => a.Id == command.Id);
-            if (current is not null && (current.TargetId != command.TargetId || current.TargetKind != command.TargetKind
+            if (current is null)
+            {
+                failed = Result<Models.Account>.Failure($"Account with ID '{command.Id}' not found.", ErrorType.NotFound);
+                return s;
+            }
+            var sameTarget = current.TargetId == command.TargetId && current.TargetKind == command.TargetKind;
+            var grants = ValidateAndNormalizeGrants(command.Grants, IsSqlTarget(s, command.TargetId, command.TargetKind),
+                sameTarget ? current.Grants : null);
+            if (!grants.IsSuccess)
+            {
+                failed = Result<Models.Account>.Failure(grants.Error!, grants.ErrorType ?? ErrorType.Validation);
+                return s;
+            }
+            // Preserve edits to legacy duplicates unless the account's identity changes.
+            if (!sameTarget
                 || current.AuthKind != command.AuthKind || current.UserName != command.UserName
-                || (IsMongoDb(s, command.TargetId, command.TargetKind) && MongoDbIdentity.AuthSource(current.Parameters) != MongoDbIdentity.AuthSource(command.Parameters))))
+                || (IsMongoDb(s, command.TargetId, command.TargetKind) && MongoDbIdentity.AuthSource(current.Parameters) != MongoDbIdentity.AuthSource(command.Parameters)))
             {
                 duplicate = FindDuplicate(s, command.TargetId, command.TargetKind, command.AuthKind, command.UserName, command.Parameters, command.Id);
                 if (duplicate is not null) return s;
@@ -118,7 +128,7 @@ public class AccountService : IAccountService
                     SecretBinding = command.SecretBinding,
                     UserName = command.UserName,
                     Parameters = command.Parameters,
-                    Grants = normalizedGrants,
+                    Grants = grants.Value!,
                     TagIds = tagIds,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -165,6 +175,7 @@ public class AccountService : IAccountService
 
             return s with { Accounts = updatedAccounts };
         });
+        if (failed is not null) return failed;
         if (duplicate is not null) return DuplicateAccount(duplicate);
         await AuditAccountAsync(AuditAction.AccountUpdated, updated);
         return Result<Models.Account>.Success(updated);
@@ -243,12 +254,10 @@ public class AccountService : IAccountService
             _currentUser.UserName, _currentUser.UserId, account.Id,
             new { account.TargetId, account.TargetKind, account.AuthKind, account.UserName }));
 
-    private async Task<Result<Models.Account>?> ValidateAccountCommand(Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
+    private async Task<Result<Models.Account>?> ValidateAccountCommand(Snapshot store, Guid targetId, TargetKind targetKind, AuthKind authKind, SecretBinding secretBinding, string? userName, HashSet<Guid> tagIds)
     {
         if (targetId == Guid.Empty)
             return Result<Models.Account>.Failure("TargetId is required.", ErrorType.Validation);
-
-        var store = await _fuseStore.GetAsync();
 
         // Validate target existence based on kind
         var targetExists = targetKind switch
@@ -304,11 +313,15 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure("At least one privilege must be specified.", ErrorType.Validation);
         }
 
-        var account = (await _fuseStore.GetAsync()).Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+        var store = await _fuseStore.GetAsync();
+        var account = store.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
         if (account is null)
         {
             return Result<Grant>.Failure($"Account with ID '{command.AccountId}' not found.", ErrorType.NotFound);
         }
+
+        if (IsSqlTarget(store, account.TargetId, account.TargetKind) && !SqlPermissionDiff.IsDatabaseScope(command.Database, command.Schema))
+            return Result<Grant>.Failure(DatabaseScopeMessage, ErrorType.Validation);
 
         // Validate that privileges are deduplicated
         var privileges = new HashSet<Privilege>(command.Privileges);
@@ -365,7 +378,8 @@ public class AccountService : IAccountService
             return Result<Grant>.Failure("At least one privilege must be specified.", ErrorType.Validation);
         }
 
-        var account = (await _fuseStore.GetAsync()).Accounts.FirstOrDefault(a => a.Id == command.AccountId);
+        var store = await _fuseStore.GetAsync();
+        var account = store.Accounts.FirstOrDefault(a => a.Id == command.AccountId);
 
         if (account is null)
         {
@@ -377,6 +391,10 @@ public class AccountService : IAccountService
         {
             return Result<Grant>.Failure($"Grant with ID '{command.GrantId}' not found on Account '{command.AccountId}'.", ErrorType.NotFound);
         }
+
+        if (IsSqlTarget(store, account.TargetId, account.TargetKind) &&
+            (!SqlPermissionDiff.IsDatabaseScope(existingGrant.Database, existingGrant.Schema) || !SqlPermissionDiff.IsDatabaseScope(command.Database, command.Schema)))
+            return Result<Grant>.Failure(DatabaseScopeMessage, ErrorType.Validation);
 
         // Validate that privileges are deduplicated
         var privileges = new HashSet<Privilege>(command.Privileges);
@@ -502,154 +520,35 @@ public class AccountService : IAccountService
             ));
         }
 
-        // Check if the integration has Read permission
-        if ((sqlIntegration.Permissions & SqlPermissions.Read) == 0)
-        {
-            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
-                AccountId: accountId,
-                SqlIntegrationId: sqlIntegration.Id,
-                SqlIntegrationName: sqlIntegration.Name,
-                Status: SyncStatus.Error,
-                StatusSummary: "SQL integration does not have Read permission.",
-                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                ErrorMessage: "The SQL integration must have Read permission to inspect account status."
-            ));
-        }
-
-        // Get the principal name (username) - required for SQL inspection
-        var principalName = account.UserName;
-        if (string.IsNullOrWhiteSpace(principalName))
-        {
-            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
-                AccountId: accountId,
-                SqlIntegrationId: sqlIntegration.Id,
-                SqlIntegrationName: sqlIntegration.Name,
-                Status: SyncStatus.NotApplicable,
-                StatusSummary: "Account has no username configured for SQL principal mapping.",
-                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                ErrorMessage: null
-            ));
-        }
-
-        // Query SQL for actual permissions
-        var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
-            sqlIntegration, principalName, ct);
-
-        if (!isSuccessful || actualPermissions is null || actualPermissions.InspectionError is not null)
-        {
-            return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
-                AccountId: accountId,
-                SqlIntegrationId: sqlIntegration.Id,
-                SqlIntegrationName: sqlIntegration.Name,
-                Status: SyncStatus.Error,
-                StatusSummary: "Failed to retrieve SQL permissions.",
-                PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                ErrorMessage: actualPermissions?.InspectionError ?? errorMessage ?? "Unknown error occurred while querying SQL permissions."
-            ));
-        }
-
-        // Build permission comparisons
-        var comparisons = BuildPermissionComparisons(account.Grants, actualPermissions);
-
-        // Determine sync status
-        var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
-        var principalMissing = !actualPermissions.Exists;
-
-        SyncStatus status;
-        if (principalMissing)
-        {
-            status = SyncStatus.MissingPrincipal;
-        }
-        else if (hasDrift)
-        {
-            status = SyncStatus.DriftDetected;
-        }
-        else
-        {
-            status = SyncStatus.InSync;
-        }
-
-        var statusSummary = status switch
-        {
-            SyncStatus.InSync => "Permissions are in sync.",
-            SyncStatus.MissingPrincipal => $"SQL principal '{principalName}' does not exist.",
-            SyncStatus.DriftDetected => "Permission drift detected between configured and actual grants.",
-            _ => "Unknown status."
-        };
-
-        return Result<AccountSqlStatusResponse>.Success(new AccountSqlStatusResponse(
-            AccountId: accountId,
-            SqlIntegrationId: sqlIntegration.Id,
-            SqlIntegrationName: sqlIntegration.Name,
-            Status: status,
-            StatusSummary: statusSummary,
-            PermissionComparisons: comparisons,
-            ErrorMessage: null
-        ));
+        var status = await _sqlInspector.GetAccountStatusAsync(account, sqlIntegration, store, ct);
+        return Result<AccountSqlStatusResponse>.Success(status);
     }
 
-    private static IReadOnlyList<SqlPermissionComparison> BuildPermissionComparisons(
-        IReadOnlyList<Grant> configuredGrants,
-        SqlPrincipalPermissions actualPermissions)
+    private const string DatabaseScopeMessage = "SQL Server assignments require a database and apply to the whole database. Existing narrower assignments can be viewed or removed from inventory.";
+
+    private static bool IsSqlTarget(Snapshot snapshot, Guid targetId, TargetKind kind)
     {
-        var comparisons = new List<SqlPermissionComparison>();
-
-        // Normalize database/schema keys (null vs empty string)
-        static string? NormalizeKey(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
-
-        // Group actual grants by database/schema for easier lookup
-        var actualGrantsLookup = actualPermissions.Grants
-            .GroupBy(g => (Database: NormalizeKey(g.Database), Schema: NormalizeKey(g.Schema)))
-            .ToDictionary(
-                g => g.Key,
-                g => g.SelectMany(x => x.Privileges).ToHashSet()
-            );
-
-        // Process configured grants
-        var processedKeys = new HashSet<(string?, string?)>();
-        foreach (var configured in configuredGrants)
-        {
-            var key = (Database: NormalizeKey(configured.Database), Schema: NormalizeKey(configured.Schema));
-            processedKeys.Add(key);
-
-            actualGrantsLookup.TryGetValue(key, out var actualPrivileges);
-            actualPrivileges ??= new HashSet<Privilege>();
-
-            var configuredSet = configured.Privileges ?? new HashSet<Privilege>();
-            var missing = configuredSet.Except(actualPrivileges).ToHashSet();
-            var extra = actualPrivileges.Except(configuredSet).ToHashSet();
-
-            comparisons.Add(new SqlPermissionComparison(
-                Database: configured.Database,
-                Schema: configured.Schema,
-                ConfiguredPrivileges: configuredSet,
-                ActualPrivileges: actualPrivileges,
-                MissingPrivileges: missing,
-                ExtraPrivileges: extra
-            ));
-        }
-
-        // Add any actual grants that weren't in configured
-        foreach (var actualKey in actualGrantsLookup.Keys)
-        {
-            if (!processedKeys.Contains(actualKey))
-            {
-                comparisons.Add(new SqlPermissionComparison(
-                    Database: actualKey.Database,
-                    Schema: actualKey.Schema,
-                    ConfiguredPrivileges: new HashSet<Privilege>(),
-                    ActualPrivileges: actualGrantsLookup[actualKey],
-                    MissingPrivileges: new HashSet<Privilege>(),
-                    ExtraPrivileges: actualGrantsLookup[actualKey]
-                ));
-            }
-        }
-
-        return comparisons;
+        if (kind != TargetKind.DataStore) return false;
+        var storeKind = snapshot.DataStores.FirstOrDefault(d => d.Id == targetId)?.Kind?.Trim().ToLowerInvariant();
+        return storeKind is "sql" or "sql server" or "sqlserver" or "mssql" ||
+            snapshot.SqlIntegrations.Any(i => i.DataStoreId == targetId);
     }
 
-    private Result<IReadOnlyList<Grant>> ValidateAndNormalizeGrants(IReadOnlyList<Grant>? grants)
+    private static Result<IReadOnlyList<Grant>> ValidateAndNormalizeGrants(
+        IReadOnlyList<Grant>? grants, bool sqlTarget, IReadOnlyList<Grant>? existingGrants = null)
     {
+        if (sqlTarget)
+        {
+            // A whole-account save from an older client must not widen a stored schema
+            // assignment. Removing a legacy entry is an explicit inventory operation.
+            var legacy = (existingGrants ?? []).Where(g => !SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema)).ToArray();
+            var submitted = (grants ?? []).Where(g => !SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema)).ToArray();
+            if (legacy.Length != submitted.Length || !legacy.All(old => submitted.Any(g =>
+                g.Id == old.Id && g.Database == old.Database && g.Schema == old.Schema &&
+                g.Privileges is not null && g.Privileges.SetEquals(old.Privileges))))
+                return Result<IReadOnlyList<Grant>>.Failure(DatabaseScopeMessage, ErrorType.Validation);
+        }
+
         if (grants is null || grants.Count == 0)
             return Result<IReadOnlyList<Grant>>.Success(Array.Empty<Grant>());
 
@@ -772,6 +671,10 @@ public class AccountService : IAccountService
             };
             if (!targetExists)
                 return Result<IReadOnlyList<Models.Account>>.Failure($"Target '{source.TargetKind}' with ID '{targetId}' not found.", ErrorType.Validation);
+
+            if (IsSqlTarget(store, targetId, source.TargetKind) &&
+                source.Grants.Any(g => !SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema)))
+                return Result<IReadOnlyList<Models.Account>>.Failure("Create the SQL account with whole-database grants. The source account contains a narrower inventory assignment.", ErrorType.Validation);
 
             var cloned = source with
             {

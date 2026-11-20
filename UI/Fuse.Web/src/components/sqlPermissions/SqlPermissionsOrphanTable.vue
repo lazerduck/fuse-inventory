@@ -1,12 +1,9 @@
 <template>
-  <q-card v-if="principals?.length" class="content-card q-mt-md">
+  <q-card v-if="principals?.length" class="content-card">
     <q-card-section>
-      <div class="text-h6 q-mb-sm">
-        <q-icon name="help_outline" class="q-mr-sm" />
-        Unmanaged SQL Accounts
-      </div>
-      <div class="text-caption text-grey-7 q-mb-md">
-        SQL principals found that are not managed by any Fuse account. Import them to start managing their permissions.
+      <h2 class="text-h6 q-ma-none q-mb-xs">Unmanaged SQL accounts</h2>
+      <div class="text-caption muted q-mb-md">
+        Import a SQL principal to document its whole-database grants in Fuse.
       </div>
       <q-table
         flat
@@ -18,21 +15,11 @@
       >
         <template #body-cell-permissions="props">
           <q-td :props="props">
-            <div v-if="props.row.errorMessage" class="text-negative q-mb-sm" role="alert">
+            <div v-if="props.row.errorMessage && props.row.errorMessage !== props.row.coverageWarning" class="text-negative q-mb-sm" role="alert">
               {{ props.row.errorMessage }}
             </div>
-            <div v-if="!props.row.errorMessage && props.row.actualPermissions?.length" class="tag-list">
-              <template v-for="grant in props.row.actualPermissions" :key="`${grant.database}-${grant.schema}`">
-                <q-badge
-                  v-for="priv in grant.privileges"
-                  :key="`${grant.database}-${grant.schema}-${priv}`"
-                  outline
-                  color="secondary"
-                  :label="`${grant.database ?? 'default'}${grant.schema ? `.${grant.schema}` : ''}:${priv}`"
-                />
-              </template>
-            </div>
-            <span v-else-if="!props.row.errorMessage" class="text-grey">—</span>
+            <SqlAccessCoverage v-if="!props.row.errorMessage || props.row.coverage?.length || props.row.coverageWarning"
+              :coverage="props.row.coverage" :warning="props.row.coverageWarning" :principal="props.row.principalName" />
           </q-td>
         </template>
         <template #body-cell-actions="props">
@@ -41,14 +28,15 @@
               v-if="canResolve"
               flat
               dense
-              size="sm"
+              no-caps
+              class="table-action"
               color="primary"
               label="Import"
               :loading="isImportingPrincipal === props.row.principalName"
-              :disable="!!props.row.errorMessage"
+              :disable="!!(props.row.errorMessage || props.row.coverageWarning)"
               @click="emit('import-orphan', props.row)"
             >
-              <q-tooltip>{{ props.row.errorMessage || 'Create Fuse account from SQL principal' }}</q-tooltip>
+              <q-tooltip>{{ props.row.errorMessage || props.row.coverageWarning || 'Create Fuse account from SQL principal' }}</q-tooltip>
             </q-btn>
           </q-td>
         </template>
@@ -63,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import SqlAccessCoverage from './SqlAccessCoverage.vue'
 import { computed } from 'vue'
 import type { QTableColumn } from 'quasar'
 import type { SqlOrphanPrincipal } from 'api/client'
@@ -84,16 +73,24 @@ const emit = defineEmits<{
 
 const columns: QTableColumn<SqlOrphanPrincipal>[] = [
   { name: 'principalName', label: 'Principal Name', field: 'principalName', align: 'left', sortable: true },
-  { name: 'permissions', label: 'Actual Permissions', field: (row) => row.principalName, align: 'left' },
+  { name: 'permissions', label: 'Observed access', field: (row) => row.principalName, align: 'left' },
   { name: 'actions', label: '', field: (row) => row.principalName, align: 'right' }
 ]
 const isImportingPrincipal = computed(() => props.isImportingPrincipal)
 </script>
 
 <style scoped>
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+.table-action { min-height: 32px; padding: 0 .5rem; font-size: .82rem; }
+.muted { color: var(--fuse-text-muted); }
+:deep(td:nth-child(2)) { min-width: 13rem; }
+@media (max-width: 600px) {
+  :deep(.q-table thead) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  :deep(.q-table), :deep(.q-table tbody) { display: block; }
+  :deep(.q-table tbody tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .55rem; height: auto; padding: .8rem; }
+  :deep(.q-table tbody tr + tr) { border-top: 1px solid var(--fuse-panel-border); }
+  :deep(.q-table tbody td) { height: auto; min-width: 0; padding: 0; border: 0; }
+  :deep(td:first-child) { overflow-wrap: anywhere; white-space: normal; font-weight: 600; }
+  :deep(td:nth-child(2)) { grid-column: 1 / -1; grid-row: 2; }
+  :deep(td:last-child) { grid-column: 2; grid-row: 1; }
 }
 </style>

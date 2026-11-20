@@ -136,219 +136,75 @@ public partial class AccountSqlInspector : IAccountSqlInspector
             return (false, Array.Empty<DriftResolutionOperation>(), "SQL integration does not have Write permission to modify grants.");
         }
 
-        var operations = new List<DriftResolutionOperation>();
-        bool hasFailures = false;
+        if (permissionComparisons.Any(c => !Helpers.SqlPermissionDiff.IsDatabaseScope(c.Database, c.Schema)))
+            return (false, [], "SQL permission changes require a whole database. Schema, object and column permissions are inspection only.");
 
+        var operations = new List<DriftResolutionOperation>();
         try
         {
-            string sanitizedConnectionString;
-            try
-            {
-                var builder = new SqlConnectionStringBuilder(sqlIntegration.ConnectionString);
-                sanitizedConnectionString = builder.ConnectionString;
-            }
-            catch (ArgumentException ex)
-            {
-                return (false, Array.Empty<DriftResolutionOperation>(), $"Invalid connection string: {ex.Message}");
-            }
-
-            await using var connection = new SqlConnection(sanitizedConnectionString);
+            await using var connection = new SqlConnection(sqlIntegration.ConnectionString);
             await connection.OpenAsync(ct);
-
+            var invalid = await FindInvalidDatabaseAsync(connection, permissionComparisons.Select(c => c.Database!), ct);
+            if (invalid != null) return (false, [], Helpers.SqlPermissionDiff.DatabaseNameWarning(invalid));
             foreach (var comparison in permissionComparisons)
             {
-                // Process missing privileges (need to GRANT)
-                foreach (var privilege in comparison.MissingPrivileges)
-                {
-                    var result = await ApplyGrantAsync(connection, principalName, comparison.Database, comparison.Schema, privilege, ct);
-                    operations.Add(result);
-                    if (!result.Success)
-                    {
-                        hasFailures = true;
-                    }
-                }
-
-                // Process extra privileges (need to REVOKE)
-                foreach (var privilege in comparison.ExtraPrivileges)
-                {
-                    var result = await ApplyRevokeAsync(connection, principalName, comparison.Database, comparison.Schema, privilege, ct);
-                    operations.Add(result);
-                    if (!result.Success)
-                    {
-                        hasFailures = true;
-                    }
-                }
+                foreach (var privilege in comparison.MissingPrivileges.Except(comparison.BlockedPrivileges))
+                    operations.Add(await ApplyDatabasePermissionAsync(connection, principalName, comparison.Database!, privilege, true, ct));
+                foreach (var privilege in comparison.ExtraPrivileges.Except(comparison.BlockedPrivileges))
+                    operations.Add(await ApplyDatabasePermissionAsync(connection, principalName, comparison.Database!, privilege, false, ct));
             }
 
-            return (!hasFailures, operations, hasFailures ? "Some operations failed. Check individual operation results." : null);
-        }
-        catch (SqlException ex)
-        {
-            return (false, operations, $"SQL error: {ex.Message}");
+            var blocked = permissionComparisons.Any(c => c.BlockedPrivileges.Count > 0);
+            var success = !blocked && operations.All(o => o.Success);
+            return (success, operations, blocked ? "Some database privileges require manual review of a role, DENY or grant option."
+                : success ? null : "Some database operations failed. Check individual results.");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return (false, operations, $"Unexpected error: {ex.Message}");
+            return (false, operations, $"Could not apply database privileges: {ex.Message}");
         }
     }
 
-    private static async Task<DriftResolutionOperation> ApplyGrantAsync(
-        SqlConnection connection,
-        string principalName,
-        string? database,
-        string? schema,
-        Privilege privilege,
-        CancellationToken ct)
+    private static async Task<string?> FindInvalidDatabaseAsync(SqlConnection connection, IEnumerable<string> databases, CancellationToken ct)
     {
-        var sqlPermission = MapPrivilegeToSqlPermission(privilege);
-        if (sqlPermission is null)
-        {
-            return new DriftResolutionOperation(
-                OperationType: "GRANT",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: false,
-                ErrorMessage: $"Privilege '{privilege}' cannot be mapped to a SQL permission.");
-        }
+        var requested = databases.Distinct(StringComparer.Ordinal).ToArray();
+        if (requested.Length == 0) return null;
+        var catalog = new HashSet<string>(StringComparer.Ordinal);
+        await using var command = new SqlCommand("SELECT name FROM sys.databases", connection);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct)) catalog.Add(reader.GetString(0));
+        return requested.FirstOrDefault(name => !catalog.Contains(name));
+    }
 
+    private static async Task<DriftResolutionOperation> ApplyDatabasePermissionAsync(
+        SqlConnection connection, string principalName, string database, Privilege privilege, bool grant, CancellationToken ct)
+    {
+        var operation = grant ? "GRANT" : "REVOKE";
+        var permission = MapPrivilegeToSqlPermission(privilege);
+        if (permission is null)
+            return new(operation, database, null, privilege, false, $"Unsupported database privilege '{privilege}'.");
+        // Only mapped permission keywords and quoted identifiers enter DDL. A database
+        // GRANT must never replace an existing DENY or alter a delegated grant.
+        var sql = $"""
+            USE {EscapeIdentifier(database)};
+            IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = @principal AND sid = SUSER_SID(@principal))
+                THROW 50001, 'The database user does not match this server login.', 1;
+            IF EXISTS (SELECT 1 FROM sys.database_permissions WHERE class = 0 AND grantee_principal_id = USER_ID(@principal)
+                        AND permission_name = @permission AND state IN ('D','W'))
+                THROW 50001, 'A database DENY or grant option requires manual review.', 1;
+            {operation} {permission} {(grant ? "TO" : "FROM")} {EscapeIdentifier(principalName)};
+            """;
         try
         {
-            // Build the GRANT statement
-            var sql = BuildGrantStatement(principalName, database, schema, sqlPermission);
-            
             await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@principal", principalName);
+            command.Parameters.AddWithValue("@permission", permission);
             await command.ExecuteNonQueryAsync(ct);
-
-            return new DriftResolutionOperation(
-                OperationType: "GRANT",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: true,
-                ErrorMessage: null);
+            return new(operation, database, null, privilege, true, null);
         }
         catch (SqlException ex)
         {
-            return new DriftResolutionOperation(
-                OperationType: "GRANT",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: false,
-                ErrorMessage: ex.Message);
-        }
-    }
-
-    private static async Task<DriftResolutionOperation> ApplyRevokeAsync(
-        SqlConnection connection,
-        string principalName,
-        string? database,
-        string? schema,
-        Privilege privilege,
-        CancellationToken ct)
-    {
-        var sqlPermission = MapPrivilegeToSqlPermission(privilege);
-        if (sqlPermission is null)
-        {
-            return new DriftResolutionOperation(
-                OperationType: "REVOKE",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: false,
-                ErrorMessage: $"Privilege '{privilege}' cannot be mapped to a SQL permission.");
-        }
-
-        try
-        {
-            // Build the REVOKE statement
-            var sql = BuildRevokeStatement(principalName, database, schema, sqlPermission);
-            
-            await using var command = new SqlCommand(sql, connection);
-            await command.ExecuteNonQueryAsync(ct);
-
-            return new DriftResolutionOperation(
-                OperationType: "REVOKE",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: true,
-                ErrorMessage: null);
-        }
-        catch (SqlException ex)
-        {
-            return new DriftResolutionOperation(
-                OperationType: "REVOKE",
-                Database: database,
-                Schema: schema,
-                Privilege: privilege,
-                Success: false,
-                ErrorMessage: ex.Message);
-        }
-    }
-
-    // Whitelist of valid SQL permission names to prevent injection
-    private static readonly HashSet<string> ValidPermissions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE", "CONNECT", "ALTER", "CONTROL"
-    };
-
-    private static string BuildGrantStatement(string principalName, string? database, string? schema, string permission)
-    {
-        // Validate permission against whitelist to prevent SQL injection
-        if (!ValidPermissions.Contains(permission))
-        {
-            throw new ArgumentException($"Invalid permission: {permission}", nameof(permission));
-        }
-
-        // Escape identifiers to prevent SQL injection
-        var escapedPrincipal = EscapeIdentifier(principalName);
-        
-        if (!string.IsNullOrWhiteSpace(database) && !string.IsNullOrWhiteSpace(schema))
-        {
-            var escapedDatabase = EscapeIdentifier(database);
-            var escapedSchema = EscapeIdentifier(schema);
-            return $"USE {escapedDatabase}; GRANT {permission} ON SCHEMA::{escapedSchema} TO {escapedPrincipal};";
-        }
-        else if (!string.IsNullOrWhiteSpace(database))
-        {
-            var escapedDatabase = EscapeIdentifier(database);
-            return $"USE {escapedDatabase}; GRANT {permission} TO {escapedPrincipal};";
-        }
-        else
-        {
-            // Server-level grant (not typically supported for most permissions)
-            return $"GRANT {permission} TO {escapedPrincipal};";
-        }
-    }
-
-    private static string BuildRevokeStatement(string principalName, string? database, string? schema, string permission)
-    {
-        // Validate permission against whitelist to prevent SQL injection
-        if (!ValidPermissions.Contains(permission))
-        {
-            throw new ArgumentException($"Invalid permission: {permission}", nameof(permission));
-        }
-
-        // Escape identifiers to prevent SQL injection
-        var escapedPrincipal = EscapeIdentifier(principalName);
-        
-        if (!string.IsNullOrWhiteSpace(database) && !string.IsNullOrWhiteSpace(schema))
-        {
-            var escapedDatabase = EscapeIdentifier(database);
-            var escapedSchema = EscapeIdentifier(schema);
-            return $"USE {escapedDatabase}; REVOKE {permission} ON SCHEMA::{escapedSchema} FROM {escapedPrincipal};";
-        }
-        else if (!string.IsNullOrWhiteSpace(database))
-        {
-            var escapedDatabase = EscapeIdentifier(database);
-            return $"USE {escapedDatabase}; REVOKE {permission} FROM {escapedPrincipal};";
-        }
-        else
-        {
-            // Server-level revoke (not typically supported for most permissions)
-            return $"REVOKE {permission} FROM {escapedPrincipal};";
+            return new(operation, database, null, privilege, false, ex.Message);
         }
     }
 
@@ -445,6 +301,9 @@ public partial class AccountSqlInspector : IAccountSqlInspector
 
             await using var connection = new SqlConnection(sanitizedConnectionString);
             await connection.OpenAsync(ct);
+
+            var invalid = await FindInvalidDatabaseAsync(connection, databases, ct);
+            if (invalid != null) return (false, [], Helpers.SqlPermissionDiff.DatabaseNameWarning(invalid));
 
             // Step 1: Create the server login
             var loginResult = await CreateLoginAsync(connection, principalName, password, ct);
@@ -685,7 +544,7 @@ EXEC sys.sp_executesql @statement;";
     {
         if (principalNames.Count == 0)
         {
-            return (true, new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase), null);
+            return (true, new Dictionary<string, SqlPrincipalPermissions>(StringComparer.Ordinal), null);
         }
 
         if (string.IsNullOrWhiteSpace(sqlIntegration.ConnectionString))
@@ -696,12 +555,12 @@ EXEC sys.sp_executesql @statement;";
         // Filter out empty names and deduplicate for efficiency
         var validPrincipals = principalNames
             .Where(n => !string.IsNullOrWhiteSpace(n))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(StringComparer.Ordinal)
             .ToList();
 
         if (validPrincipals.Count == 0)
         {
-            return (true, new Dictionary<string, SqlPrincipalPermissions>(StringComparer.OrdinalIgnoreCase), null);
+            return (true, new Dictionary<string, SqlPrincipalPermissions>(StringComparer.Ordinal), null);
         }
 
         try

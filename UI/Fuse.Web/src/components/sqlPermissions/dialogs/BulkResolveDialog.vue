@@ -3,7 +3,7 @@
     <q-card style="width: 38rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="auto_fix_high" color="primary" size="2em" class="q-mr-sm" />
-        <span class="text-h6">Bulk Resolve All</span>
+        <span class="text-h6">Bulk Resolve</span>
       </q-card-section>
 
       <q-card-section>
@@ -12,15 +12,17 @@
           {{ error }}
           <template #action><q-btn flat label="Refresh" @click="emit('refresh')" /></template>
         </q-banner>
-        <q-list v-else-if="operations.length" bordered separator aria-label="Planned SQL operations">
+        <p v-if="!loading && !error && operations.length">Review the account and whole-database grant changes before applying them.</p>
+        <q-list v-if="!loading && !error && operations.length" bordered separator aria-label="Planned SQL operations">
           <q-item v-for="(item, index) in operations" :key="index">
             <q-item-section>
-              <q-item-label>{{ item.operation }} {{ item.privilege ?? '' }} · {{ item.principal }}</q-item-label>
-              <q-item-label caption>{{ item.reason || (item.schema ? item.database + ' / schema ' + item.schema : item.database || 'Server login') }}</q-item-label>
+              <q-item-label><template v-if="['Grant','Revoke'].includes(item.operation ?? '')">{{ item.operation }} {{ item.privilege?.toUpperCase() }} across {{ item.database }}</template>
+                <template v-else>{{ item.operation }}<template v-if="item.privilege"> {{ item.privilege.toUpperCase() }}</template></template></q-item-label>
+              <q-item-label caption>{{ item.principal }}<template v-if="item.reason"> · {{ item.reason }}</template><template v-if="item.database && !['Grant','Revoke'].includes(item.operation ?? '')"> · {{ item.database }}</template></q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
-        <p v-else>There are no pending SQL operations.</p>
+        <p v-else-if="!loading && !error">There are no pending SQL operations.</p>
       </q-card-section>
 
       <q-card-actions align="right">

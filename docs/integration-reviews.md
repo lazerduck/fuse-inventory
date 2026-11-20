@@ -22,7 +22,7 @@ The latest attempt can be unknown while the last verified result still shows the
 
 | Connection | Examples |
 | --- | --- |
-| SQL Server | Compare an account's documented grants with observed database and schema permissions. The existing SQL overview also previews bulk operations before confirmation. |
+| SQL Server | Compare an account's documented whole-database grants with SQL Server. Open the SQL permissions overview to inspect its access to individual procedures, tables and columns. |
 | PostgreSQL | Check table, column, sequence and routine privileges with their prerequisites and sources. Inspect row security configuration. [PostgreSQL guide](postgresql.md) |
 | Redis | Simulate a command against an example key or channel. Compare a user's ACL across two registered nodes. [Redis guide](redis.md) |
 | RabbitMQ | Trace a sample route within a vhost, check publisher or consumer permissions, and review queue durability, type and dead-letter routing. [RabbitMQ guide](rabbitmq.md) |
@@ -31,9 +31,21 @@ The latest attempt can be unknown while the last verified result still shows the
 | Azure Service Bus | Review queue retention, delivery limits, dead letters, SAS settings and scoped Entra grants. Topic checks require a namespace tier that supports topics. [Service Bus guide](servicebus.md) |
 | Azure Cosmos DB | Compare ordered partition paths, indexing policy sections, TTL, shared throughput and native data-role evidence. [Cosmos DB guide](cosmosdb.md) |
 
+## Inspecting SQL Server permissions
+
+The SQL permissions overview shows access by account and database. For example, **EXECUTE · Some** can mean the account can run two procedures. Select the privilege to see the named objects, the grants or restrictions and which user or role supplied them. **All** can come from a database grant or, for EXECUTE, access to every current routine. The detail explains which was observed. A privilege with no observed access is omitted. An incomplete inspection is marked unknown.
+
+Fuse reads SQL Server's permission catalog. For EXECUTE, a new routine can change **All** to **Some** when the account had grants on every previous routine individually. For other privileges, a scoped grant is shown as **Some** when Fuse can establish access. The evidence describes catalog permissions. Runtime behavior can also depend on ownership chains or the execution context of a module.
+
+The drift column answers a different question. An account with a documented database EXECUTE grant and a DENY on one procedure can show both **Some** and **In sync**. An account with grants on individual procedures can show **Some** and still be missing a documented database EXECUTE grant. New assignments and permission imports in Fuse apply at database scope. Existing documented schema grants are preserved when updating an account.
+
+Use the database name as it appears in SQL Server. If a saved declaration uses a different spelling or capitalization, Fuse marks that account's comparison unknown and skips automatic changes until the name is corrected.
+
 ## SQL Server bulk changes
 
-Open the SQL permissions overview and preview the proposed operations. The preview names the principal, object scope, privilege and proposed action, including grants after principal creation. Unsupported or indirectly inherited permissions are identified before confirmation. The web client sends the preview revision with its bulk request, so a changed plan requires another preview. API clients can obtain that revision from `POST /api/SqlIntegration/{id}/bulk-resolve/preview` and return it as `previewRevision` to `POST /api/SqlIntegration/{id}/bulk-resolve`. Older API clients retain their original behavior when they omit this field.
+Select **Bulk Resolve** to preview the principal, database, privilege and action for each proposed change. Resolving drift can grant or revoke whole-database privileges. Procedure, table, column and schema entries stay as configured in SQL Server. The preview identifies privileges that require manual review, such as a grant inherited through a role. Applying a database-wide grant can expand what the account can do, even when individual object grants stay in place.
+
+API clients can preview with `POST /api/SqlIntegration/{id}/bulk-resolve/preview` and pass its `revision` as `previewRevision` to `POST /api/SqlIntegration/{id}/bulk-resolve`. A changed plan requires another preview. The same database-scope restrictions also apply to clients that omit the revision.
 
 ## Importing observed inventory
 

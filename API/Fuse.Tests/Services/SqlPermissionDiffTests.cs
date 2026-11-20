@@ -15,11 +15,11 @@ public class SqlPermissionDiffTests
     {
         var configured = new List<Grant>
         {
-            new Grant(Guid.NewGuid(), "DB1", "dbo", new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
+            new Grant(Guid.NewGuid(), "DB1", null, new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
         };
         var actual = new SqlPrincipalPermissions("user", true, new List<SqlActualGrant>
         {
-            new SqlActualGrant("DB1", "dbo", new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
+            new SqlActualGrant("DB1", null, new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
         });
 
         var comps = SqlPermissionDiff.BuildComparisons(configured, actual);
@@ -38,11 +38,11 @@ public class SqlPermissionDiffTests
     {
         var configured = new List<Grant>
         {
-            new Grant(Guid.NewGuid(), "DB1", "dbo", new HashSet<Privilege>{ Privilege.Select, Privilege.Update })
+            new Grant(Guid.NewGuid(), "DB1", null, new HashSet<Privilege>{ Privilege.Select, Privilege.Update })
         };
         var actual = new SqlPrincipalPermissions("user", true, new List<SqlActualGrant>
         {
-            new SqlActualGrant("DB1", "dbo", new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
+            new SqlActualGrant("DB1", null, new HashSet<Privilege>{ Privilege.Select, Privilege.Insert })
         });
 
         var comps = SqlPermissionDiff.BuildComparisons(configured, actual);
@@ -51,6 +51,31 @@ public class SqlPermissionDiffTests
         Assert.Contains(Privilege.Update, comps[0].MissingPrivileges);
         Assert.Contains(Privilege.Insert, comps[0].ExtraPrivileges);
         Assert.Equal(SyncStatus.DriftDetected, status);
+    }
+
+    [Theory]
+    [InlineData("dbo")]
+    [InlineData(" ")]
+    public void NarrowerDeclarationsAndEvidenceCannotCreateDatabaseDrift(string schema)
+    {
+        var actual = new SqlPrincipalPermissions("user", true,
+            [new("DB1", schema, [Privilege.Select]), new(null, null, [Privilege.Execute])]);
+        var comparisons = SqlPermissionDiff.BuildComparisons(
+            [new(Guid.NewGuid(), "DB1", schema, [Privilege.Update])], actual);
+        Assert.Empty(comparisons);
+        Assert.Empty(SqlPermissionDiff.ImportableGrants(actual));
+        Assert.Equal(SyncStatus.InSync, SqlPermissionDiff.ComputeStatus(actual, comparisons));
+    }
+
+    [Fact]
+    public void IncompleteInspectionSuppliesNeitherDriftNorImportableDeclarations()
+    {
+        var actual = new SqlPrincipalPermissions("user", true, [new("db", null, [Privilege.Select])])
+            { CoverageWarning = "Incomplete metadata visibility" };
+        var comparisons = SqlPermissionDiff.BuildComparisons([], actual);
+        Assert.Empty(comparisons);
+        Assert.Empty(SqlPermissionDiff.ImportableGrants(actual));
+        Assert.Equal(SyncStatus.Unknown, SqlPermissionDiff.ComputeStatus(actual, comparisons));
     }
 
     [Fact]
