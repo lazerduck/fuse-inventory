@@ -17,7 +17,7 @@ public record SqlPermissionComparison(
     HashSet<Privilege> ExtraPrivileges
 )
 {
-    internal HashSet<Privilege> Inherited { get; init; } = [];
+    public HashSet<Privilege> BlockedPrivileges { get; init; } = [];
 }
 
 /// <summary>
@@ -29,7 +29,8 @@ public enum SyncStatus
     DriftDetected,
     MissingPrincipal,
     Error,
-    NotApplicable
+    NotApplicable,
+    Unknown
 }
 
 /// <summary>
@@ -44,7 +45,11 @@ public record AccountSqlStatusResponse(
     string StatusSummary,
     IReadOnlyList<SqlPermissionComparison> PermissionComparisons,
     string? ErrorMessage
-);
+)
+{
+    public IReadOnlyList<SqlPrivilegeCoverage> Coverage { get; init; } = [];
+    public string? CoverageWarning { get; init; }
+}
 
 /// <summary>
 /// Permission status for a single account within an integration overview.
@@ -56,7 +61,11 @@ public record SqlAccountPermissionsStatus(
     SyncStatus Status,
     IReadOnlyList<SqlPermissionComparison> PermissionComparisons,
     string? ErrorMessage
-);
+)
+{
+    public IReadOnlyList<SqlPrivilegeCoverage> Coverage { get; init; } = [];
+    public string? CoverageWarning { get; init; }
+}
 
 /// <summary>
 /// Represents an orphan SQL principal that exists but is not mapped to any Fuse account.
@@ -65,7 +74,11 @@ public record SqlOrphanPrincipal(
     string PrincipalName,
     IReadOnlyList<SqlActualGrant> ActualPermissions,
     string? ErrorMessage = null
-);
+)
+{
+    public IReadOnlyList<SqlPrivilegeCoverage> Coverage { get; init; } = [];
+    public string? CoverageWarning { get; init; }
+}
 
 /// <summary>
 /// Summary aggregates for the integration permissions overview.

@@ -44,7 +44,7 @@
               outlined
               hint="Enter database name"
             />
-            <q-input v-model="grantForm.schema" label="Schema" dense outlined />
+            <q-input v-if="!databaseGrantsOnly" v-model="grantForm.schema" label="Schema" dense outlined />
             <q-select
               v-model="grantForm.privileges"
               label="Privileges"
@@ -66,6 +66,7 @@
             type="submit"
             :label="isEditing ? 'Save and close' : 'Create'"
             :loading="loading"
+            :disable="!grantForm.privileges.length || (databaseGrantsOnly && !grantForm.database?.trim())"
           />
         </q-card-actions>
       </q-form>
@@ -84,6 +85,7 @@ interface Props {
   modelValue: boolean
   initialGrant: Grant | null
   hasSqlIntegration: boolean
+  databaseGrantsOnly: boolean
   databaseOptions: Array<{ label: string; value: string }>
   isDatabasesLoading: boolean
   privilegeOptions: SelectOption<Privilege>[]
@@ -162,6 +164,7 @@ function handleCancel() {
 }
 
 function handleSubmit() {
+  if (!grantForm.privileges.length || (props.databaseGrantsOnly && (!grantForm.database?.trim() || grantForm.schema))) return
   emit('save', {
     database: grantForm.database,
     schema: grantForm.schema,

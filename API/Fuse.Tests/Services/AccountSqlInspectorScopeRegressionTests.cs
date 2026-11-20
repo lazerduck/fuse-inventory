@@ -53,8 +53,8 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         var permissions = await InspectAsync(batch);
 
         Assert.Null(permissions.InspectionError);
-        var schemaGrant = Assert.Single(permissions.Grants, g => g.Database == _database && g.Schema == "app_scope");
-        Assert.Contains(Privilege.Select, schemaGrant.Privileges);
+        var observed = Coverage(permissions, "SELECT", SqlCoverageLevel.Some);
+        Assert.Contains(observed.Evidence, e => e.Scope == "Schema" && e.Schema == "app_scope" && e.Grantee == _principal);
         Assert.DoesNotContain(permissions.Grants, g => g.Database == _database && g.Schema is null && g.Privileges.Contains(Privilege.Select));
     }
 
@@ -72,8 +72,8 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         {
             var permissions = await InspectAsync(batch);
             Assert.Null(permissions.InspectionError);
-            var schemaGrant = Assert.Single(permissions.Grants, g => g.Database == _database && g.Schema == "app_scope");
-            Assert.Contains(Privilege.Select, schemaGrant.Privileges);
+            var observed = Coverage(permissions, "SELECT", SqlCoverageLevel.Some);
+            Assert.Contains(observed.Evidence, e => e.Scope == "Schema" && e.Schema == "app_scope" && e.Grantee == "ScopeReaders");
             Assert.DoesNotContain(permissions.Grants, g => g.Database == _database && g.Schema is null && g.Privileges.Contains(Privilege.Select));
         }
 
@@ -92,12 +92,12 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         {
             var permissions = await InspectAsync(batch);
             Assert.Null(permissions.InspectionError);
-            Assert.Contains(permissions.Grants, g => g.Database == _database && g.Schema == "app_scope" && g.Privileges.Contains(Privilege.Select));
+            Assert.Contains(Coverage(permissions, "SELECT", SqlCoverageLevel.Some).Evidence, e => e.Grantee == "public" && e.Inherited && e.Schema == "app_scope");
         }
     }
 
     [Fact]
-    public async Task CreateAccount_InheritingPublicObjectGrant_SucceedsWithExplicitInspectionError()
+    public async Task CreateAccount_InheritingPublicObjectGrant_ShowsScopedAccessAlongsideDatabaseDriftStatus()
     {
         await ExecuteAsync(_connectionString, "GRANT SELECT ON OBJECT::[dbo].[Inventory] TO [public];");
         var newPrincipal = $"created_scope_{Guid.NewGuid():N}";
@@ -122,13 +122,12 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         Assert.Contains(created.Value.Operations, operation => operation.OperationType == "CREATE LOGIN" && operation.Success);
         Assert.Contains(created.Value.Operations, operation => operation.OperationType == "CREATE USER" && operation.Database == _database && operation.Success);
         Assert.NotNull(created.Value.UpdatedStatus);
-        Assert.Equal(SyncStatus.Error, created.Value.UpdatedStatus.Status);
-        AssertUnsupported(created.Value.UpdatedStatus.ErrorMessage);
-        Assert.Empty(created.Value.UpdatedStatus.PermissionComparisons);
+        Assert.Equal(SyncStatus.InSync, created.Value.UpdatedStatus.Status);
+        Assert.Contains(created.Value.UpdatedStatus.Coverage, c => c.Database == _database && c.Permission == "SELECT" && c.Level == SqlCoverageLevel.Some);
     }
 
     [Fact]
-    public async Task ImportCustomRolePermissions_PreservesSchemaAndDoesNotChangeSql()
+    public async Task ImportSkipsCustomRoleSchemaGrantsAndDoesNotChangeSql()
     {
         await ExecuteAsync(_connectionString, $"CREATE ROLE [ScopeReaders]; GRANT SELECT ON SCHEMA::[app_scope] TO [ScopeReaders]; ALTER ROLE [ScopeReaders] ADD MEMBER {Identifier(_principal)};");
         var account = NewAccount(_principal, [NewGrant(null, Privilege.Connect)]);
@@ -139,7 +138,7 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
 
         Assert.True(imported.IsSuccess, imported.Error);
         Assert.True(imported.Value!.Success, imported.Value.ErrorMessage);
-        Assert.Contains(imported.Value.ImportedGrants, g => g.Database == _database && g.Schema == "app_scope" && g.Privileges.Contains(Privilege.Select));
+        Assert.All(imported.Value.ImportedGrants, g => Assert.Null(g.Schema));
         Assert.DoesNotContain(imported.Value.ImportedGrants, g => g.Database == _database && g.Schema is null && g.Privileges.Contains(Privilege.Select));
         Assert.Equal(SyncStatus.InSync, imported.Value.UpdatedStatus!.Status);
         Assert.Equal(1, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_role_members WHERE role_principal_id=USER_ID(N'ScopeReaders') AND member_principal_id=USER_ID({Literal(_principal)});"));
@@ -147,7 +146,7 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ResolveInheritedExtraGrant_DoesNotReportSuccessWhenRoleStillGrantsPermission()
+    public async Task ResolveLeavesInheritedSchemaGrantAlone()
     {
         await ExecuteAsync(_connectionString, $"CREATE ROLE [ScopeReaders]; GRANT SELECT ON SCHEMA::[app_scope] TO [ScopeReaders]; ALTER ROLE [ScopeReaders] ADD MEMBER {Identifier(_principal)};");
         var account = NewAccount(_principal, [NewGrant(null, Privilege.Connect)]);
@@ -156,13 +155,9 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         var resolved = await NewService(store).ResolveDriftAsync(new ResolveDrift(_integration.Id, account.Id), "scope-test", null);
 
         Assert.True(resolved.IsSuccess, resolved.Error);
-        Assert.False(resolved.Value!.Success);
-        Assert.False(string.IsNullOrWhiteSpace(resolved.Value.ErrorMessage));
-        Assert.Equal(SyncStatus.DriftDetected, resolved.Value.UpdatedStatus.Status);
-        Assert.Contains(resolved.Value.Operations, operation => operation.OperationType == "REVOKE"
-            && operation.Schema == "app_scope" && operation.Privilege == Privilege.Select && operation.Success);
-        Assert.Contains(resolved.Value.UpdatedStatus.PermissionComparisons, comparison => comparison.Schema == "app_scope"
-            && comparison.ExtraPrivileges.Contains(Privilege.Select));
+        Assert.True(resolved.Value!.Success);
+        Assert.Equal(SyncStatus.InSync, resolved.Value.UpdatedStatus.Status);
+        Assert.Empty(resolved.Value.Operations);
         Assert.Equal(1, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_role_members WHERE role_principal_id=USER_ID(N'ScopeReaders') AND member_principal_id=USER_ID({Literal(_principal)});"));
         Assert.Equal(1, await ScalarAsync($"EXECUTE AS USER={Literal(_principal)}; SELECT HAS_PERMS_BY_NAME(N'app_scope', N'SCHEMA', N'SELECT'); REVERT;"));
         Assert.Equal(account.Grants, Assert.Single(store.Current!.Accounts).Grants);
@@ -171,7 +166,7 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ObjectOrColumnGrant_IsExplicitlyUnsupported_AndCannotBeImportedOrResolvedAsBroaderGrant(bool columnOnly)
+    public async Task ObjectOrColumnGrant_RemainsVisibleAndCannotBeImportedOrResolvedAsBroaderGrant(bool columnOnly)
     {
         await ExecuteAsync(_connectionString, $"GRANT SELECT ON OBJECT::[dbo].[Inventory]{(columnOnly ? " ([Id])" : "")} TO {Identifier(_principal)};");
         var ordinaryPrincipal = await CreatePrincipalAsync();
@@ -183,46 +178,45 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         foreach (var batch in new[] { false, true })
         {
             var permissions = await InspectAsync(batch);
-            AssertUnsupported(permissions.InspectionError);
-            Assert.DoesNotContain(permissions.Grants, g => g.Database == _database && g.Privileges.Contains(Privilege.Select));
+            var row = Assert.Single(Coverage(permissions, "SELECT", SqlCoverageLevel.Some).Evidence);
+            Assert.Equal(columnOnly ? "Column" : "Object", row.Scope);
+            Assert.Equal("Inventory", row.ObjectName);
+            Assert.Equal(columnOnly ? "Id" : null, row.ColumnName);
+            Assert.DoesNotContain(permissions.Grants, g => g.Privileges.Contains(Privilege.Select));
         }
 
         var status = await facade.GetAccountStatusAsync(account, _integration, store.Current!);
-        Assert.Equal(SyncStatus.Error, status.Status);
-        AssertUnsupported(status.ErrorMessage);
+        Assert.Equal(SyncStatus.DriftDetected, status.Status);
         var overview = await facade.GetOverviewAsync(_integration, store.Current!);
         Assert.Null(overview.ErrorMessage);
-        var unsupportedStatus = Assert.Single(overview.Accounts, a => a.AccountId == account.Id);
-        Assert.Equal(SyncStatus.Error, unsupportedStatus.Status);
-        AssertUnsupported(unsupportedStatus.ErrorMessage);
+        Assert.Equal(SyncStatus.DriftDetected, Assert.Single(overview.Accounts, a => a.AccountId == account.Id).Status);
         Assert.Equal(SyncStatus.InSync, Assert.Single(overview.Accounts, a => a.AccountId == ordinaryAccount.Id).Status);
 
         var service = NewService(store);
-        var imported = await service.ImportPermissionsAsync(new ImportPermissions(_integration.Id, account.Id), "scope-test", null);
-        Assert.False(imported.IsSuccess);
-        AssertUnsupported(imported.Error);
-        Assert.Equal(account.Grants, Assert.Single(store.Current!.Accounts, a => a.Id == account.Id).Grants);
-
         var resolved = await service.ResolveDriftAsync(new ResolveDrift(_integration.Id, account.Id), "scope-test", null);
-        Assert.False(resolved.IsSuccess);
-        AssertUnsupported(resolved.Error);
-        Assert.Equal(0, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_permissions WHERE grantee_principal_id=USER_ID({Literal(_principal)}) AND permission_name='INSERT';"));
+        Assert.True(resolved.IsSuccess, resolved.Error);
+        Assert.True(resolved.Value!.Success, resolved.Value.ErrorMessage);
+        Assert.All(resolved.Value.Operations, op => Assert.Null(op.Schema));
+        var imported = await service.ImportPermissionsAsync(new ImportPermissions(_integration.Id, account.Id), "scope-test", null);
+        Assert.True(imported.IsSuccess, imported.Error);
+        Assert.DoesNotContain(imported.Value!.ImportedGrants, g => g.Privileges.Contains(Privilege.Select));
+        Assert.Equal(1, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_permissions WHERE grantee_principal_id=USER_ID({Literal(_principal)}) AND permission_name='INSERT' AND class=0;"));
         Assert.Equal(1, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_permissions WHERE grantee_principal_id=USER_ID({Literal(_principal)}) AND class=1 AND major_id=OBJECT_ID(N'dbo.Inventory') AND permission_name='SELECT' AND minor_id={(columnOnly ? "COLUMNPROPERTY(OBJECT_ID(N'dbo.Inventory'), N'Id', 'ColumnId')" : "0")};"));
 
         var orphanStore = NewStore();
         var orphanOverview = await facade.GetOverviewAsync(_integration, orphanStore.Current!);
         var orphan = Assert.Single(orphanOverview.OrphanPrincipals, p => p.PrincipalName == _principal);
-        AssertUnsupported(orphan.ErrorMessage);
+        Assert.Null(orphan.ErrorMessage);
+        Assert.Contains(orphan.Coverage, c => c.Database == _database && c.Permission == "SELECT");
         var orphanImport = await NewService(orphanStore).ImportOrphanPrincipalAsync(
             new ImportOrphanPrincipal(_integration.Id, _principal, AuthKind.UserPassword,
                 new SecretBinding(SecretBindingKind.PlainReference, "scope-test", null)), "scope-test", null);
-        Assert.False(orphanImport.IsSuccess);
-        AssertUnsupported(orphanImport.Error);
-        Assert.Empty(orphanStore.Current!.Accounts);
+        Assert.True(orphanImport.IsSuccess, orphanImport.Error);
+        Assert.DoesNotContain(Assert.Single(orphanStore.Current!.Accounts).Grants, g => g.Privileges.Contains(Privilege.Select));
     }
 
     [Fact]
-    public async Task DenyOverInheritedGrant_IsReportedAsIncompleteRatherThanInSyncOrImported()
+    public async Task DenyOverInheritedSchemaGrant_IsVisibleAndDoesNotProduceDatabaseDrift()
     {
         await ExecuteAsync(_connectionString, $"CREATE ROLE [ScopeReaders]; GRANT SELECT ON SCHEMA::[app_scope] TO [ScopeReaders]; ALTER ROLE [ScopeReaders] ADD MEMBER {Identifier(_principal)}; DENY SELECT ON SCHEMA::[app_scope] TO {Identifier(_principal)};");
         var account = NewAccount(_principal, [NewGrant(null, Privilege.Connect), NewGrant("app_scope", Privilege.Select)]);
@@ -231,19 +225,18 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         foreach (var batch in new[] { false, true })
         {
             var permissions = await InspectAsync(batch);
-            Assert.Contains("DENY", permissions.InspectionError ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            var coverage = Coverage(permissions, "SELECT", SqlCoverageLevel.None);
+            Assert.Contains(coverage.Evidence, e => e.Inherited && e.Grantee == "ScopeReaders" && e.State == "GRANT");
+            Assert.Contains(coverage.Evidence, e => !e.Inherited && e.Grantee == _principal && e.State == "DENY");
         }
         var status = await new SqlPermissionsInspector(_inspector).GetAccountStatusAsync(account, _integration, store.Current!);
-        Assert.Equal(SyncStatus.Error, status.Status);
-        var imported = await NewService(store).ImportPermissionsAsync(new ImportPermissions(_integration.Id, account.Id), "scope-test", null);
-        Assert.False(imported.IsSuccess);
-        Assert.Equal(account.Grants, Assert.Single(store.Current!.Accounts).Grants);
+        Assert.Equal(SyncStatus.InSync, status.Status);
     }
 
     [Theory]
     [InlineData("db_denydatareader", Privilege.Select)]
     [InlineData("db_denydatawriter", Privilege.Insert)]
-    public async Task FixedDenyRole_OverridesCustomRoleGrant_WithoutFalseInSyncOrImport(string denyRole, Privilege privilege)
+    public async Task FixedDenyRole_OverridesAccessWithoutChangingItsDatabaseGrantDeclaration(string denyRole, Privilege privilege)
     {
         var permission = privilege == Privilege.Select ? "SELECT" : "INSERT";
         await ExecuteAsync(_connectionString, $"CREATE ROLE [ScopeAllowed]; GRANT {permission} TO [ScopeAllowed]; ALTER ROLE [ScopeAllowed] ADD MEMBER {Identifier(_principal)}; ALTER ROLE {Identifier(denyRole)} ADD MEMBER {Identifier(_principal)};");
@@ -253,15 +246,185 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         foreach (var batch in new[] { false, true })
         {
             var permissions = await InspectAsync(batch);
-            Assert.Contains("DENY", permissions.InspectionError ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            var coverage = Coverage(permissions, permission, SqlCoverageLevel.None);
+            Assert.Contains(coverage.Evidence, e => e.Inherited && e.Grantee == denyRole && e.State == "DENY");
         }
         Assert.Equal(0, await ScalarAsync($"EXECUTE AS USER={Literal(_principal)}; SELECT HAS_PERMS_BY_NAME(N'dbo.Inventory', N'OBJECT', {Literal(permission)}); REVERT;"));
         var status = await new SqlPermissionsInspector(_inspector).GetAccountStatusAsync(account, _integration, store.Current!);
-        Assert.Equal(SyncStatus.Error, status.Status);
-        var imported = await NewService(store).ImportPermissionsAsync(new ImportPermissions(_integration.Id, account.Id), "scope-test", null);
+        Assert.Equal(SyncStatus.InSync, status.Status);
+    }
+
+    [Fact]
+    public async Task AllCurrentProceduresThroughRoleAndDirectGrant_BecomesSomeWhenANewProcedureAppears()
+    {
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [app_scope].[One] AS SELECT 1;");
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[Two] AS SELECT 2;");
+        await ExecuteAsync(_connectionString, "CREATE FUNCTION [app_scope].[ScalarExample]() RETURNS int AS BEGIN RETURN 1; END;");
+        await ExecuteAsync(_connectionString, $"CREATE ROLE [Operators]; ALTER ROLE [Operators] ADD MEMBER {Identifier(_principal)}; GRANT EXECUTE ON SCHEMA::[app_scope] TO [Operators]; GRANT EXECUTE ON OBJECT::[app_scope].[One] TO {Identifier(_principal)}; GRANT EXECUTE ON OBJECT::[dbo].[Two] TO {Identifier(_principal)} WITH GRANT OPTION;");
+        var first = await InspectAsync(false);
+        var all = Coverage(first, "EXECUTE", SqlCoverageLevel.All);
+        Assert.Equal("CurrentObjects", all.Basis);
+        Assert.Equal(new SqlProcedureAccess(2, 2), all.ProcedureAccess);
+        Assert.Contains(all.Evidence, e => e.Grantee == "Operators" && e.State == "GRANT" && e.Inherited);
+        Assert.Contains(all.Evidence, e => e.ObjectName == "Two" && e.State == "GRANT_WITH_GRANT_OPTION" && e.Grantor == "dbo");
+        Assert.DoesNotContain(first.Grants, g => g.Privileges.Contains(Privilege.Execute));
+
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[Three] AS SELECT 3;");
+        Assert.Equal(new SqlProcedureAccess(2, 3), Coverage(await InspectAsync(true), "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
+        await ExecuteAsync(_connectionString, $"GRANT EXECUTE TO {Identifier(_principal)}; DENY EXECUTE ON OBJECT::[dbo].[Three] TO [Operators];");
+        var mixed = await InspectAsync(false);
+        var withException = Coverage(mixed, "EXECUTE", SqlCoverageLevel.Some);
+        Assert.Contains(withException.Evidence, e => e.ObjectName == "Three" && e.State == "DENY");
+        Assert.Equal(new SqlProcedureAccess(2, 3), withException.ProcedureAccess);
+        Assert.Equal(withException.ProcedureAccess!.Executable, await ScalarAsync($"""
+            SELECT QUOTENAME(SCHEMA_NAME(schema_id))+'.'+QUOTENAME(name) AS qualified INTO #procedures
+                FROM sys.procedures WHERE is_ms_shipped=0;
+            EXECUTE AS USER={Literal(_principal)};
+            SELECT COUNT(*) FROM #procedures WHERE HAS_PERMS_BY_NAME(qualified, 'OBJECT', 'EXECUTE')=1;
+            REVERT;
+            """));
+        Assert.Contains(mixed.Grants, g => g.Database == _database && g.Privileges.Contains(Privilege.Execute));
+
+        await ExecuteAsync(_connectionString, "CREATE SYNONYM [dbo].[ExternalRoutine] FOR [RemoteCatalog].[dbo].[Unresolved];");
+        Assert.Null(Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
+        await ExecuteAsync(_connectionString, "REVOKE EXECUTE ON OBJECT::[dbo].[Three] FROM [Operators];");
+        var wholeDatabase = Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.All);
+        Assert.Equal("DatabaseGrant", wholeDatabase.Basis);
+        Assert.Equal(new SqlProcedureAccess(3, 3), wholeDatabase.ProcedureAccess);
+    }
+
+    [Fact]
+    public async Task ExecuteCountCoversCurrentProceduresOnlyAndNeedsCatalogVisibility()
+    {
+        await ExecuteAsync(_connectionString, "CREATE FUNCTION [dbo].[Compute]() RETURNS int AS BEGIN RETURN 1; END;");
+        await ExecuteAsync(_connectionString, $"GRANT EXECUTE ON OBJECT::[dbo].[Compute] TO {Identifier(_principal)};");
+        var onlyFunction = Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.All);
+        Assert.Equal(new SqlProcedureAccess(0, 0), onlyFunction.ProcedureAccess);
+
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[HiddenProcedure] AS SELECT 1;");
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [app_scope].[HiddenProcedure] AS SELECT 1;");
+        await ExecuteAsync(_connectionString, $"GRANT EXECUTE ON OBJECT::[app_scope].[HiddenProcedure] TO {Identifier(_principal)};");
+        var data = await InspectAsync(false);
+        Assert.Equal(new SqlProcedureAccess(1, 2), Coverage(data, "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
+        Assert.All(data.Coverage.Where(c => c.Permission != "EXECUTE"), c => Assert.Null(c.ProcedureAccess));
+
+        var limited = await CreatePrincipalAsync();
+        await ExecuteAsync(_fixture.MasterConnectionString, $"GRANT VIEW ANY DEFINITION, CONNECT ANY DATABASE TO {Identifier(limited)};");
+        await ExecuteAsync(_connectionString, $"DENY VIEW DEFINITION ON OBJECT::[dbo].[HiddenProcedure] TO {Identifier(limited)};");
+        var integration = _integration with { ConnectionString = new SqlConnectionStringBuilder(_connectionString)
+            { UserID = limited, Password = "ScopeTest123!password" }.ConnectionString };
+        var inspected = await _inspector.GetPrincipalPermissionsAsync(integration, _principal);
+        Assert.True(inspected.IsSuccessful, inspected.ErrorMessage);
+        Assert.NotNull(inspected.Permissions!.CoverageWarning);
+        var unknown = Assert.Single(inspected.Permissions.Coverage, c => c.Database == _database && c.Permission == "EXECUTE");
+        Assert.Equal(SqlCoverageLevel.Unknown, unknown.Level);
+        Assert.Null(unknown.ProcedureAccess);
+    }
+
+    [Fact]
+    public async Task DatabaseSelectWithColumnDeny_AndColumnRevokeRetainTheirNativeScopeAndState()
+    {
+        await ExecuteAsync(_connectionString, $"GRANT SELECT TO {Identifier(_principal)}; DENY SELECT ON OBJECT::dbo.Inventory ([Description]) TO {Identifier(_principal)};");
+        var mixed = Coverage(await InspectAsync(false), "SELECT", SqlCoverageLevel.Some);
+        Assert.Contains(mixed.Evidence, e => e.State == "DENY" && e.Scope == "Column" && e.ColumnName == "Description");
+        await ExecuteAsync(_connectionString, $"GRANT REFERENCES ON OBJECT::dbo.Inventory TO {Identifier(_principal)}; REVOKE REFERENCES ON OBJECT::dbo.Inventory ([Id]) FROM {Identifier(_principal)};");
+        var revoked = Coverage(await InspectAsync(true), "REFERENCES", SqlCoverageLevel.Unknown);
+        Assert.Contains(revoked.Evidence, e => e.State == "REVOKE" && e.Scope == "Column" && e.ColumnName == "Id");
+    }
+
+    [Fact]
+    public async Task PartialVisibilityDoesNotPresentAnUnverifiedAbsenceAsNoAccess()
+    {
+        var limitedPrincipal = await CreatePrincipalAsync();
+        await ExecuteAsync(_connectionString, $"GRANT SELECT ON OBJECT::[dbo].[Inventory] TO {Identifier(_principal)};");
+        var limited = _integration with { ConnectionString = new SqlConnectionStringBuilder(_connectionString)
+            { UserID = limitedPrincipal, Password = "ScopeTest123!password" }.ConnectionString };
+        var inspected = await _inspector.GetPrincipalPermissionsAsync(limited, _principal);
+        Assert.True(inspected.IsSuccessful, inspected.ErrorMessage);
+        Assert.NotNull(inspected.Permissions!.CoverageWarning);
+        Assert.All(inspected.Permissions.Coverage, c => Assert.Equal(SqlCoverageLevel.Unknown, c.Level));
+    }
+
+    [Fact]
+    public async Task DdlAdminSuppliesScopedAlterWithoutSatisfyingDatabaseAlter()
+    {
+        await ExecuteAsync(_connectionString, $"ALTER ROLE db_ddladmin ADD MEMBER {Identifier(_principal)};");
+        Assert.Equal(0, await ScalarAsync($"EXECUTE AS USER={Literal(_principal)}; SELECT HAS_PERMS_BY_NAME(DB_NAME(),'DATABASE','ALTER'); REVERT;"));
+        Assert.Equal(1, await ScalarAsync($"EXECUTE AS USER={Literal(_principal)}; SELECT HAS_PERMS_BY_NAME('dbo.Inventory','OBJECT','ALTER'); REVERT;"));
+        var roleOnly = await InspectAsync(false);
+        var scoped = Coverage(roleOnly, "ALTER", SqlCoverageLevel.Some);
+        Assert.Contains(scoped.Evidence, e => e.Scope == "Fixed database role" && e.Grantee == "db_ddladmin" && e.Inherited);
+        Assert.DoesNotContain(roleOnly.Grants, g => g.Privileges.Contains(Privilege.Alter));
+        var account = NewAccount(_principal, [NewGrant(null, Privilege.Connect, Privilege.Alter)]);
+        var snapshot = NewStore(account).Current!;
+        var facade = new SqlPermissionsInspector(_inspector);
+        var status = await facade.GetAccountStatusAsync(account, _integration, snapshot);
+        Assert.Contains(status.PermissionComparisons, c => c.Database == _database && c.MissingPrivileges.Contains(Privilege.Alter));
+
+        await ExecuteAsync(_connectionString, $"GRANT ALTER TO {Identifier(_principal)};");
+        var direct = await InspectAsync(true);
+        var all = Coverage(direct, "ALTER", SqlCoverageLevel.All);
+        Assert.Contains(all.Evidence, e => e.Scope == "Database" && e.Grantee == _principal && !e.Inherited);
+        Assert.Contains(all.Evidence, e => e.Scope == "Fixed database role" && e.Grantee == "db_ddladmin");
+        Assert.Contains(direct.Grants, g => g.Database == _database && g.Privileges.Contains(Privilege.Alter));
+        Assert.Equal(SyncStatus.InSync, (await facade.GetAccountStatusAsync(account, _integration, snapshot)).Status);
+
+        await ExecuteAsync(_connectionString, $"DENY ALTER ON OBJECT::dbo.Inventory TO {Identifier(_principal)};");
+        var conflict = Coverage(await InspectAsync(false), "ALTER", SqlCoverageLevel.Unknown);
+        Assert.Contains(conflict.Evidence, e => e.Scope == "Object" && e.State == "DENY");
+    }
+
+    [Fact]
+    public async Task AlternateDatabaseSpellingCannotGrantThenRevokeTheSamePhysicalPermission()
+    {
+        var alternate = _database.ToUpperInvariant();
+        Assert.NotEqual(_database, alternate);
+        Assert.Equal(1, await ScalarAsync($"SELECT CASE WHEN DB_ID({Literal(alternate)})=DB_ID() THEN 1 ELSE 0 END;"));
+        await ExecuteAsync(_connectionString, $"GRANT SELECT TO {Identifier(_principal)};");
+        var wrongName = NewGrant(null, Privilege.Connect, Privilege.Select) with { Database = alternate };
+        var account = NewAccount(_principal, [wrongName]);
+        var newLogin = $"pending_{Guid.NewGuid():N}";
+        var pending = NewAccount(newLogin, [wrongName]);
+        var ordinary = NewAccount(await CreatePrincipalAsync(), [NewGrant(null, Privilege.Connect, Privilege.Insert)]);
+        var store = NewStore(account, pending, ordinary);
+        var service = NewService(store);
+        var status = await new SqlPermissionsInspector(_inspector).GetAccountStatusAsync(account, _integration, store.Current!);
+        Assert.Equal(SyncStatus.Unknown, status.Status);
+        Assert.Contains("catalog", status.CoverageWarning);
+        Assert.Empty(status.PermissionComparisons);
+        var plan = await service.PreviewBulkAsync(_integration.Id);
+        Assert.True(plan.IsSuccess, plan.Error);
+        Assert.All(plan.Value!.Operations.Where(op => op.AccountId == account.Id || op.AccountId == pending.Id), op => Assert.Equal("Skip", op.Operation));
+        Assert.Equal(2, plan.Value.Operations.Count(op => op.Operation == "Skip"));
+        Assert.Contains(plan.Value.Operations, op => op.AccountId == ordinary.Id && op.Operation == "Grant" && op.Privilege == Privilege.Insert);
+        var applied = await service.BulkResolveAsync(new(_integration.Id, BulkPasswordSource.SecretProvider, plan.Value.Revision), "scope-test", null);
+        Assert.True(applied.IsSuccess, applied.Error);
+        Assert.Equal(2, applied.Value!.Summary.Skipped);
+        Assert.Equal(1, applied.Value.Summary.DriftsResolved);
+
+        var single = await service.ResolveDriftAsync(new(_integration.Id, account.Id), "scope-test", null);
+        var imported = await service.ImportPermissionsAsync(new(_integration.Id, account.Id), "scope-test", null);
+        Assert.False(single.IsSuccess);
         Assert.False(imported.IsSuccess);
-        Assert.Contains("DENY", imported.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(account.Grants, Assert.Single(store.Current!.Accounts).Grants);
+        var creation = await service.CreateSqlAccountAsync(new(_integration.Id, pending.Id, PasswordSource.Manual, "ScopeTest123!password"), "scope-test", null);
+        Assert.False(creation.IsSuccess);
+        Assert.Equal(0, await ScalarAsync($"SELECT COUNT(*) FROM sys.server_principals WHERE name={Literal(newLogin)};"));
+
+        // Simulate an old or external caller supplying the conflicting operations directly.
+        var writer = await _inspector.ApplyPermissionChangesAsync(_integration, _principal,
+            [new(_database, null, [], [], [], [Privilege.Select]), new(alternate, null, [], [], [Privilege.Select], [])]);
+        Assert.False(writer.IsSuccessful);
+        Assert.Empty(writer.Operations);
+        Assert.Equal(1, await ScalarAsync($"SELECT COUNT(*) FROM sys.database_permissions WHERE grantee_principal_id=USER_ID({Literal(_principal)}) AND class=0 AND permission_name='SELECT' AND state='G';"));
+    }
+
+    private SqlPrivilegeCoverage Coverage(SqlPrincipalPermissions sql, string privilege, SqlCoverageLevel level)
+    {
+        Assert.Null(sql.InspectionError);
+        Assert.Null(sql.CoverageWarning);
+        var observed = Assert.Single(sql.Coverage, c => c.Database == _database && c.Permission == privilege);
+        Assert.Equal(level, observed.Level);
+        return observed;
     }
 
     private async Task<SqlPrincipalPermissions> InspectAsync(bool batch)
@@ -279,13 +442,6 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
         Assert.NotNull(single.Permissions);
         Assert.True(single.Permissions!.Exists);
         return single.Permissions!;
-    }
-
-    private static void AssertUnsupported(string? message)
-    {
-        Assert.NotNull(message);
-        Assert.False(string.IsNullOrWhiteSpace(message));
-        Assert.Contains("Inventory", message, StringComparison.OrdinalIgnoreCase);
     }
 
     private Account NewAccount(string name, IReadOnlyList<Grant> grants) => new(

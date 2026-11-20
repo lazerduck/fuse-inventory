@@ -8,7 +8,7 @@ namespace Fuse.Core.Areas.SqlIntegration;
 public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector, IAccountSqlInspector catalog) : IIntegrationReviewProvider
 {
     public string Provider => "sql";
-    public IReadOnlyList<ReviewCheck> Checks { get; } = [new("account-grants", "Documented SQL Server grants", [], RequiresAccount: true)];
+    public IReadOnlyList<ReviewCheck> Checks { get; } = [new("account-grants", "Documented whole-database grants", [], RequiresAccount: true)];
 
     public string? Validate(Snapshot s, ReviewInput input)
     {
@@ -31,10 +31,10 @@ public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector, IAccou
         var status = result.Status switch { SyncStatus.InSync => ReviewStatus.Matched,
             SyncStatus.DriftDetected or SyncStatus.MissingPrincipal => ReviewStatus.Drift, _ => ReviewStatus.Unknown };
         var details = result.PermissionComparisons.SelectMany(x =>
-            x.MissingPrivileges.Order().Select(p => $"{x.Database ?? "(database)"} / {x.Schema ?? "(database scope)"} · missing {p}")
-            .Concat(x.ExtraPrivileges.Order().Select(p => $"{x.Database ?? "(database)"} / {x.Schema ?? "(database scope)"} · unexpected {p}"))).ToArray();
-        return new(status, result.Status switch { SyncStatus.InSync => "Documented grants match SQL Server.",
-            SyncStatus.MissingPrincipal => "The documented principal is missing.", SyncStatus.DriftDetected => "SQL Server and documented grants differ.",
-            _ => "Grant coverage is unavailable." }, details);
+            x.MissingPrivileges.Order().Select(p => $"{x.Database} · missing {p}")
+            .Concat(x.ExtraPrivileges.Order().Select(p => $"{x.Database} · unexpected {p}"))).ToArray();
+        return new(status, result.Status switch { SyncStatus.InSync => "Whole-database grants match the configuration.",
+            SyncStatus.MissingPrincipal => "The documented principal is missing.", SyncStatus.DriftDetected => "Whole-database grants differ from the configuration.",
+            _ => result.CoverageWarning ?? "Grant coverage is unavailable." }, details);
     }
 }

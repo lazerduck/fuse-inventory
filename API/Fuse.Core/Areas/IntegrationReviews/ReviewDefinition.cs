@@ -1,3 +1,4 @@
+using Fuse.Core.Helpers;
 using Fuse.Core.Models;
 
 namespace Fuse.Core.Areas.IntegrationReviews;
@@ -58,9 +59,11 @@ public static class ReviewSources
         }
         if (input.Provider == "sql" && account is not null)
         {
-            var grants = account.Grants.Select(g => System.Text.Json.JsonSerializer.Serialize(
+            var grants = account.Grants.Where(g => SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema))
+                .Select(g => System.Text.Json.JsonSerializer.Serialize(
                 new { g.Database, g.Schema, Privileges = g.Privileges.Order().ToArray() })).Order(StringComparer.Ordinal);
-            resource = [..resource, ..grants];
+            // Observations made by the former database-and-schema comparison used a different scope.
+            resource = [..resource, "whole-database-grants-v1", ..grants];
         }
         string?[] scope = [..resource, Find(s, input)?.TargetId?.ToString(), account?.TargetId.ToString(), account?.UserName,
             account?.Parameters?.GetValueOrDefault("authSource"), account?.Parameters?.GetValueOrDefault("keycloakIssuer"),

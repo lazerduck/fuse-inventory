@@ -160,8 +160,10 @@ export function useAccountEdit() {
       .map((item) => ({ label: item.name ?? item.id!, value: item.id! }))
   })
 
+  // Grant dialogs update the saved account immediately, even when its form has unsaved edits.
+  const grantTarget = computed(() => isEditMode.value && account.value ? account.value : form.value)
   const currentSqlIntegrationId = computed<string | null>(() => {
-    const formValue = form.value
+    const formValue = grantTarget.value
     if (formValue.targetKind !== TargetKind.DataStore || !formValue.targetId) {
       return null
     }
@@ -178,6 +180,12 @@ export function useAccountEdit() {
     () => databasesQuery.isLoading.value || databasesQuery.isFetching.value
   )
   const hasSqlIntegration = computed(() => !!currentSqlIntegrationId.value)
+  const databaseGrantsOnly = computed(() => {
+    if (hasSqlIntegration.value) return true
+    if (grantTarget.value.targetKind !== TargetKind.DataStore) return false
+    const kind = dataStoresQuery.data.value?.find(store => store.id === grantTarget.value.targetId)?.kind
+    return ['sql', 'sql server', 'sqlserver', 'mssql'].includes(kind?.trim().toLowerCase() ?? '')
+  })
 
   const selectedProvider = computed(() =>
     secretProvidersQuery.data.value?.find((provider) => provider.id === form.value.secret.providerId) ?? null
@@ -456,6 +464,7 @@ export function useAccountEdit() {
     privilegeOptions,
     targetOptions,
     hasSqlIntegration,
+    databaseGrantsOnly,
     databaseOptions,
     isDatabasesLoading,
     showSqlStatus,

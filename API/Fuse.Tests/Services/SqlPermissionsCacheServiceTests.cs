@@ -209,6 +209,7 @@ public class SqlPermissionsCacheServiceTests
 
         var store = NewStore(integrations: new[] { integration }, dataStores: new[] { ds }, accounts: new[] { account });
         
+        var coverage = new SqlPrivilegeCoverage("TestDB", "EXECUTE", SqlCoverageLevel.Some, [], "Procedure grant");
         var mockInspector = new Mock<ISqlPermissionsInspector>();
         mockInspector
             .Setup(i => i.GetOverviewAsync(It.IsAny<SqlIntegration>(), It.IsAny<Snapshot>(), It.IsAny<CancellationToken>()))
@@ -224,7 +225,7 @@ public class SqlPermissionsCacheServiceTests
                         Status: SyncStatus.InSync,
                         PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
                         ErrorMessage: null
-                    )
+                    ) { Coverage = [coverage] }
                 },
                 OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(),
                 Summary: new SqlPermissionsOverviewSummary(1, 1, 0, 0, 0, 0),
@@ -241,6 +242,8 @@ public class SqlPermissionsCacheServiceTests
         Assert.NotNull(cachedAccount);
         Assert.Equal(accountId, cachedAccount.Status.AccountId);
         Assert.Equal(SyncStatus.InSync, cachedAccount.Status.Status);
+        Assert.Equal(coverage, Assert.Single(cachedAccount.Status.Coverage));
+        Assert.Equal(coverage, Assert.Single(service.GetCachedOverview(intId)!.Overview.Accounts.Single().Coverage));
     }
 
     [Fact]

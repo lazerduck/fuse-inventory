@@ -10,72 +10,68 @@ namespace Fuse.Core.Helpers;
 
 public static class SqlPermissionDiff
 {
-    private static string? NormalizeKey(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+    public static bool IsDatabaseScope(string? database, string? schema) =>
+        !string.IsNullOrWhiteSpace(database) && string.IsNullOrEmpty(schema);
 
+    // A deployment can have case-sensitive or accent-sensitive catalog identifiers.
+    // Comparing one spelling while executing USE with SQL Server's collation can
+    // turn an intended grant into a revoke against the same physical database.
+    internal static SqlPrincipalPermissions CheckDatabaseNames(IReadOnlyList<Grant> configured, SqlPrincipalPermissions actual)
+    {
+        if (actual.CatalogDatabases is null || actual.CoverageWarning is not null) return actual;
+        var invalid = configured.Where(g => IsDatabaseScope(g.Database, g.Schema)).Select(g => g.Database!)
+            .FirstOrDefault(name => !actual.CatalogDatabases.Contains(name));
+        return invalid == null ? actual : actual with { CoverageWarning = DatabaseNameWarning(invalid) };
+    }
+
+    internal static string DatabaseNameWarning(string name) =>
+        $"The configured database '{name}' does not exactly match a database in the server catalog. Select its catalog name before managing this account.";
+
+    // Granular SQL permissions are inspection evidence. They never participate in the
+    // declaration diff: projecting an object or column onto its database would widen it.
     public static IReadOnlyList<SqlPermissionComparison> BuildComparisons(
         IReadOnlyList<Grant> configuredGrants,
         SqlPrincipalPermissions actualPermissions)
     {
-        // An incomplete representation must never become a proposed broader GRANT.
-        if (actualPermissions.InspectionError is not null)
-            return Array.Empty<SqlPermissionComparison>();
+        if (actualPermissions.InspectionError is not null || actualPermissions.CoverageWarning is not null)
+            return [];
 
-        var comparisons = new List<SqlPermissionComparison>();
-
-        var actualGrantsLookup = actualPermissions.Grants
-            .GroupBy(g => (Database: NormalizeKey(g.Database), Schema: NormalizeKey(g.Schema)))
-            .ToDictionary(
-                g => g.Key,
-                g => g.SelectMany(x => x.Privileges).ToHashSet()
-            );
-
-        var inherited = actualPermissions.Grants.GroupBy(g => (NormalizeKey(g.Database), NormalizeKey(g.Schema)))
-            .ToDictionary(g => g.Key, g => g.SelectMany(p => p.Inherited).ToHashSet());
-        var processedKeys = new HashSet<(string?, string?)>();
-        foreach (var configured in configuredGrants)
+        var declarations = configuredGrants.Where(g => IsDatabaseScope(g.Database, g.Schema))
+            .ToLookup(g => g.Database!, StringComparer.Ordinal);
+        var observations = actualPermissions.Grants.Where(g => IsDatabaseScope(g.Database, g.Schema))
+            .ToLookup(g => g.Database!, StringComparer.Ordinal);
+        var databases = declarations.Select(g => g.Key).Union(observations.Select(g => g.Key), StringComparer.Ordinal);
+        var result = new List<SqlPermissionComparison>();
+        foreach (var database in databases)
         {
-            var key = (Database: NormalizeKey(configured.Database), Schema: NormalizeKey(configured.Schema));
-            processedKeys.Add(key);
-
-            actualGrantsLookup.TryGetValue(key, out var actualPrivileges);
-            actualPrivileges ??= new HashSet<Privilege>();
-
-            var configuredSet = configured.Privileges ?? new HashSet<Privilege>();
-            var missing = configuredSet.Except(actualPrivileges).ToHashSet();
-            var extra = actualPrivileges.Except(configuredSet).ToHashSet();
-
-            comparisons.Add(new SqlPermissionComparison(
-                Database: configured.Database,
-                Schema: configured.Schema,
-                ConfiguredPrivileges: configuredSet,
-                ActualPrivileges: actualPrivileges,
-                MissingPrivileges: missing,
-                ExtraPrivileges: extra
-            ) { Inherited = inherited.GetValueOrDefault(key) ?? [] });
+            var expected = declarations[database].SelectMany(g => g.Privileges).ToHashSet();
+            var observed = observations[database].SelectMany(g => g.Privileges).ToHashSet();
+            var missing = expected.Except(observed).ToHashSet();
+            var extra = observed.Except(expected).ToHashSet();
+            var blocked = observations[database].SelectMany(g => g.Protected.Concat(g.Inherited))
+                .Where(p => missing.Contains(p) || extra.Contains(p)).ToHashSet();
+            if (expected.Count > 0 || observed.Count > 0)
+                result.Add(new(database, null, expected, observed, missing, extra) { BlockedPrivileges = blocked });
         }
+        return result;
+    }
 
-        foreach (var actualKey in actualGrantsLookup.Keys)
-        {
-            if (!processedKeys.Contains(actualKey))
-            {
-                comparisons.Add(new SqlPermissionComparison(
-                    Database: actualKey.Database,
-                    Schema: actualKey.Schema,
-                    ConfiguredPrivileges: new HashSet<Privilege>(),
-                    ActualPrivileges: actualGrantsLookup[actualKey],
-                    MissingPrivileges: new HashSet<Privilege>(),
-                    ExtraPrivileges: actualGrantsLookup[actualKey]
-                ) { Inherited = inherited.GetValueOrDefault(actualKey) ?? [] });
-            }
-        }
-
-        return comparisons;
+    public static IReadOnlyList<SqlActualGrant> ImportableGrants(SqlPrincipalPermissions actual)
+    {
+        if (actual.InspectionError is not null || actual.CoverageWarning is not null)
+            return [];
+        return actual.Grants.Where(g => IsDatabaseScope(g.Database, g.Schema))
+            .Select(g => g with { Privileges = g.Privileges.Except(g.Inherited).Except(g.Protected).ToHashSet() })
+            .Where(g => g.Privileges.Count > 0).ToList();
     }
 
     public static SyncStatus ComputeStatus(SqlPrincipalPermissions actualPermissions, IReadOnlyList<SqlPermissionComparison> comparisons)
     {
         if (actualPermissions.InspectionError is not null)
             return SyncStatus.Error;
+
+        if (actualPermissions.CoverageWarning is not null)
+            return SyncStatus.Unknown;
 
         var principalMissing = !actualPermissions.Exists;
         if (principalMissing)

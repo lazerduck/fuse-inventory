@@ -1,27 +1,23 @@
 <template>
   <q-dialog v-model="dialogModel" persistent>
-    <q-card style="min-width: 400px">
+    <q-card style="width: 32rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="sync" color="primary" size="2em" class="q-mr-sm" />
-        <span class="text-h6">Resolve Permission Drift</span>
+        <span class="text-h6">Resolve whole-database drift</span>
       </q-card-section>
 
       <q-card-section>
-        <p v-if="account">
-          Apply changes to align
-          <strong>{{ account.principalName }}</strong>'s
-          SQL permissions with Fuse configuration?
-        </p>
-        <div v-if="account" class="q-mt-md text-caption">
-          <div v-if="missingCount > 0" class="row items-center q-gutter-xs">
-            <q-icon name="add_circle" color="positive" size="xs" />
-            <span>{{ missingCount }} permission(s) will be GRANTED</span>
-          </div>
-          <div v-if="extraCount > 0" class="row items-center q-gutter-xs q-mt-xs">
-            <q-icon name="remove_circle" color="negative" size="xs" />
-            <span>{{ extraCount }} permission(s) will be REVOKED</span>
-          </div>
-        </div>
+        <p>Review whole-database changes for <strong>{{ account?.principalName }}</strong>.</p>
+        <q-list bordered separator aria-label="Database changes">
+          <q-item v-for="c in account?.permissionComparisons?.filter(c => c.missingPrivileges?.length || c.extraPrivileges?.length)" :key="c.database">
+            <q-item-section>
+              <q-item-label class="text-weight-medium">{{ c.database }}</q-item-label>
+              <q-item-label v-if="actionable(c.missingPrivileges, c).length">Grant {{ actionable(c.missingPrivileges, c).join(', ') }}</q-item-label>
+              <q-item-label v-if="actionable(c.extraPrivileges, c).length">Revoke {{ actionable(c.extraPrivileges, c).join(', ') }}</q-item-label>
+              <q-item-label v-if="c.blockedPrivileges?.length" caption>Manual review · {{ c.blockedPrivileges.join(', ') }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -30,6 +26,7 @@
           flat
           label="Resolve Drift"
           color="primary"
+          :disable="!hasChanges"
           :loading="isResolving"
           @click="emit('confirm')"
         />
@@ -40,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SqlAccountPermissionsStatus } from 'api/client'
+import type { Privilege, SqlPermissionComparison, SqlAccountPermissionsStatus } from 'api/client'
 
 interface Props {
   modelValue: boolean
@@ -63,11 +60,10 @@ const dialogModel = computed({
   set: (value: boolean) => emit('update:modelValue', value)
 })
 
-const missingCount = computed(() =>
-  props.account?.permissionComparisons?.reduce((sum, c) => sum + (c.missingPrivileges?.length ?? 0), 0) ?? 0
-)
+function actionable(privileges: Privilege[] | undefined, comparison: SqlPermissionComparison) {
+  return (privileges ?? []).filter(privilege => !comparison.blockedPrivileges?.includes(privilege))
+}
 
-const extraCount = computed(() =>
-  props.account?.permissionComparisons?.reduce((sum, c) => sum + (c.extraPrivileges?.length ?? 0), 0) ?? 0
-)
+const hasChanges = computed(() => props.account?.permissionComparisons?.some(c =>
+  actionable(c.missingPrivileges, c).length || actionable(c.extraPrivileges, c).length))
 </script>

@@ -12,17 +12,21 @@
         <h1>{{ integrationName ?? 'SQL Permissions Overview' }}</h1>
       </div>
       <p class="subtitle">
-        Permission drift dashboard for accounts associated with this SQL integration.
+        Inspect SQL access and compare whole-database grants with Fuse.
       </p>
     </div>
-    <q-btn
-      flat
-      dense
-      icon="refresh"
-      label="Refresh"
-      :loading="isFetching"
-      @click="$emit('refresh')"
-    />
+    <div class="row items-center q-gutter-x-md">
+      <slot />
+      <q-btn
+        flat
+        no-caps
+        dense
+        icon="refresh"
+        label="Refresh"
+        :loading="isFetching"
+        @click="$emit('refresh')"
+      />
+    </div>
   </div>
 </template>
 
@@ -36,3 +40,7 @@ defineProps<Props>()
 
 defineEmits<{ (e: 'back'): void; (e: 'refresh'): void }>()
 </script>
+
+<style scoped>
+@import '../../styles/pages.css';
+</style>

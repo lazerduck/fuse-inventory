@@ -76,7 +76,7 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
                 Status: accountCached.Status.Status,
                 PermissionComparisons: accountCached.Status.PermissionComparisons,
                 ErrorMessage: accountCached.Status.ErrorMessage
-            ));
+            ) { Coverage = accountCached.Status.Coverage, CoverageWarning = accountCached.Status.CoverageWarning });
         }
 
         foreach (var principalName in metadata.OrphanPrincipals)
@@ -157,7 +157,7 @@ public class SqlPermissionsCacheService : BackgroundService, ISqlPermissionsCach
                         StatusSummary: SqlPermissionsInspector.GetStatusSummaryStatic(accountStatus.Status, accountStatus.PrincipalName),
                         PermissionComparisons: accountStatus.PermissionComparisons,
                         ErrorMessage: accountStatus.ErrorMessage
-                    );
+                    ) { Coverage = accountStatus.Coverage, CoverageWarning = accountStatus.CoverageWarning };
 
                     var accountCached = new CachedAccountSqlStatus(accountSqlStatus, now);
                     _cache.Set(GetAccountCacheKey(accountStatus.AccountId), accountCached, cacheOptions);

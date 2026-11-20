@@ -1,301 +1,61 @@
 <template>
-  <q-expansion-item 
-    dense 
-    expand-icon="expand_more" 
-    icon="sync" 
-    label="SQL Status" 
-    class="q-mt-lg"
-    :default-opened="true"
-  >
-    <template #default>
-      <div class="section-header">
-        <div>
-          <div class="text-subtitle1">SQL Permission Status</div>
-          <div class="text-caption text-grey-7">
-            Compare configured grants with actual SQL permissions.
-          </div>
-        </div>
-        <q-btn
-          flat
-          dense
-          icon="refresh"
-          label="Refresh"
-          :loading="isFetching"
-          @click="() => refetch()"
-        />
+  <section aria-labelledby="sql-status-title">
+    <div class="section-header">
+      <div>
+        <h2 id="sql-status-title" class="text-h6 q-ma-none">SQL permissions</h2>
+        <p v-if="status?.sqlIntegrationName" class="muted q-mb-none">{{ status.sqlIntegrationName }}</p>
       </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="q-pa-md text-center">
-        <q-spinner color="primary" size="2em" />
-        <div class="text-grey-7 q-mt-sm">Loading SQL status...</div>
+      <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="isFetching" @click="() => refetch()" />
+    </div>
+    <div v-if="isLoading" class="q-py-md" role="status"><q-spinner class="q-mr-sm" />Loading SQL permissions…</div>
+    <p v-else-if="error" role="alert" class="q-mt-md">Unable to load SQL permissions.</p>
+    <template v-else-if="status">
+      <p v-if="status.errorMessage && status.errorMessage !== status.coverageWarning" class="q-mt-md" role="alert">{{ status.errorMessage }}</p>
+      <div v-if="showCoverage" class="q-mt-lg">
+        <h3 class="text-subtitle2 q-mb-sm">Observed access</h3>
+        <SqlAccessCoverage :coverage="status.coverage" :warning="status.coverageWarning" />
       </div>
-
-      <!-- Error State -->
-      <q-banner v-else-if="error" dense class="bg-red-1 text-negative q-mt-md">
-        <template #avatar>
-          <q-icon name="error" color="negative" />
-        </template>
-        Unable to load SQL status. Please try again.
-      </q-banner>
-
-      <!-- Data Display -->
-      <template v-else-if="data">
-        <!-- Status Summary -->
-        <div class="status-summary q-mt-md q-pa-sm rounded-borders" :class="statusClass">
-          <div class="row items-center q-gutter-sm">
-            <q-icon :name="statusIcon" size="sm" :color="statusColor" />
-            <div>
-              <div class="text-weight-medium">{{ statusLabel }}</div>
-              <div class="text-caption">{{ data.status?.statusSummary }}</div>
-            </div>
-          </div>
-          <q-badge 
-            v-if="data.status?.sqlIntegrationName" 
-            outline 
-            color="primary" 
-            class="q-mt-sm"
-          >
-            {{ data.status.sqlIntegrationName }}
-          </q-badge>
+      <div class="q-mt-lg">
+        <div class="row items-center q-gutter-x-sm">
+          <h3 class="text-subtitle2 q-ma-none">Whole-database grants</h3>
+          <StatusBadge :status="status.status" />
         </div>
-
-        <!-- Error Message from SQL inspection -->
-        <q-banner v-if="data.status?.errorMessage" dense class="bg-orange-1 text-orange-9 q-mt-md">
-          <template #avatar>
-            <q-icon name="warning" color="orange" />
-          </template>
-          {{ data.status.errorMessage }}
-        </q-banner>
-
-        <!-- Permission Comparison Table -->
-        <div v-if="hasComparisons" class="q-mt-md">
-          <div class="text-subtitle2 q-mb-sm">Permission Details</div>
-          <q-table
-            flat
-            bordered
-            dense
-            :rows="comparisonRows"
-            :columns="columns"
-            row-key="key"
-          >
-            <template #body-cell-configured="props">
-              <q-td :props="props">
-                <div v-if="props.row.configuredPrivileges?.length" class="tag-list">
-                  <q-badge
-                    v-for="priv in props.row.configuredPrivileges"
-                    :key="priv"
-                    outline
-                    color="primary"
-                    :label="priv"
-                  />
-                </div>
-                <span v-else class="text-grey">—</span>
-              </q-td>
-            </template>
-            <template #body-cell-actual="props">
-              <q-td :props="props">
-                <div v-if="props.row.actualPrivileges?.length" class="tag-list">
-                  <q-badge
-                    v-for="priv in props.row.actualPrivileges"
-                    :key="priv"
-                    outline
-                    color="secondary"
-                    :label="priv"
-                  />
-                </div>
-                <span v-else class="text-grey">—</span>
-              </q-td>
-            </template>
-            <template #body-cell-status="props">
-              <q-td :props="props">
-                <div class="row items-center q-gutter-xs">
-                  <template v-if="props.row.hasMissing">
-                    <q-icon name="remove_circle" color="negative" size="xs" />
-                    <span class="text-negative text-caption">
-                      Missing: {{ props.row.missingPrivileges.join(', ') }}
-                    </span>
-                  </template>
-                  <template v-if="props.row.hasExtra">
-                    <q-icon name="add_circle" color="orange" size="xs" />
-                    <span class="text-orange text-caption">
-                      Extra: {{ props.row.extraPrivileges.join(', ') }}
-                    </span>
-                  </template>
-                  <template v-if="!props.row.hasMissing && !props.row.hasExtra">
-                    <q-icon name="check_circle" color="positive" size="xs" />
-                    <span class="text-positive text-caption">In sync</span>
-                  </template>
-                </div>
-              </q-td>
-            </template>
-            <template #no-data>
-              <div class="q-pa-sm text-grey-7">No permission data available.</div>
-            </template>
-          </q-table>
-        </div>
-      </template>
+        <p v-if="status.statusSummary" class="muted q-mt-xs">{{ status.statusSummary }}</p>
+        <q-markup-table v-if="status.permissionComparisons?.length" flat bordered dense wrap-cells>
+          <thead><tr><th>Database</th><th>Configured</th><th>Observed</th><th>Difference</th></tr></thead>
+          <tbody><tr v-for="comparison in status.permissionComparisons" :key="comparison.database">
+            <td>{{ comparison.database }}</td>
+            <td>{{ comparison.configuredPrivileges?.join(', ') || '—' }}</td>
+            <td>{{ comparison.actualPrivileges?.join(', ') || '—' }}</td>
+            <td>
+              <div v-if="comparison.missingPrivileges?.length">Missing {{ comparison.missingPrivileges.join(', ') }}</div>
+              <div v-if="comparison.extraPrivileges?.length">Extra {{ comparison.extraPrivileges.join(', ') }}</div>
+              <div v-if="comparison.blockedPrivileges?.length" class="muted">Manual review · {{ comparison.blockedPrivileges.join(', ') }}</div>
+              <span v-if="!comparison.missingPrivileges?.length && !comparison.extraPrivileges?.length">—</span>
+            </td>
+          </tr></tbody>
+        </q-markup-table>
+      </div>
     </template>
-  </q-expansion-item>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { QTableColumn } from 'quasar'
-import { SyncStatus, type SqlPermissionComparison } from 'api/client'
+import { SyncStatus } from 'api/client'
+import SqlAccessCoverage from '../sqlPermissions/SqlAccessCoverage.vue'
+import StatusBadge from '../sqlPermissions/StatusBadge.vue'
 import { useAccountSqlStatus } from '../../composables/useAccountSqlStatus'
 
-interface ComparisonRow {
-  key: string
-  database: string
-  schema: string
-  configuredPrivileges: string[]
-  actualPrivileges: string[]
-  missingPrivileges: string[]
-  extraPrivileges: string[]
-  hasMissing: boolean
-  hasExtra: boolean
-}
-
-const props = defineProps<{
-  accountId: string
-}>()
-
-const { data, isLoading, isFetching, error, refetch } = useAccountSqlStatus(
-  computed(() => props.accountId)
-)
-
-const statusLabel = computed(() => {
-  if (!data.value?.status) return 'Unknown'
-  switch (data.value.status.status) {
-    case SyncStatus.InSync:
-      return 'In Sync'
-    case SyncStatus.DriftDetected:
-      return 'Drift Detected'
-    case SyncStatus.MissingPrincipal:
-      return 'Missing Principal'
-    case SyncStatus.Error:
-      return 'Error'
-    case SyncStatus.NotApplicable:
-      return 'Not Applicable'
-    default:
-      return 'Unknown'
-  }
-})
-
-const statusIcon = computed(() => {
-  if (!data.value?.status) return 'help'
-  switch (data.value.status.status) {
-    case SyncStatus.InSync:
-      return 'check_circle'
-    case SyncStatus.DriftDetected:
-      return 'warning'
-    case SyncStatus.MissingPrincipal:
-      return 'person_off'
-    case SyncStatus.Error:
-      return 'error'
-    case SyncStatus.NotApplicable:
-      return 'info'
-    default:
-      return 'help'
-  }
-})
-
-const statusColor = computed(() => {
-  if (!data.value?.status) return 'grey'
-  switch (data.value.status.status) {
-    case SyncStatus.InSync:
-      return 'positive'
-    case SyncStatus.DriftDetected:
-      return 'warning'
-    case SyncStatus.MissingPrincipal:
-      return 'orange'
-    case SyncStatus.Error:
-      return 'negative'
-    case SyncStatus.NotApplicable:
-      return 'grey'
-    default:
-      return 'grey'
-  }
-})
-
-const statusClass = computed(() => {
-  if (!data.value?.status) return 'status-na'
-  switch (data.value.status.status) {
-    case SyncStatus.InSync:
-      return 'status-in-sync'
-    case SyncStatus.DriftDetected:
-      return 'status-drift'
-    case SyncStatus.MissingPrincipal:
-      return 'status-drift'
-    case SyncStatus.Error:
-      return 'status-error'
-    case SyncStatus.NotApplicable:
-      return 'status-na'
-    default:
-      return 'status-na'
-  }
-})
-
-const hasComparisons = computed(() => {
-  return data.value?.status?.permissionComparisons && data.value.status.permissionComparisons.length > 0
-})
-
-const columns: QTableColumn<ComparisonRow>[] = [
-  { name: 'database', label: 'Database', field: 'database', align: 'left' },
-  { name: 'schema', label: 'Schema', field: 'schema', align: 'left' },
-  { name: 'configured', label: 'Configured', field: 'configuredPrivileges', align: 'left' },
-  { name: 'actual', label: 'Actual (SQL)', field: 'actualPrivileges', align: 'left' },
-  { name: 'status', label: 'Status', field: (row) => row.key, align: 'left' }
-]
-
-const comparisonRows = computed<ComparisonRow[]>(() => {
-  if (!data.value?.status?.permissionComparisons) return []
-  return data.value.status.permissionComparisons.map((comp: SqlPermissionComparison, index: number) => ({
-    key: `perm-${index}-${comp.database ?? ''}-${comp.schema ?? ''}`,
-    database: comp.database ?? '—',
-    schema: comp.schema ?? '—',
-    configuredPrivileges: comp.configuredPrivileges ?? [],
-    actualPrivileges: comp.actualPrivileges ?? [],
-    missingPrivileges: comp.missingPrivileges ?? [],
-    extraPrivileges: comp.extraPrivileges ?? [],
-    hasMissing: (comp.missingPrivileges?.length ?? 0) > 0,
-    hasExtra: (comp.extraPrivileges?.length ?? 0) > 0
-  }))
-})
+const props = defineProps<{ accountId: string }>()
+const { data, isLoading, isFetching, error, refetch } = useAccountSqlStatus(computed(() => props.accountId))
+const status = computed(() => data.value?.status)
+const showCoverage = computed(() => status.value?.coverage?.length || status.value?.coverageWarning ||
+  status.value?.status === SyncStatus.InSync || status.value?.status === SyncStatus.DriftDetected)
 </script>
 
 <style scoped>
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.status-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  background: var(--fuse-status-bg);
-  border: 1px solid var(--fuse-panel-border);
-  transition: background 0.2s ease;
-}
-
-.status-summary.status-in-sync { --fuse-status-bg: var(--fuse-status-in-sync-bg); }
-.status-summary.status-drift { --fuse-status-bg: var(--fuse-status-drift-bg); }
-.status-summary.status-error { --fuse-status-bg: var(--fuse-status-error-bg); }
-.status-summary.status-na { --fuse-status-bg: var(--fuse-status-na-bg); }
-
-/* Ensure readable selection inside status summary */
-.status-summary ::selection {
-  background: var(--fuse-selection-bg);
-  color: var(--fuse-selection-color);
-}
-
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
+.section-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+.muted { color: var(--fuse-text-muted); }
+th, td { text-align: left; }
 </style>

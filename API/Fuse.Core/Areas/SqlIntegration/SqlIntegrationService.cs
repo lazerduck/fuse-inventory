@@ -14,6 +14,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
     private readonly IFuseStore _store;
     private readonly ISqlConnectionValidator _validator;
     private readonly IAccountSqlInspector _sqlInspector;
+    private readonly SqlPermissionsInspector _permissions;
     private readonly IAuditService _auditService;
     private readonly ISecretOperationService _secretOperationService;
 
@@ -27,6 +28,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         _store = store;
         _validator = validator;
         _sqlInspector = sqlInspector;
+        _permissions = new SqlPermissionsInspector(sqlInspector);
         _auditService = auditService;
         _secretOperationService = secretOperationService;
     }
@@ -417,155 +419,9 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.NotFound);
         }
 
-        // Check if the integration has Read permission
-        if ((integration.Permissions & SqlPermissions.Read) == 0)
-        {
-            return Result<SqlIntegrationPermissionsOverviewResponse>.Success(
-                new SqlIntegrationPermissionsOverviewResponse(
-                    IntegrationId: integration.Id,
-                    IntegrationName: integration.Name,
-                    Accounts: Array.Empty<SqlAccountPermissionsStatus>(),
-                    OrphanPrincipals: Array.Empty<SqlOrphanPrincipal>(),
-                    Summary: new SqlPermissionsOverviewSummary(0, 0, 0, 0, 0, 0),
-                    ErrorMessage: "SQL integration does not have Read permission to inspect accounts."));
-        }
-
-        // Find all accounts associated with this integration's data store
-        var associatedAccounts = snapshot.Accounts
-            .Where(a => a.TargetKind == TargetKind.DataStore && a.TargetId == integration.DataStoreId)
-            .ToList();
-
-        // Get the set of principal names managed by Fuse
-        var managedPrincipalNames = associatedAccounts
-            .Where(a => !string.IsNullOrWhiteSpace(a.UserName))
-            .Select(a => a.UserName!)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var accountStatuses = new List<SqlAccountPermissionsStatus>();
-
-        foreach (var account in associatedAccounts)
-        {
-            var principalName = account.UserName;
-            
-            // Skip accounts without a username
-            if (string.IsNullOrWhiteSpace(principalName))
-            {
-                accountStatuses.Add(new SqlAccountPermissionsStatus(
-                    AccountId: account.Id,
-                    AccountName: GetAccountDisplayName(account, snapshot),
-                    PrincipalName: null,
-                    Status: SyncStatus.NotApplicable,
-                    PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                    ErrorMessage: "Account has no username configured for SQL principal mapping."));
-                continue;
-            }
-
-            // Query SQL for actual permissions
-            var (isSuccessful, actualPermissions, errorMessage) = await _sqlInspector.GetPrincipalPermissionsAsync(
-                integration, principalName, ct);
-
-            if (!isSuccessful || actualPermissions is null || actualPermissions.InspectionError is not null)
-            {
-                accountStatuses.Add(new SqlAccountPermissionsStatus(
-                    AccountId: account.Id,
-                    AccountName: GetAccountDisplayName(account, snapshot),
-                    PrincipalName: principalName,
-                    Status: SyncStatus.Error,
-                    PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
-                    ErrorMessage: actualPermissions?.InspectionError ?? errorMessage ?? "Failed to retrieve SQL permissions."));
-                continue;
-            }
-
-            // Build permission comparisons
-            var comparisons = SqlPermissionDiff.BuildComparisons(account.Grants, actualPermissions);
-
-            // Determine sync status
-            var hasDrift = comparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
-            var principalMissing = !actualPermissions.Exists;
-            
-            SyncStatus status;
-            if (principalMissing)
-            {
-                status = SyncStatus.MissingPrincipal;
-            }
-            else if (hasDrift)
-            {
-                status = SyncStatus.DriftDetected;
-            }
-            else
-            {
-                status = SyncStatus.InSync;
-            }
-
-            accountStatuses.Add(new SqlAccountPermissionsStatus(
-                AccountId: account.Id,
-                AccountName: GetAccountDisplayName(account, snapshot),
-                PrincipalName: principalName,
-                Status: status,
-                PermissionComparisons: comparisons,
-                ErrorMessage: null));
-        }
-
-        // Detect orphan principals (SQL principals not managed by any Fuse account)
-        var orphanPrincipals = new List<SqlOrphanPrincipal>();
-        var (allPrincipalsSuccess, allPrincipals, allPrincipalsError) = await _sqlInspector.GetAllPrincipalsAsync(integration, ct);
-        
-        if (allPrincipalsSuccess && allPrincipals is not null)
-        {
-            foreach (var principal in allPrincipals)
-            {
-                if (!string.IsNullOrWhiteSpace(principal.PrincipalName) && 
-                    !managedPrincipalNames.Contains(principal.PrincipalName))
-                {
-                    orphanPrincipals.Add(new SqlOrphanPrincipal(
-                        principal.PrincipalName,
-                        principal.Grants.Select(g => new SqlActualGrant(g.Database, g.Schema, g.Privileges)).ToList(),
-                        principal.InspectionError));
-                }
-            }
-        }
-
-        // Calculate summary
-        var summary = new SqlPermissionsOverviewSummary(
-            TotalAccounts: accountStatuses.Count,
-            InSyncCount: accountStatuses.Count(s => s.Status == SyncStatus.InSync),
-            DriftCount: accountStatuses.Count(s => s.Status == SyncStatus.DriftDetected),
-            MissingPrincipalCount: accountStatuses.Count(s => s.Status == SyncStatus.MissingPrincipal),
-            ErrorCount: accountStatuses.Count(s => s.Status == SyncStatus.Error),
-            OrphanPrincipalCount: orphanPrincipals.Count
-        );
-
-        return Result<SqlIntegrationPermissionsOverviewResponse>.Success(
-            new SqlIntegrationPermissionsOverviewResponse(
-                IntegrationId: integration.Id,
-                IntegrationName: integration.Name,
-                Accounts: accountStatuses,
-                OrphanPrincipals: orphanPrincipals,
-                Summary: summary,
-                ErrorMessage: null));
+        var overview = await _permissions.GetOverviewAsync(integration, snapshot, ct);
+        return Result<SqlIntegrationPermissionsOverviewResponse>.Success(overview);
     }
-
-    private static string GetAccountDisplayName(Models.Account account, Snapshot snapshot)
-    {
-        // Try to get a meaningful name from the target
-        var targetName = account.TargetKind switch
-        {
-            TargetKind.DataStore => snapshot.DataStores.FirstOrDefault(d => d.Id == account.TargetId)?.Name,
-            TargetKind.Application => snapshot.Applications.FirstOrDefault(a => a.Id == account.TargetId)?.Name,
-            TargetKind.External => snapshot.ExternalResources.FirstOrDefault(e => e.Id == account.TargetId)?.Name,
-            _ => null
-        };
-
-        // Build display name: username @ target or just username
-        if (!string.IsNullOrWhiteSpace(account.UserName) && !string.IsNullOrWhiteSpace(targetName))
-        {
-            return $"{account.UserName} @ {targetName}";
-        }
-        
-        return account.UserName ?? targetName ?? account.Id.ToString();
-    }
-
-    // Comparison logic consolidated in SqlPermissionDiff helper.
 
     public async Task<Result<ResolveDriftResponse>> ResolveDriftAsync(ResolveDrift command, string userName, Guid? userId, CancellationToken ct = default)
     {
@@ -625,9 +481,10 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.ServerError);
         }
 
-        if (actualPermissions.InspectionError is not null)
+        actualPermissions = SqlPermissionDiff.CheckDatabaseNames(account.Grants, actualPermissions);
+        if ((actualPermissions.InspectionError ?? actualPermissions.CoverageWarning) is { } incomplete)
         {
-            return Result<ResolveDriftResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
+            return Result<ResolveDriftResponse>.Failure(incomplete, ErrorType.Validation);
         }
 
         // Check if principal exists (we can't resolve drift for missing principals)
@@ -643,7 +500,6 @@ public partial class SqlIntegrationService : ISqlIntegrationService
 
         if (command.Guard is {} guard && (guard.Principal != principalName ||
             guard.ConnectionUpdated != integration.UpdatedAt || guard.AccountUpdated != account.UpdatedAt ||
-            InheritedExtra(account.Id, principalName, comparisons) is not null ||
             PrivilegeOperations(account.Id, principalName, comparisons).Except(guard.Operations).Any()))
             return Result<ResolveDriftResponse>.Failure("The account or its privileges changed after preview. Preview again.", ErrorType.Conflict);
 
@@ -652,13 +508,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         if (!hasDrift)
         {
             // Already in sync - return success with no operations
-            var inSyncStatus = new SqlAccountPermissionsStatus(
-                AccountId: account.Id,
-                AccountName: GetAccountDisplayName(account, snapshot),
-                PrincipalName: principalName,
-                Status: SyncStatus.InSync,
-                PermissionComparisons: comparisons,
-                ErrorMessage: null);
+            var inSyncStatus = SqlPermissionsInspector.BuildStatus(account, snapshot, actualPermissions);
 
             return Result<ResolveDriftResponse>.Success(new ResolveDriftResponse(
                 AccountId: account.Id,
@@ -669,9 +519,16 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorMessage: null));
         }
 
-        // Apply the permission changes
+        var changes = comparisons.Select(c => c with
+        {
+            MissingPrivileges = c.MissingPrivileges.Except(c.BlockedPrivileges).ToHashSet(),
+            ExtraPrivileges = c.ExtraPrivileges.Except(c.BlockedPrivileges).ToHashSet(),
+            BlockedPrivileges = []
+        }).Where(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0).ToArray();
+        if (changes.Length == 0)
+            return Result<ResolveDriftResponse>.Failure("The differing database privileges are inherited, denied, or delegated. Review them in SQL Server.", ErrorType.Validation);
         var (applySuccess, operations, applyError) = await _sqlInspector.ApplyPermissionChangesAsync(
-            integration, principalName, comparisons, ct);
+            integration, principalName, changes, ct);
 
         // Re-check permissions to get updated status
         var (recheckSuccess, updatedPermissions, recheckError) = await _sqlInspector.GetPrincipalPermissionsAsync(
@@ -680,30 +537,24 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         SqlAccountPermissionsStatus updatedStatus;
         if (recheckSuccess && updatedPermissions is not null && updatedPermissions.InspectionError is null)
         {
-            var updatedComparisons = SqlPermissionDiff.BuildComparisons(account.Grants, updatedPermissions);
-            var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
-
-            updatedStatus = new SqlAccountPermissionsStatus(
-                AccountId: account.Id,
-                AccountName: GetAccountDisplayName(account, snapshot),
-                PrincipalName: principalName,
-                Status: updatedHasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync,
-                PermissionComparisons: updatedComparisons,
-                ErrorMessage: null);
+            updatedStatus = SqlPermissionsInspector.BuildStatus(account, snapshot, updatedPermissions);
         }
         else
         {
             // Couldn't recheck, report error status
             updatedStatus = new SqlAccountPermissionsStatus(
                 AccountId: account.Id,
-                AccountName: GetAccountDisplayName(account, snapshot),
+                AccountName: SqlPermissionsInspector.GetAccountDisplayName(account, snapshot),
                 PrincipalName: principalName,
                 Status: SyncStatus.Error,
                 PermissionComparisons: comparisons,
                 ErrorMessage: updatedPermissions?.InspectionError ?? recheckError ?? "Failed to verify updated permissions.");
         }
 
-        if (applySuccess && updatedStatus.Status != SyncStatus.InSync)
+        var onlyPreviewedSkipsRemain = command.Guard is { } appliedGuard && updatedStatus.Status == SyncStatus.DriftDetected &&
+            PrivilegeOperations(account.Id, principalName, updatedStatus.PermissionComparisons)
+                .All(o => o.Operation == "Skip" && appliedGuard.Operations.Contains(o));
+        if (applySuccess && updatedStatus.Status != SyncStatus.InSync && !onlyPreviewedSkipsRemain)
         {
             applySuccess = false;
             applyError = updatedStatus.ErrorMessage
@@ -825,9 +676,10 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.ServerError);
         }
 
-        if (actualPermissions.InspectionError is not null)
+        actualPermissions = SqlPermissionDiff.CheckDatabaseNames(account.Grants, actualPermissions);
+        if ((actualPermissions.InspectionError ?? actualPermissions.CoverageWarning) is { } incomplete)
         {
-            return Result<ImportPermissionsResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
+            return Result<ImportPermissionsResponse>.Failure(incomplete, ErrorType.Validation);
         }
 
         // Check if principal exists
@@ -839,8 +691,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         }
 
         // Convert actual SQL grants to Fuse grants
-        var importedGrants = actualPermissions.Grants
-            .Where(g => g.Privileges.Count > 0)
+        var importedGrants = SqlPermissionDiff.ImportableGrants(actualPermissions)
             .Select(g => new Grant(
                 Id: Guid.NewGuid(),
                 Database: g.Database,
@@ -861,13 +712,25 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 importFailure = Result<ImportPermissionsResponse>.Failure("Account was deleted during permission inspection.", ErrorType.NotFound);
                 return s;
             }
-            if (current.UserName != account.UserName || current.TargetId != account.TargetId || current.TargetKind != account.TargetKind)
+            if (current.UpdatedAt != account.UpdatedAt || current.UserName != account.UserName || current.TargetId != account.TargetId || current.TargetKind != account.TargetKind)
             {
-                importFailure = Result<ImportPermissionsResponse>.Failure("Account principal changed during permission inspection. Retry the import.", ErrorType.Conflict);
+                importFailure = Result<ImportPermissionsResponse>.Failure("Account changed during permission inspection. Retry the import.", ErrorType.Conflict);
                 return s;
             }
 
-            updatedAccount = current with { Grants = importedGrants, UpdatedAt = DateTime.UtcNow };
+            // Preserve legacy narrower declarations and any database expectations for
+            // permissions sourced through roles or protected by DENY / grant option.
+            var retained = current.Grants.Where(g => !SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema));
+            var databaseGrants = importedGrants.ToDictionary(g => g.Database!, StringComparer.Ordinal);
+            foreach (var grant in current.Grants.Where(g => SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema)))
+            {
+                var protectedPrivileges = actualPermissions.Grants.Where(g => g.Database == grant.Database && string.IsNullOrEmpty(g.Schema))
+                    .SelectMany(g => g.Protected.Concat(g.Inherited));
+                var keep = grant.Privileges.Intersect(protectedPrivileges).ToHashSet();
+                if (databaseGrants.TryGetValue(grant.Database!, out var direct)) keep.UnionWith(direct.Privileges);
+                if (keep.Count > 0) databaseGrants[grant.Database!] = grant with { Privileges = keep };
+            }
+            updatedAccount = current with { Grants = retained.Concat(databaseGrants.Values).ToList(), UpdatedAt = DateTime.UtcNow };
             return s with { Accounts = s.Accounts.Select(a => a.Id == account.Id ? updatedAccount : a).ToList() };
         }, ct);
         if (importFailure is not null) return importFailure;
@@ -879,16 +742,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         SqlAccountPermissionsStatus? updatedStatus = null;
         if (recheckSuccess && recheckPermissions is not null)
         {
-            var updatedComparisons = Fuse.Core.Helpers.SqlPermissionDiff.BuildComparisons(importedGrants, recheckPermissions);
-            var hasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
-
-            updatedStatus = new SqlAccountPermissionsStatus(
-                AccountId: account.Id,
-                AccountName: GetAccountDisplayName(updatedAccount, snapshot),
-                PrincipalName: principalName,
-                Status: hasDrift ? SyncStatus.DriftDetected : SyncStatus.InSync,
-                PermissionComparisons: updatedComparisons,
-                ErrorMessage: null);
+            updatedStatus = SqlPermissionsInspector.BuildStatus(updatedAccount, snapshot, recheckPermissions);
         }
 
         // Log the import to audit
@@ -966,9 +820,9 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.ServerError);
         }
 
-        if (actualPermissions.InspectionError is not null)
+        if ((actualPermissions.InspectionError ?? actualPermissions.CoverageWarning) is { } incomplete)
         {
-            return Result<ImportOrphanPrincipalResponse>.Failure(actualPermissions.InspectionError, ErrorType.Validation);
+            return Result<ImportOrphanPrincipalResponse>.Failure(incomplete, ErrorType.Validation);
         }
 
         if (!actualPermissions.Exists)
@@ -992,8 +846,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         }
 
         // Convert actual SQL grants to Fuse grants
-        var importedGrants = actualPermissions.Grants
-            .Where(g => g.Privileges.Count > 0)
+        var importedGrants = SqlPermissionDiff.ImportableGrants(actualPermissions)
             .Select(g => new Grant(
                 Id: Guid.NewGuid(),
                 Database: g.Database,
@@ -1116,14 +969,18 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         var (inspectSuccess, existingPermissions, inspectError) = await _sqlInspector.GetPrincipalPermissionsAsync(
             integration, principalName, ct);
 
-        if (!inspectSuccess)
+        if (!inspectSuccess || existingPermissions is null)
         {
             return Result<CreateSqlAccountResponse>.Failure(
                 inspectError ?? "Failed to check if SQL principal exists.",
                 ErrorType.ServerError);
         }
 
-        if (existingPermissions?.Exists == true)
+        existingPermissions = SqlPermissionDiff.CheckDatabaseNames(account.Grants, existingPermissions);
+        if ((existingPermissions.InspectionError ?? existingPermissions.CoverageWarning) is { } incomplete)
+            return Result<CreateSqlAccountResponse>.Failure(incomplete, ErrorType.Conflict);
+
+        if (existingPermissions.Exists)
         {
             return Result<CreateSqlAccountResponse>.Failure(
                 "SQL principal already exists. Use drift resolution to update permissions.",
@@ -1131,9 +988,11 @@ public partial class SqlIntegrationService : ISqlIntegrationService
         }
 
         if (command.Guard is {} guard && (guard.Principal != principalName || guard.ConnectionUpdated != integration.UpdatedAt
-            || guard.AccountUpdated != account.UpdatedAt || !guard.Operations.Any(o => o.Operation == "Create login")
-            || existingPermissions is null || existingPermissions.InspectionError is not null))
+            || guard.AccountUpdated != account.UpdatedAt || !guard.Operations.Any(o => o.Operation == "Create login")))
             return Result<CreateSqlAccountResponse>.Failure("The principal changed after preview. Preview again.", ErrorType.Conflict);
+
+        if (account.Grants.Count > 0 && !account.Grants.Any(g => SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema)))
+            return Result<CreateSqlAccountResponse>.Failure("Choose a whole-database declaration before provisioning this account.", ErrorType.Validation);
 
         // Get the password based on the source
         string? password;
@@ -1224,7 +1083,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
 
         // Get the list of databases from the account's grants
         var databases = account.Grants
-            .Where(g => !string.IsNullOrWhiteSpace(g.Database))
+            .Where(g => SqlPermissionDiff.IsDatabaseScope(g.Database, g.Schema))
             .Select(g => g.Database!)
             .Distinct()
             .ToList();
@@ -1242,31 +1101,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
 
             if (recheckSuccess && updatedPermissions is not null && updatedPermissions.InspectionError is null)
             {
-                var updatedComparisons = Fuse.Core.Helpers.SqlPermissionDiff.BuildComparisons(account.Grants, updatedPermissions);
-                var updatedHasDrift = updatedComparisons.Any(c => c.MissingPrivileges.Count > 0 || c.ExtraPrivileges.Count > 0);
-                var principalMissing = !updatedPermissions.Exists;
-
-                SyncStatus status;
-                if (principalMissing)
-                {
-                    status = SyncStatus.MissingPrincipal;
-                }
-                else if (updatedHasDrift)
-                {
-                    status = SyncStatus.DriftDetected;
-                }
-                else
-                {
-                    status = SyncStatus.InSync;
-                }
-
-                updatedStatus = new SqlAccountPermissionsStatus(
-                    AccountId: account.Id,
-                    AccountName: GetAccountDisplayName(account, snapshot),
-                    PrincipalName: principalName,
-                    Status: status,
-                    PermissionComparisons: updatedComparisons,
-                    ErrorMessage: null);
+                updatedStatus = SqlPermissionsInspector.BuildStatus(account, snapshot, updatedPermissions);
             }
             else
             {
@@ -1274,7 +1109,7 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 // rather than returning no status or treating partial grants as in sync.
                 updatedStatus = new SqlAccountPermissionsStatus(
                     AccountId: account.Id,
-                    AccountName: GetAccountDisplayName(account, snapshot),
+                    AccountName: SqlPermissionsInspector.GetAccountDisplayName(account, snapshot),
                     PrincipalName: principalName,
                     Status: SyncStatus.Error,
                     PermissionComparisons: Array.Empty<SqlPermissionComparison>(),
@@ -1353,26 +1188,15 @@ public partial class SqlIntegrationService : ISqlIntegrationService
                 ErrorType.Validation);
         }
 
-        // Get the permissions overview to identify accounts that need action
-        var overviewResult = await GetPermissionsOverviewAsync(integration.Id, ct);
-        if (!overviewResult.IsSuccess || overviewResult.Value is null)
-        {
-            return Result<BulkResolveResponse>.Failure(
-                overviewResult.Error ?? "Failed to get permissions overview.",
-                overviewResult.ErrorType ?? ErrorType.ServerError);
-        }
-
-        var overview = overviewResult.Value;
-        SqlBulkPlan? plan = null;
-        if (command.PreviewRevision is not null)
-        {
-            if (await _sqlInspector.InspectGrantCoverageAsync(integration, ct) is { } incomplete)
-                return Result<BulkResolveResponse>.Failure(incomplete, ErrorType.Conflict);
-            var fresh = await BuildBulkPlan(integration, snapshot, overview, ct);
-            if (!fresh.IsSuccess || fresh.Value?.Revision != command.PreviewRevision)
-                return Result<BulkResolveResponse>.Failure("The SQL plan changed. Preview the operations again.", ErrorType.Conflict);
-            plan = fresh.Value;
-        }
+        var overview = await _permissions.GetOverviewAsync(integration, snapshot, includeOrphans: false, ct);
+        if (await _sqlInspector.InspectGrantCoverageAsync(integration, ct) is { } incomplete)
+            return Result<BulkResolveResponse>.Failure(incomplete, ErrorType.Conflict);
+        var fresh = await BuildBulkPlan(integration, snapshot, overview, ct);
+        if (!fresh.IsSuccess || fresh.Value is null)
+            return Result<BulkResolveResponse>.Failure(fresh.Error ?? "Could not establish the SQL plan.", fresh.ErrorType ?? ErrorType.Conflict);
+        var plan = fresh.Value;
+        if (command.PreviewRevision is not null && plan.Revision != command.PreviewRevision)
+            return Result<BulkResolveResponse>.Failure("The SQL plan changed. Preview the operations again.", ErrorType.Conflict);
 
         var results = new List<BulkResolveAccountResult>();
         var accountsCreated = 0;
@@ -1382,21 +1206,18 @@ public partial class SqlIntegrationService : ISqlIntegrationService
 
         foreach (var accountStatus in overview.Accounts)
         {
-            SqlBulkGuard? guard = null;
-            if (plan is not null)
+            var selected = plan.Operations.Where(o => o.AccountId == accountStatus.AccountId).ToArray();
+            if (selected.Length == 0) continue;
+            var skips = selected.Where(o => o.Operation == "Skip").ToArray();
+            if (skips.Length > 0)
             {
-                var selected = plan.Operations.Where(o => o.AccountId == accountStatus.AccountId).ToArray();
-                if (selected.Length == 0) continue;
-                if (selected[0].Operation == "Skip")
-                {
-                    results.Add(new(accountStatus.AccountId, accountStatus.AccountName, accountStatus.PrincipalName, "Skip", false,
-                        selected[0].Reason, null));
-                    skipped++;
-                    continue;
-                }
-                guard = new(integration.UpdatedAt, snapshot.Accounts.Single(a => a.Id == accountStatus.AccountId).UpdatedAt,
-                    selected[0].Principal, selected);
+                results.Add(new(accountStatus.AccountId, accountStatus.AccountName, accountStatus.PrincipalName, "Skip", false,
+                    string.Join(" ", skips.Select(o => o.Reason)), null));
+                skipped++;
+                if (skips.Length == selected.Length) continue;
             }
+            var guard = new SqlBulkGuard(integration.UpdatedAt, snapshot.Accounts.Single(a => a.Id == accountStatus.AccountId).UpdatedAt,
+                selected[0].Principal, selected);
             if (accountStatus.Status == SyncStatus.MissingPrincipal)
             {
                 // Try to create the account

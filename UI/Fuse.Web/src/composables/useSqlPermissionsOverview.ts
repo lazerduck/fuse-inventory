@@ -1,10 +1,12 @@
-import { computed, toValue, type MaybeRef } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { computed, ref, toValue, type MaybeRef } from 'vue'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Notify } from 'quasar'
 import { useFuseClient } from './useFuseClient'
 
 export function useSqlPermissionsOverview(sqlIntegrationId: MaybeRef<string | null | undefined>) {
   const client = useFuseClient()
+  const queryClient = useQueryClient()
+  const refreshing = ref(false)
   const integrationId = computed(() => toValue(sqlIntegrationId))
 
   const query = useQuery({
@@ -16,25 +18,28 @@ export function useSqlPermissionsOverview(sqlIntegrationId: MaybeRef<string | nu
   })
 
   async function refresh() {
-    if (!integrationId.value) {
+    const id = integrationId.value
+    if (!id) {
       return query.refetch()
     }
 
+    refreshing.value = true
     try {
-      const refreshed = await client.refreshPOST(integrationId.value)
-      query.data.value = refreshed
+      const refreshed = await client.refreshPOST(id)
+      queryClient.setQueryData(['sql-permissions-overview', id], refreshed)
       Notify.create({ type: 'positive', message: 'SQL permissions overview refreshed' })
       return refreshed
-    } catch (error) {
+    } catch {
       Notify.create({ type: 'negative', message: 'Failed to refresh SQL permissions overview' })
-      throw error
+    } finally {
+      refreshing.value = false
     }
   }
 
   return {
     data: query.data,
     isLoading: query.isLoading,
-    isFetching: query.isFetching,
+    isFetching: computed(() => query.isFetching.value || refreshing.value),
     error: query.error,
     refetch: query.refetch,
     refresh

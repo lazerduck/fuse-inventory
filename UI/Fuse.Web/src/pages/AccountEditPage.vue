@@ -44,7 +44,8 @@
         <div class="text-h6 q-mb-md">Grants & Permissions</div>
         <AccountGrantsSection
           :grants="isEditMode ? (account?.grants ?? []) : form.grants"
-          :disable-actions="grantMutationPending"
+          :database-grants-only="databaseGrantsOnly"
+          :disable-actions="grantMutationPending || !canModify"
           @add="handleGrantCreateRequest"
           @edit="handleGrantEditRequest"
           @delete="handleGrantDeleteRequest"
@@ -55,7 +56,6 @@
       <q-separator v-if="showSqlStatus" />
 
       <q-card-section v-if="showSqlStatus">
-        <div class="text-h6 q-mb-md">SQL Status</div>
         <AccountSqlStatusSection :account-id="accountId!" />
       </q-card-section>
 
@@ -81,6 +81,7 @@
       v-model="isGrantDialogOpen"
       :initial-grant="editingGrant"
       :has-sql-integration="hasSqlIntegration"
+      :database-grants-only="databaseGrantsOnly"
       :database-options="databaseOptions"
       :is-databases-loading="isDatabasesLoading"
       :privilege-options="privilegeOptions"
@@ -192,6 +193,7 @@ const {
   authKindOptions,
   privilegeOptions,
   hasSqlIntegration,
+  databaseGrantsOnly,
   databaseOptions,
   isDatabasesLoading,
   showSqlStatus,
@@ -287,6 +289,7 @@ function handleGrantCreateRequest() {
 }
 
 function handleGrantEditRequest({ grant }: { grant: Grant }) {
+  if (databaseGrantsOnly.value && (grant.schema || !grant.database?.trim())) return
   editingGrant.value = grant
   isGrantDialogOpen.value = true
 }

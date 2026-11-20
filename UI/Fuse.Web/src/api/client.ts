@@ -402,7 +402,7 @@ export interface IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPOSTPOST(
+  azureCredentialProfilesPOST(
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
   ): Promise<AzureProfileInfo>;
@@ -411,7 +411,7 @@ export interface IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPUTPUT(
+  azureCredentialProfilesPUT(
     id: string,
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
@@ -420,7 +420,7 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
-  azureCredentialProfilesDELETEDELETE(
+  azureCredentialProfilesDELETE(
     id: string,
     signal?: AbortSignal,
   ): Promise<void>;
@@ -5951,7 +5951,7 @@ export class FuseApiClient implements IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPOSTPOST(
+  azureCredentialProfilesPOST(
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
   ): Promise<AzureProfileInfo> {
@@ -5971,11 +5971,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAzureCredentialProfilesPOSTPOST(_response);
+      return this.processAzureCredentialProfilesPOST(_response);
     });
   }
 
-  protected processAzureCredentialProfilesPOSTPOST(
+  protected processAzureCredentialProfilesPOST(
     response: Response,
   ): Promise<AzureProfileInfo> {
     const status = response.status;
@@ -6010,7 +6010,7 @@ export class FuseApiClient implements IFuseApiClient {
    * @param body (optional)
    * @return OK
    */
-  azureCredentialProfilesPUTPUT(
+  azureCredentialProfilesPUT(
     id: string,
     body: SaveAzureProfile | undefined,
     signal?: AbortSignal,
@@ -6034,11 +6034,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAzureCredentialProfilesPUTPUT(_response);
+      return this.processAzureCredentialProfilesPUT(_response);
     });
   }
 
-  protected processAzureCredentialProfilesPUTPUT(
+  protected processAzureCredentialProfilesPUT(
     response: Response,
   ): Promise<AzureProfileInfo> {
     const status = response.status;
@@ -6072,7 +6072,7 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
-  azureCredentialProfilesDELETEDELETE(
+  azureCredentialProfilesDELETE(
     id: string,
     signal?: AbortSignal,
   ): Promise<void> {
@@ -6089,11 +6089,11 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAzureCredentialProfilesDELETEDELETE(_response);
+      return this.processAzureCredentialProfilesDELETE(_response);
     });
   }
 
-  protected processAzureCredentialProfilesDELETEDELETE(
+  protected processAzureCredentialProfilesDELETE(
     response: Response,
   ): Promise<void> {
     const status = response.status;
@@ -25018,6 +25018,8 @@ export class AccountSqlStatusResponse implements IAccountSqlStatusResponse {
   statusSummary?: string | undefined;
   permissionComparisons?: SqlPermissionComparison[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 
   constructor(data?: IAccountSqlStatusResponse) {
     if (data) {
@@ -25043,6 +25045,12 @@ export class AccountSqlStatusResponse implements IAccountSqlStatusResponse {
           );
       }
       this.errorMessage = _data["errorMessage"];
+      if (Array.isArray(_data["coverage"])) {
+        this.coverage = [] as any;
+        for (let item of _data["coverage"])
+          this.coverage!.push(SqlPrivilegeCoverage.fromJS(item));
+      }
+      this.coverageWarning = _data["coverageWarning"];
     }
   }
 
@@ -25068,6 +25076,12 @@ export class AccountSqlStatusResponse implements IAccountSqlStatusResponse {
         );
     }
     data["errorMessage"] = this.errorMessage;
+    if (Array.isArray(this.coverage)) {
+      data["coverage"] = [];
+      for (let item of this.coverage)
+        data["coverage"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["coverageWarning"] = this.coverageWarning;
     return data;
   }
 }
@@ -25080,6 +25094,8 @@ export interface IAccountSqlStatusResponse {
   statusSummary?: string | undefined;
   permissionComparisons?: SqlPermissionComparison[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 }
 
 export class ActivityFeedItem implements IActivityFeedItem {
@@ -38880,6 +38896,8 @@ export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus
   status?: SyncStatus;
   permissionComparisons?: SqlPermissionComparison[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 
   constructor(data?: ISqlAccountPermissionsStatus) {
     if (data) {
@@ -38904,6 +38922,12 @@ export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus
           );
       }
       this.errorMessage = _data["errorMessage"];
+      if (Array.isArray(_data["coverage"])) {
+        this.coverage = [] as any;
+        for (let item of _data["coverage"])
+          this.coverage!.push(SqlPrivilegeCoverage.fromJS(item));
+      }
+      this.coverageWarning = _data["coverageWarning"];
     }
   }
 
@@ -38928,6 +38952,12 @@ export class SqlAccountPermissionsStatus implements ISqlAccountPermissionsStatus
         );
     }
     data["errorMessage"] = this.errorMessage;
+    if (Array.isArray(this.coverage)) {
+      data["coverage"] = [];
+      for (let item of this.coverage)
+        data["coverage"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["coverageWarning"] = this.coverageWarning;
     return data;
   }
 }
@@ -38939,6 +38969,8 @@ export interface ISqlAccountPermissionsStatus {
   status?: SyncStatus;
   permissionComparisons?: SqlPermissionComparison[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 }
 
 export class SqlActualGrant implements ISqlActualGrant {
@@ -39143,6 +39175,13 @@ export interface ISqlConnectionTestResult {
   errorMessage?: string | undefined;
 }
 
+export enum SqlCoverageLevel {
+  None = "None",
+  Some = "Some",
+  All = "All",
+  Unknown = "Unknown",
+}
+
 export class SqlDatabasesResponse implements ISqlDatabasesResponse {
   databases?: string[] | undefined;
 
@@ -39333,6 +39372,8 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
   principalName?: string | undefined;
   actualPermissions?: SqlActualGrant[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 
   constructor(data?: ISqlOrphanPrincipal) {
     if (data) {
@@ -39352,6 +39393,12 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
           this.actualPermissions!.push(SqlActualGrant.fromJS(item));
       }
       this.errorMessage = _data["errorMessage"];
+      if (Array.isArray(_data["coverage"])) {
+        this.coverage = [] as any;
+        for (let item of _data["coverage"])
+          this.coverage!.push(SqlPrivilegeCoverage.fromJS(item));
+      }
+      this.coverageWarning = _data["coverageWarning"];
     }
   }
 
@@ -39373,6 +39420,12 @@ export class SqlOrphanPrincipal implements ISqlOrphanPrincipal {
         );
     }
     data["errorMessage"] = this.errorMessage;
+    if (Array.isArray(this.coverage)) {
+      data["coverage"] = [];
+      for (let item of this.coverage)
+        data["coverage"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["coverageWarning"] = this.coverageWarning;
     return data;
   }
 }
@@ -39381,6 +39434,8 @@ export interface ISqlOrphanPrincipal {
   principalName?: string | undefined;
   actualPermissions?: SqlActualGrant[] | undefined;
   errorMessage?: string | undefined;
+  coverage?: SqlPrivilegeCoverage[] | undefined;
+  coverageWarning?: string | undefined;
 }
 
 export class SqlPermissionComparison implements ISqlPermissionComparison {
@@ -39390,6 +39445,7 @@ export class SqlPermissionComparison implements ISqlPermissionComparison {
   actualPrivileges?: Privilege[] | undefined;
   missingPrivileges?: Privilege[] | undefined;
   extraPrivileges?: Privilege[] | undefined;
+  blockedPrivileges?: Privilege[] | undefined;
 
   constructor(data?: ISqlPermissionComparison) {
     if (data) {
@@ -39424,6 +39480,11 @@ export class SqlPermissionComparison implements ISqlPermissionComparison {
         for (let item of _data["extraPrivileges"])
           this.extraPrivileges!.push(item);
       }
+      if (Array.isArray(_data["blockedPrivileges"])) {
+        this.blockedPrivileges = [] as any;
+        for (let item of _data["blockedPrivileges"])
+          this.blockedPrivileges!.push(item);
+      }
     }
   }
 
@@ -39457,6 +39518,11 @@ export class SqlPermissionComparison implements ISqlPermissionComparison {
       data["extraPrivileges"] = [];
       for (let item of this.extraPrivileges) data["extraPrivileges"].push(item);
     }
+    if (Array.isArray(this.blockedPrivileges)) {
+      data["blockedPrivileges"] = [];
+      for (let item of this.blockedPrivileges)
+        data["blockedPrivileges"].push(item);
+    }
     return data;
   }
 }
@@ -39468,6 +39534,75 @@ export interface ISqlPermissionComparison {
   actualPrivileges?: Privilege[] | undefined;
   missingPrivileges?: Privilege[] | undefined;
   extraPrivileges?: Privilege[] | undefined;
+  blockedPrivileges?: Privilege[] | undefined;
+}
+
+export class SqlPermissionEvidence implements ISqlPermissionEvidence {
+  scope?: string | undefined;
+  schema?: string | undefined;
+  objectName?: string | undefined;
+  columnName?: string | undefined;
+  state?: string | undefined;
+  grantee?: string | undefined;
+  grantor?: string | undefined;
+  inherited?: boolean;
+  permission?: string | undefined;
+
+  constructor(data?: ISqlPermissionEvidence) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.scope = _data["scope"];
+      this.schema = _data["schema"];
+      this.objectName = _data["objectName"];
+      this.columnName = _data["columnName"];
+      this.state = _data["state"];
+      this.grantee = _data["grantee"];
+      this.grantor = _data["grantor"];
+      this.inherited = _data["inherited"];
+      this.permission = _data["permission"];
+    }
+  }
+
+  static fromJS(data: any): SqlPermissionEvidence {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlPermissionEvidence();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["scope"] = this.scope;
+    data["schema"] = this.schema;
+    data["objectName"] = this.objectName;
+    data["columnName"] = this.columnName;
+    data["state"] = this.state;
+    data["grantee"] = this.grantee;
+    data["grantor"] = this.grantor;
+    data["inherited"] = this.inherited;
+    data["permission"] = this.permission;
+    return data;
+  }
+}
+
+export interface ISqlPermissionEvidence {
+  scope?: string | undefined;
+  schema?: string | undefined;
+  objectName?: string | undefined;
+  columnName?: string | undefined;
+  state?: string | undefined;
+  grantee?: string | undefined;
+  grantor?: string | undefined;
+  inherited?: boolean;
+  permission?: string | undefined;
 }
 
 export enum SqlPermissions {
@@ -39533,12 +39668,121 @@ export interface ISqlPermissionsOverviewSummary {
   orphanPrincipalCount?: number;
 }
 
+export class SqlPrivilegeCoverage implements ISqlPrivilegeCoverage {
+  database?: string | undefined;
+  permission?: string | undefined;
+  level?: SqlCoverageLevel;
+  evidence?: SqlPermissionEvidence[] | undefined;
+  basis?: string | undefined;
+  procedureAccess?: SqlProcedureAccess;
+
+  constructor(data?: ISqlPrivilegeCoverage) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.database = _data["database"];
+      this.permission = _data["permission"];
+      this.level = _data["level"];
+      if (Array.isArray(_data["evidence"])) {
+        this.evidence = [] as any;
+        for (let item of _data["evidence"])
+          this.evidence!.push(SqlPermissionEvidence.fromJS(item));
+      }
+      this.basis = _data["basis"];
+      this.procedureAccess = _data["procedureAccess"]
+        ? SqlProcedureAccess.fromJS(_data["procedureAccess"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): SqlPrivilegeCoverage {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlPrivilegeCoverage();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["database"] = this.database;
+    data["permission"] = this.permission;
+    data["level"] = this.level;
+    if (Array.isArray(this.evidence)) {
+      data["evidence"] = [];
+      for (let item of this.evidence)
+        data["evidence"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["basis"] = this.basis;
+    data["procedureAccess"] = this.procedureAccess
+      ? this.procedureAccess.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface ISqlPrivilegeCoverage {
+  database?: string | undefined;
+  permission?: string | undefined;
+  level?: SqlCoverageLevel;
+  evidence?: SqlPermissionEvidence[] | undefined;
+  basis?: string | undefined;
+  procedureAccess?: SqlProcedureAccess;
+}
+
+export class SqlProcedureAccess implements ISqlProcedureAccess {
+  executable?: number;
+  total?: number;
+
+  constructor(data?: ISqlProcedureAccess) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.executable = _data["executable"];
+      this.total = _data["total"];
+    }
+  }
+
+  static fromJS(data: any): SqlProcedureAccess {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlProcedureAccess();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["executable"] = this.executable;
+    data["total"] = this.total;
+    return data;
+  }
+}
+
+export interface ISqlProcedureAccess {
+  executable?: number;
+  total?: number;
+}
+
 export enum SyncStatus {
   InSync = "InSync",
   DriftDetected = "DriftDetected",
   MissingPrincipal = "MissingPrincipal",
   Error = "Error",
   NotApplicable = "NotApplicable",
+  Unknown = "Unknown",
 }
 
 export class SystemLogCounts implements ISystemLogCounts {
