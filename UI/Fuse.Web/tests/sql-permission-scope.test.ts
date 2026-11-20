@@ -51,7 +51,48 @@ it('shows partial access beside in-sync database grants and opens the exact inhe
   expect(table.text()).toContain('report_readers')
   expect(table.text()).toContain('Inherited')
   expect(table.text()).toContain('dbo')
+  expect(wrapper.text()).not.toContain('Can execute')
   expect(wrapper.findAllComponents(QBtn).map(b => b.props('label'))).not.toContain('Resolve')
+})
+
+it('shows the verified procedure count only in the EXECUTE drill-down, independent of the evidence list', async () => {
+  const wrapper = managedAccount({ coverage: [{
+    ...someExecute, procedureAccess: { executable: 30, total: 50 },
+    evidence: [
+      { ...evidence, scope: 'Schema', schema: 'archive', objectName: null },
+      ...Array.from({ length: 14 }, (_, i) => ({ ...evidence, objectName: `Report${i + 1}` }))
+    ]
+  }] })
+  const chip = wrapper.get('[aria-label="Inspect EXECUTE: Some in InventoryDb"]')
+  expect(chip.text()).toMatch(/EXECUTE\s*Some/)
+  expect(wrapper.text()).not.toContain('30 of 50')
+  await chip.trigger('click')
+  expect(wrapper.get('.procedure-summary').text()).toBe('Can execute 30 of 50 procedures')
+  expect(wrapper.find('.explanation').exists()).toBe(false)
+  const evidenceRows = () => wrapper.findAll('table[aria-label="SQL permission evidence"] tbody tr')
+  expect(evidenceRows()).toHaveLength(12)
+  await wrapper.get('.evidence-content input').setValue('Report14')
+  expect(evidenceRows()).toHaveLength(1)
+  expect(wrapper.get('.procedure-summary').text()).toBe('Can execute 30 of 50 procedures')
+})
+
+it.each([0, 50])('explains partial EXECUTE access with %i of 50 procedures', async executable => {
+  const wrapper = managedAccount({ coverage: [{ ...someExecute, procedureAccess: { executable, total: 50 } }] })
+  await wrapper.get('[aria-label="Inspect EXECUTE: Some in InventoryDb"]').trigger('click')
+  expect(wrapper.get('.procedure-summary').text()).toBe(`Can execute ${executable} of 50 procedures`)
+  expect(wrapper.get('.explanation').text()).toContain('other objects, such as functions')
+})
+
+it.each([
+  { executable: 0, total: 0, label: 'No stored procedures in this database.' },
+  { executable: 1, total: 1, label: 'Can execute 1 of 1 procedure' }
+])('describes a verified EXECUTE count for $total stored procedures', async ({ executable, total, label }) => {
+  const wrapper = managedAccount({ coverage: [{
+    ...someExecute, level: 'All', basis: 'DatabaseGrant', procedureAccess: { executable, total }
+  }] })
+  await wrapper.get('[aria-label="Inspect EXECUTE: All in InventoryDb"]').trigger('click')
+  expect(wrapper.get('.procedure-summary').text()).toBe(label)
+  expect(wrapper.text()).toContain('database-wide access')
 })
 
 it('explains when All covers current routines and keeps explicit denies out of the access list', async () => {
@@ -85,13 +126,15 @@ it('identifies object privileges from fixed database roles without presenting a 
   expect(table.text()).toContain('db_ddladmin')
 })
 
-it('shows restricted inspection with its evidence and suppresses both drift actions', () => {
+it('shows restricted inspection with its evidence and suppresses both drift actions', async () => {
   const wrapper = managedAccount({
     status: 'Unknown', coverageWarning: 'Metadata visibility is limited in InventoryDb.',
     coverage: [{ ...someExecute, level: 'Unknown', basis: 'Incomplete' }]
   })
   expect(wrapper.get('[role="status"]').text()).toContain('Metadata visibility is limited')
-  expect(wrapper.find('[aria-label="Inspect EXECUTE: Unknown in InventoryDb"]').exists()).toBe(true)
+  await wrapper.get('[aria-label="Inspect EXECUTE: Unknown in InventoryDb"]').trigger('click')
+  expect(wrapper.find('.procedure-summary').exists()).toBe(false)
+  expect(wrapper.text()).toContain('from the visible evidence')
   const labels = wrapper.findAllComponents(QBtn).map(button => button.props('label'))
   expect(labels).not.toContain('Import')
   expect(labels).not.toContain('Resolve')

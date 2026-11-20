@@ -39674,6 +39674,7 @@ export class SqlPrivilegeCoverage implements ISqlPrivilegeCoverage {
   level?: SqlCoverageLevel;
   evidence?: SqlPermissionEvidence[] | undefined;
   basis?: string | undefined;
+  procedureAccess?: SqlProcedureAccess;
 
   constructor(data?: ISqlPrivilegeCoverage) {
     if (data) {
@@ -39695,6 +39696,9 @@ export class SqlPrivilegeCoverage implements ISqlPrivilegeCoverage {
           this.evidence!.push(SqlPermissionEvidence.fromJS(item));
       }
       this.basis = _data["basis"];
+      this.procedureAccess = _data["procedureAccess"]
+        ? SqlProcedureAccess.fromJS(_data["procedureAccess"])
+        : (undefined as any);
     }
   }
 
@@ -39716,6 +39720,9 @@ export class SqlPrivilegeCoverage implements ISqlPrivilegeCoverage {
         data["evidence"].push(item ? item.toJSON() : (undefined as any));
     }
     data["basis"] = this.basis;
+    data["procedureAccess"] = this.procedureAccess
+      ? this.procedureAccess.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -39726,6 +39733,47 @@ export interface ISqlPrivilegeCoverage {
   level?: SqlCoverageLevel;
   evidence?: SqlPermissionEvidence[] | undefined;
   basis?: string | undefined;
+  procedureAccess?: SqlProcedureAccess;
+}
+
+export class SqlProcedureAccess implements ISqlProcedureAccess {
+  executable?: number;
+  total?: number;
+
+  constructor(data?: ISqlProcedureAccess) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.executable = _data["executable"];
+      this.total = _data["total"];
+    }
+  }
+
+  static fromJS(data: any): SqlProcedureAccess {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlProcedureAccess();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["executable"] = this.executable;
+    data["total"] = this.total;
+    return data;
+  }
+}
+
+export interface ISqlProcedureAccess {
+  executable?: number;
+  total?: number;
 }
 
 export enum SyncStatus {

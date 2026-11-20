@@ -5,7 +5,12 @@ namespace Fuse.Core.Areas.Account;
 
 public partial class AccountSqlInspector
 {
-    private sealed record SqlCallableObject(string Schema, string Name, bool Ambiguous);
+    private sealed record SqlCallableObject(string Schema, string Name, string Type)
+    {
+        public bool IsProcedure => Type is "P" or "PC" or "RF" or "X";
+    }
+
+    private readonly record struct CoverageAssessment(SqlCoverageLevel Level, string Basis, SqlProcedureAccess? Procedures = null);
 
     private sealed record SqlTableColumn(string Schema, string Object, string Column);
 
@@ -48,10 +53,10 @@ public partial class AccountSqlInspector
             {
                 var observations = evidence.Where(e => e.Permission == permission ||
                     (e.Permission == "CONTROL" && permission is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "EXECUTE" or "ALTER" or "REFERENCES")).ToArray();
-                var (level, basis) = complete
+                var assessment = complete
                     ? EvaluateCoverage(permission, observations, targets.GetValueOrDefault(database.Key) ?? [], columns.GetValueOrDefault(database.Key) ?? [])
-                    : (SqlCoverageLevel.Unknown, "Incomplete");
-                coverage.Add(new(database.Key, permission, level, observations, basis));
+                    : new CoverageAssessment(SqlCoverageLevel.Unknown, "Incomplete");
+                coverage.Add(new(database.Key, permission, assessment.Level, observations, assessment.Basis) { ProcedureAccess = assessment.Procedures });
             }
         }
         var warnings = gaps.Select(g => g.Database == null ? g.Reason : $"{g.Database}: {g.Reason}").Distinct().Order(StringComparer.Ordinal).ToArray();
@@ -60,7 +65,7 @@ public partial class AccountSqlInspector
 
     private static bool IsGrant(SqlPermissionEvidence e) => e.State is "GRANT" or "GRANT_WITH_GRANT_OPTION";
 
-    private static (SqlCoverageLevel, string) EvaluateCoverage(string permission, SqlPermissionEvidence[] rows,
+    private static CoverageAssessment EvaluateCoverage(string permission, SqlPermissionEvidence[] rows,
         List<SqlCallableObject> targets, List<SqlTableColumn> columns)
     {
         // Resolve catalog scopes and permission states only where their meaning
@@ -68,37 +73,36 @@ public partial class AccountSqlInspector
         if (rows.Any(e => e.Scope is not ("Database" or "Schema" or "Object" or "Column" or "Fixed database role")
             || e.State == "REVOKE" || (e.Scope is "Schema" or "Object" or "Column" && e.Schema == null)
             || (e.Permission == "CONTROL" && e.Permission != permission && (e.State == "DENY" || (e.Scope == "Object" && permission != "EXECUTE")))))
-            return (SqlCoverageLevel.Unknown, "Incomplete");
+            return new(SqlCoverageLevel.Unknown, "Incomplete");
 
         var grants = rows.Where(IsGrant).ToArray();
         var denies = rows.Where(e => e.State == "DENY").ToArray();
         // db_ddladmin can alter objects, but membership does not grant ALTER on
         // DATABASE. Its granular role rights cannot settle a conflicting DENY.
         if (grants.Any(e => e.Scope == "Fixed database role") && denies.Length != 0)
-            return (SqlCoverageLevel.Unknown, "Incomplete");
-        if (grants.Length == 0 || denies.Any(e => e.Scope == "Database"))
-            return (SqlCoverageLevel.None, "Restrictions");
-        var databaseGrant = grants.Any(e => e.Scope == "Database");
-        if (databaseGrant && denies.Length == 0) return (SqlCoverageLevel.All, "DatabaseGrant");
-
+            return new(SqlCoverageLevel.Unknown, "Incomplete");
         if (permission == "EXECUTE" && rows.All(e => e.Scope != "Column"))
             return ExecutableCoverage(grants, denies, targets);
+        if (grants.Length == 0 || denies.Any(e => e.Scope == "Database"))
+            return new(SqlCoverageLevel.None, "Restrictions");
+        var databaseGrant = grants.Any(e => e.Scope == "Database");
+        if (databaseGrant && denies.Length == 0) return new(SqlCoverageLevel.All, "DatabaseGrant");
 
         // SQL Server preserves the historic column GRANT exception to an object
         // DENY. Matching a column requires the object as well as the schema.
         var surviving = grants.Where(g => !denies.Any(d => Covers(d, g) &&
             !(d.Scope == "Object" && g.Scope == "Column"))).ToArray();
-        if (surviving.Length == 0) return (SqlCoverageLevel.None, "Restrictions");
+        if (surviving.Length == 0) return new(SqlCoverageLevel.None, "Restrictions");
         // A database or schema grant can have narrower exceptions. Without an
         // inventory of applicable targets we cannot prove any surviving access.
         if (denies.Any(d => surviving.Any(g => Covers(g, d))))
         {
             if (permission is "SELECT" or "REFERENCES" or "UPDATE" or "DELETE" or "INSERT" &&
                 HasMixedTableAccess(grants, denies, columns))
-                return (SqlCoverageLevel.Some, "ScopedGrants");
-            return (SqlCoverageLevel.Unknown, "Incomplete");
+                return new(SqlCoverageLevel.Some, "ScopedGrants");
+            return new(SqlCoverageLevel.Unknown, "Incomplete");
         }
-        return (SqlCoverageLevel.Some, "ScopedGrants");
+        return new(SqlCoverageLevel.Some, "ScopedGrants");
     }
 
     private static bool Covers(SqlPermissionEvidence parent, SqlPermissionEvidence child)
@@ -143,23 +147,43 @@ public partial class AccountSqlInspector
         return false;
     }
 
-    private static (SqlCoverageLevel, string) ExecutableCoverage(SqlPermissionEvidence[] grants,
+    private static CoverageAssessment ExecutableCoverage(SqlPermissionEvidence[] grants,
         SqlPermissionEvidence[] denies, List<SqlCallableObject> targets)
     {
+        // A grant can cover many procedures, and the same procedure can be granted
+        // through multiple roles. Count catalog objects, independently of evidence rows.
+        if (grants.Length == 0 || denies.Any(e => e.Scope == "Database"))
+            return new(SqlCoverageLevel.None, "Restrictions", new(0, targets.Count(t => t.IsProcedure)));
+        if (denies.Length == 0 && grants.Any(e => e.Scope == "Database"))
+        {
+            var total = targets.Count(t => t.IsProcedure);
+            return new(SqlCoverageLevel.All, "DatabaseGrant", new(total, total));
+        }
+
         var allowed = new PermissionScopes(grants);
         var denied = new PermissionScopes(denies);
         var reachable = 0;
         var uncovered = 0;
+        var totalProcedures = 0;
+        var executableProcedures = 0;
         var ambiguous = false;
         foreach (var target in targets)
         {
-            if (target.Ambiguous) { ambiguous = true; continue; }
-            if (allowed.Covers(target.Schema, target.Name) && !denied.Covers(target.Schema, target.Name)) reachable++;
+            if (target.Type == "SN") { ambiguous = true; continue; }
+            var accessible = allowed.Covers(target.Schema, target.Name) && !denied.Covers(target.Schema, target.Name);
+            if (accessible) reachable++;
             else uncovered++;
+            if (target.IsProcedure)
+            {
+                totalProcedures++;
+                if (accessible) executableProcedures++;
+            }
         }
-        if (reachable > 0 && uncovered > 0) return (SqlCoverageLevel.Some, "CurrentObjects");
-        if (ambiguous) return (SqlCoverageLevel.Unknown, "Incomplete");
-        if (reachable > 0) return (SqlCoverageLevel.All, "CurrentObjects");
-        return (SqlCoverageLevel.None, "CurrentObjects");
+        // A synonym's base object may be another database's procedure. We can
+        // still establish Some from known objects without claiming an exact count.
+        var procedures = ambiguous ? null : new SqlProcedureAccess(executableProcedures, totalProcedures);
+        if (reachable > 0 && uncovered > 0) return new(SqlCoverageLevel.Some, "CurrentObjects", procedures);
+        if (ambiguous) return new(SqlCoverageLevel.Unknown, "Incomplete");
+        return new(reachable > 0 ? SqlCoverageLevel.All : SqlCoverageLevel.None, "CurrentObjects", procedures);
     }
 }

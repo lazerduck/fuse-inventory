@@ -51,7 +51,7 @@ public partial class AccountSqlInspector
                 PermissionName SYSNAME, PermissionState SYSNAME, ScopeName SYSNAME, Grantee SYSNAME, Grantor SYSNAME NULL,
                 Inherited BIT, MajorId INT, MinorId INT
             );
-            CREATE TABLE #ExecTargets (DatabaseName SYSNAME, SchemaName SYSNAME, ObjectName SYSNAME, Ambiguous BIT);
+            CREATE TABLE #ExecTargets (DatabaseName SYSNAME, SchemaName SYSNAME, ObjectName SYSNAME, ObjectType VARCHAR(2));
             CREATE TABLE #DataColumns (DatabaseName SYSNAME, SchemaName SYSNAME, ObjectName SYSNAME, ColumnName SYSNAME);
             CREATE TABLE #Gaps (DatabaseName SYSNAME NULL, RequestId INT NULL, Reason NVARCHAR(200));
             IF @limited=0 AND (ISNULL(HAS_PERMS_BY_NAME(NULL,NULL,'VIEW ANY DATABASE'),0) <> 1
@@ -117,7 +117,7 @@ public partial class AccountSqlInspector
                         OR EXISTS (SELECT 1 FROM sys.objects o WHERE o.principal_id=c.MemberId);
                     IF EXISTS (SELECT 1 FROM #RoleClosure)
                         INSERT INTO #ExecTargets
-                        SELECT DB_NAME(),s.name,o.name,CASE WHEN o.type=''SN'' THEN 1 ELSE 0 END
+                        SELECT DB_NAME(),s.name,o.name,RTRIM(o.type)
                         FROM sys.objects o JOIN sys.schemas s ON s.schema_id=o.schema_id
                         WHERE o.is_ms_shipped=0 AND o.type IN (''P'',''PC'',''RF'',''X'',''FN'',''FS'',''AF'',''SN'');
                     INSERT INTO #PermissionRows
@@ -184,7 +184,7 @@ public partial class AccountSqlInspector
                    r.ScopeName,r.Grantee,r.Grantor,r.Inherited,r.MajorId,r.MinorId
                 FROM #PermissionRows r JOIN #Principals pr ON pr.RequestId=r.RequestId;
             SELECT Name, LoginName FROM #Principals WHERE LoginSid IS NOT NULL;
-            SELECT DatabaseName,SchemaName,ObjectName,Ambiguous FROM #ExecTargets;
+            SELECT DatabaseName,SchemaName,ObjectName,ObjectType FROM #ExecTargets;
             SELECT DatabaseName,SchemaName,ObjectName,ColumnName FROM #DataColumns;
             SELECT g.DatabaseName,pr.Name,g.Reason FROM #Gaps g LEFT JOIN #Principals pr ON g.RequestId=pr.RequestId;
             SELECT name FROM sys.databases WHERE @limited=0 OR database_id IN (SELECT DB_ID(Name) FROM #RequestedDatabases);
@@ -217,7 +217,7 @@ public partial class AccountSqlInspector
         {
             var database = reader.GetString(0);
             if (!targets.TryGetValue(database, out var items)) targets[database] = items = [];
-            items.Add(new(reader.GetString(1), reader.GetString(2), reader.GetBoolean(3)));
+            items.Add(new(reader.GetString(1), reader.GetString(2), reader.GetString(3)));
         }
         await reader.NextResultAsync(ct);
         while (await reader.ReadAsync(ct))

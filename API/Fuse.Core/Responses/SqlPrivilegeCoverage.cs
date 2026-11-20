@@ -1,6 +1,10 @@
+using System.Text.Json.Serialization;
+
 namespace Fuse.Core.Responses;
 
 public enum SqlCoverageLevel { None, Some, All, Unknown }
+
+public record SqlProcedureAccess(int Executable, int Total);
 
 public record SqlPermissionEvidence(
     string Scope,
@@ -20,4 +24,8 @@ public record SqlPrivilegeCoverage(
     SqlCoverageLevel Level,
     IReadOnlyList<SqlPermissionEvidence> Evidence,
     string Basis
-);
+)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SqlProcedureAccess? ProcedureAccess { get; init; }
+}

@@ -52,7 +52,8 @@
           <q-btn flat round dense icon="close" aria-label="Close permission details" @click="dialogOpen = false" />
         </q-card-section>
         <q-card-section class="evidence-content">
-          <p class="explanation">{{ explanation }}</p>
+          <p v-if="procedureSummary" class="procedure-summary">{{ procedureSummary }}</p>
+          <p v-if="explanation" class="explanation">{{ explanation }}</p>
           <q-input v-if="(selected.evidence?.length ?? 0) > 8" v-model="search" outlined dense clearable
             label="Filter permission evidence" class="q-mb-md" @update:model-value="limit = 12">
             <template #prepend><q-icon name="search" /></template>
@@ -122,12 +123,24 @@ function open(entry: SqlPrivilegeCoverage) {
   limit.value = 12
   dialogOpen.value = true
 }
+const procedureSummary = computed(() => {
+  if (selected.value?.permission !== 'EXECUTE') return ''
+  const count = selected.value.procedureAccess
+  if (count?.executable == null || count.total == null) return ''
+  if (count.total === 0) return 'No stored procedures in this database.'
+  return `Can execute ${count.executable} of ${count.total} ${count.total === 1 ? 'procedure' : 'procedures'}`
+})
 const explanation = computed(() => {
   switch (selected.value?.level) {
     case 'All': return selected.value.basis === 'CurrentObjects'
       ? 'Every current callable object is covered. New objects may have different permissions.'
       : 'SQL Server reports database-wide access for this privilege.'
-    case 'Some': return 'This privilege applies to part of the database. The entries below show its scope and exceptions.'
+    case 'Some': {
+      const count = selected.value.procedureAccess
+      if (!count || !procedureSummary.value) return 'This privilege applies to part of the database. The entries below show its scope and exceptions.'
+      return count.executable === 0 || count.executable === count.total
+        ? 'EXECUTE also covers other objects, such as functions.' : ''
+    }
     case 'None': return selected.value.basis === 'CurrentObjects'
       ? 'These entries cover no current callable objects.'
       : 'SQL Server reports a restriction for this privilege.'
@@ -178,6 +191,8 @@ body.body--dark .level.all { color: #a2dfbd; background: #29483b; }
 .evidence-title { display: flex; gap: .7rem; align-items: center; margin-top: .5rem; }
 h2 { margin: 0; font-size: 1.5rem; font-weight: 650; line-height: 1.3; letter-spacing: -.025em; }
 .evidence-content { padding: .4rem 1.5rem 1.5rem; }
+.procedure-summary { margin: 0 0 1.2rem; font-weight: 600; font-size: 1rem; }
+.procedure-summary:has(+ .explanation) { margin-bottom: .25rem; }
 .explanation { margin: 0 0 1.2rem; line-height: 1.5; }
 .evidence-table { overflow: auto; max-height: 50vh; border: 1px solid var(--fuse-panel-border); border-radius: 5px; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; }

@@ -259,20 +259,66 @@ public class AccountSqlInspectorScopeRegressionTests : IAsyncLifetime
     {
         await ExecuteAsync(_connectionString, "CREATE PROCEDURE [app_scope].[One] AS SELECT 1;");
         await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[Two] AS SELECT 2;");
-        await ExecuteAsync(_connectionString, $"CREATE ROLE [Operators]; ALTER ROLE [Operators] ADD MEMBER {Identifier(_principal)}; GRANT EXECUTE ON SCHEMA::[app_scope] TO [Operators]; GRANT EXECUTE ON OBJECT::[dbo].[Two] TO {Identifier(_principal)} WITH GRANT OPTION;");
+        await ExecuteAsync(_connectionString, "CREATE FUNCTION [app_scope].[ScalarExample]() RETURNS int AS BEGIN RETURN 1; END;");
+        await ExecuteAsync(_connectionString, $"CREATE ROLE [Operators]; ALTER ROLE [Operators] ADD MEMBER {Identifier(_principal)}; GRANT EXECUTE ON SCHEMA::[app_scope] TO [Operators]; GRANT EXECUTE ON OBJECT::[app_scope].[One] TO {Identifier(_principal)}; GRANT EXECUTE ON OBJECT::[dbo].[Two] TO {Identifier(_principal)} WITH GRANT OPTION;");
         var first = await InspectAsync(false);
         var all = Coverage(first, "EXECUTE", SqlCoverageLevel.All);
         Assert.Equal("CurrentObjects", all.Basis);
+        Assert.Equal(new SqlProcedureAccess(2, 2), all.ProcedureAccess);
         Assert.Contains(all.Evidence, e => e.Grantee == "Operators" && e.State == "GRANT" && e.Inherited);
         Assert.Contains(all.Evidence, e => e.ObjectName == "Two" && e.State == "GRANT_WITH_GRANT_OPTION" && e.Grantor == "dbo");
         Assert.DoesNotContain(first.Grants, g => g.Privileges.Contains(Privilege.Execute));
 
         await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[Three] AS SELECT 3;");
-        Coverage(await InspectAsync(true), "EXECUTE", SqlCoverageLevel.Some);
+        Assert.Equal(new SqlProcedureAccess(2, 3), Coverage(await InspectAsync(true), "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
         await ExecuteAsync(_connectionString, $"GRANT EXECUTE TO {Identifier(_principal)}; DENY EXECUTE ON OBJECT::[dbo].[Three] TO [Operators];");
         var mixed = await InspectAsync(false);
-        Assert.Contains(Coverage(mixed, "EXECUTE", SqlCoverageLevel.Some).Evidence, e => e.ObjectName == "Three" && e.State == "DENY");
+        var withException = Coverage(mixed, "EXECUTE", SqlCoverageLevel.Some);
+        Assert.Contains(withException.Evidence, e => e.ObjectName == "Three" && e.State == "DENY");
+        Assert.Equal(new SqlProcedureAccess(2, 3), withException.ProcedureAccess);
+        Assert.Equal(withException.ProcedureAccess!.Executable, await ScalarAsync($"""
+            SELECT QUOTENAME(SCHEMA_NAME(schema_id))+'.'+QUOTENAME(name) AS qualified INTO #procedures
+                FROM sys.procedures WHERE is_ms_shipped=0;
+            EXECUTE AS USER={Literal(_principal)};
+            SELECT COUNT(*) FROM #procedures WHERE HAS_PERMS_BY_NAME(qualified, 'OBJECT', 'EXECUTE')=1;
+            REVERT;
+            """));
         Assert.Contains(mixed.Grants, g => g.Database == _database && g.Privileges.Contains(Privilege.Execute));
+
+        await ExecuteAsync(_connectionString, "CREATE SYNONYM [dbo].[ExternalRoutine] FOR [RemoteCatalog].[dbo].[Unresolved];");
+        Assert.Null(Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
+        await ExecuteAsync(_connectionString, "REVOKE EXECUTE ON OBJECT::[dbo].[Three] FROM [Operators];");
+        var wholeDatabase = Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.All);
+        Assert.Equal("DatabaseGrant", wholeDatabase.Basis);
+        Assert.Equal(new SqlProcedureAccess(3, 3), wholeDatabase.ProcedureAccess);
+    }
+
+    [Fact]
+    public async Task ExecuteCountCoversCurrentProceduresOnlyAndNeedsCatalogVisibility()
+    {
+        await ExecuteAsync(_connectionString, "CREATE FUNCTION [dbo].[Compute]() RETURNS int AS BEGIN RETURN 1; END;");
+        await ExecuteAsync(_connectionString, $"GRANT EXECUTE ON OBJECT::[dbo].[Compute] TO {Identifier(_principal)};");
+        var onlyFunction = Coverage(await InspectAsync(false), "EXECUTE", SqlCoverageLevel.All);
+        Assert.Equal(new SqlProcedureAccess(0, 0), onlyFunction.ProcedureAccess);
+
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [dbo].[HiddenProcedure] AS SELECT 1;");
+        await ExecuteAsync(_connectionString, "CREATE PROCEDURE [app_scope].[HiddenProcedure] AS SELECT 1;");
+        await ExecuteAsync(_connectionString, $"GRANT EXECUTE ON OBJECT::[app_scope].[HiddenProcedure] TO {Identifier(_principal)};");
+        var data = await InspectAsync(false);
+        Assert.Equal(new SqlProcedureAccess(1, 2), Coverage(data, "EXECUTE", SqlCoverageLevel.Some).ProcedureAccess);
+        Assert.All(data.Coverage.Where(c => c.Permission != "EXECUTE"), c => Assert.Null(c.ProcedureAccess));
+
+        var limited = await CreatePrincipalAsync();
+        await ExecuteAsync(_fixture.MasterConnectionString, $"GRANT VIEW ANY DEFINITION, CONNECT ANY DATABASE TO {Identifier(limited)};");
+        await ExecuteAsync(_connectionString, $"DENY VIEW DEFINITION ON OBJECT::[dbo].[HiddenProcedure] TO {Identifier(limited)};");
+        var integration = _integration with { ConnectionString = new SqlConnectionStringBuilder(_connectionString)
+            { UserID = limited, Password = "ScopeTest123!password" }.ConnectionString };
+        var inspected = await _inspector.GetPrincipalPermissionsAsync(integration, _principal);
+        Assert.True(inspected.IsSuccessful, inspected.ErrorMessage);
+        Assert.NotNull(inspected.Permissions!.CoverageWarning);
+        var unknown = Assert.Single(inspected.Permissions.Coverage, c => c.Database == _database && c.Permission == "EXECUTE");
+        Assert.Equal(SqlCoverageLevel.Unknown, unknown.Level);
+        Assert.Null(unknown.ProcedureAccess);
     }
 
     [Fact]
