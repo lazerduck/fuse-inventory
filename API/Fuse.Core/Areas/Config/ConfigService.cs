@@ -331,6 +331,7 @@ public class ConfigService : IConfigService
                 License: current.License
             )
             {
+                IntegrationReviews = current.IntegrationReviews,
                 RedisIntegrations = current.RedisIntegrations,
                 PostgreSqlIntegrations = current.PostgreSqlIntegrations,
                 MongoDbIntegrations = current.MongoDbIntegrations,

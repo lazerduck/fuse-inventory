@@ -34,7 +34,7 @@ public class ServiceBusIntegrationTests
         var inspector = Inspector(url =>
         {
             if (url.AbsolutePath == Id + "/queues") return Json(new { value = new[] { Queue("orders") }, nextLink = continuation });
-            Assert.Contains(url.AbsolutePath, new[] { Id + "/authorizationRules", Id + "/queues/orders/authorizationRules" });
+            Assert.Contains(url.AbsolutePath, new[] { Id, Id + "/authorizationRules", Id + "/queues/orders/authorizationRules" });
             return new(HttpStatusCode.Forbidden);
         });
         var result = await inspector.DiscoverAsync(Saved, [], default);

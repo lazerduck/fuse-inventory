@@ -1,4 +1,4 @@
-# Read-only PostgreSQL integration
+# PostgreSQL integration
 
 Create a data store with kind **PostgreSQL**, then add its connection under
 **PostgreSQL Integrations**. Each data store has one integration and one selected
@@ -42,9 +42,7 @@ snapshot of concurrent administrator changes.
 
 Ordinary roles can normally read the required catalogs and call the privilege
 functions; superuser is not required. CONNECT to the selected database is required.
-Restricted catalog permissions are reported per section. This does not evaluate
-pg_hba rules, password expiry, column privileges, sequence permissions, function
-execution, row-level security policies or the effect of executing application SQL.
+Restricted catalog permissions are reported per section. Discovery covers metadata visible to the configured inspector. Access reviews can examine additional object privileges. Connection rules, password expiry and the rows visible to a particular query depend on the live session.
 Role attributes such as SUPERUSER are shown separately from inherited object grants.
 
 ## Storage and permissions
@@ -64,3 +62,13 @@ removed. No writes, grants, revokes or credential rotation on PostgreSQL are sup
 
 See PostgreSQL's [role membership documentation](https://www.postgresql.org/docs/18/role-membership.html)
 and [privilege inquiry functions](https://www.postgresql.org/docs/18/functions-info.html).
+
+## Access reviews and direct grant repair
+
+Open **Reviews** on a saved connection and choose a named account. Table, column, sequence and routine reviews accept a required or forbidden privilege. Evidence shows LOGIN, database CONNECT, schema USAGE, the object grant and its source. It also identifies roles the account could assume. For an overloaded routine, enter the exact input types as PostgreSQL displays them, such as `integer, text`. A row security review records the enabled or forced setting and visible policy names.
+
+A saved required table privilege can be repaired from its review. Preview requires an authenticated user with `postgresqlintegrations:grants:apply` and read access to accounts, PostgreSQL integrations and reviews. Application read access displays the linked consumers. The PostgreSQL inspection identity must own the selected table, and the application role must already have LOGIN, CONNECT and schema USAGE. Prefer a dedicated owner for a lab table where repair is intended.
+
+The preview names the principal, database, schema, table and privilege. Its approval expires after five minutes. Applying re-reads the catalog under a brief table lock, rejects a changed target or privilege state, then verifies the direct grant before committing. An already satisfied expectation returns without an additional grant. Requested and completed repairs appear in the audit log.
+
+For vault-backed inspection passwords and rotation, see [Connector passwords in Azure Key Vault](connector-passwords.md).

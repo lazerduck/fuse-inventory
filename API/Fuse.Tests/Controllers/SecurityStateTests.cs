@@ -24,7 +24,7 @@ public class SecurityStateTests
         var security = new Mock<IFuseSecurityService>();
         security.Setup(s => s.GetSecurityPosture()).ReturnsAsync(SecurityPosture.FullyRestricted);
         var controller = new SecurityController(security.Object, users.Object,
-            Mock.Of<IFuseUserSessionService>(), roles.Object, store);
+            Mock.Of<IFuseUserSessionService>(), roles.Object, store, []);
         var context = new DefaultHttpContext();
         if (userId is not null)
             context.User = new ClaimsPrincipal(new ClaimsIdentity(

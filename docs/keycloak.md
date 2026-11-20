@@ -22,3 +22,13 @@ Fuse compares the issuer and exact case-sensitive client ID. An application or a
 An inspector with realm-wide client visibility can distinguish missing and disabled clients. Filtered lists, denied requests, failed authentication and interrupted pagination leave unseen clients unknown. A client may be visible while reading its service-account roles is denied. Roles shown with incomplete status are the grants Fuse could observe. Discovery has a 30-second deadline, up to 1,000 clients and a 500-read budget per inspection. Fuse issues the token request and uses GET for all admin operations.
 
 The server endpoints are documented in the [Keycloak Admin REST API](https://www.keycloak.org/docs-api/latest/rest-api/index.html).
+
+## Reviewing a client or service account
+
+Select **Reviews** beside a connection and enter the application’s exact client ID. An **Assigned role** check compares effective service-account membership and traces direct and composite grants. Supply the owning client ID for a client role, or leave it empty for a realm role. Checks stay inside the saved issuer. A Fuse OAuth account attached to a review must match both issuer and client ID.
+
+A **Token-eligible** role check first evaluates assignment, then asks Keycloak which roles are admitted by the default and requested optional scopes. If admitted, it inspects Keycloak’s unsigned example access-token representation for the service account and projects only the named standard role. A custom mapper that omits or moves the role can yield unknown. The result records the role, scope and explanation. No example claims or token payloads are saved.
+
+Client configuration checks compare configured redirect URIs, web origins, client visibility, enablement, service accounts, and interactive or direct access flows. Enter one origin or redirect URI per line. Comparison is case sensitive and independent of list order. Each check looks up the named client directly and has a 30-second deadline. Missing inspection permissions yield unknown with a timestamp.
+
+[Keycloak client scope evaluation](https://www.keycloak.org/docs-api/latest/rest-api/index.html)

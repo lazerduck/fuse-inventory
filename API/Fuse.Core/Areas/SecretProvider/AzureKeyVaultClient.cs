@@ -182,6 +182,28 @@ public class AzureKeyVaultClient : IAzureKeyVaultClient
         }
     }
 
+    public async Task<KeyVaultVersions> VersionsAsync(Models.SecretProvider provider, string name, CancellationToken ct)
+    {
+        var versions = new List<KeyVaultVersion>();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(25));
+        try
+        {
+            var client = await GetClientAsync(provider);
+            await foreach (var entry in client.GetPropertiesOfSecretVersionsAsync(name, deadline.Token))
+            {
+                if (versions.Count >= 256) return new("partial", versions);
+                if (string.Equals(name, entry.Name, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Version))
+                    versions.Add(new(entry.Version, entry.CreatedOn, entry.ExpiresOn, entry.Enabled));
+            }
+            return new(versions.Count > 0 ? "visible" : "none-observed", versions);
+        }
+        catch (RequestFailedException ex) { return new(ex.Status switch { 403 => "denied", 404 => "not-found-or-hidden", _ => "unavailable" }, versions); }
+        catch (Exception ex) when (ex is AuthenticationFailedException or ArgumentException) { return new("authentication-failed", versions); }
+        catch (HttpRequestException) { return new("unavailable", versions); }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return new("timeout", versions); }
+    }
+
     private async Task<IKeyVaultSecretClient> GetClientAsync(Models.SecretProvider provider)
     {
         var credentials = await ResolveProviderCredentialsAsync(provider);
@@ -244,5 +266,7 @@ internal sealed class KeyVaultSecretClientWrapper : IKeyVaultSecretClient
     public Task<Response<KeyVaultSecret>> GetSecretAsync(string name, CancellationToken ct = default) => _inner.GetSecretAsync(name, cancellationToken: ct);
     public Task<Response<KeyVaultSecret>> GetSecretVersionAsync(string name, string version, CancellationToken ct = default) => _inner.GetSecretAsync(name, version, ct);
     public Task<Response<KeyVaultSecret>> SetSecretAsync(string name, string value, CancellationToken ct = default) => _inner.SetSecretAsync(name, value, ct);
+    public AsyncPageable<SecretProperties> GetPropertiesOfSecretVersionsAsync(string name, CancellationToken ct = default) =>
+        _inner.GetPropertiesOfSecretVersionsAsync(name, ct);
     public AsyncPageable<SecretProperties> GetPropertiesOfSecretsAsync(CancellationToken ct = default) => _inner.GetPropertiesOfSecretsAsync(ct);
 }

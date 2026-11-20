@@ -25,8 +25,8 @@ public sealed partial class CosmosDbInspector(HttpClient http, IAzureIntegration
     internal static bool ValidTarget(string? database, string? container) => (database is null || ValidName(database))
         && (container is null || (database is not null && ValidName(container)));
 
-    private async Task<ArmMetadataSession> Open(SecretProviderAuthMode mode, CancellationToken ct, CancellationToken deadline) =>
-        new(http, await GetToken(manager, credentials, mode, deadline), ct, deadline, Version, StringComparison.Ordinal);
+    internal async Task<ArmMetadataSession> Open(string id, SecretProviderAuthMode mode, Guid? profileId, CancellationToken ct, CancellationToken deadline) =>
+        new(http, await GetToken(manager, credentials, mode, deadline, profileId, id), ct, deadline, Version, StringComparison.Ordinal);
 
     // Use the logical, case-sensitive ID from Cosmos. Construct every request under the configured account.
     private static JsonElement Resource(JsonElement entry) => entry.GetProperty("properties").GetProperty("resource");
@@ -51,18 +51,50 @@ public sealed partial class CosmosDbInspector(HttpClient http, IAzureIntegration
         if (resource.TryGetProperty("indexingPolicy", out var policy) && policy.ValueKind == JsonValueKind.Object)
             indexing = new(Text(policy, "indexingMode"), policy.TryGetProperty("automatic", out var automatic) && automatic.ValueKind != JsonValueKind.Null
                 ? automatic.GetBoolean() : null, IndexPaths(policy, "includedPaths"), IndexPaths(policy, "excludedPaths"), policy.GetRawText());
-        return new(Name(row), partition, indexing);
+        int? ttl = null;
+        if (resource.TryGetProperty("defaultTtl", out var ttlValue) && ttlValue.ValueKind != JsonValueKind.Null)
+        {
+            if (ttlValue.ValueKind != JsonValueKind.Number || !ttlValue.TryGetInt32(out var seconds) || seconds != -1 && seconds <= 0)
+                throw new InspectionError("invalid-response");
+            ttl = seconds;
+        }
+        return new(Name(row), partition, indexing, ttl);
     }
 
-    private static string Status<T>(PageList<T> list) => list.Status == "visible" && list.Items.Count == 0 ? "none-observed" : list.Status;
+    private static async Task<CosmosDbThroughput> Throughput(ArmMetadataSession session, string databasePath)
+    {
+        var read = await session.Resource(databasePath + "/throughputSettings/default", row =>
+        {
+            var settings = Resource(row);
+            int? manual = settings.TryGetProperty("throughput", out var ru) && ru.ValueKind == JsonValueKind.Number ? ru.GetInt32() : null;
+            int? autoscale = settings.TryGetProperty("autoscaleSettings", out var scale) && scale.ValueKind == JsonValueKind.Object &&
+                scale.TryGetProperty("maxThroughput", out var max) && max.ValueKind == JsonValueKind.Number ? max.GetInt32() : null;
+            return new CosmosDbThroughput("visible", autoscale is null ? manual : null, autoscale);
+        });
+        return read.Value ?? new CosmosDbThroughput(read.Status);
+    }
 
-    public async Task<CosmosDbConnectionTestResult> ValidateAsync(string id, SecretProviderAuthMode mode, CancellationToken ct)
+    internal async Task<CosmosDbThroughput> SharedThroughputAsync(CosmosDbConnection item, string database, CancellationToken ct)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(20));
         try
         {
-            var session = await Open(mode, ct, deadline.Token);
+            var session = await Open(item.AccountResourceId, item.AuthMode, item.CredentialProfileId, ct, deadline.Token);
+            return await Throughput(session, item.AccountResourceId + "/sqlDatabases/" + Uri.EscapeDataString(database));
+        }
+        catch (Exception ex) when (Failure(ex, ct) is { } reason) { return new(reason); }
+    }
+
+    private static string Status<T>(PageList<T> list) => list.Status == "visible" && list.Items.Count == 0 ? "none-observed" : list.Status;
+
+    public async Task<CosmosDbConnectionTestResult> ValidateAsync(string id, SecretProviderAuthMode mode, CancellationToken ct, Guid? profileId = null)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(20));
+        try
+        {
+            var session = await Open(id, mode, profileId, ct, deadline.Token);
             var page = await session.List(id + "/sqlDatabases", Name, firstPageOnly: true);
             return new(page.Status == "visible", Status(page));
         }
@@ -79,7 +111,7 @@ public sealed partial class CosmosDbInspector(HttpClient http, IAzureIntegration
         string visibility;
         try
         {
-            var session = await Open(item.AuthMode, ct, deadline.Token);
+            var session = await Open(item.AccountResourceId, item.AuthMode, item.CredentialProfileId, ct, deadline.Token);
             if (container is not null)
             {
                 var path = collection + "/" + Uri.EscapeDataString(database!) + "/containers/" + Uri.EscapeDataString(container);
@@ -96,10 +128,12 @@ public sealed partial class CosmosDbInspector(HttpClient http, IAzureIntegration
                 foreach (var name in names.Items.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
                 {
                     ct.ThrowIfCancellationRequested();
-                    var containers = await session.List(collection + "/" + Uri.EscapeDataString(name) + "/containers", Container);
+                    var databasePath = collection + "/" + Uri.EscapeDataString(name);
+                    var containers = await session.List(databasePath + "/containers", Container);
                     var status = Status(containers);
                     if (database is not null) visibility = status;
-                    databases.Add(new(name, status, containers.Items.DistinctBy(c => c.Name, StringComparer.Ordinal).OrderBy(c => c.Name, StringComparer.Ordinal).ToArray()));
+                    databases.Add(new(name, status, containers.Items.DistinctBy(c => c.Name, StringComparer.Ordinal).OrderBy(c => c.Name, StringComparer.Ordinal).ToArray(),
+                        await Throughput(session, databasePath)));
                 }
             }
         }

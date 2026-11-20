@@ -8,9 +8,11 @@ public class AzureIntegrationManagerService : IAzureIntegrationManagerService
 {
     private readonly IFuseStore _fuseStore;
 
-    public AzureIntegrationManagerService(IFuseStore fuseStore)
+    private readonly Fuse.Core.Areas.AzureMetadata.IAzureProfileProtector? _protector;
+    public AzureIntegrationManagerService(IFuseStore fuseStore, Fuse.Core.Areas.AzureMetadata.IAzureProfileProtector? protector = null)
     {
         _fuseStore = fuseStore;
+        _protector = protector;
     }
 
     public async Task<AzureIntegrationManager?> GetManagerAsync()
@@ -18,6 +20,15 @@ public class AzureIntegrationManagerService : IAzureIntegrationManagerService
 
     public async Task<SecretProviderCredentials?> GetClientSecretCredentialsAsync()
         => (await GetManagerAsync())?.ClientSecretCredentials;
+
+    public async Task<SecretProviderCredentials?> GetProfileCredentialsAsync(Guid id, string resourceId)
+    {
+        var profile = (await GetManagerAsync())?.CredentialProfiles?.FirstOrDefault(p => p.Id == id &&
+            p.ResourceId.Equals(resourceId.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+        if (profile is null || _protector is null) return null;
+        try { return new(profile.TenantId.ToString(), profile.ClientId.ToString(), _protector.Unprotect(id, profile.ProtectedSecret)); }
+        catch (System.Security.Cryptography.CryptographicException) { return null; }
+    }
 
     public async Task<Result<AzureIntegrationManager>> UpdateClientSecretCredentialsAsync(SecretProviderCredentials credentials)
     {

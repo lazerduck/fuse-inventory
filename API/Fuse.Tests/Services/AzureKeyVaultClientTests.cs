@@ -80,6 +80,10 @@ public class AzureKeyVaultClientTests
             return Task.FromResult(Response.FromValue(secret, new TestResponse(200)));
         }
 
+        public List<SecretProperties> VersionMetadata { get; } = [];
+        public AsyncPageable<SecretProperties> GetPropertiesOfSecretVersionsAsync(string name, CancellationToken ct = default) =>
+            AsyncPageable<SecretProperties>.FromPages([Page<SecretProperties>.FromValues(VersionMetadata.Where(v => v.Name == name).ToArray(), null, new TestResponse(200))]);
+
         public AsyncPageable<SecretProperties> GetPropertiesOfSecretsAsync(CancellationToken ct = default)
         {
             if (ThrowAuth) throw new AuthenticationFailedException("auth failed");
@@ -111,6 +115,22 @@ public class AzureKeyVaultClientTests
     {
         public FakeSecretClient Instance { get; } = new();
         public IKeyVaultSecretClient Create(Uri vaultUri, TokenCredential credential) => Instance;
+    }
+
+    [Fact]
+    public async Task ExpiryMetadataDoesNotRequireSecretValueReads()
+    {
+        var sf = new FakeSecretClientFactory();
+        sf.Instance.ThrowGet = sf.Instance.ThrowList = true;
+        var v = SecretModelFactory.SecretProperties(name: "orders", version: "pinned");
+        v.ExpiresOn = DateTimeOffset.UtcNow.AddDays(4);
+        sf.Instance.VersionMetadata.Add(v);
+        var client = new AzureKeyVaultClient(new FakeCredentialFactory(), sf);
+        var versions = await client.VersionsAsync(NewProvider(SecretProviderAuthMode.ManagedIdentity, SecretProviderCapabilities.Check), "orders", default);
+        Assert.Equal("visible", versions.Visibility);
+        var version = Assert.Single(versions.Versions);
+        Assert.Equal("pinned", version.Version);
+        Assert.Equal(v.ExpiresOn, version.Expires);
     }
 
     private sealed class FakeAzureIntegrationManagerService : IAzureIntegrationManagerService

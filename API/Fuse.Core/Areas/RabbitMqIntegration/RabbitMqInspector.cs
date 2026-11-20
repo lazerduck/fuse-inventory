@@ -25,6 +25,37 @@ public sealed class RabbitMqInspector(IHttpClientFactory factory) : IRabbitMqIns
  private static string Status(Exception error)=>error switch { HttpRequestException { StatusCode:HttpStatusCode.Unauthorized }=>"authentication-failed",HttpRequestException { StatusCode:HttpStatusCode.Forbidden }=>"denied",HttpRequestException { StatusCode:HttpStatusCode.NotFound }=>"unavailable",OperationCanceledException=>"timeout",InvalidDataException=>"partial",_=>"unavailable" };
  private static string SectionStatus(Exception e) => Status(e)=="authentication-failed"?"denied":Status(e);
  private static string Str(JsonElement item,string field)=>item.TryGetProperty(field,out var value)&&value.ValueKind==JsonValueKind.String?value.GetString()!:"";
+ private static string? Option(JsonElement row, string section, string key) =>
+     row.TryGetProperty(section, out var obj) && obj.ValueKind == JsonValueKind.Object
+         && obj.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+ private static RabbitMqResource Resource(JsonElement row, string kind, string vhost)
+ {
+     if (Str(row, "vhost") != vhost) throw new InvalidDataException();
+     if (kind == "bindings")
+         return new(Str(row, "source"), kind, vhost, Str(row, "destination_type"), Str(row, "destination"), Str(row, "routing_key"));
+     bool? durable = row.TryGetProperty("durable", out var flag) && flag.ValueKind is JsonValueKind.True or JsonValueKind.False ? flag.GetBoolean() : null;
+     var operatorPolicy = Str(row, "operator_policy").Length > 0;
+     var hasPolicy = Str(row, "policy").Length > 0 || operatorPolicy;
+     var policyKnown = !hasPolicy || row.TryGetProperty("effective_policy_definition", out var policy) && policy.ValueKind == JsonValueKind.Object;
+     var optionsKnown = row.TryGetProperty("arguments", out var args) && args.ValueKind == JsonValueKind.Object && policyKnown;
+     string? Setting(string key)
+     {
+         var argument = Option(row, "arguments", "x-" + key);
+         var effective = Option(row, "effective_policy_definition", key);
+         // RabbitMQ merges regular and operator policies into one reported definition.
+         // When both apply, a conflicting value cannot be attributed to the operator here.
+         if (operatorPolicy && argument != null && effective != null && argument != effective)
+         {
+             optionsKnown = false;
+             return null;
+         }
+         return argument ?? effective;
+     }
+     return new(Str(row, "name"), kind, vhost, Str(row, "type"), Durable: durable,
+         DeadLetterExchange: Setting("dead-letter-exchange"), DeadLetterRoutingKey: Setting("dead-letter-routing-key"),
+         RoutingOptionsKnown: optionsKnown, AlternateExchange: Option(row, "arguments", "alternate-exchange") ?? Option(row, "effective_policy_definition", "alternate-exchange"));
+ }
  public async Task<RabbitMqConnectionTestResult> ValidateAsync(Uri endpoint,string username,string? password,CancellationToken ct=default) {
   using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);deadline.CancelAfter(TimeSpan.FromSeconds(10));
   try {var result=await Get(endpoint,username,password,"whoami",deadline.Token);if(Str(result,"name")!=username)throw new InvalidDataException();return new(true,true,"connected",null);}
@@ -33,6 +64,8 @@ public sealed class RabbitMqInspector(IHttpClientFactory factory) : IRabbitMqIns
  public async Task<RabbitMqDiscoveryResponse> DiscoverAsync(Models.RabbitMqIntegration item,IReadOnlyList<Models.Account> accounts,IReadOnlyList<BrokerQueue> queues,CancellationToken ct=default) {
   using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);deadline.CancelAfter(TimeSpan.FromSeconds(25));
   var resources=new List<RabbitMqResource>();var users=new List<string>();var permissions=new List<RabbitMqPermission>();var warnings=new List<string>();
+  var topicPermissions = new List<RabbitMqTopicPermission>();
+  var topicStatus = "unavailable";
   var connection=await ValidateAsync(item.Endpoint,item.Username,item.Password,deadline.Token);
   var topology="unavailable";var usersStatus="unavailable";var permissionStatus="unavailable";
   var scope=Uri.EscapeDataString(item.VirtualHost);
@@ -43,11 +76,10 @@ public sealed class RabbitMqInspector(IHttpClientFactory factory) : IRabbitMqIns
     var hosts=await Fetch("vhosts?columns=name");if(hosts.ValueKind!=JsonValueKind.Array || hosts.GetArrayLength()>1000)throw new InvalidDataException();
     if(!hosts.EnumerateArray().Any(h=>Str(h,"name")==item.VirtualHost))throw new HttpRequestException("Virtual host is not visible.",null,HttpStatusCode.Forbidden);
     foreach(var kind in new[]{"queues","exchanges","bindings"}) {
-     var rows=await Fetch(kind+"/"+scope+"?disable_stats=true&columns=name,vhost,type,source,destination,destination_type,routing_key");
+     var rows=await Fetch(kind+"/"+scope+"?disable_stats=true&columns=name,vhost,type,source,destination,destination_type,routing_key,durable,arguments,policy,operator_policy,effective_policy_definition");
      if(rows.ValueKind!=JsonValueKind.Array || rows.GetArrayLength()>1000)throw new InvalidDataException();
      foreach(var row in rows.EnumerateArray()) {
-      if(Str(row,"vhost")!=item.VirtualHost)throw new InvalidDataException();
-      resources.Add(new(kind=="bindings"?Str(row,"source"):Str(row,"name"),kind,item.VirtualHost,kind=="bindings"?Str(row,"destination_type"):Str(row,"type"),kind=="bindings"?Str(row,"destination"):null,kind=="bindings"?Str(row,"routing_key"):null));
+      resources.Add(Resource(row, kind, item.VirtualHost));
      }
     }
     topology="complete";
@@ -56,9 +88,22 @@ public sealed class RabbitMqInspector(IHttpClientFactory factory) : IRabbitMqIns
    catch(Exception e) when(!ct.IsCancellationRequested) {usersStatus=SectionStatus(e);warnings.Add("User discovery is unavailable or incomplete. Viewing all users requires RabbitMQ administrator privileges.");}
    try {var rows=await Fetch("vhosts/"+scope+"/permissions?columns=user,vhost,configure,write,read");if(rows.ValueKind!=JsonValueKind.Array || rows.GetArrayLength()>1000)throw new InvalidDataException();foreach(var row in rows.EnumerateArray()){if(Str(row,"vhost")!=item.VirtualHost)throw new InvalidDataException();permissions.Add(new(Str(row,"user"),item.VirtualHost,Str(row,"configure"),Str(row,"write"),Str(row,"read")));}permissionStatus="complete";}
    catch(Exception e) when(!ct.IsCancellationRequested) {permissionStatus=SectionStatus(e);warnings.Add("Virtual host permission rules are unavailable or incomplete.");}
+   try
+   {
+       var rows = await Fetch("vhosts/" + scope + "/topic-permissions?columns=user,vhost,exchange,write,read");
+       if (rows.ValueKind != JsonValueKind.Array || rows.GetArrayLength() > 1000) throw new InvalidDataException();
+       foreach (var row in rows.EnumerateArray())
+       {
+           if (Str(row, "vhost") != item.VirtualHost || Str(row, "user") == "" || Str(row, "exchange") == "")
+               throw new InvalidDataException();
+           topicPermissions.Add(new(Str(row, "user"), item.VirtualHost, Str(row, "exchange"), Str(row, "write"), Str(row, "read")));
+       }
+       topicStatus = "complete";
+   }
+   catch (Exception e) when (!ct.IsCancellationRequested) { topicStatus = SectionStatus(e); }
   } else warnings.Add(connection.ErrorMessage!);
   return new(item.Id,DateTime.UtcNow,item.VirtualHost,connection.Status,topology,usersStatus,permissionStatus,resources,
    queues.Select(q=>new RabbitMqQueueMatch(q.Name,resources.Any(r=>r.Kind=="queues"&&r.Name==q.Name)?"matched":topology=="complete"?"missing":"unknown")).ToArray(),users,permissions,
-   accounts.Where(a=>a.TargetKind==TargetKind.MessageBroker&&a.TargetId==item.MessageBrokerId).Select(a=>new RabbitMqAccountMatch(a.Id,a.UserName,users.Contains(a.UserName??"",StringComparer.Ordinal)?"matched":usersStatus=="complete"&&!string.IsNullOrEmpty(a.UserName)?"missing":"unknown")).ToArray(),warnings);
+   accounts.Where(a=>a.TargetKind==TargetKind.MessageBroker&&a.TargetId==item.MessageBrokerId).Select(a=>new RabbitMqAccountMatch(a.Id,a.UserName,users.Contains(a.UserName??"",StringComparer.Ordinal)?"matched":usersStatus=="complete"&&!string.IsNullOrEmpty(a.UserName)?"missing":"unknown")).ToArray(),warnings) { TopicPermissions = topicPermissions, TopicPermissionsStatus = topicStatus };
  }
 }

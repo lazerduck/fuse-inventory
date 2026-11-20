@@ -1,6 +1,8 @@
 import type { IdentityKind, IdentityAssignment, TargetKind } from 'api/client'
 
 export interface IdentityFormModel {
+  azureTenantId?: string
+  azureObjectId?: string
   name: string
   kind: IdentityKind
   notes: string

@@ -17,6 +17,7 @@ async function render(permissions: string[], posture = SecurityPosture.FullyRest
   const pinia = createPinia()
   const store = useFuseStore(pinia)
   store.securityPosture = posture
+  store.posturePermissions = posture === SecurityPosture.Unrestricted ? ['tags:read', 'tags:create', 'tags:update', 'tags:delete'] : posture === SecurityPosture.RestrictedEditing ? ['tags:read'] : []
   store.currentUser = anonymous ? null : { id: 'user', isAdmin: admin } as any
   store.userPermissions = permissions
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })

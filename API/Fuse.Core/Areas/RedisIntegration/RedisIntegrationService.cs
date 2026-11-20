@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.Audit;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
@@ -8,10 +9,10 @@ using Fuse.Core.Responses;
 namespace Fuse.Core.Areas.RedisIntegration;
 
 public sealed class RedisIntegrationService(IFuseStore store, IRedisInspector inspector,
-    IAuditService audit, ICurrentUser currentUser) : IRedisIntegrationService
+    IAuditService audit, ICurrentUser currentUser, IntegrationPasswords? passwords = null) : IRedisIntegrationService
 {
     private static RedisIntegrationResponse Public(Models.RedisIntegration item) => new(item.Id, item.Name,
-        item.DataStoreId, item.Endpoint, item.Username, !string.IsNullOrEmpty(item.Password), item.CreatedAt, item.UpdatedAt);
+        item.DataStoreId, item.Endpoint, item.Username, (item.PasswordBinding is not null || !string.IsNullOrEmpty(item.Password)), item.CreatedAt, item.UpdatedAt);
 
     public async Task<IReadOnlyList<RedisIntegrationResponse>> GetAllAsync(CancellationToken ct = default) =>
         (await store.GetAsync(ct)).RedisIntegrations.Select(Public).ToArray();
@@ -72,6 +73,11 @@ public sealed class RedisIntegrationService(IFuseStore store, IRedisInspector in
             updated = found with { Name = command.Name.Trim(), DataStoreId = command.DataStoreId, Endpoint = command.Endpoint,
                 Username = RedisConnectionSettings.Username(command.Username), Password = command.Password ?? found.Password,
                 UpdatedAt = DateTime.UtcNow };
+            if (IntegrationPasswords.InvalidEdit(found, updated, command.Password))
+            {
+                failure = Result.Failure("Detach the Key Vault password before changing its destination or supplying a password.");
+                return current;
+            }
             return current with { RedisIntegrations = current.RedisIntegrations.Select(x => x.Id == command.Id ? updated : x).ToArray() };
         }, ct);
         if (failure is not null) return Result<RedisIntegrationResponse>.Failure(failure.Error!, failure.ErrorType!.Value);
@@ -104,6 +110,9 @@ public sealed class RedisIntegrationService(IFuseStore store, IRedisInspector in
     {
         var item = (await store.GetAsync(ct)).RedisIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<RedisConnectionTestResult>.Failure("Redis integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<RedisConnectionTestResult>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         return await ValidateAsync(new(item.Endpoint, item.Username, item.Password), ct);
     }
 
@@ -112,6 +121,9 @@ public sealed class RedisIntegrationService(IFuseStore store, IRedisInspector in
         var snapshot = await store.GetAsync(ct);
         var item = snapshot.RedisIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<RedisDiscoveryResponse>.Failure("Redis integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<RedisDiscoveryResponse>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         var validation = RedisConnectionSettings.Validate(item.Endpoint, item.Username, item.Password);
         if (!validation.IsSuccess) return Result<RedisDiscoveryResponse>.Failure(validation.Error!);
         if (!snapshot.DataStores.Any(x => x.Id == item.DataStoreId && string.Equals(x.Kind, "redis", StringComparison.OrdinalIgnoreCase)))

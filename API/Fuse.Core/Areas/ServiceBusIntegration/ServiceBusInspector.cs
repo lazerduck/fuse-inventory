@@ -21,7 +21,8 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         resourceId is { Length: < 512 } && Enum.IsDefined(mode) && NamespacePattern().Match(resourceId) is { Success: true } match
         && Guid.TryParseExact(match.Groups[1].Value, "D", out _) && !match.Groups[2].Value.EndsWith('.');
 
-    private sealed record QueueMetadata(string Path, string Name, string? Status);
+    private sealed record NamespaceAuth(bool? Enabled);
+    private sealed record QueueMetadata(string Path, string Name, string? Status, string? Ttl, int? MaxDelivery, long? DeadLetters);
 
     private sealed class ReadSession(HttpClient http, string token, CancellationToken caller, CancellationToken deadline)
         : ArmMetadataSession(http, token, caller, deadline, Version)
@@ -54,7 +55,10 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         }
     }
 
-    private static bool ValidQueueSegment(string segment) => segment.Length is > 0 and <= 260
+    internal async Task<ArmMetadataSession> Open(ServiceBusConnection item, CancellationToken caller, CancellationToken deadline) =>
+        new(http, await GetToken(manager, credentials, item.AuthMode, deadline, item.CredentialProfileId, item.NamespaceResourceId), caller, deadline, Version);
+
+    internal static bool ValidQueueSegment(string segment) => segment.Length is > 0 and <= 260
         && segment is not ("." or "..") && segment.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.' or '~');
 
     private static QueueMetadata Queue(string namespaceId, JsonElement row)
@@ -65,16 +69,53 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         var segment = id[prefix.Length..];
         if (!ValidQueueSegment(segment))
             throw new InspectionError("invalid-response");
-        return new(prefix + segment, Required(row, "name"), Text(row.GetProperty("properties"), "status"));
+        var props = row.GetProperty("properties");
+        long? deadLetters = null;
+        if (props.TryGetProperty("countDetails", out var details) && details.ValueKind == JsonValueKind.Object &&
+            details.TryGetProperty("deadLetterMessageCount", out var count) && count.ValueKind == JsonValueKind.Number && count.TryGetInt64(out var value)) deadLetters = value;
+        return new(prefix + segment, Required(row, "name"), Text(props, "status"), Text(props, "defaultMessageTimeToLive"),
+            props.TryGetProperty("maxDeliveryCount", out var max) && max.ValueKind == JsonValueKind.Number && max.TryGetInt32(out var limit) ? limit : null, deadLetters);
     }
 
-    public async Task<ServiceBusConnectionTestResult> ValidateAsync(string namespaceId, SecretProviderAuthMode mode, CancellationToken ct)
+    internal sealed record QueueCheck(ServiceBusQueue? Queue, string Visibility, ServiceBusPolicyList? Policies, bool? LocalAuthEnabled);
+
+    private static async Task<bool?> NamespaceLocalAuth(ArmMetadataSession session, string resourceId)
+    {
+        var ns = await session.Resource(resourceId, row =>
+        {
+            var props = row.GetProperty("properties");
+            return new NamespaceAuth(props.TryGetProperty("disableLocalAuth", out var flag) && flag.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? !flag.GetBoolean() : null);
+        });
+        return ns.Value?.Enabled;
+    }
+
+    internal async Task<QueueCheck> ReadQueueCheck(ServiceBusConnection item, string? queue, bool policy, bool namespaceAuth, CancellationToken ct)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(25));
+        try
+        {
+            var session = new ReadSession(http, await GetToken(manager, credentials, item.AuthMode, deadline.Token, item.CredentialProfileId, item.NamespaceResourceId), ct, deadline.Token);
+            var localAuth = namespaceAuth ? await NamespaceLocalAuth(session, item.NamespaceResourceId) : null;
+            var path = item.NamespaceResourceId;
+            if (queue is null)
+                return new(null, "unknown", policy ? await session.Policies(path) : null, localAuth);
+            var (row, visibility) = await session.KnownQueue(path, queue);
+            if (row is null) return new(null, visibility, null, localAuth);
+            var policies = policy ? await session.Policies(row.Path) : null;
+            return new(new(row.Name, row.Status, policies ?? new("unknown", []), row.Ttl, row.MaxDelivery, row.DeadLetters), visibility, policies, localAuth);
+        }
+        catch (Exception ex) when (Failure(ex, ct) is { } reason) { return new(null, reason, null, null); }
+    }
+
+    public async Task<ServiceBusConnectionTestResult> ValidateAsync(string namespaceId, SecretProviderAuthMode mode, CancellationToken ct, Guid? profileId = null)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(20));
         try
         {
-            var session = new ReadSession(http, await GetToken(manager, credentials, mode, deadline.Token), ct, deadline.Token);
+            var session = new ReadSession(http, await GetToken(manager, credentials, mode, deadline.Token, profileId, namespaceId), ct, deadline.Token);
             var result = await session.List(namespaceId + "/queues", row => Queue(namespaceId, row), firstPageOnly: true);
             return new(result.Status == "visible", result.Status);
         }
@@ -89,9 +130,11 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         var queues = new List<ServiceBusQueue>();
         ServiceBusPolicyList namespacePolicies = new("unknown", []);
         string queueVisibility;
+        bool? localAuthEnabled = null;
         try
         {
-            var session = new ReadSession(http, await GetToken(manager, credentials, item.AuthMode, deadline.Token), ct, deadline.Token);
+            var session = new ReadSession(http, await GetToken(manager, credentials, item.AuthMode, deadline.Token, item.CredentialProfileId, item.NamespaceResourceId), ct, deadline.Token);
+            localAuthEnabled = await NamespaceLocalAuth(session, item.NamespaceResourceId);
             var list = await session.List(item.NamespaceResourceId + "/queues", row => Queue(item.NamespaceResourceId, row));
             queueVisibility = list.Status;
             namespacePolicies = await session.Policies(item.NamespaceResourceId);
@@ -107,7 +150,7 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
                 if (queueVisibility == "visible" && lookup.Status == "denied") queueVisibility = "limited";
             }
             foreach (var queue in visible.Values.OrderBy(q => q.Name, StringComparer.OrdinalIgnoreCase))
-                queues.Add(new(queue.Name, queue.Status, await session.Policies(queue.Path)));
+                queues.Add(new(queue.Name, queue.Status, await session.Policies(queue.Path), queue.Ttl, queue.MaxDelivery, queue.DeadLetters));
         }
         catch (Exception e) when (Failure(e, ct) is { } status)
         {
@@ -116,6 +159,6 @@ public sealed partial class ServiceBusInspector(HttpClient http, IAzureIntegrati
         }
         var names = queues.Select(q => q.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var inventory = expected.Select(q => new ServiceBusQueueMatch(q.Id, q.Name, names.Contains(q.Name) || names.Contains(q.Name.Replace('/', '~')) ? "observed" : "unknown")).ToArray();
-        return new(item.NamespaceResourceId, observed, queueVisibility, queues, namespacePolicies, inventory);
+        return new(item.NamespaceResourceId, observed, queueVisibility, queues, namespacePolicies, inventory, localAuthEnabled);
     }
 }

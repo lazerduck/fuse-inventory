@@ -175,7 +175,9 @@
           </div>
           <div v-if="instance.apiKey.kind === 'AzureKeyVault' && instance.apiKey.azureKeyVault" class="url-item">
             <span class="url-label">Secret Name</span>
-            <span class="url-value">{{ instance.apiKey.azureKeyVault.secretName }}</span>
+            <span class="url-value">{{ instance.apiKey.azureKeyVault.secretName }} · {{ instance.apiKey.azureKeyVault.version || 'Version follows latest' }}</span>
+            <SecretReferenceButton v-if="store.hasPermission('secretproviders:read') && instance.apiKey.azureKeyVault.providerId && instance.apiKey.azureKeyVault.secretName"
+              :provider="instance.apiKey.azureKeyVault.providerId" :name="instance.apiKey.azureKeyVault.secretName" :version="instance.apiKey.azureKeyVault.version" />
           </div>
         </div>
       </section>
@@ -194,7 +196,7 @@
             <span class="url-value">{{ appConfigurationProviderName }}</span>
           </div>
           <div class="url-item">
-            <span class="url-label">Key suffix filter</span>
+            <span class="url-label">Key filter</span>
             <span class="url-value">{{ appConfigurationKeySuffixDisplay }}</span>
           </div>
 
@@ -225,6 +227,8 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side top>
+                  <SecretReferenceButton v-if="entry.isKeyVaultReference && entry.key && appConfigurationProviderId && store.hasPermission('secretproviders:read')"
+                    :provider="appConfigurationProviderId" :name="entry.key" :label="entry.label ?? undefined" from-config />
                   <q-item-label caption>{{ formatAppConfigurationEntryValue(entry.value) }}</q-item-label>
                   <q-item-label caption>{{ formatDate(entry.lastModified) }}</q-item-label>
                 </q-item-section>
@@ -262,11 +266,14 @@
           </q-item>
         </q-list>
       </section>
+      <IntegrationFindings :instance-id="id" />
     </div>
   </ReadOnlyShell>
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../../components/integrations/IntegrationFindings.vue'
+import SecretReferenceButton from "../../components/secretProvider/SecretReferenceButton.vue"
 import { useRoute, useRouter } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import ReadOnlyShell from '../../components/readonly/ReadOnlyShell.vue'
@@ -353,7 +360,8 @@ const filteredAppConfigurationEntries = computed(() => {
   const entries = appConfigurationEntries.value ?? []
   const suffix = appConfigurationKeySuffix.value
   if (!suffix) return entries
-  return entries.filter((entry) => entry.key?.toLowerCase().endsWith(suffix.toLowerCase()))
+  const filter = suffix.toLowerCase()
+  return entries.filter(entry => filter.startsWith(':') ? entry.key?.toLowerCase().endsWith(filter) : entry.key?.toLowerCase().includes(filter))
 })
 
 const appConfigurationError = computed(() =>

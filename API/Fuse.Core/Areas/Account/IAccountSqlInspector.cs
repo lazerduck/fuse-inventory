@@ -20,13 +20,19 @@ public record SqlActualGrant(
     string? Database,
     string? Schema,
     HashSet<Privilege> Privileges
-);
+)
+{
+    internal HashSet<Privilege> Inherited { get; init; } = [];
+}
 
 /// <summary>
 /// Abstraction for inspecting SQL principals and their permissions.
 /// </summary>
 public interface IAccountSqlInspector
 {
+    Task<SqlPrincipalPermissions?> GetNewUserBaselineAsync(Models.SqlIntegration integration, IReadOnlyList<string> databases, CancellationToken ct = default);
+    Task<string?> InspectGrantCoverageAsync(Models.SqlIntegration integration, CancellationToken ct = default);
+
     /// <summary>
     /// Lists all SQL server login names (without fetching grants).
     /// </summary>

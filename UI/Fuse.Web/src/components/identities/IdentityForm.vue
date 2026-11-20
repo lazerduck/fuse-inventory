@@ -29,6 +29,8 @@
       type="textarea"
       rows="3"
     />
+    <q-input v-model="form.azureTenantId" label="Azure tenant ID (optional)" outlined dense />
+    <q-input v-model="form.azureObjectId" label="Azure principal object ID (optional)" hint="The service principal object ID from the tenant" outlined dense />
     <TagSelect v-model="form.tagIds" />
   </div>
 </template>

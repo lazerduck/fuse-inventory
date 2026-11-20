@@ -64,7 +64,7 @@ restrictions, external users and broader topology discovery are not evaluated.
 
 ## Read-only behavior and limits
 
-The connector uses only `connectionStatus`, `listCollections`, `rolesInfo`,
+The connector uses `connectionStatus`, `listCollections`, `listIndexes`, `rolesInfo`,
 `usersInfo` and cursor cleanup. It never queries application collections or MongoDB
 system user/role collections directly. `showCredentials` and `showCustomData` are
 explicitly false; API projections allowlist metadata and never expose hashes.
@@ -99,3 +99,15 @@ integration before deleting its data store or changing its kind.
 Sources: MongoDB [usersInfo](https://www.mongodb.com/docs/manual/reference/command/usersinfo/),
 [rolesInfo](https://www.mongodb.com/docs/manual/reference/command/rolesinfo/) and
 [driver connection lifecycle](https://www.mongodb.com/docs/drivers/csharp/current/connect/mongoclient/).
+
+## Review collection actions and indexes
+
+From a saved connection, select **Reviews** to document a required or forbidden collection action. Choose the account with the correct `authSource`, a collection in the selected database, and an action such as `find` or `insert`. Fuse reads the user's effective privileges and, where visible, identifies which directly assigned roles supply the action through their own privilege inheritance. A role lookup may have less visibility than the user privilege lookup.
+
+Inspect a collection to see its type and index inventory. The inspector needs the MongoDB `listIndexes` action on that collection. An index expectation records its name, ordered key document, uniqueness, and expiry in seconds (or `none`). For example, `{"customerId":1,"status":1}` describes two ascending fields in that order. Reversing them changes the index. A partial listing can confirm an index it contains. An index absent from a partial or inaccessible listing has **Unknown** status.
+
+To compare environments directly, choose **Compare a MongoDB index across environments**, select the second saved connection and enter the shared index name. The second collection can have a different name. The result identifies both databases and reports key order, uniqueness and expiry differences. Each inspection identity needs index visibility on its own collection.
+
+Use `GET /api/MongoDbIntegration/{id}/indexes?collection=orders` to retrieve the same metadata with `mongodbintegrations:read`. The response projects index key fields, types, uniqueness and expiry.
+
+For vault-backed inspection passwords and rotation, see [Connector passwords in Azure Key Vault](connector-passwords.md).

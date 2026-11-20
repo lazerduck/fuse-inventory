@@ -24,11 +24,6 @@ function hasHighestAccess(user: SecurityUserInfo | null | undefined): boolean {
   return user.roleIds?.includes(DEFAULT_ADMIN_ROLE_ID) ?? false;
 }
 
-function isOpenReadPermission(posture: SecurityPosture | null, permission: Permission): boolean {
-  // Backend allows read descriptors during RestrictedEditing even when unauthenticated.
-  return posture === SecurityPosture.RestrictedEditing && permission.endsWith(":read");
-}
-
 const fuseClient = useFuseClient
 const { getToken, setToken, clearToken } = useAuthToken()
 
@@ -39,6 +34,7 @@ export const useFuseStore = defineStore("fuse", {
     currentUser: null as SecurityUserInfo | null,
     sessionToken: null as string | null,
     userPermissions: null as Permission[] | null,
+    posturePermissions: [] as Permission[],
     appSettings: null as AppSettings | null,
     licenseStatus: null as LicenseStatus | null
   }),
@@ -48,11 +44,7 @@ export const useFuseStore = defineStore("fuse", {
     userRole: (state) => (state.currentUser as { role?: string } | null)?.role ?? null,
     userName: (state) => state.currentUser?.userName ?? null,
     hasPermission: (state) => (permission: Permission): boolean => {
-      // No security restrictions
-      if (state.securityPosture === SecurityPosture.Unrestricted) return true;
-
-      // Restricted editing allows read operations without authentication.
-      if (isOpenReadPermission(state.securityPosture, permission)) return true;
+      if (state.posturePermissions.includes(permission)) return true;
 
       // Must be logged in
       if (!state.currentUser) return false;
@@ -90,6 +82,7 @@ export const useFuseStore = defineStore("fuse", {
       const status = await fuseClient().state();
       this.requireSetup = status.requiresSetup || false;
       this.securityPosture = status.posture || null;
+      this.posturePermissions = status.posturePermissions ?? [];
       this.currentUser = status.currentUser || null;
       this.userPermissions = this.currentUser ? (status.permissions ?? []) : null;
 

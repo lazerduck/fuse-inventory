@@ -34,6 +34,7 @@ public class CosmosDbIntegrationTests
     {
         var inspector = Inspector(url =>
         {
+            if (url.AbsolutePath == Id + "/sqlDatabases/lab/throughputSettings/default") return new(HttpStatusCode.Forbidden);
             Assert.Equal(Id + "/sqlDatabases/lab/containers", url.AbsolutePath);
             return Json(new { value = new[] { Row(new { id = "orders" }) }, nextLink = link });
         });
@@ -50,6 +51,7 @@ public class CosmosDbIntegrationTests
             Id + "/sqlDatabases" => Json(new { value = new[] { Database("Lab"), Database("lab") } }),
             Id + "/sqlDatabases/Lab/containers" => Json(new { value = Array.Empty<object>() }),
             Id + "/sqlDatabases/lab/containers" => new(HttpStatusCode.Forbidden),
+            var path when path.EndsWith("/throughputSettings/default") => new(HttpStatusCode.Forbidden),
             _ => throw new Exception("Unexpected request")
         });
         var result = await inspector.DiscoverAsync(Saved, null, null, default);

@@ -1787,4 +1787,42 @@ public class SqlIntegrationServiceTests
         Assert.Contains(result.Value.OrphanPrincipals, o => o.PrincipalName == "orphanuser2");
         Assert.Equal(2, result.Value.Summary.OrphanPrincipalCount);
     }
+
+    [Fact]
+    public async Task BulkPreviewModelsNewUserBaselineAndRejectsChangedDeclarationsBeforeWrites()
+    {
+        var now = DateTime.UtcNow;
+        var integration = new SqlIntegration(Guid.NewGuid(), "SQL", Guid.NewGuid(), "Server=test;", null,
+            SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, now, now);
+        var account = new Account(Guid.NewGuid(), integration.DataStoreId, TargetKind.DataStore, AuthKind.UserPassword,
+            new(SecretBindingKind.AzureKeyVault, null, new(Guid.NewGuid(), "lab-login", null)), "app-user", null,
+            [new(Guid.NewGuid(), "AppDb", null, [Privilege.Connect]), new(Guid.NewGuid(), "AppDb", "orders", [Privilege.Select])], [], now, now);
+        var store = NewStore([integration], accounts: [account]);
+        var inspector = new Mock<IAccountSqlInspector>();
+        inspector.Setup(i => i.GetPrincipalPermissionsAsync(integration, account.UserName!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, new SqlPrincipalPermissions(account.UserName, false, []), null));
+        inspector.Setup(i => i.GetNewUserBaselineAsync(integration, It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SqlPrincipalPermissions(null, true, [new("AppDb", null, [Privilege.Connect])]));
+        var service = CreateService(store, inspector: inspector.Object);
+        var plan = (await service.PreviewBulkAsync(integration.Id)).Value!;
+        Assert.Equal(new[] { "Create login", "Create user", "Grant" }, plan.Operations.Select(o => o.Operation));
+        var grant = plan.Operations.Last();
+        Assert.Equal(("AppDb", "orders", Privilege.Select), (grant.Database, grant.Schema, grant.Privilege));
+        await store.UpdateAsync(s => s with { Accounts = [account with { Grants = [], UpdatedAt = now.AddMinutes(1) }] });
+        var result = await service.BulkResolveAsync(new(integration.Id, BulkPasswordSource.SecretProvider, plan.Revision), "tester", null);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        inspector.Verify(i => i.CreatePrincipalAsync(It.IsAny<SqlIntegration>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task BulkPreviewRefusesIncompleteCatalogCoverage()
+    {
+        var integration = new SqlIntegration(Guid.NewGuid(), "SQL", Guid.NewGuid(), "Server=test;", null,
+            SqlPermissions.Read | SqlPermissions.Write | SqlPermissions.Create, DateTime.UtcNow, DateTime.UtcNow);
+        var inspector = new Mock<IAccountSqlInspector>();
+        inspector.Setup(i => i.InspectGrantCoverageAsync(integration, It.IsAny<CancellationToken>())).ReturnsAsync("Incomplete");
+        var result = await CreateService(NewStore([integration]), inspector: inspector.Object).PreviewBulkAsync(integration.Id);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+    }
 }

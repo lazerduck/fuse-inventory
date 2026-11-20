@@ -26,6 +26,8 @@ public record Snapshot(
     LicenseState? License = null
 )
 {
+    public IReadOnlyList<Fuse.Core.Areas.IntegrationReviews.ReviewDefinition> IntegrationReviews { get; init; } = [];
+
     public IReadOnlyList<RabbitMqIntegration> RabbitMqIntegrations { get; init; } = Array.Empty<RabbitMqIntegration>();
 
     public IReadOnlyList<RedisIntegration> RedisIntegrations { get; init; } = Array.Empty<RedisIntegration>();

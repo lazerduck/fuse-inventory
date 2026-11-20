@@ -160,11 +160,13 @@
           </router-link>
         </div>
       </section>
+      <IntegrationFindings :application-id="id" />
     </div>
   </ReadOnlyShell>
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../../components/integrations/IntegrationFindings.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { getErrorMessage } from '../../utils/error'

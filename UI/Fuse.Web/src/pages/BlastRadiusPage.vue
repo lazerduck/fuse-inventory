@@ -242,10 +242,13 @@
         </q-card-section>
       </q-card>
     </template>
+    <IntegrationFindings v-if="selectedId && (selectedKind==='DataStore' || selectedKind==='MessageBroker')" :target-id="selectedId" />
+    <IntegrationFindings v-if="selectedId && selectedKind==='Application'" :instance-id="selectedId" />
   </div>
 </template>
 
 <script setup lang="ts">
+import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApplications } from '../composables/useApplications'

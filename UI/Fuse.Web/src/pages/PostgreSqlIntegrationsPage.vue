@@ -28,6 +28,9 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <IntegrationPasswordButton provider="postgresql" :integration-id="item.id" @saved="load" />
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'postgresql', integration: item.id } }" />
             <q-btn
               flat
               label="Inspect"
@@ -213,6 +216,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { ref, watch, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { useAuthToken } from "../composables/useAuthToken";

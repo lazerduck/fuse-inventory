@@ -48,6 +48,20 @@ public static class FuseCodeModule
 {
     public static void Register(IServiceCollection services)
     {
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IntegrationReviewService>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.ReviewImportService>();
+        services.AddScoped<Fuse.Core.Areas.SecretProvider.IntegrationPasswords>();
+        services.AddScoped<PostgreSqlGrantRepairService>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, SqlReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, ServiceBusReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, CosmosDbReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, PostgreSqlReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, RedisReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, MongoDbReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, RabbitMqReviewProvider>();
+        services.AddScoped<Fuse.Core.Areas.IntegrationReviews.IIntegrationReviewProvider, KeycloakReviewProvider>();
+        services.AddSingleton<AreaPermissions, Fuse.Core.Areas.IntegrationReviews.IntegrationReviewPermissions>();
+        services.AddHostedService<Fuse.Core.Areas.IntegrationReviews.ReviewRefreshWorker>();
         services.AddScoped<IRabbitMqIntegrationService, RabbitMqIntegrationService>();
         services.AddScoped<IRabbitMqInspector, RabbitMqInspector>();
         services.AddSingleton<AreaPermissions, RabbitMqIntegrationPermissions>();

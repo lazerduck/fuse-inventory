@@ -91,3 +91,11 @@ dotnet tool run nswag run nswag.json /variables:ApiBaseUrl=http://localhost:5072
 ```
 
 Do not splice generated DTOs or methods by hand. Stable operation IDs on the Scrum Poker endpoints prevent their names from colliding with security and secret-provider operations during regeneration.
+
+## Workload identities in inventory
+
+Set the directory tenant ID and service-principal object ID on a Fuse identity to use it in Service Bus and Cosmos data-role reviews. The inspector correlates the tenant from its ARM credential and the object ID from the role assignment. Client (application) IDs and display names are distinct from the principal object ID.
+
+For optional credential-expiry inspection, create a named Azure credential profile, explicitly enable directory lookup on it, and open the bound workload in **Identities**. The profile needs Microsoft Graph application metadata read access in the same tenant. Fuse reads the named service principal and, for an application service principal, its app registration by client ID. It displays key identifiers and expiry dates with independent visibility for each source. Managed identities have credentials managed by Azure. Runtime Graph credentials come from the selected profile. Fuse sign-in configuration is managed separately.
+
+The operator needs `identities:read`, `secretproviders:read` and `secretproviders:directory:read`. Managing a saved credential requires `secretproviders:credentialprofiles:manage`. Directory lookup and profile management require explicit grants or an administrator. [Read a service principal](https://learn.microsoft.com/graph/api/serviceprincipal-get) · [Read an app registration](https://learn.microsoft.com/graph/api/application-get)

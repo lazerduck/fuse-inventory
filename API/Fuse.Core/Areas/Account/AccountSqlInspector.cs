@@ -387,10 +387,7 @@ public partial class AccountSqlInspector : IAccountSqlInspector
             "CONNECT" => Privilege.Connect,
             "ALTER" => Privilege.Alter,
             "CONTROL" => Privilege.Control,
-            // Additional mappings for common SQL permissions
-            "ALTER ANY SCHEMA" => Privilege.Alter,
-            "ALTER ANY USER" => Privilege.Alter,
-            "VIEW DEFINITION" => Privilege.Select,
+            // SQL metadata and administrative permissions do not confer ALTER or SELECT on application data.
             _ => null // Unmapped permissions are ignored
         };
     }

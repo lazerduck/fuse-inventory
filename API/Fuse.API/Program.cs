@@ -59,11 +59,16 @@ builder.Services.AddCors(options =>
 });
 
 Fuse.API.Entra.EntraAuthentication.Register(builder.Services);
+builder.Services.AddScoped<Fuse.Core.Areas.AzureMetadata.AzureCredentialProfiles>();
+builder.Services.AddHttpClient<Fuse.Core.Areas.AzureMetadata.WorkloadInspector>(c => c.MaxResponseContentBufferSize = 1024 * 1024)
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+builder.Services.AddSingleton<Fuse.Core.Areas.AzureMetadata.IAzureProfileProtector, Fuse.API.Services.AzureProfileProtector>();
 builder.Services.AddSingleton<Fuse.Core.Areas.KeycloakIntegration.IKeycloakSecretProtector, Fuse.API.Services.KeycloakSecretProtector>();
 FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<Fuse.API.CurrentUser.RequestPermissions>();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddFuseMcp();
 builder.Services.AddSingleton(AboutResponse.FromEnvironment());

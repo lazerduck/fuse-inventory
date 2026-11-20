@@ -392,6 +392,40 @@ export interface IFuseApiClient {
   areas(signal?: AbortSignal): Promise<string[]>;
 
   /**
+   * @return OK
+   */
+  azureCredentialProfilesAllAll(
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo[]>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  azureCredentialProfilesPOSTPOST(
+    body: SaveAzureProfile | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  azureCredentialProfilesPUTPUT(
+    id: string,
+    body: SaveAzureProfile | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo>;
+
+  /**
+   * @return OK
+   */
+  azureCredentialProfilesDELETEDELETE(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
    * @param body (optional)
    * @return OK
    */
@@ -426,6 +460,38 @@ export interface IFuseApiClient {
     body: UpdateAzureDiscoveryExclusions | undefined,
     signal?: AbortSignal,
   ): Promise<AzureDiscoveryExclusionsResponse>;
+
+  /**
+   * @param name (optional)
+   * @return OK
+   */
+  vault(
+    providerId: string,
+    name: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<SecretReferenceHealth>;
+
+  /**
+   * @param key (optional)
+   * @param label (optional)
+   * @return OK
+   */
+  configuration(
+    providerId: string,
+    key: string | undefined,
+    label: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<SecretReferenceHealth>;
+
+  /**
+   * @param profileId (optional)
+   * @return OK
+   */
+  azureWorkloads(
+    identityId: string,
+    profileId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<WorkloadObservation>;
 
   /**
    * @param format (optional)
@@ -801,6 +867,85 @@ export interface IFuseApiClient {
   /**
    * @return OK
    */
+  integrationCredentialGet(
+    provider: string,
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  integrationCredentialBind(
+    provider: string,
+    id: string,
+    body: BindIntegrationPassword | undefined,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView>;
+
+  /**
+   * @return OK
+   */
+  reviewsCatalog(signal?: AbortSignal): Promise<ReviewCatalog[]>;
+
+  /**
+   * @param accountId (optional)
+   * @param applicationId (optional)
+   * @param instanceId (optional)
+   * @param targetId (optional)
+   * @return OK
+   */
+  reviewsList(
+    accountId: string | undefined,
+    applicationId: string | undefined,
+    instanceId: string | undefined,
+    targetId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewView[]>;
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  reviewsCreate(
+    body: SaveReview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewDefinition>;
+
+  /**
+   * @return OK
+   */
+  reviewsGet(id: string, signal?: AbortSignal): Promise<ReviewDefinition>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewsUpdate(
+    id: string,
+    body: SaveReview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewDefinition>;
+
+  /**
+   * @param revision (optional)
+   * @return OK
+   */
+  reviewsDelete(
+    id: string,
+    revision: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
+   * @return OK
+   */
+  reviewsRefresh(id: string, signal?: AbortSignal): Promise<ReviewDefinition>;
+
+  /**
+   * @return OK
+   */
   keycloakIntegrationAll(
     signal?: AbortSignal,
   ): Promise<KeycloakIntegrationResponse[]>;
@@ -1065,9 +1210,19 @@ export interface IFuseApiClient {
   ): Promise<MongoDbDiscoveryResponse>;
 
   /**
+   * @param collection (optional)
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress>;
+  mongodbIntegrationIndexes(
+    id: string,
+    collection: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIndexInventory>;
+
+  /**
+   * @return OK
+   */
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress>;
 
   /**
    * @param body (optional)
@@ -1168,6 +1323,26 @@ export interface IFuseApiClient {
    * @return No Content
    */
   positionDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlGrantRepairPreview(
+    id: string,
+    body: GrantRepairRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<GrantRepairPlan>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlGrantRepairApply(
+    id: string,
+    body: GrantRepairRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<GrantRepairPlan>;
 
   /**
    * @return OK
@@ -1444,6 +1619,35 @@ export interface IFuseApiClient {
    * @return No Content
    */
   responsibilityTypeDELETE(id: string, signal?: AbortSignal): Promise<void>;
+
+  /**
+   * @param provider (optional)
+   * @param integrationId (optional)
+   * @return OK
+   */
+  reviewImportChoices(
+    provider: string | undefined,
+    integrationId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ObservedItem[]>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewImportPreview(
+    body: ImportSelection | undefined,
+    signal?: AbortSignal,
+  ): Promise<ImportPreview>;
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewImportConfirm(
+    body: ImportPreview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ImportReceipt>;
 
   /**
    * @return OK
@@ -2022,6 +2226,11 @@ export interface IFuseApiClient {
     body: CreateSqlAccountRequest | undefined,
     signal?: AbortSignal,
   ): Promise<CreateSqlAccountResponse>;
+
+  /**
+   * @return OK
+   */
+  previewSqlBulkResolve(id: string, signal?: AbortSignal): Promise<SqlBulkPlan>;
 
   /**
    * @param body (optional)
@@ -5680,6 +5889,236 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @return OK
+   */
+  azureCredentialProfilesAllAll(
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo[]> {
+    let url_ = this.baseUrl + "/api/azure-credential-profiles";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAzureCredentialProfilesAllAll(_response);
+    });
+  }
+
+  protected processAzureCredentialProfilesAllAll(
+    response: Response,
+  ): Promise<AzureProfileInfo[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(AzureProfileInfo.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureProfileInfo[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  azureCredentialProfilesPOSTPOST(
+    body: SaveAzureProfile | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo> {
+    let url_ = this.baseUrl + "/api/azure-credential-profiles";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAzureCredentialProfilesPOSTPOST(_response);
+    });
+  }
+
+  protected processAzureCredentialProfilesPOSTPOST(
+    response: Response,
+  ): Promise<AzureProfileInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureProfileInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureProfileInfo>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  azureCredentialProfilesPUTPUT(
+    id: string,
+    body: SaveAzureProfile | undefined,
+    signal?: AbortSignal,
+  ): Promise<AzureProfileInfo> {
+    let url_ = this.baseUrl + "/api/azure-credential-profiles/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAzureCredentialProfilesPUTPUT(_response);
+    });
+  }
+
+  protected processAzureCredentialProfilesPUTPUT(
+    response: Response,
+  ): Promise<AzureProfileInfo> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AzureProfileInfo.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AzureProfileInfo>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  azureCredentialProfilesDELETEDELETE(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/azure-credential-profiles/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAzureCredentialProfilesDELETEDELETE(_response);
+    });
+  }
+
+  protected processAzureCredentialProfilesDELETEDELETE(
+    response: Response,
+  ): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
    * @param body (optional)
    * @return OK
    */
@@ -5975,6 +6414,201 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<AzureDiscoveryExclusionsResponse>(null as any);
+  }
+
+  /**
+   * @param name (optional)
+   * @return OK
+   */
+  vault(
+    providerId: string,
+    name: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<SecretReferenceHealth> {
+    let url_ =
+      this.baseUrl + "/api/azure-secret-references/vault/{providerId}?";
+    if (providerId === undefined || providerId === null)
+      throw new globalThis.Error("The parameter 'providerId' must be defined.");
+    url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+    if (name === null)
+      throw new globalThis.Error("The parameter 'name' cannot be null.");
+    else if (name !== undefined)
+      url_ += "name=" + encodeURIComponent("" + name) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processVault(_response);
+    });
+  }
+
+  protected processVault(response: Response): Promise<SecretReferenceHealth> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = SecretReferenceHealth.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SecretReferenceHealth>(null as any);
+  }
+
+  /**
+   * @param key (optional)
+   * @param label (optional)
+   * @return OK
+   */
+  configuration(
+    providerId: string,
+    key: string | undefined,
+    label: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<SecretReferenceHealth> {
+    let url_ =
+      this.baseUrl + "/api/azure-secret-references/configuration/{providerId}?";
+    if (providerId === undefined || providerId === null)
+      throw new globalThis.Error("The parameter 'providerId' must be defined.");
+    url_ = url_.replace("{providerId}", encodeURIComponent("" + providerId));
+    if (key === null)
+      throw new globalThis.Error("The parameter 'key' cannot be null.");
+    else if (key !== undefined)
+      url_ += "key=" + encodeURIComponent("" + key) + "&";
+    if (label === null)
+      throw new globalThis.Error("The parameter 'label' cannot be null.");
+    else if (label !== undefined)
+      url_ += "label=" + encodeURIComponent("" + label) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processConfiguration(_response);
+    });
+  }
+
+  protected processConfiguration(
+    response: Response,
+  ): Promise<SecretReferenceHealth> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = SecretReferenceHealth.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SecretReferenceHealth>(null as any);
+  }
+
+  /**
+   * @param profileId (optional)
+   * @return OK
+   */
+  azureWorkloads(
+    identityId: string,
+    profileId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<WorkloadObservation> {
+    let url_ = this.baseUrl + "/api/azure-workloads/{identityId}?";
+    if (identityId === undefined || identityId === null)
+      throw new globalThis.Error("The parameter 'identityId' must be defined.");
+    url_ = url_.replace("{identityId}", encodeURIComponent("" + identityId));
+    if (profileId === null)
+      throw new globalThis.Error("The parameter 'profileId' cannot be null.");
+    else if (profileId !== undefined)
+      url_ += "profileId=" + encodeURIComponent("" + profileId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAzureWorkloads(_response);
+    });
+  }
+
+  protected processAzureWorkloads(
+    response: Response,
+  ): Promise<WorkloadObservation> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = WorkloadObservation.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<WorkloadObservation>(null as any);
   }
 
   /**
@@ -9821,6 +10455,555 @@ export class FuseApiClient implements IFuseApiClient {
   /**
    * @return OK
    */
+  integrationCredentialGet(
+    provider: string,
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView> {
+    let url_ = this.baseUrl + "/api/integration-credentials/{provider}/{id}";
+    if (provider === undefined || provider === null)
+      throw new globalThis.Error("The parameter 'provider' must be defined.");
+    url_ = url_.replace("{provider}", encodeURIComponent("" + provider));
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processIntegrationCredentialGet(_response);
+    });
+  }
+
+  protected processIntegrationCredentialGet(
+    response: Response,
+  ): Promise<PasswordReferenceView> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PasswordReferenceView.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PasswordReferenceView>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  integrationCredentialBind(
+    provider: string,
+    id: string,
+    body: BindIntegrationPassword | undefined,
+    signal?: AbortSignal,
+  ): Promise<PasswordReferenceView> {
+    let url_ = this.baseUrl + "/api/integration-credentials/{provider}/{id}";
+    if (provider === undefined || provider === null)
+      throw new globalThis.Error("The parameter 'provider' must be defined.");
+    url_ = url_.replace("{provider}", encodeURIComponent("" + provider));
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processIntegrationCredentialBind(_response);
+    });
+  }
+
+  protected processIntegrationCredentialBind(
+    response: Response,
+  ): Promise<PasswordReferenceView> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = PasswordReferenceView.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<PasswordReferenceView>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  reviewsCatalog(signal?: AbortSignal): Promise<ReviewCatalog[]> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/catalog";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsCatalog(_response);
+    });
+  }
+
+  protected processReviewsCatalog(
+    response: Response,
+  ): Promise<ReviewCatalog[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(ReviewCatalog.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewCatalog[]>(null as any);
+  }
+
+  /**
+   * @param accountId (optional)
+   * @param applicationId (optional)
+   * @param instanceId (optional)
+   * @param targetId (optional)
+   * @return OK
+   */
+  reviewsList(
+    accountId: string | undefined,
+    applicationId: string | undefined,
+    instanceId: string | undefined,
+    targetId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewView[]> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews?";
+    if (accountId === null)
+      throw new globalThis.Error("The parameter 'accountId' cannot be null.");
+    else if (accountId !== undefined)
+      url_ += "accountId=" + encodeURIComponent("" + accountId) + "&";
+    if (applicationId === null)
+      throw new globalThis.Error(
+        "The parameter 'applicationId' cannot be null.",
+      );
+    else if (applicationId !== undefined)
+      url_ += "applicationId=" + encodeURIComponent("" + applicationId) + "&";
+    if (instanceId === null)
+      throw new globalThis.Error("The parameter 'instanceId' cannot be null.");
+    else if (instanceId !== undefined)
+      url_ += "instanceId=" + encodeURIComponent("" + instanceId) + "&";
+    if (targetId === null)
+      throw new globalThis.Error("The parameter 'targetId' cannot be null.");
+    else if (targetId !== undefined)
+      url_ += "targetId=" + encodeURIComponent("" + targetId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsList(_response);
+    });
+  }
+
+  protected processReviewsList(response: Response): Promise<ReviewView[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(ReviewView.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewView[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return Created
+   */
+  reviewsCreate(
+    body: SaveReview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewDefinition> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsCreate(_response);
+    });
+  }
+
+  protected processReviewsCreate(
+    response: Response,
+  ): Promise<ReviewDefinition> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 201) {
+      return response.text().then((_responseText) => {
+        let result201: any = null;
+        let resultData201 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result201 = ReviewDefinition.fromJS(resultData201);
+        return result201;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewDefinition>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  reviewsGet(id: string, signal?: AbortSignal): Promise<ReviewDefinition> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsGet(_response);
+    });
+  }
+
+  protected processReviewsGet(response: Response): Promise<ReviewDefinition> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ReviewDefinition.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewDefinition>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewsUpdate(
+    id: string,
+    body: SaveReview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ReviewDefinition> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/{id}";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsUpdate(_response);
+    });
+  }
+
+  protected processReviewsUpdate(
+    response: Response,
+  ): Promise<ReviewDefinition> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ReviewDefinition.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewDefinition>(null as any);
+  }
+
+  /**
+   * @param revision (optional)
+   * @return OK
+   */
+  reviewsDelete(
+    id: string,
+    revision: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/{id}?";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    if (revision === null)
+      throw new globalThis.Error("The parameter 'revision' cannot be null.");
+    else if (revision !== undefined)
+      url_ += "revision=" + encodeURIComponent("" + revision) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsDelete(_response);
+    });
+  }
+
+  protected processReviewsDelete(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  reviewsRefresh(id: string, signal?: AbortSignal): Promise<ReviewDefinition> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/{id}/refresh";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewsRefresh(_response);
+    });
+  }
+
+  protected processReviewsRefresh(
+    response: Response,
+  ): Promise<ReviewDefinition> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ReviewDefinition.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ReviewDefinition>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
   keycloakIntegrationAll(
     signal?: AbortSignal,
   ): Promise<KeycloakIntegrationResponse[]> {
@@ -12342,9 +13525,104 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @param collection (optional)
    * @return OK
    */
-  progressGET(signal?: AbortSignal): Promise<UserGuideProgress> {
+  mongodbIntegrationIndexes(
+    id: string,
+    collection: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<MongoDbIndexInventory> {
+    let url_ = this.baseUrl + "/api/MongoDbIntegration/{id}/indexes?";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    if (collection === null)
+      throw new globalThis.Error("The parameter 'collection' cannot be null.");
+    else if (collection !== undefined)
+      url_ += "collection=" + encodeURIComponent("" + collection) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processMongodbIntegrationIndexes(_response);
+    });
+  }
+
+  protected processMongodbIntegrationIndexes(
+    response: Response,
+  ): Promise<MongoDbIndexInventory> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = MongoDbIndexInventory.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<MongoDbIndexInventory>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  progressGETGET(signal?: AbortSignal): Promise<UserGuideProgress> {
     let url_ = this.baseUrl + "/api/Onboarding/progress";
     url_ = url_.replace(/[?&]$/, "");
 
@@ -12357,11 +13635,13 @@ export class FuseApiClient implements IFuseApiClient {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processProgressGET(_response);
+      return this.processProgressGETGET(_response);
     });
   }
 
-  protected processProgressGET(response: Response): Promise<UserGuideProgress> {
+  protected processProgressGETGET(
+    response: Response,
+  ): Promise<UserGuideProgress> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -13486,6 +14766,262 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlGrantRepairPreview(
+    id: string,
+    body: GrantRepairRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<GrantRepairPlan> {
+    let url_ =
+      this.baseUrl + "/api/PostgreSqlIntegration/{id}/grant-repair/preview";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlGrantRepairPreview(_response);
+    });
+  }
+
+  protected processPostgresqlGrantRepairPreview(
+    response: Response,
+  ): Promise<GrantRepairPlan> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = GrantRepairPlan.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<GrantRepairPlan>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  postgresqlGrantRepairApply(
+    id: string,
+    body: GrantRepairRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<GrantRepairPlan> {
+    let url_ =
+      this.baseUrl + "/api/PostgreSqlIntegration/{id}/grant-repair/apply";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPostgresqlGrantRepairApply(_response);
+    });
+  }
+
+  protected processPostgresqlGrantRepairApply(
+    response: Response,
+  ): Promise<GrantRepairPlan> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = GrantRepairPlan.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        let resultData403 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result403 = ProblemDetails.fromJS(resultData403);
+        return throwException(
+          "Forbidden",
+          status,
+          _responseText,
+          _headers,
+          result403,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<GrantRepairPlan>(null as any);
   }
 
   /**
@@ -16341,6 +17877,197 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param provider (optional)
+   * @param integrationId (optional)
+   * @return OK
+   */
+  reviewImportChoices(
+    provider: string | undefined,
+    integrationId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<ObservedItem[]> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/imports?";
+    if (provider === null)
+      throw new globalThis.Error("The parameter 'provider' cannot be null.");
+    else if (provider !== undefined)
+      url_ += "provider=" + encodeURIComponent("" + provider) + "&";
+    if (integrationId === null)
+      throw new globalThis.Error(
+        "The parameter 'integrationId' cannot be null.",
+      );
+    else if (integrationId !== undefined)
+      url_ += "integrationId=" + encodeURIComponent("" + integrationId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewImportChoices(_response);
+    });
+  }
+
+  protected processReviewImportChoices(
+    response: Response,
+  ): Promise<ObservedItem[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(ObservedItem.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ObservedItem[]>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewImportPreview(
+    body: ImportSelection | undefined,
+    signal?: AbortSignal,
+  ): Promise<ImportPreview> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/imports/preview";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewImportPreview(_response);
+    });
+  }
+
+  protected processReviewImportPreview(
+    response: Response,
+  ): Promise<ImportPreview> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ImportPreview.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ImportPreview>(null as any);
+  }
+
+  /**
+   * @param body (optional)
+   * @return OK
+   */
+  reviewImportConfirm(
+    body: ImportPreview | undefined,
+    signal?: AbortSignal,
+  ): Promise<ImportReceipt> {
+    let url_ = this.baseUrl + "/api/IntegrationReviews/imports/confirm";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processReviewImportConfirm(_response);
+    });
+  }
+
+  protected processReviewImportConfirm(
+    response: Response,
+  ): Promise<ImportReceipt> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = ImportReceipt.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<ImportReceipt>(null as any);
   }
 
   /**
@@ -22253,6 +23980,111 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @return OK
+   */
+  previewSqlBulkResolve(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<SqlBulkPlan> {
+    let url_ = this.baseUrl + "/api/SqlIntegration/{id}/bulk-resolve/preview";
+    if (id === undefined || id === null)
+      throw new globalThis.Error("The parameter 'id' must be defined.");
+    url_ = url_.replace("{id}", encodeURIComponent("" + id));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPreviewSqlBulkResolve(_response);
+    });
+  }
+
+  protected processPreviewSqlBulkResolve(
+    response: Response,
+  ): Promise<SqlBulkPlan> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = SqlBulkPlan.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = ProblemDetails.fromJS(resultData400);
+        return throwException(
+          "Bad Request",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SqlBulkPlan>(null as any);
+  }
+
+  /**
    * @param body (optional)
    * @return OK
    */
@@ -22332,6 +24164,22 @@ export class FuseApiClient implements IFuseApiClient {
           _responseText,
           _headers,
           result404,
+        );
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
         );
       });
     } else if (status !== 200 && status !== 204) {
@@ -23049,6 +24897,7 @@ export class Account implements IAccount {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  importedFrom?: InventoryOrigin;
   readonly secretRef?: string | undefined;
 
   constructor(data?: IAccount) {
@@ -23090,6 +24939,9 @@ export class Account implements IAccount {
         : (undefined as any);
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+      this.importedFrom = _data["importedFrom"]
+        ? InventoryOrigin.fromJS(_data["importedFrom"])
         : (undefined as any);
       (this as any).secretRef = _data["secretRef"];
     }
@@ -23134,6 +24986,9 @@ export class Account implements IAccount {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["importedFrom"] = this.importedFrom
+      ? this.importedFrom.toJSON()
+      : (undefined as any);
     data["secretRef"] = this.secretRef;
     return data;
   }
@@ -23151,6 +25006,7 @@ export interface IAccount {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  importedFrom?: InventoryOrigin;
   secretRef?: string | undefined;
 }
 
@@ -24425,6 +26281,13 @@ export enum AuditAction {
   CosmosDbIntegrationCreated = "CosmosDbIntegrationCreated",
   CosmosDbIntegrationUpdated = "CosmosDbIntegrationUpdated",
   CosmosDbIntegrationDeleted = "CosmosDbIntegrationDeleted",
+  IntegrationReviewCreated = "IntegrationReviewCreated",
+  IntegrationReviewUpdated = "IntegrationReviewUpdated",
+  IntegrationReviewDeleted = "IntegrationReviewDeleted",
+  IntegrationReviewImported = "IntegrationReviewImported",
+  PostgreSqlGrantRepairRequested = "PostgreSqlGrantRepairRequested",
+  PostgreSqlGrantRepairApplied = "PostgreSqlGrantRepairApplied",
+  IntegrationPasswordBindingChanged = "IntegrationPasswordBindingChanged",
 }
 
 export enum AuditArea {
@@ -24452,6 +26315,7 @@ export enum AuditArea {
   KeycloakIntegration = "KeycloakIntegration",
   ServiceBusIntegration = "ServiceBusIntegration",
   CosmosDbIntegration = "CosmosDbIntegration",
+  IntegrationReview = "IntegrationReview",
 }
 
 export class AuditLog implements IAuditLog {
@@ -24820,6 +26684,102 @@ export interface IAzureKeyVaultBinding {
   version?: string | undefined;
 }
 
+export class AzurePrincipalBinding implements IAzurePrincipalBinding {
+  tenantId?: string;
+  objectId?: string;
+
+  constructor(data?: IAzurePrincipalBinding) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.tenantId = _data["tenantId"];
+      this.objectId = _data["objectId"];
+    }
+  }
+
+  static fromJS(data: any): AzurePrincipalBinding {
+    data = typeof data === "object" ? data : {};
+    let result = new AzurePrincipalBinding();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["tenantId"] = this.tenantId;
+    data["objectId"] = this.objectId;
+    return data;
+  }
+}
+
+export interface IAzurePrincipalBinding {
+  tenantId?: string;
+  objectId?: string;
+}
+
+export class AzureProfileInfo implements IAzureProfileInfo {
+  id?: string;
+  name?: string | undefined;
+  resourceId?: string | undefined;
+  tenantId?: string;
+  clientId?: string;
+  directoryLookup?: boolean;
+
+  constructor(data?: IAzureProfileInfo) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.resourceId = _data["resourceId"];
+      this.tenantId = _data["tenantId"];
+      this.clientId = _data["clientId"];
+      this.directoryLookup = _data["directoryLookup"];
+    }
+  }
+
+  static fromJS(data: any): AzureProfileInfo {
+    data = typeof data === "object" ? data : {};
+    let result = new AzureProfileInfo();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["resourceId"] = this.resourceId;
+    data["tenantId"] = this.tenantId;
+    data["clientId"] = this.clientId;
+    data["directoryLookup"] = this.directoryLookup;
+    return data;
+  }
+}
+
+export interface IAzureProfileInfo {
+  id?: string;
+  name?: string | undefined;
+  resourceId?: string | undefined;
+  tenantId?: string;
+  clientId?: string;
+  directoryLookup?: boolean;
+}
+
 export class AzureResourceImportResult implements IAzureResourceImportResult {
   resourceId?: string | undefined;
   name?: string | undefined;
@@ -25016,10 +26976,55 @@ export interface IAzureSubscriptionsResponse {
   warnings?: string[] | undefined;
 }
 
+export class BindIntegrationPassword implements IBindIntegrationPassword {
+  expectedRevision?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+
+  constructor(data?: IBindIntegrationPassword) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.expectedRevision = _data["expectedRevision"];
+      this.reference = _data["reference"]
+        ? AzureKeyVaultBinding.fromJS(_data["reference"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): BindIntegrationPassword {
+    data = typeof data === "object" ? data : {};
+    let result = new BindIntegrationPassword();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["expectedRevision"] = this.expectedRevision;
+    data["reference"] = this.reference
+      ? this.reference.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IBindIntegrationPassword {
+  expectedRevision?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+}
+
 export class BrokerQueue implements IBrokerQueue {
   id?: string;
   name?: string | undefined;
   description?: string | undefined;
+  importedFrom?: InventoryOrigin;
 
   constructor(data?: IBrokerQueue) {
     if (data) {
@@ -25035,6 +27040,9 @@ export class BrokerQueue implements IBrokerQueue {
       this.id = _data["id"];
       this.name = _data["name"];
       this.description = _data["description"];
+      this.importedFrom = _data["importedFrom"]
+        ? InventoryOrigin.fromJS(_data["importedFrom"])
+        : (undefined as any);
     }
   }
 
@@ -25050,6 +27058,9 @@ export class BrokerQueue implements IBrokerQueue {
     data["id"] = this.id;
     data["name"] = this.name;
     data["description"] = this.description;
+    data["importedFrom"] = this.importedFrom
+      ? this.importedFrom.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -25058,6 +27069,7 @@ export interface IBrokerQueue {
   id?: string;
   name?: string | undefined;
   description?: string | undefined;
+  importedFrom?: InventoryOrigin;
 }
 
 export class BrokerQueueInput implements IBrokerQueueInput {
@@ -25274,6 +27286,7 @@ export interface IBulkResolveAccountResult {
 
 export class BulkResolveRequest implements IBulkResolveRequest {
   passwordSource?: BulkPasswordSource;
+  previewRevision?: string | undefined;
 
   constructor(data?: IBulkResolveRequest) {
     if (data) {
@@ -25287,6 +27300,7 @@ export class BulkResolveRequest implements IBulkResolveRequest {
   init(_data?: any) {
     if (_data) {
       this.passwordSource = _data["passwordSource"];
+      this.previewRevision = _data["previewRevision"];
     }
   }
 
@@ -25300,12 +27314,14 @@ export class BulkResolveRequest implements IBulkResolveRequest {
   toJSON(data?: any) {
     data = typeof data === "object" ? data : {};
     data["passwordSource"] = this.passwordSource;
+    data["previewRevision"] = this.previewRevision;
     return data;
   }
 }
 
 export interface IBulkResolveRequest {
   passwordSource?: BulkPasswordSource;
+  previewRevision?: string | undefined;
 }
 
 export class BulkResolveResponse implements IBulkResolveResponse {
@@ -25670,6 +27686,7 @@ export class CosmosDbConnection implements ICosmosDbConnection {
   authMode?: SecretProviderAuthMode;
   createdAt?: Date;
   updatedAt?: Date;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: ICosmosDbConnection) {
     if (data) {
@@ -25693,6 +27710,7 @@ export class CosmosDbConnection implements ICosmosDbConnection {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -25716,6 +27734,7 @@ export class CosmosDbConnection implements ICosmosDbConnection {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -25728,6 +27747,7 @@ export interface ICosmosDbConnection {
   authMode?: SecretProviderAuthMode;
   createdAt?: Date;
   updatedAt?: Date;
+  credentialProfileId?: string | undefined;
 }
 
 export class CosmosDbConnectionTestResult implements ICosmosDbConnectionTestResult {
@@ -25774,6 +27794,7 @@ export class CosmosDbContainer implements ICosmosDbContainer {
   name?: string | undefined;
   partitionKey?: CosmosDbPartitionKey;
   indexingPolicy?: CosmosDbIndexingPolicy;
+  defaultTtl?: number | undefined;
 
   constructor(data?: ICosmosDbContainer) {
     if (data) {
@@ -25793,6 +27814,7 @@ export class CosmosDbContainer implements ICosmosDbContainer {
       this.indexingPolicy = _data["indexingPolicy"]
         ? CosmosDbIndexingPolicy.fromJS(_data["indexingPolicy"])
         : (undefined as any);
+      this.defaultTtl = _data["defaultTtl"];
     }
   }
 
@@ -25812,6 +27834,7 @@ export class CosmosDbContainer implements ICosmosDbContainer {
     data["indexingPolicy"] = this.indexingPolicy
       ? this.indexingPolicy.toJSON()
       : (undefined as any);
+    data["defaultTtl"] = this.defaultTtl;
     return data;
   }
 }
@@ -25820,12 +27843,14 @@ export interface ICosmosDbContainer {
   name?: string | undefined;
   partitionKey?: CosmosDbPartitionKey;
   indexingPolicy?: CosmosDbIndexingPolicy;
+  defaultTtl?: number | undefined;
 }
 
 export class CosmosDbDatabase implements ICosmosDbDatabase {
   name?: string | undefined;
   containerVisibility?: string | undefined;
   containers?: CosmosDbContainer[] | undefined;
+  sharedThroughput?: CosmosDbThroughput;
 
   constructor(data?: ICosmosDbDatabase) {
     if (data) {
@@ -25845,6 +27870,9 @@ export class CosmosDbDatabase implements ICosmosDbDatabase {
         for (let item of _data["containers"])
           this.containers!.push(CosmosDbContainer.fromJS(item));
       }
+      this.sharedThroughput = _data["sharedThroughput"]
+        ? CosmosDbThroughput.fromJS(_data["sharedThroughput"])
+        : (undefined as any);
     }
   }
 
@@ -25864,6 +27892,9 @@ export class CosmosDbDatabase implements ICosmosDbDatabase {
       for (let item of this.containers)
         data["containers"].push(item ? item.toJSON() : (undefined as any));
     }
+    data["sharedThroughput"] = this.sharedThroughput
+      ? this.sharedThroughput.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -25872,6 +27903,7 @@ export interface ICosmosDbDatabase {
   name?: string | undefined;
   containerVisibility?: string | undefined;
   containers?: CosmosDbContainer[] | undefined;
+  sharedThroughput?: CosmosDbThroughput;
 }
 
 export class CosmosDbDiscoveryResponse implements ICosmosDbDiscoveryResponse {
@@ -26046,6 +28078,50 @@ export interface ICosmosDbPartitionKey {
   kind?: string | undefined;
   version?: number | undefined;
   paths?: string[] | undefined;
+}
+
+export class CosmosDbThroughput implements ICosmosDbThroughput {
+  visibility?: string | undefined;
+  manualRu?: number | undefined;
+  autoscaleMaxRu?: number | undefined;
+
+  constructor(data?: ICosmosDbThroughput) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.visibility = _data["visibility"];
+      this.manualRu = _data["manualRu"];
+      this.autoscaleMaxRu = _data["autoscaleMaxRu"];
+    }
+  }
+
+  static fromJS(data: any): CosmosDbThroughput {
+    data = typeof data === "object" ? data : {};
+    let result = new CosmosDbThroughput();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["visibility"] = this.visibility;
+    data["manualRu"] = this.manualRu;
+    data["autoscaleMaxRu"] = this.autoscaleMaxRu;
+    return data;
+  }
+}
+
+export interface ICosmosDbThroughput {
+  visibility?: string | undefined;
+  manualRu?: number | undefined;
+  autoscaleMaxRu?: number | undefined;
 }
 
 export class CreateAccount implements ICreateAccount {
@@ -26520,6 +28596,7 @@ export class CreateCosmosDbIntegration implements ICreateCosmosDbIntegration {
   dataStoreId?: string;
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: ICreateCosmosDbIntegration) {
     if (data) {
@@ -26536,6 +28613,7 @@ export class CreateCosmosDbIntegration implements ICreateCosmosDbIntegration {
       this.dataStoreId = _data["dataStoreId"];
       this.accountResourceId = _data["accountResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -26552,6 +28630,7 @@ export class CreateCosmosDbIntegration implements ICreateCosmosDbIntegration {
     data["dataStoreId"] = this.dataStoreId;
     data["accountResourceId"] = this.accountResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -26561,6 +28640,7 @@ export interface ICreateCosmosDbIntegration {
   dataStoreId?: string;
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 }
 
 export class CreateDataStore implements ICreateDataStore {
@@ -26752,6 +28832,7 @@ export class CreateIdentity implements ICreateIdentity {
   ownerInstanceId?: string | undefined;
   assignments?: IdentityAssignment[] | undefined;
   tagIds?: string[] | undefined;
+  azurePrincipal?: AzurePrincipalBinding;
 
   constructor(data?: ICreateIdentity) {
     if (data) {
@@ -26777,6 +28858,9 @@ export class CreateIdentity implements ICreateIdentity {
         this.tagIds = [] as any;
         for (let item of _data["tagIds"]) this.tagIds!.push(item);
       }
+      this.azurePrincipal = _data["azurePrincipal"]
+        ? AzurePrincipalBinding.fromJS(_data["azurePrincipal"])
+        : (undefined as any);
     }
   }
 
@@ -26802,6 +28886,9 @@ export class CreateIdentity implements ICreateIdentity {
       data["tagIds"] = [];
       for (let item of this.tagIds) data["tagIds"].push(item);
     }
+    data["azurePrincipal"] = this.azurePrincipal
+      ? this.azurePrincipal.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -26813,6 +28900,7 @@ export interface ICreateIdentity {
   ownerInstanceId?: string | undefined;
   assignments?: IdentityAssignment[] | undefined;
   tagIds?: string[] | undefined;
+  azurePrincipal?: AzurePrincipalBinding;
 }
 
 export class CreateIdentityAssignment implements ICreateIdentityAssignment {
@@ -27849,6 +29937,7 @@ export class CreateServiceBusIntegration implements ICreateServiceBusIntegration
   messageBrokerId?: string;
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: ICreateServiceBusIntegration) {
     if (data) {
@@ -27865,6 +29954,7 @@ export class CreateServiceBusIntegration implements ICreateServiceBusIntegration
       this.messageBrokerId = _data["messageBrokerId"];
       this.namespaceResourceId = _data["namespaceResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -27881,6 +29971,7 @@ export class CreateServiceBusIntegration implements ICreateServiceBusIntegration
     data["messageBrokerId"] = this.messageBrokerId;
     data["namespaceResourceId"] = this.namespaceResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -27890,6 +29981,7 @@ export interface ICreateServiceBusIntegration {
   messageBrokerId?: string;
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 }
 
 export class CreateSqlAccountRequest implements ICreateSqlAccountRequest {
@@ -28890,6 +30982,126 @@ export interface IGrant {
   privileges?: Privilege[] | undefined;
 }
 
+export class GrantRepairPlan implements IGrantRepairPlan {
+  database?: string | undefined;
+  schema?: string | undefined;
+  table?: string | undefined;
+  principal?: string | undefined;
+  privilege?: string | undefined;
+  changeRequired?: boolean;
+  applied?: boolean;
+  status?: string | undefined;
+  applications?: ReviewApplication[] | undefined;
+  token?: string | undefined;
+
+  constructor(data?: IGrantRepairPlan) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.database = _data["database"];
+      this.schema = _data["schema"];
+      this.table = _data["table"];
+      this.principal = _data["principal"];
+      this.privilege = _data["privilege"];
+      this.changeRequired = _data["changeRequired"];
+      this.applied = _data["applied"];
+      this.status = _data["status"];
+      if (Array.isArray(_data["applications"])) {
+        this.applications = [] as any;
+        for (let item of _data["applications"])
+          this.applications!.push(ReviewApplication.fromJS(item));
+      }
+      this.token = _data["token"];
+    }
+  }
+
+  static fromJS(data: any): GrantRepairPlan {
+    data = typeof data === "object" ? data : {};
+    let result = new GrantRepairPlan();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["database"] = this.database;
+    data["schema"] = this.schema;
+    data["table"] = this.table;
+    data["principal"] = this.principal;
+    data["privilege"] = this.privilege;
+    data["changeRequired"] = this.changeRequired;
+    data["applied"] = this.applied;
+    data["status"] = this.status;
+    if (Array.isArray(this.applications)) {
+      data["applications"] = [];
+      for (let item of this.applications)
+        data["applications"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["token"] = this.token;
+    return data;
+  }
+}
+
+export interface IGrantRepairPlan {
+  database?: string | undefined;
+  schema?: string | undefined;
+  table?: string | undefined;
+  principal?: string | undefined;
+  privilege?: string | undefined;
+  changeRequired?: boolean;
+  applied?: boolean;
+  status?: string | undefined;
+  applications?: ReviewApplication[] | undefined;
+  token?: string | undefined;
+}
+
+export class GrantRepairRequest implements IGrantRepairRequest {
+  reviewId?: string;
+  token?: string | undefined;
+
+  constructor(data?: IGrantRepairRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.reviewId = _data["reviewId"];
+      this.token = _data["token"];
+    }
+  }
+
+  static fromJS(data: any): GrantRepairRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new GrantRepairRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["reviewId"] = this.reviewId;
+    data["token"] = this.token;
+    return data;
+  }
+}
+
+export interface IGrantRepairRequest {
+  reviewId?: string;
+  token?: string | undefined;
+}
+
 export enum HealthCheckProvider {
   None = "None",
   Internal = "Internal",
@@ -29026,6 +31238,7 @@ export class Identity implements IIdentity {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  azurePrincipal?: AzurePrincipalBinding;
 
   constructor(data?: IIdentity) {
     if (data) {
@@ -29057,6 +31270,9 @@ export class Identity implements IIdentity {
         : (undefined as any);
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+      this.azurePrincipal = _data["azurePrincipal"]
+        ? AzurePrincipalBinding.fromJS(_data["azurePrincipal"])
         : (undefined as any);
     }
   }
@@ -29090,6 +31306,9 @@ export class Identity implements IIdentity {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["azurePrincipal"] = this.azurePrincipal
+      ? this.azurePrincipal.toJSON()
+      : (undefined as any);
     return data;
   }
 }
@@ -29104,6 +31323,7 @@ export interface IIdentity {
   tagIds?: string[] | undefined;
   createdAt?: Date;
   updatedAt?: Date;
+  azurePrincipal?: AzurePrincipalBinding;
 }
 
 export class IdentityAssignment implements IIdentityAssignment {
@@ -29419,6 +31639,188 @@ export interface IImportPermissionsResponse {
   errorMessage?: string | undefined;
 }
 
+export class ImportPreview implements IImportPreview {
+  selection?: ImportSelection;
+  connectionVersion?: Date;
+  existingId?: string | undefined;
+  destination?: string | undefined;
+  linkDependency?: boolean;
+  destinationId?: string;
+  resourceFingerprint?: string | undefined;
+  recordOrigin?: boolean;
+  application?: string | undefined;
+  applicationId?: string | undefined;
+  environmentId?: string | undefined;
+  confirmationToken?: string | undefined;
+
+  constructor(data?: IImportPreview) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.selection = _data["selection"]
+        ? ImportSelection.fromJS(_data["selection"])
+        : (undefined as any);
+      this.connectionVersion = _data["connectionVersion"]
+        ? new Date(_data["connectionVersion"].toString())
+        : (undefined as any);
+      this.existingId = _data["existingId"];
+      this.destination = _data["destination"];
+      this.linkDependency = _data["linkDependency"];
+      this.destinationId = _data["destinationId"];
+      this.resourceFingerprint = _data["resourceFingerprint"];
+      this.recordOrigin = _data["recordOrigin"];
+      this.application = _data["application"];
+      this.applicationId = _data["applicationId"];
+      this.environmentId = _data["environmentId"];
+      this.confirmationToken = _data["confirmationToken"];
+    }
+  }
+
+  static fromJS(data: any): ImportPreview {
+    data = typeof data === "object" ? data : {};
+    let result = new ImportPreview();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["selection"] = this.selection
+      ? this.selection.toJSON()
+      : (undefined as any);
+    data["connectionVersion"] = this.connectionVersion
+      ? this.connectionVersion.toISOString()
+      : (undefined as any);
+    data["existingId"] = this.existingId;
+    data["destination"] = this.destination;
+    data["linkDependency"] = this.linkDependency;
+    data["destinationId"] = this.destinationId;
+    data["resourceFingerprint"] = this.resourceFingerprint;
+    data["recordOrigin"] = this.recordOrigin;
+    data["application"] = this.application;
+    data["applicationId"] = this.applicationId;
+    data["environmentId"] = this.environmentId;
+    data["confirmationToken"] = this.confirmationToken;
+    return data;
+  }
+}
+
+export interface IImportPreview {
+  selection?: ImportSelection;
+  connectionVersion?: Date;
+  existingId?: string | undefined;
+  destination?: string | undefined;
+  linkDependency?: boolean;
+  destinationId?: string;
+  resourceFingerprint?: string | undefined;
+  recordOrigin?: boolean;
+  application?: string | undefined;
+  applicationId?: string | undefined;
+  environmentId?: string | undefined;
+  confirmationToken?: string | undefined;
+}
+
+export class ImportReceipt implements IImportReceipt {
+  inventoryId?: string;
+  created?: boolean;
+  linked?: boolean;
+
+  constructor(data?: IImportReceipt) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.inventoryId = _data["inventoryId"];
+      this.created = _data["created"];
+      this.linked = _data["linked"];
+    }
+  }
+
+  static fromJS(data: any): ImportReceipt {
+    data = typeof data === "object" ? data : {};
+    let result = new ImportReceipt();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["inventoryId"] = this.inventoryId;
+    data["created"] = this.created;
+    data["linked"] = this.linked;
+    return data;
+  }
+}
+
+export interface IImportReceipt {
+  inventoryId?: string;
+  created?: boolean;
+  linked?: boolean;
+}
+
+export class ImportSelection implements IImportSelection {
+  provider?: string | undefined;
+  integrationId?: string;
+  item?: ObservedItem;
+  instanceId?: string | undefined;
+
+  constructor(data?: IImportSelection) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      this.integrationId = _data["integrationId"];
+      this.item = _data["item"]
+        ? ObservedItem.fromJS(_data["item"])
+        : (undefined as any);
+      this.instanceId = _data["instanceId"];
+    }
+  }
+
+  static fromJS(data: any): ImportSelection {
+    data = typeof data === "object" ? data : {};
+    let result = new ImportSelection();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    data["integrationId"] = this.integrationId;
+    data["item"] = this.item ? this.item.toJSON() : (undefined as any);
+    data["instanceId"] = this.instanceId;
+    return data;
+  }
+}
+
+export interface IImportSelection {
+  provider?: string | undefined;
+  integrationId?: string;
+  item?: ObservedItem;
+  instanceId?: string | undefined;
+}
+
 export class InstanceHealthResult implements IInstanceHealthResult {
   instanceId?: string;
   applicationId?: string;
@@ -29615,6 +32017,170 @@ export interface IInstanceHealthTransition {
   monitorName?: string | undefined;
   responseTruncated?: boolean;
   responseRedacted?: boolean;
+}
+
+export class InventoryOrigin implements IInventoryOrigin {
+  provider?: string | undefined;
+  integrationId?: string;
+  resourceFingerprint?: string | undefined;
+  scope?: string | undefined;
+  externalName?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
+
+  constructor(data?: IInventoryOrigin) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      this.integrationId = _data["integrationId"];
+      this.resourceFingerprint = _data["resourceFingerprint"];
+      this.scope = _data["scope"];
+      this.externalName = _data["externalName"];
+      this.coverage = _data["coverage"];
+      this.nativeId = _data["nativeId"];
+    }
+  }
+
+  static fromJS(data: any): InventoryOrigin {
+    data = typeof data === "object" ? data : {};
+    let result = new InventoryOrigin();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    data["integrationId"] = this.integrationId;
+    data["resourceFingerprint"] = this.resourceFingerprint;
+    data["scope"] = this.scope;
+    data["externalName"] = this.externalName;
+    data["coverage"] = this.coverage;
+    data["nativeId"] = this.nativeId;
+    return data;
+  }
+}
+
+export interface IInventoryOrigin {
+  provider?: string | undefined;
+  integrationId?: string;
+  resourceFingerprint?: string | undefined;
+  scope?: string | undefined;
+  externalName?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
+}
+
+export class KeyVaultVersion implements IKeyVaultVersion {
+  version?: string | undefined;
+  created?: Date | undefined;
+  expires?: Date | undefined;
+  enabled?: boolean | undefined;
+
+  constructor(data?: IKeyVaultVersion) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.version = _data["version"];
+      this.created = _data["created"]
+        ? new Date(_data["created"].toString())
+        : (undefined as any);
+      this.expires = _data["expires"]
+        ? new Date(_data["expires"].toString())
+        : (undefined as any);
+      this.enabled = _data["enabled"];
+    }
+  }
+
+  static fromJS(data: any): KeyVaultVersion {
+    data = typeof data === "object" ? data : {};
+    let result = new KeyVaultVersion();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["version"] = this.version;
+    data["created"] = this.created
+      ? this.created.toISOString()
+      : (undefined as any);
+    data["expires"] = this.expires
+      ? this.expires.toISOString()
+      : (undefined as any);
+    data["enabled"] = this.enabled;
+    return data;
+  }
+}
+
+export interface IKeyVaultVersion {
+  version?: string | undefined;
+  created?: Date | undefined;
+  expires?: Date | undefined;
+  enabled?: boolean | undefined;
+}
+
+export class KeyVaultVersions implements IKeyVaultVersions {
+  visibility?: string | undefined;
+  versions?: KeyVaultVersion[] | undefined;
+
+  constructor(data?: IKeyVaultVersions) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.visibility = _data["visibility"];
+      if (Array.isArray(_data["versions"])) {
+        this.versions = [] as any;
+        for (let item of _data["versions"])
+          this.versions!.push(KeyVaultVersion.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): KeyVaultVersions {
+    data = typeof data === "object" ? data : {};
+    let result = new KeyVaultVersions();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["visibility"] = this.visibility;
+    if (Array.isArray(this.versions)) {
+      data["versions"] = [];
+      for (let item of this.versions)
+        data["versions"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IKeyVaultVersions {
+  visibility?: string | undefined;
+  versions?: KeyVaultVersion[] | undefined;
 }
 
 export class KeycloakAccountMatch implements IKeycloakAccountMatch {
@@ -30554,6 +33120,7 @@ export class MongoDbDiscoveryResponse implements IMongoDbDiscoveryResponse {
   users?: MongoDbUserResponse[] | undefined;
   accounts?: MongoDbAccountMatchResponse[] | undefined;
   warnings?: string[] | undefined;
+  collectionTypes?: { [key: string]: string } | undefined;
 
   constructor(data?: IMongoDbDiscoveryResponse) {
     if (data) {
@@ -30601,6 +33168,13 @@ export class MongoDbDiscoveryResponse implements IMongoDbDiscoveryResponse {
       if (Array.isArray(_data["warnings"])) {
         this.warnings = [] as any;
         for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+      if (_data["collectionTypes"]) {
+        this.collectionTypes = {} as any;
+        for (let key in _data["collectionTypes"]) {
+          if (_data["collectionTypes"].hasOwnProperty(key))
+            (this.collectionTypes as any)![key] = _data["collectionTypes"][key];
+        }
       }
     }
   }
@@ -30650,6 +33224,15 @@ export class MongoDbDiscoveryResponse implements IMongoDbDiscoveryResponse {
       data["warnings"] = [];
       for (let item of this.warnings) data["warnings"].push(item);
     }
+    if (this.collectionTypes) {
+      data["collectionTypes"] = {};
+      for (let key in this.collectionTypes) {
+        if (this.collectionTypes.hasOwnProperty(key))
+          (data["collectionTypes"] as any)[key] = (this.collectionTypes as any)[
+            key
+          ];
+      }
+    }
     return data;
   }
 }
@@ -30667,6 +33250,155 @@ export interface IMongoDbDiscoveryResponse {
   users?: MongoDbUserResponse[] | undefined;
   accounts?: MongoDbAccountMatchResponse[] | undefined;
   warnings?: string[] | undefined;
+  collectionTypes?: { [key: string]: string } | undefined;
+}
+
+export class MongoDbIndexDefinition implements IMongoDbIndexDefinition {
+  name?: string | undefined;
+  keys?: MongoDbIndexField[] | undefined;
+  unique?: boolean;
+  expireAfterSeconds?: number | undefined;
+
+  constructor(data?: IMongoDbIndexDefinition) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      if (Array.isArray(_data["keys"])) {
+        this.keys = [] as any;
+        for (let item of _data["keys"])
+          this.keys!.push(MongoDbIndexField.fromJS(item));
+      }
+      this.unique = _data["unique"];
+      this.expireAfterSeconds = _data["expireAfterSeconds"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbIndexDefinition {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbIndexDefinition();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    if (Array.isArray(this.keys)) {
+      data["keys"] = [];
+      for (let item of this.keys)
+        data["keys"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["unique"] = this.unique;
+    data["expireAfterSeconds"] = this.expireAfterSeconds;
+    return data;
+  }
+}
+
+export interface IMongoDbIndexDefinition {
+  name?: string | undefined;
+  keys?: MongoDbIndexField[] | undefined;
+  unique?: boolean;
+  expireAfterSeconds?: number | undefined;
+}
+
+export class MongoDbIndexField implements IMongoDbIndexField {
+  field?: string | undefined;
+  order?: string | undefined;
+
+  constructor(data?: IMongoDbIndexField) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.field = _data["field"];
+      this.order = _data["order"];
+    }
+  }
+
+  static fromJS(data: any): MongoDbIndexField {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbIndexField();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["field"] = this.field;
+    data["order"] = this.order;
+    return data;
+  }
+}
+
+export interface IMongoDbIndexField {
+  field?: string | undefined;
+  order?: string | undefined;
+}
+
+export class MongoDbIndexInventory implements IMongoDbIndexInventory {
+  collection?: string | undefined;
+  status?: string | undefined;
+  indexes?: MongoDbIndexDefinition[] | undefined;
+
+  constructor(data?: IMongoDbIndexInventory) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.collection = _data["collection"];
+      this.status = _data["status"];
+      if (Array.isArray(_data["indexes"])) {
+        this.indexes = [] as any;
+        for (let item of _data["indexes"])
+          this.indexes!.push(MongoDbIndexDefinition.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): MongoDbIndexInventory {
+    data = typeof data === "object" ? data : {};
+    let result = new MongoDbIndexInventory();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["collection"] = this.collection;
+    data["status"] = this.status;
+    if (Array.isArray(this.indexes)) {
+      data["indexes"] = [];
+      for (let item of this.indexes)
+        data["indexes"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IMongoDbIndexInventory {
+  collection?: string | undefined;
+  status?: string | undefined;
+  indexes?: MongoDbIndexDefinition[] | undefined;
 }
 
 export class MongoDbIntegrationResponse implements IMongoDbIntegrationResponse {
@@ -31062,6 +33794,58 @@ export enum MonitorStatus {
   Maintenance = "Maintenance",
 }
 
+export class ObservedItem implements IObservedItem {
+  kind?: string | undefined;
+  name?: string | undefined;
+  scope?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
+
+  constructor(data?: IObservedItem) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.kind = _data["kind"];
+      this.name = _data["name"];
+      this.scope = _data["scope"];
+      this.coverage = _data["coverage"];
+      this.nativeId = _data["nativeId"];
+    }
+  }
+
+  static fromJS(data: any): ObservedItem {
+    data = typeof data === "object" ? data : {};
+    let result = new ObservedItem();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["kind"] = this.kind;
+    data["name"] = this.name;
+    data["scope"] = this.scope;
+    data["coverage"] = this.coverage;
+    data["nativeId"] = this.nativeId;
+    return data;
+  }
+}
+
+export interface IObservedItem {
+  kind?: string | undefined;
+  name?: string | undefined;
+  scope?: string | undefined;
+  coverage?: string | undefined;
+  nativeId?: string | undefined;
+}
+
 export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
   allowedCharacters?: string | undefined;
   length?: number;
@@ -31100,6 +33884,62 @@ export class PasswordGeneratorConfig implements IPasswordGeneratorConfig {
 export interface IPasswordGeneratorConfig {
   allowedCharacters?: string | undefined;
   length?: number;
+}
+
+export class PasswordReferenceView implements IPasswordReferenceView {
+  revision?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  scope?: string | undefined;
+  reference?: AzureKeyVaultBinding;
+
+  constructor(data?: IPasswordReferenceView) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.revision = _data["revision"];
+      this.endpoint = _data["endpoint"];
+      this.username = _data["username"];
+      this.scope = _data["scope"];
+      this.reference = _data["reference"]
+        ? AzureKeyVaultBinding.fromJS(_data["reference"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): PasswordReferenceView {
+    data = typeof data === "object" ? data : {};
+    let result = new PasswordReferenceView();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["revision"] = this.revision;
+    data["endpoint"] = this.endpoint;
+    data["username"] = this.username;
+    data["scope"] = this.scope;
+    data["reference"] = this.reference
+      ? this.reference.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IPasswordReferenceView {
+  revision?: string | undefined;
+  endpoint?: string | undefined;
+  username?: string | undefined;
+  scope?: string | undefined;
+  reference?: AzureKeyVaultBinding;
 }
 
 export enum PasswordSource {
@@ -32112,6 +34952,8 @@ export class RabbitMqDiscoveryResponse implements IRabbitMqDiscoveryResponse {
   permissions?: RabbitMqPermission[] | undefined;
   accounts?: RabbitMqAccountMatch[] | undefined;
   warnings?: string[] | undefined;
+  topicPermissionsStatus?: string | undefined;
+  topicPermissions?: RabbitMqTopicPermission[] | undefined;
 
   constructor(data?: IRabbitMqDiscoveryResponse) {
     if (data) {
@@ -32160,6 +35002,12 @@ export class RabbitMqDiscoveryResponse implements IRabbitMqDiscoveryResponse {
       if (Array.isArray(_data["warnings"])) {
         this.warnings = [] as any;
         for (let item of _data["warnings"]) this.warnings!.push(item);
+      }
+      this.topicPermissionsStatus = _data["topicPermissionsStatus"];
+      if (Array.isArray(_data["topicPermissions"])) {
+        this.topicPermissions = [] as any;
+        for (let item of _data["topicPermissions"])
+          this.topicPermissions!.push(RabbitMqTopicPermission.fromJS(item));
       }
     }
   }
@@ -32210,6 +35058,14 @@ export class RabbitMqDiscoveryResponse implements IRabbitMqDiscoveryResponse {
       data["warnings"] = [];
       for (let item of this.warnings) data["warnings"].push(item);
     }
+    data["topicPermissionsStatus"] = this.topicPermissionsStatus;
+    if (Array.isArray(this.topicPermissions)) {
+      data["topicPermissions"] = [];
+      for (let item of this.topicPermissions)
+        data["topicPermissions"].push(
+          item ? item.toJSON() : (undefined as any),
+        );
+    }
     return data;
   }
 }
@@ -32228,6 +35084,8 @@ export interface IRabbitMqDiscoveryResponse {
   permissions?: RabbitMqPermission[] | undefined;
   accounts?: RabbitMqAccountMatch[] | undefined;
   warnings?: string[] | undefined;
+  topicPermissionsStatus?: string | undefined;
+  topicPermissions?: RabbitMqTopicPermission[] | undefined;
 }
 
 export class RabbitMqIntegrationResponse implements IRabbitMqIntegrationResponse {
@@ -32405,6 +35263,11 @@ export class RabbitMqResource implements IRabbitMqResource {
   type?: string | undefined;
   destination?: string | undefined;
   routingKey?: string | undefined;
+  durable?: boolean | undefined;
+  deadLetterExchange?: string | undefined;
+  deadLetterRoutingKey?: string | undefined;
+  routingOptionsKnown?: boolean;
+  alternateExchange?: string | undefined;
 
   constructor(data?: IRabbitMqResource) {
     if (data) {
@@ -32423,6 +35286,11 @@ export class RabbitMqResource implements IRabbitMqResource {
       this.type = _data["type"];
       this.destination = _data["destination"];
       this.routingKey = _data["routingKey"];
+      this.durable = _data["durable"];
+      this.deadLetterExchange = _data["deadLetterExchange"];
+      this.deadLetterRoutingKey = _data["deadLetterRoutingKey"];
+      this.routingOptionsKnown = _data["routingOptionsKnown"];
+      this.alternateExchange = _data["alternateExchange"];
     }
   }
 
@@ -32441,6 +35309,11 @@ export class RabbitMqResource implements IRabbitMqResource {
     data["type"] = this.type;
     data["destination"] = this.destination;
     data["routingKey"] = this.routingKey;
+    data["durable"] = this.durable;
+    data["deadLetterExchange"] = this.deadLetterExchange;
+    data["deadLetterRoutingKey"] = this.deadLetterRoutingKey;
+    data["routingOptionsKnown"] = this.routingOptionsKnown;
+    data["alternateExchange"] = this.alternateExchange;
     return data;
   }
 }
@@ -32452,6 +35325,63 @@ export interface IRabbitMqResource {
   type?: string | undefined;
   destination?: string | undefined;
   routingKey?: string | undefined;
+  durable?: boolean | undefined;
+  deadLetterExchange?: string | undefined;
+  deadLetterRoutingKey?: string | undefined;
+  routingOptionsKnown?: boolean;
+  alternateExchange?: string | undefined;
+}
+
+export class RabbitMqTopicPermission implements IRabbitMqTopicPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  exchange?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
+
+  constructor(data?: IRabbitMqTopicPermission) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.username = _data["username"];
+      this.virtualHost = _data["virtualHost"];
+      this.exchange = _data["exchange"];
+      this.write = _data["write"];
+      this.read = _data["read"];
+    }
+  }
+
+  static fromJS(data: any): RabbitMqTopicPermission {
+    data = typeof data === "object" ? data : {};
+    let result = new RabbitMqTopicPermission();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["username"] = this.username;
+    data["virtualHost"] = this.virtualHost;
+    data["exchange"] = this.exchange;
+    data["write"] = this.write;
+    data["read"] = this.read;
+    return data;
+  }
+}
+
+export interface IRabbitMqTopicPermission {
+  username?: string | undefined;
+  virtualHost?: string | undefined;
+  exchange?: string | undefined;
+  write?: string | undefined;
+  read?: string | undefined;
 }
 
 export class RedisAccountMatchResponse implements IRedisAccountMatchResponse {
@@ -33261,6 +36191,616 @@ export interface IResponsibilityType {
   updatedAt?: Date;
 }
 
+export class ReviewApplication implements IReviewApplication {
+  applicationId?: string;
+  instanceId?: string;
+  name?: string | undefined;
+  environment?: string | undefined;
+  owner?: string | undefined;
+  responsibilities?: string[] | undefined;
+
+  constructor(data?: IReviewApplication) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationId = _data["applicationId"];
+      this.instanceId = _data["instanceId"];
+      this.name = _data["name"];
+      this.environment = _data["environment"];
+      this.owner = _data["owner"];
+      if (Array.isArray(_data["responsibilities"])) {
+        this.responsibilities = [] as any;
+        for (let item of _data["responsibilities"])
+          this.responsibilities!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): ReviewApplication {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewApplication();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
+    data["instanceId"] = this.instanceId;
+    data["name"] = this.name;
+    data["environment"] = this.environment;
+    data["owner"] = this.owner;
+    if (Array.isArray(this.responsibilities)) {
+      data["responsibilities"] = [];
+      for (let item of this.responsibilities)
+        data["responsibilities"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IReviewApplication {
+  applicationId?: string;
+  instanceId?: string;
+  name?: string | undefined;
+  environment?: string | undefined;
+  owner?: string | undefined;
+  responsibilities?: string[] | undefined;
+}
+
+export class ReviewAttempt implements IReviewAttempt {
+  checkedAt?: Date;
+  evidence?: ReviewEvidence;
+
+  constructor(data?: IReviewAttempt) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.checkedAt = _data["checkedAt"]
+        ? new Date(_data["checkedAt"].toString())
+        : (undefined as any);
+      this.evidence = _data["evidence"]
+        ? ReviewEvidence.fromJS(_data["evidence"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): ReviewAttempt {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewAttempt();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["checkedAt"] = this.checkedAt
+      ? this.checkedAt.toISOString()
+      : (undefined as any);
+    data["evidence"] = this.evidence
+      ? this.evidence.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IReviewAttempt {
+  checkedAt?: Date;
+  evidence?: ReviewEvidence;
+}
+
+export class ReviewCatalog implements IReviewCatalog {
+  provider?: string | undefined;
+  checks?: ReviewCheck[] | undefined;
+  sources?: ReviewSource[] | undefined;
+
+  constructor(data?: IReviewCatalog) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      if (Array.isArray(_data["checks"])) {
+        this.checks = [] as any;
+        for (let item of _data["checks"])
+          this.checks!.push(ReviewCheck.fromJS(item));
+      }
+      if (Array.isArray(_data["sources"])) {
+        this.sources = [] as any;
+        for (let item of _data["sources"])
+          this.sources!.push(ReviewSource.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ReviewCatalog {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewCatalog();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    if (Array.isArray(this.checks)) {
+      data["checks"] = [];
+      for (let item of this.checks)
+        data["checks"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.sources)) {
+      data["sources"] = [];
+      for (let item of this.sources)
+        data["sources"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IReviewCatalog {
+  provider?: string | undefined;
+  checks?: ReviewCheck[] | undefined;
+  sources?: ReviewSource[] | undefined;
+}
+
+export class ReviewCheck implements IReviewCheck {
+  kind?: string | undefined;
+  label?: string | undefined;
+  fields?: ReviewField[] | undefined;
+  requiresAccount?: boolean;
+
+  constructor(data?: IReviewCheck) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.kind = _data["kind"];
+      this.label = _data["label"];
+      if (Array.isArray(_data["fields"])) {
+        this.fields = [] as any;
+        for (let item of _data["fields"])
+          this.fields!.push(ReviewField.fromJS(item));
+      }
+      this.requiresAccount = _data["requiresAccount"];
+    }
+  }
+
+  static fromJS(data: any): ReviewCheck {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewCheck();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["kind"] = this.kind;
+    data["label"] = this.label;
+    if (Array.isArray(this.fields)) {
+      data["fields"] = [];
+      for (let item of this.fields)
+        data["fields"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["requiresAccount"] = this.requiresAccount;
+    return data;
+  }
+}
+
+export interface IReviewCheck {
+  kind?: string | undefined;
+  label?: string | undefined;
+  fields?: ReviewField[] | undefined;
+  requiresAccount?: boolean;
+}
+
+export class ReviewDefinition implements IReviewDefinition {
+  id?: string;
+  revision?: string;
+  name?: string | undefined;
+  input?: ReviewInput;
+  refreshMinutes?: number;
+  applicationInstanceIds?: string[] | undefined;
+  lastAttempt?: ReviewAttempt;
+  lastVerified?: ReviewAttempt;
+  history?: ReviewAttempt[] | undefined;
+  scopeFingerprint?: string | undefined;
+
+  constructor(data?: IReviewDefinition) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.revision = _data["revision"];
+      this.name = _data["name"];
+      this.input = _data["input"]
+        ? ReviewInput.fromJS(_data["input"])
+        : (undefined as any);
+      this.refreshMinutes = _data["refreshMinutes"];
+      if (Array.isArray(_data["applicationInstanceIds"])) {
+        this.applicationInstanceIds = [] as any;
+        for (let item of _data["applicationInstanceIds"])
+          this.applicationInstanceIds!.push(item);
+      }
+      this.lastAttempt = _data["lastAttempt"]
+        ? ReviewAttempt.fromJS(_data["lastAttempt"])
+        : (undefined as any);
+      this.lastVerified = _data["lastVerified"]
+        ? ReviewAttempt.fromJS(_data["lastVerified"])
+        : (undefined as any);
+      if (Array.isArray(_data["history"])) {
+        this.history = [] as any;
+        for (let item of _data["history"])
+          this.history!.push(ReviewAttempt.fromJS(item));
+      }
+      this.scopeFingerprint = _data["scopeFingerprint"];
+    }
+  }
+
+  static fromJS(data: any): ReviewDefinition {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewDefinition();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["revision"] = this.revision;
+    data["name"] = this.name;
+    data["input"] = this.input ? this.input.toJSON() : (undefined as any);
+    data["refreshMinutes"] = this.refreshMinutes;
+    if (Array.isArray(this.applicationInstanceIds)) {
+      data["applicationInstanceIds"] = [];
+      for (let item of this.applicationInstanceIds)
+        data["applicationInstanceIds"].push(item);
+    }
+    data["lastAttempt"] = this.lastAttempt
+      ? this.lastAttempt.toJSON()
+      : (undefined as any);
+    data["lastVerified"] = this.lastVerified
+      ? this.lastVerified.toJSON()
+      : (undefined as any);
+    if (Array.isArray(this.history)) {
+      data["history"] = [];
+      for (let item of this.history)
+        data["history"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["scopeFingerprint"] = this.scopeFingerprint;
+    return data;
+  }
+}
+
+export interface IReviewDefinition {
+  id?: string;
+  revision?: string;
+  name?: string | undefined;
+  input?: ReviewInput;
+  refreshMinutes?: number;
+  applicationInstanceIds?: string[] | undefined;
+  lastAttempt?: ReviewAttempt;
+  lastVerified?: ReviewAttempt;
+  history?: ReviewAttempt[] | undefined;
+  scopeFingerprint?: string | undefined;
+}
+
+export class ReviewEvidence implements IReviewEvidence {
+  status?: ReviewStatus;
+  summary?: string | undefined;
+  details?: string[] | undefined;
+
+  constructor(data?: IReviewEvidence) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.status = _data["status"];
+      this.summary = _data["summary"];
+      if (Array.isArray(_data["details"])) {
+        this.details = [] as any;
+        for (let item of _data["details"]) this.details!.push(item);
+      }
+    }
+  }
+
+  static fromJS(data: any): ReviewEvidence {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewEvidence();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["status"] = this.status;
+    data["summary"] = this.summary;
+    if (Array.isArray(this.details)) {
+      data["details"] = [];
+      for (let item of this.details) data["details"].push(item);
+    }
+    return data;
+  }
+}
+
+export interface IReviewEvidence {
+  status?: ReviewStatus;
+  summary?: string | undefined;
+  details?: string[] | undefined;
+}
+
+export class ReviewField implements IReviewField {
+  key?: string | undefined;
+  label?: string | undefined;
+  required?: boolean;
+  choices?: string[] | undefined;
+  hint?: string | undefined;
+
+  constructor(data?: IReviewField) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.key = _data["key"];
+      this.label = _data["label"];
+      this.required = _data["required"];
+      if (Array.isArray(_data["choices"])) {
+        this.choices = [] as any;
+        for (let item of _data["choices"]) this.choices!.push(item);
+      }
+      this.hint = _data["hint"];
+    }
+  }
+
+  static fromJS(data: any): ReviewField {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewField();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["key"] = this.key;
+    data["label"] = this.label;
+    data["required"] = this.required;
+    if (Array.isArray(this.choices)) {
+      data["choices"] = [];
+      for (let item of this.choices) data["choices"].push(item);
+    }
+    data["hint"] = this.hint;
+    return data;
+  }
+}
+
+export interface IReviewField {
+  key?: string | undefined;
+  label?: string | undefined;
+  required?: boolean;
+  choices?: string[] | undefined;
+  hint?: string | undefined;
+}
+
+export class ReviewInput implements IReviewInput {
+  provider?: string | undefined;
+  integrationId?: string;
+  kind?: string | undefined;
+  accountId?: string | undefined;
+  fields?: { [key: string]: string } | undefined;
+
+  constructor(data?: IReviewInput) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      this.integrationId = _data["integrationId"];
+      this.kind = _data["kind"];
+      this.accountId = _data["accountId"];
+      if (_data["fields"]) {
+        this.fields = {} as any;
+        for (let key in _data["fields"]) {
+          if (_data["fields"].hasOwnProperty(key))
+            (this.fields as any)![key] = _data["fields"][key];
+        }
+      }
+    }
+  }
+
+  static fromJS(data: any): ReviewInput {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewInput();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    data["integrationId"] = this.integrationId;
+    data["kind"] = this.kind;
+    data["accountId"] = this.accountId;
+    if (this.fields) {
+      data["fields"] = {};
+      for (let key in this.fields) {
+        if (this.fields.hasOwnProperty(key))
+          (data["fields"] as any)[key] = (this.fields as any)[key];
+      }
+    }
+    return data;
+  }
+}
+
+export interface IReviewInput {
+  provider?: string | undefined;
+  integrationId?: string;
+  kind?: string | undefined;
+  accountId?: string | undefined;
+  fields?: { [key: string]: string } | undefined;
+}
+
+export class ReviewSource implements IReviewSource {
+  provider?: string | undefined;
+  id?: string;
+  name?: string | undefined;
+  targetId?: string | undefined;
+  updatedAt?: Date;
+
+  constructor(data?: IReviewSource) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.provider = _data["provider"];
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.targetId = _data["targetId"];
+      this.updatedAt = _data["updatedAt"]
+        ? new Date(_data["updatedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): ReviewSource {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewSource();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["provider"] = this.provider;
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["targetId"] = this.targetId;
+    data["updatedAt"] = this.updatedAt
+      ? this.updatedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IReviewSource {
+  provider?: string | undefined;
+  id?: string;
+  name?: string | undefined;
+  targetId?: string | undefined;
+  updatedAt?: Date;
+}
+
+export enum ReviewStatus {
+  Matched = "Matched",
+  Drift = "Drift",
+  Unknown = "Unknown",
+}
+
+export class ReviewView implements IReviewView {
+  review?: ReviewDefinition;
+  applications?: ReviewApplication[] | undefined;
+
+  constructor(data?: IReviewView) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.review = _data["review"]
+        ? ReviewDefinition.fromJS(_data["review"])
+        : (undefined as any);
+      if (Array.isArray(_data["applications"])) {
+        this.applications = [] as any;
+        for (let item of _data["applications"])
+          this.applications!.push(ReviewApplication.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): ReviewView {
+    data = typeof data === "object" ? data : {};
+    let result = new ReviewView();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["review"] = this.review ? this.review.toJSON() : (undefined as any);
+    if (Array.isArray(this.applications)) {
+      data["applications"] = [];
+      for (let item of this.applications)
+        data["applications"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IReviewView {
+  review?: ReviewDefinition;
+  applications?: ReviewApplication[] | undefined;
+}
+
 export class Risk implements IRisk {
   id?: string;
   title?: string | undefined;
@@ -33583,6 +37123,124 @@ export interface IRotateSecret {
   providerId?: string;
   secretName?: string | undefined;
   newSecretValue?: string | undefined;
+}
+
+export class SaveAzureProfile implements ISaveAzureProfile {
+  name?: string | undefined;
+  resourceId?: string | undefined;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string | undefined;
+  directoryLookup?: boolean;
+
+  constructor(data?: ISaveAzureProfile) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.resourceId = _data["resourceId"];
+      this.tenantId = _data["tenantId"];
+      this.clientId = _data["clientId"];
+      this.clientSecret = _data["clientSecret"];
+      this.directoryLookup = _data["directoryLookup"];
+    }
+  }
+
+  static fromJS(data: any): SaveAzureProfile {
+    data = typeof data === "object" ? data : {};
+    let result = new SaveAzureProfile();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["resourceId"] = this.resourceId;
+    data["tenantId"] = this.tenantId;
+    data["clientId"] = this.clientId;
+    data["clientSecret"] = this.clientSecret;
+    data["directoryLookup"] = this.directoryLookup;
+    return data;
+  }
+}
+
+export interface ISaveAzureProfile {
+  name?: string | undefined;
+  resourceId?: string | undefined;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string | undefined;
+  directoryLookup?: boolean;
+}
+
+export class SaveReview implements ISaveReview {
+  name?: string | undefined;
+  input?: ReviewInput;
+  refreshMinutes?: number;
+  applicationInstanceIds?: string[] | undefined;
+  expectedRevision?: string | undefined;
+
+  constructor(data?: ISaveReview) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.input = _data["input"]
+        ? ReviewInput.fromJS(_data["input"])
+        : (undefined as any);
+      this.refreshMinutes = _data["refreshMinutes"];
+      if (Array.isArray(_data["applicationInstanceIds"])) {
+        this.applicationInstanceIds = [] as any;
+        for (let item of _data["applicationInstanceIds"])
+          this.applicationInstanceIds!.push(item);
+      }
+      this.expectedRevision = _data["expectedRevision"];
+    }
+  }
+
+  static fromJS(data: any): SaveReview {
+    data = typeof data === "object" ? data : {};
+    let result = new SaveReview();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["input"] = this.input ? this.input.toJSON() : (undefined as any);
+    data["refreshMinutes"] = this.refreshMinutes;
+    if (Array.isArray(this.applicationInstanceIds)) {
+      data["applicationInstanceIds"] = [];
+      for (let item of this.applicationInstanceIds)
+        data["applicationInstanceIds"].push(item);
+    }
+    data["expectedRevision"] = this.expectedRevision;
+    return data;
+  }
+}
+
+export interface ISaveReview {
+  name?: string | undefined;
+  input?: ReviewInput;
+  refreshMinutes?: number;
+  applicationInstanceIds?: string[] | undefined;
+  expectedRevision?: string | undefined;
 }
 
 export class ScrumPokerAutoRevealRequest implements IScrumPokerAutoRevealRequest {
@@ -34050,6 +37708,58 @@ export enum SecretBindingKind {
   AzureKeyVault = "AzureKeyVault",
 }
 
+export class SecretConsumer implements ISecretConsumer {
+  applicationId?: string;
+  application?: string | undefined;
+  instanceId?: string;
+  source?: string | undefined;
+  pinnedVersion?: string | undefined;
+
+  constructor(data?: ISecretConsumer) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationId = _data["applicationId"];
+      this.application = _data["application"];
+      this.instanceId = _data["instanceId"];
+      this.source = _data["source"];
+      this.pinnedVersion = _data["pinnedVersion"];
+    }
+  }
+
+  static fromJS(data: any): SecretConsumer {
+    data = typeof data === "object" ? data : {};
+    let result = new SecretConsumer();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
+    data["application"] = this.application;
+    data["instanceId"] = this.instanceId;
+    data["source"] = this.source;
+    data["pinnedVersion"] = this.pinnedVersion;
+    return data;
+  }
+}
+
+export interface ISecretConsumer {
+  applicationId?: string;
+  application?: string | undefined;
+  instanceId?: string;
+  source?: string | undefined;
+  pinnedVersion?: string | undefined;
+}
+
 export class SecretMetadataResponse implements ISecretMetadataResponse {
   name?: string | undefined;
   enabled?: boolean;
@@ -34303,6 +38013,66 @@ export interface ISecretProviderResponse {
   lastCheckMessage?: string | undefined;
 }
 
+export class SecretReferenceHealth implements ISecretReferenceHealth {
+  name?: string | undefined;
+  pinnedVersion?: string | undefined;
+  metadata?: KeyVaultVersions;
+  consumers?: SecretConsumer[] | undefined;
+
+  constructor(data?: ISecretReferenceHealth) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.name = _data["name"];
+      this.pinnedVersion = _data["pinnedVersion"];
+      this.metadata = _data["metadata"]
+        ? KeyVaultVersions.fromJS(_data["metadata"])
+        : (undefined as any);
+      if (Array.isArray(_data["consumers"])) {
+        this.consumers = [] as any;
+        for (let item of _data["consumers"])
+          this.consumers!.push(SecretConsumer.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): SecretReferenceHealth {
+    data = typeof data === "object" ? data : {};
+    let result = new SecretReferenceHealth();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["name"] = this.name;
+    data["pinnedVersion"] = this.pinnedVersion;
+    data["metadata"] = this.metadata
+      ? this.metadata.toJSON()
+      : (undefined as any);
+    if (Array.isArray(this.consumers)) {
+      data["consumers"] = [];
+      for (let item of this.consumers)
+        data["consumers"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface ISecretReferenceHealth {
+  name?: string | undefined;
+  pinnedVersion?: string | undefined;
+  metadata?: KeyVaultVersions;
+  consumers?: SecretConsumer[] | undefined;
+}
+
 export class SecretValueResponse implements ISecretValueResponse {
   value?: string | undefined;
 
@@ -34349,6 +38119,7 @@ export class SecurityStateResponse implements ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  posturePermissions?: string[] | undefined;
   permissions?: string[] | undefined;
 
   constructor(data?: ISecurityStateResponse) {
@@ -34367,6 +38138,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
       this.currentUser = _data["currentUser"]
         ? SecurityUserInfo.fromJS(_data["currentUser"])
         : (undefined as any);
+      if (Array.isArray(_data["posturePermissions"])) {
+        this.posturePermissions = [] as any;
+        for (let item of _data["posturePermissions"])
+          this.posturePermissions!.push(item);
+      }
       if (Array.isArray(_data["permissions"])) {
         this.permissions = [] as any;
         for (let item of _data["permissions"]) this.permissions!.push(item);
@@ -34388,6 +38164,11 @@ export class SecurityStateResponse implements ISecurityStateResponse {
     data["currentUser"] = this.currentUser
       ? this.currentUser.toJSON()
       : (undefined as any);
+    if (Array.isArray(this.posturePermissions)) {
+      data["posturePermissions"] = [];
+      for (let item of this.posturePermissions)
+        data["posturePermissions"].push(item);
+    }
     if (Array.isArray(this.permissions)) {
       data["permissions"] = [];
       for (let item of this.permissions) data["permissions"].push(item);
@@ -34400,6 +38181,7 @@ export interface ISecurityStateResponse {
   posture?: SecurityPosture;
   requiresSetup?: boolean;
   currentUser?: SecurityUserInfo;
+  posturePermissions?: string[] | undefined;
   permissions?: string[] | undefined;
 }
 
@@ -34533,6 +38315,7 @@ export class ServiceBusConnection implements IServiceBusConnection {
   authMode?: SecretProviderAuthMode;
   createdAt?: Date;
   updatedAt?: Date;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: IServiceBusConnection) {
     if (data) {
@@ -34556,6 +38339,7 @@ export class ServiceBusConnection implements IServiceBusConnection {
       this.updatedAt = _data["updatedAt"]
         ? new Date(_data["updatedAt"].toString())
         : (undefined as any);
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -34579,6 +38363,7 @@ export class ServiceBusConnection implements IServiceBusConnection {
     data["updatedAt"] = this.updatedAt
       ? this.updatedAt.toISOString()
       : (undefined as any);
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -34591,6 +38376,7 @@ export interface IServiceBusConnection {
   authMode?: SecretProviderAuthMode;
   createdAt?: Date;
   updatedAt?: Date;
+  credentialProfileId?: string | undefined;
 }
 
 export class ServiceBusConnectionTestResult implements IServiceBusConnectionTestResult {
@@ -34640,6 +38426,7 @@ export class ServiceBusDiscoveryResponse implements IServiceBusDiscoveryResponse
   queues?: ServiceBusQueue[] | undefined;
   namespaceAuthorizationRules?: ServiceBusPolicyList;
   inventory?: ServiceBusQueueMatch[] | undefined;
+  localAuthEnabled?: boolean | undefined;
 
   constructor(data?: IServiceBusDiscoveryResponse) {
     if (data) {
@@ -34670,6 +38457,7 @@ export class ServiceBusDiscoveryResponse implements IServiceBusDiscoveryResponse
         for (let item of _data["inventory"])
           this.inventory!.push(ServiceBusQueueMatch.fromJS(item));
       }
+      this.localAuthEnabled = _data["localAuthEnabled"];
     }
   }
 
@@ -34700,6 +38488,7 @@ export class ServiceBusDiscoveryResponse implements IServiceBusDiscoveryResponse
       for (let item of this.inventory)
         data["inventory"].push(item ? item.toJSON() : (undefined as any));
     }
+    data["localAuthEnabled"] = this.localAuthEnabled;
     return data;
   }
 }
@@ -34711,6 +38500,7 @@ export interface IServiceBusDiscoveryResponse {
   queues?: ServiceBusQueue[] | undefined;
   namespaceAuthorizationRules?: ServiceBusPolicyList;
   inventory?: ServiceBusQueueMatch[] | undefined;
+  localAuthEnabled?: boolean | undefined;
 }
 
 export class ServiceBusPolicy implements IServiceBusPolicy {
@@ -34811,6 +38601,9 @@ export class ServiceBusQueue implements IServiceBusQueue {
   name?: string | undefined;
   status?: string | undefined;
   authorizationRules?: ServiceBusPolicyList;
+  defaultMessageTimeToLive?: string | undefined;
+  maxDeliveryCount?: number | undefined;
+  deadLetterMessageCount?: number | undefined;
 
   constructor(data?: IServiceBusQueue) {
     if (data) {
@@ -34828,6 +38621,9 @@ export class ServiceBusQueue implements IServiceBusQueue {
       this.authorizationRules = _data["authorizationRules"]
         ? ServiceBusPolicyList.fromJS(_data["authorizationRules"])
         : (undefined as any);
+      this.defaultMessageTimeToLive = _data["defaultMessageTimeToLive"];
+      this.maxDeliveryCount = _data["maxDeliveryCount"];
+      this.deadLetterMessageCount = _data["deadLetterMessageCount"];
     }
   }
 
@@ -34845,6 +38641,9 @@ export class ServiceBusQueue implements IServiceBusQueue {
     data["authorizationRules"] = this.authorizationRules
       ? this.authorizationRules.toJSON()
       : (undefined as any);
+    data["defaultMessageTimeToLive"] = this.defaultMessageTimeToLive;
+    data["maxDeliveryCount"] = this.maxDeliveryCount;
+    data["deadLetterMessageCount"] = this.deadLetterMessageCount;
     return data;
   }
 }
@@ -34853,6 +38652,9 @@ export interface IServiceBusQueue {
   name?: string | undefined;
   status?: string | undefined;
   authorizationRules?: ServiceBusPolicyList;
+  defaultMessageTimeToLive?: string | undefined;
+  maxDeliveryCount?: number | undefined;
+  deadLetterMessageCount?: number | undefined;
 }
 
 export class ServiceBusQueueMatch implements IServiceBusQueueMatch {
@@ -35187,6 +38989,114 @@ export interface ISqlActualGrant {
   database?: string | undefined;
   schema?: string | undefined;
   privileges?: Privilege[] | undefined;
+}
+
+export class SqlBulkOperation implements ISqlBulkOperation {
+  accountId?: string;
+  principal?: string | undefined;
+  operation?: string | undefined;
+  database?: string | undefined;
+  schema?: string | undefined;
+  privilege?: Privilege;
+  reason?: string | undefined;
+
+  constructor(data?: ISqlBulkOperation) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.accountId = _data["accountId"];
+      this.principal = _data["principal"];
+      this.operation = _data["operation"];
+      this.database = _data["database"];
+      this.schema = _data["schema"];
+      this.privilege = _data["privilege"];
+      this.reason = _data["reason"];
+    }
+  }
+
+  static fromJS(data: any): SqlBulkOperation {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlBulkOperation();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["accountId"] = this.accountId;
+    data["principal"] = this.principal;
+    data["operation"] = this.operation;
+    data["database"] = this.database;
+    data["schema"] = this.schema;
+    data["privilege"] = this.privilege;
+    data["reason"] = this.reason;
+    return data;
+  }
+}
+
+export interface ISqlBulkOperation {
+  accountId?: string;
+  principal?: string | undefined;
+  operation?: string | undefined;
+  database?: string | undefined;
+  schema?: string | undefined;
+  privilege?: Privilege;
+  reason?: string | undefined;
+}
+
+export class SqlBulkPlan implements ISqlBulkPlan {
+  revision?: string | undefined;
+  operations?: SqlBulkOperation[] | undefined;
+
+  constructor(data?: ISqlBulkPlan) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.revision = _data["revision"];
+      if (Array.isArray(_data["operations"])) {
+        this.operations = [] as any;
+        for (let item of _data["operations"])
+          this.operations!.push(SqlBulkOperation.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): SqlBulkPlan {
+    data = typeof data === "object" ? data : {};
+    let result = new SqlBulkPlan();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["revision"] = this.revision;
+    if (Array.isArray(this.operations)) {
+      data["operations"] = [];
+      for (let item of this.operations)
+        data["operations"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface ISqlBulkPlan {
+  revision?: string | undefined;
+  operations?: SqlBulkOperation[] | undefined;
 }
 
 export class SqlConnectionTestResult implements ISqlConnectionTestResult {
@@ -36554,6 +40464,8 @@ export class UpdateCosmosDbIntegration implements IUpdateCosmosDbIntegration {
   dataStoreId?: string;
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
+  useSharedCredential?: boolean;
 
   constructor(data?: IUpdateCosmosDbIntegration) {
     if (data) {
@@ -36571,6 +40483,8 @@ export class UpdateCosmosDbIntegration implements IUpdateCosmosDbIntegration {
       this.dataStoreId = _data["dataStoreId"];
       this.accountResourceId = _data["accountResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
+      this.useSharedCredential = _data["useSharedCredential"];
     }
   }
 
@@ -36588,6 +40502,8 @@ export class UpdateCosmosDbIntegration implements IUpdateCosmosDbIntegration {
     data["dataStoreId"] = this.dataStoreId;
     data["accountResourceId"] = this.accountResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
+    data["useSharedCredential"] = this.useSharedCredential;
     return data;
   }
 }
@@ -36598,6 +40514,8 @@ export interface IUpdateCosmosDbIntegration {
   dataStoreId?: string;
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
+  useSharedCredential?: boolean;
 }
 
 export class UpdateDataStore implements IUpdateDataStore {
@@ -36922,6 +40840,8 @@ export class UpdateIdentity implements IUpdateIdentity {
   ownerInstanceId?: string | undefined;
   assignments?: IdentityAssignment[] | undefined;
   tagIds?: string[] | undefined;
+  azurePrincipal?: AzurePrincipalBinding;
+  clearAzurePrincipal?: boolean;
 
   constructor(data?: IUpdateIdentity) {
     if (data) {
@@ -36948,6 +40868,10 @@ export class UpdateIdentity implements IUpdateIdentity {
         this.tagIds = [] as any;
         for (let item of _data["tagIds"]) this.tagIds!.push(item);
       }
+      this.azurePrincipal = _data["azurePrincipal"]
+        ? AzurePrincipalBinding.fromJS(_data["azurePrincipal"])
+        : (undefined as any);
+      this.clearAzurePrincipal = _data["clearAzurePrincipal"];
     }
   }
 
@@ -36974,6 +40898,10 @@ export class UpdateIdentity implements IUpdateIdentity {
       data["tagIds"] = [];
       for (let item of this.tagIds) data["tagIds"].push(item);
     }
+    data["azurePrincipal"] = this.azurePrincipal
+      ? this.azurePrincipal.toJSON()
+      : (undefined as any);
+    data["clearAzurePrincipal"] = this.clearAzurePrincipal;
     return data;
   }
 }
@@ -36986,6 +40914,8 @@ export interface IUpdateIdentity {
   ownerInstanceId?: string | undefined;
   assignments?: IdentityAssignment[] | undefined;
   tagIds?: string[] | undefined;
+  azurePrincipal?: AzurePrincipalBinding;
+  clearAzurePrincipal?: boolean;
 }
 
 export class UpdateIdentityAssignment implements IUpdateIdentityAssignment {
@@ -38061,6 +41991,8 @@ export class UpdateServiceBusIntegration implements IUpdateServiceBusIntegration
   messageBrokerId?: string;
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
+  useSharedCredential?: boolean;
 
   constructor(data?: IUpdateServiceBusIntegration) {
     if (data) {
@@ -38078,6 +42010,8 @@ export class UpdateServiceBusIntegration implements IUpdateServiceBusIntegration
       this.messageBrokerId = _data["messageBrokerId"];
       this.namespaceResourceId = _data["namespaceResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
+      this.useSharedCredential = _data["useSharedCredential"];
     }
   }
 
@@ -38095,6 +42029,8 @@ export class UpdateServiceBusIntegration implements IUpdateServiceBusIntegration
     data["messageBrokerId"] = this.messageBrokerId;
     data["namespaceResourceId"] = this.namespaceResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
+    data["useSharedCredential"] = this.useSharedCredential;
     return data;
   }
 }
@@ -38105,6 +42041,8 @@ export interface IUpdateServiceBusIntegration {
   messageBrokerId?: string;
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
+  useSharedCredential?: boolean;
 }
 
 export class UpdateSqlIntegration implements IUpdateSqlIntegration {
@@ -38286,6 +42224,7 @@ export interface IUserGuideProgress {
 export class ValidateCosmosDbConnection implements IValidateCosmosDbConnection {
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: IValidateCosmosDbConnection) {
     if (data) {
@@ -38300,6 +42239,7 @@ export class ValidateCosmosDbConnection implements IValidateCosmosDbConnection {
     if (_data) {
       this.accountResourceId = _data["accountResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -38314,6 +42254,7 @@ export class ValidateCosmosDbConnection implements IValidateCosmosDbConnection {
     data = typeof data === "object" ? data : {};
     data["accountResourceId"] = this.accountResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -38321,6 +42262,7 @@ export class ValidateCosmosDbConnection implements IValidateCosmosDbConnection {
 export interface IValidateCosmosDbConnection {
   accountResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 }
 
 export class ValidateKeycloakConnection implements IValidateKeycloakConnection {
@@ -38558,6 +42500,7 @@ export interface IValidateRedisConnection {
 export class ValidateServiceBusConnection implements IValidateServiceBusConnection {
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
 
   constructor(data?: IValidateServiceBusConnection) {
     if (data) {
@@ -38572,6 +42515,7 @@ export class ValidateServiceBusConnection implements IValidateServiceBusConnecti
     if (_data) {
       this.namespaceResourceId = _data["namespaceResourceId"];
       this.authMode = _data["authMode"];
+      this.credentialProfileId = _data["credentialProfileId"];
     }
   }
 
@@ -38586,6 +42530,7 @@ export class ValidateServiceBusConnection implements IValidateServiceBusConnecti
     data = typeof data === "object" ? data : {};
     data["namespaceResourceId"] = this.namespaceResourceId;
     data["authMode"] = this.authMode;
+    data["credentialProfileId"] = this.credentialProfileId;
     return data;
   }
 }
@@ -38593,6 +42538,191 @@ export class ValidateServiceBusConnection implements IValidateServiceBusConnecti
 export interface IValidateServiceBusConnection {
   namespaceResourceId?: string | undefined;
   authMode?: SecretProviderAuthMode;
+  credentialProfileId?: string | undefined;
+}
+
+export class WorkloadApplication implements IWorkloadApplication {
+  applicationId?: string;
+  name?: string | undefined;
+  instanceId?: string;
+
+  constructor(data?: IWorkloadApplication) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.applicationId = _data["applicationId"];
+      this.name = _data["name"];
+      this.instanceId = _data["instanceId"];
+    }
+  }
+
+  static fromJS(data: any): WorkloadApplication {
+    data = typeof data === "object" ? data : {};
+    let result = new WorkloadApplication();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["applicationId"] = this.applicationId;
+    data["name"] = this.name;
+    data["instanceId"] = this.instanceId;
+    return data;
+  }
+}
+
+export interface IWorkloadApplication {
+  applicationId?: string;
+  name?: string | undefined;
+  instanceId?: string;
+}
+
+export class WorkloadCredential implements IWorkloadCredential {
+  source?: string | undefined;
+  kind?: string | undefined;
+  keyId?: string;
+  expiresAt?: Date | undefined;
+
+  constructor(data?: IWorkloadCredential) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.source = _data["source"];
+      this.kind = _data["kind"];
+      this.keyId = _data["keyId"];
+      this.expiresAt = _data["expiresAt"]
+        ? new Date(_data["expiresAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): WorkloadCredential {
+    data = typeof data === "object" ? data : {};
+    let result = new WorkloadCredential();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["source"] = this.source;
+    data["kind"] = this.kind;
+    data["keyId"] = this.keyId;
+    data["expiresAt"] = this.expiresAt
+      ? this.expiresAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IWorkloadCredential {
+  source?: string | undefined;
+  kind?: string | undefined;
+  keyId?: string;
+  expiresAt?: Date | undefined;
+}
+
+export class WorkloadObservation implements IWorkloadObservation {
+  principalVisibility?: string | undefined;
+  applicationVisibility?: string | undefined;
+  name?: string | undefined;
+  kind?: string | undefined;
+  enabled?: boolean | undefined;
+  appId?: string | undefined;
+  credentials?: WorkloadCredential[] | undefined;
+  checkedAt?: Date;
+  applications?: WorkloadApplication[] | undefined;
+
+  constructor(data?: IWorkloadObservation) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.principalVisibility = _data["principalVisibility"];
+      this.applicationVisibility = _data["applicationVisibility"];
+      this.name = _data["name"];
+      this.kind = _data["kind"];
+      this.enabled = _data["enabled"];
+      this.appId = _data["appId"];
+      if (Array.isArray(_data["credentials"])) {
+        this.credentials = [] as any;
+        for (let item of _data["credentials"])
+          this.credentials!.push(WorkloadCredential.fromJS(item));
+      }
+      this.checkedAt = _data["checkedAt"]
+        ? new Date(_data["checkedAt"].toString())
+        : (undefined as any);
+      if (Array.isArray(_data["applications"])) {
+        this.applications = [] as any;
+        for (let item of _data["applications"])
+          this.applications!.push(WorkloadApplication.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): WorkloadObservation {
+    data = typeof data === "object" ? data : {};
+    let result = new WorkloadObservation();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["principalVisibility"] = this.principalVisibility;
+    data["applicationVisibility"] = this.applicationVisibility;
+    data["name"] = this.name;
+    data["kind"] = this.kind;
+    data["enabled"] = this.enabled;
+    data["appId"] = this.appId;
+    if (Array.isArray(this.credentials)) {
+      data["credentials"] = [];
+      for (let item of this.credentials)
+        data["credentials"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["checkedAt"] = this.checkedAt
+      ? this.checkedAt.toISOString()
+      : (undefined as any);
+    if (Array.isArray(this.applications)) {
+      data["applications"] = [];
+      for (let item of this.applications)
+        data["applications"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IWorkloadObservation {
+  principalVisibility?: string | undefined;
+  applicationVisibility?: string | undefined;
+  name?: string | undefined;
+  kind?: string | undefined;
+  enabled?: boolean | undefined;
+  appId?: string | undefined;
+  credentials?: WorkloadCredential[] | undefined;
+  checkedAt?: Date;
+  applications?: WorkloadApplication[] | undefined;
 }
 
 export interface FileParameter {

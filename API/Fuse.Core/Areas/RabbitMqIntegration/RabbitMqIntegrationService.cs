@@ -1,3 +1,4 @@
+using Fuse.Core.Areas.SecretProvider;
 using Fuse.Core.Areas.Audit;
 using Fuse.Core.Commands;
 using Fuse.Core.Helpers;
@@ -8,10 +9,10 @@ using Fuse.Core.Responses;
 namespace Fuse.Core.Areas.RabbitMqIntegration;
 
 public sealed class RabbitMqIntegrationService(IFuseStore store, IRabbitMqInspector inspector,
-    IAuditService audit, ICurrentUser currentUser) : IRabbitMqIntegrationService
+    IAuditService audit, ICurrentUser currentUser, IntegrationPasswords? passwords = null) : IRabbitMqIntegrationService
 {
     private static RabbitMqIntegrationResponse Public(Models.RabbitMqIntegration item) => new(item.Id, item.Name,
-        item.MessageBrokerId, item.VirtualHost, item.Endpoint, item.Username, !string.IsNullOrEmpty(item.Password), item.CreatedAt, item.UpdatedAt);
+        item.MessageBrokerId, item.VirtualHost, item.Endpoint, item.Username, (item.PasswordBinding is not null || !string.IsNullOrEmpty(item.Password)), item.CreatedAt, item.UpdatedAt);
 
     public async Task<IReadOnlyList<RabbitMqIntegrationResponse>> GetAllAsync(CancellationToken ct = default) =>
         (await store.GetAsync(ct)).RabbitMqIntegrations.Select(Public).ToArray();
@@ -74,6 +75,11 @@ public sealed class RabbitMqIntegrationService(IFuseStore store, IRabbitMqInspec
             updated = found with { Name = command.Name.Trim(), MessageBrokerId = command.MessageBrokerId, VirtualHost = command.VirtualHost, Endpoint = command.Endpoint,
                 Username = RabbitMqConnectionSettings.Username(command.Username), Password = command.Password ?? found.Password,
                 UpdatedAt = DateTime.UtcNow };
+            if (IntegrationPasswords.InvalidEdit(found, updated, command.Password))
+            {
+                failure = Result.Failure("Detach the Key Vault password before changing its destination or supplying a password.");
+                return current;
+            }
             return current with { RabbitMqIntegrations = current.RabbitMqIntegrations.Select(x => x.Id == command.Id ? updated : x).ToArray() };
         }, ct);
         if (failure is not null) return Result<RabbitMqIntegrationResponse>.Failure(failure.Error!, failure.ErrorType!.Value);
@@ -106,6 +112,9 @@ public sealed class RabbitMqIntegrationService(IFuseStore store, IRabbitMqInspec
     {
         var item = (await store.GetAsync(ct)).RabbitMqIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<RabbitMqConnectionTestResult>.Failure("RabbitMq integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<RabbitMqConnectionTestResult>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         return await ValidateAsync(new(item.VirtualHost, item.Endpoint, item.Username, item.Password), ct);
     }
 
@@ -114,6 +123,9 @@ public sealed class RabbitMqIntegrationService(IFuseStore store, IRabbitMqInspec
         var snapshot = await store.GetAsync(ct);
         var item = snapshot.RabbitMqIntegrations.FirstOrDefault(x => x.Id == id);
         if (item is null) return Result<RabbitMqDiscoveryResponse>.Failure("RabbitMq integration not found.", ErrorType.NotFound);
+        var credential = await IntegrationPasswords.ForUse(item, passwords, ct);
+        if (!credential.IsSuccess) return Result<RabbitMqDiscoveryResponse>.Failure(IntegrationPasswords.Unavailable);
+        item = credential.Value!;
         var validation = RabbitMqConnectionSettings.Validate(item.Endpoint, item.Username, item.Password);
         if (!validation.IsSuccess) return Result<RabbitMqDiscoveryResponse>.Failure(validation.Error!);
         if (!snapshot.MessageBrokers.Any(x => x.Id == item.MessageBrokerId && string.Equals(x.Kind, "rabbitmq", StringComparison.OrdinalIgnoreCase)))

@@ -36,6 +36,8 @@
               :disable="busy"
               @click="inspect(item)"
             />
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'servicebus', integration: item.id } }" />
             <q-btn
               v-if="allowed('validate')"
               flat
@@ -75,6 +77,7 @@
         {{ discovery.observedAt?.toLocaleString() }}
       </p>
       <h3>Namespace policies</h3>
+      <p>SAS authentication: {{ discovery.localAuthEnabled == null ? 'Unknown' : discovery.localAuthEnabled ? 'Enabled' : 'Disabled' }}</p>
       <p>Visibility: {{ discovery.namespaceAuthorizationRules?.visibility }}</p>
       <p
         v-for="rule in discovery.namespaceAuthorizationRules?.policies"
@@ -99,6 +102,7 @@
           <tr>
             <th>Queue</th>
             <th>Status</th>
+            <th>Retention</th><th>Maximum deliveries</th><th>Dead letters</th>
             <th>Queue policies</th>
             <th>Policy visibility</th>
           </tr>
@@ -107,6 +111,9 @@
           <tr v-for="queue in discovery.queues" :key="queue.name">
             <td>{{ queue.name }}</td>
             <td>{{ queue.status || "Unknown" }}</td>
+            <td>{{ queue.defaultMessageTimeToLive ?? "Unknown" }}</td>
+            <td>{{ queue.maxDeliveryCount ?? "Unknown" }}</td>
+            <td>{{ queue.deadLetterMessageCount ?? "Unknown" }}</td>
             <td>
               <div
                 v-for="rule in queue.authorizationRules?.policies"
@@ -123,7 +130,7 @@
             <td>{{ queue.authorizationRules?.visibility }}</td>
           </tr>
           <tr v-if="!discovery.queues?.length">
-            <td colspan="4">No queues observed.</td>
+            <td colspan="7">No queues observed.</td>
           </tr>
         </tbody>
       </q-markup-table>
@@ -179,6 +186,8 @@
               emit-value
               map-options
             />
+            <AzureResourceSelection v-model:resource-id="form.namespaceResourceId" v-model:profile-id="form.credentialProfileId"
+              :auth-mode="form.authMode" kind="ServiceBus" />
             <q-banner v-if="formError" class="error q-mt-md" role="alert">{{
               formError
             }}</q-banner>
@@ -196,6 +205,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from "vue";
+import AzureResourceSelection from "../components/secretProvider/AzureResourceSelection.vue";
 import { useQuasar } from "quasar";
 import {
   CreateServiceBusIntegration,
@@ -238,6 +248,7 @@ const empty = () => ({
   name: "",
   messageBrokerId: "",
   namespaceResourceId: "",
+  credentialProfileId: null as string | null,
   authMode: SecretProviderAuthMode.ClientSecret,
 });
 const form = ref(empty());
@@ -312,6 +323,7 @@ async function edit(item?: ServiceBusConnection) {
         messageBrokerId: item.messageBrokerId!,
         namespaceResourceId: item.namespaceResourceId!,
         authMode: item.authMode!,
+        credentialProfileId: item.credentialProfileId ?? null,
       }
     : empty();
   dialog.value = true;
@@ -338,6 +350,8 @@ async function save() {
           messageBrokerId,
           namespaceResourceId,
           authMode,
+          credentialProfileId: form.value.credentialProfileId ?? undefined,
+          useSharedCredential: !form.value.credentialProfileId,
         }),
         signal,
       );
@@ -348,6 +362,7 @@ async function save() {
           messageBrokerId,
           namespaceResourceId,
           authMode,
+          credentialProfileId: form.value.credentialProfileId ?? undefined,
         }),
         signal,
       );

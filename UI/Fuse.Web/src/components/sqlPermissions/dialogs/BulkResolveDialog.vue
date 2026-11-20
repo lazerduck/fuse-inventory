@@ -1,39 +1,26 @@
 <template>
   <q-dialog v-model="dialogModel" persistent>
-    <q-card style="min-width: 500px">
+    <q-card style="width: 38rem; max-width: 95vw">
       <q-card-section class="row items-center">
         <q-icon name="auto_fix_high" color="primary" size="2em" class="q-mr-sm" />
         <span class="text-h6">Bulk Resolve All</span>
       </q-card-section>
 
       <q-card-section>
-        <p>This will apply all pending changes to align SQL permissions with Fuse configuration.</p>
-
-        <div class="q-mt-md text-caption">
-          <div v-if="resolvableMissingCount > 0" class="q-mb-sm">
-            <q-icon name="person_add" color="positive" size="xs" />
-            {{ resolvableMissingCount }} account(s) will be created
-            <div class="text-grey-7 q-ml-lg">
-              Only accounts linked to an Azure integration will be processed.
-            </div>
-          </div>
-          <div v-if="resolvableDriftCount > 0" class="q-mb-sm">
-            <q-icon name="sync" color="primary" size="xs" />
-            {{ resolvableDriftCount }} drift(s) will be resolved
-          </div>
-          <div v-if="skippedAccountsCount > 0" class="text-orange q-mb-sm">
-            <q-icon name="warning" color="orange" size="xs" />
-            {{ skippedAccountsCount }} account(s) will be skipped (no Azure integration linked)
-          </div>
-        </div>
-
-        <q-banner dense class="bg-blue-1 text-blue-9 q-mt-md">
-          <template #avatar>
-            <q-icon name="info" color="primary" />
-          </template>
-          Passwords will be retrieved from linked Azure integrations.
-          Accounts without an Azure integration link will be skipped.
+        <div v-if="loading" role="status"><q-spinner class="q-mr-sm" />Inspecting current SQL permissions…</div>
+        <q-banner v-else-if="error" dense role="alert">
+          {{ error }}
+          <template #action><q-btn flat label="Refresh" @click="emit('refresh')" /></template>
         </q-banner>
+        <q-list v-else-if="operations.length" bordered separator aria-label="Planned SQL operations">
+          <q-item v-for="(item, index) in operations" :key="index">
+            <q-item-section>
+              <q-item-label>{{ item.operation }} {{ item.privilege ?? '' }} · {{ item.principal }}</q-item-label>
+              <q-item-label caption>{{ item.reason || (item.schema ? item.database + ' / schema ' + item.schema : item.database || 'Server login') }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <p v-else>There are no pending SQL operations.</p>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -43,6 +30,7 @@
           label="Bulk Resolve"
           color="primary"
           :loading="isBulkResolving"
+          :disable="loading || !canConfirm || !operations.some(item => item.operation !== 'Skip')"
           @click="emit('confirm')"
         />
       </q-card-actions>
@@ -52,12 +40,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { SqlBulkOperation } from 'api/client'
 
 interface Props {
   modelValue: boolean
-  resolvableMissingCount: number
-  resolvableDriftCount: number
-  skippedAccountsCount: number
+  operations: SqlBulkOperation[]
+  canConfirm: boolean
+  loading: boolean
+  error: string
   isBulkResolving?: boolean
 }
 
@@ -68,6 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'confirm'): void
+  (e: 'refresh'): void
 }>()
 
 const dialogModel = computed({

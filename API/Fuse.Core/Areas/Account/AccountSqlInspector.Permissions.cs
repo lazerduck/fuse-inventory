@@ -8,9 +8,9 @@ public partial class AccountSqlInspector
     // Single-account, batch and orphan inspection use the same query so their scope
     // and inherited-permission semantics cannot diverge.
     private static async Task<IReadOnlyDictionary<string, SqlPrincipalPermissions>> ReadPrincipalPermissionsAsync(
-        SqlConnection connection, IReadOnlyList<string> principalNames, CancellationToken ct)
+        SqlConnection connection, IReadOnlyList<string> principalNames, CancellationToken ct, IReadOnlyList<string>? databases = null)
     {
-        const string createPrincipals = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY);";
+        const string createPrincipals = "CREATE TABLE #Principals (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY); CREATE TABLE #RequestedDatabases (Name NVARCHAR(128) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY);";
         await using (var command = new SqlCommand(createPrincipals, connection))
             await command.ExecuteNonQueryAsync(ct);
 
@@ -26,6 +26,17 @@ public partial class AccountSqlInspector
             await insert.ExecuteNonQueryAsync(ct);
         }
 
+        // A new user inherits public only in the databases where a user is created.
+        if (databases is not null)
+        {
+            foreach (var names in databases.Chunk(500))
+            {
+                var values = string.Join(", ", names.Select((_, i) => $"(@d{i})"));
+                await using var insert = new SqlCommand($"INSERT INTO #RequestedDatabases (Name) VALUES {values}", connection);
+                for (var index = 0; index < names.Length; index++) insert.Parameters.AddWithValue($"@d{index}", names[index]);
+                await insert.ExecuteNonQueryAsync(ct);
+            }
+        }
         const string query = """
             SET NOCOUNT ON;
             CREATE TABLE #PermissionRows (
@@ -35,11 +46,14 @@ public partial class AccountSqlInspector
                 ObjectName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
                 ColumnName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
                 PermissionName NVARCHAR(128) COLLATE DATABASE_DEFAULT,
-                PermissionState CHAR(1), PermissionClass INT
+                PermissionState CHAR(1), PermissionClass INT, Inherited BIT
             );
+            IF @limited=1 AND EXISTS(SELECT 1 FROM #RequestedDatabases WHERE DB_ID(Name) IS NULL OR ISNULL(HAS_DBACCESS(Name),0) <> 1)
+                THROW 50001, 'One or more requested databases are unavailable.', 1;
             DECLARE @Database SYSNAME, @Sql NVARCHAR(MAX);
             DECLARE databases CURSOR LOCAL FAST_FORWARD FOR
-                SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND HAS_DBACCESS(name) = 1;
+                SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND HAS_DBACCESS(name) = 1
+                AND (@limited=0 OR name IN (SELECT Name FROM #RequestedDatabases));
             OPEN databases;
             FETCH NEXT FROM databases INTO @Database;
             WHILE @@FETCH_STATUS = 0
@@ -77,7 +91,7 @@ public partial class AccountSqlInspector
 
                     INSERT INTO #PermissionRows
                     SELECT c.PrincipalName, DB_NAME(), s.name, o.name, col.name,
-                           p.permission_name, p.state, p.class
+                           p.permission_name, p.state, p.class, CASE WHEN grantee.name=c.PrincipalName THEN 0 ELSE 1 END
                     FROM #RoleClosure c
                     JOIN sys.database_permissions p ON p.grantee_principal_id = c.MemberId
                     JOIN sys.database_principals grantee ON grantee.principal_id = c.MemberId
@@ -92,7 +106,7 @@ public partial class AccountSqlInspector
                       AND NOT (grantee.name = ''public'' AND p.class = 1 AND p.major_id < 0 AND p.state IN (''G'', ''W''))
                     UNION ALL
                     SELECT c.PrincipalName, DB_NAME(), NULL, NULL, NULL,
-                           perms.PermissionName, perms.PermissionState, 0
+                           perms.PermissionName, perms.PermissionState, 0, 1
                     FROM #RoleClosure c
                     JOIN sys.database_principals r ON r.principal_id = c.MemberId AND r.is_fixed_role = 1
                     CROSS APPLY (SELECT PermissionName, PermissionState FROM (VALUES
@@ -120,18 +134,21 @@ public partial class AccountSqlInspector
             CLOSE databases;
             DEALLOCATE databases;
             SELECT PrincipalName, DatabaseName, SchemaName, ObjectName, ColumnName,
-                   PermissionName, PermissionState, PermissionClass FROM #PermissionRows;
+                   PermissionName, PermissionState, PermissionClass, Inherited FROM #PermissionRows;
             SELECT sp.name FROM sys.server_principals sp JOIN #Principals pr ON sp.name = pr.Name
             WHERE sp.type IN ('S', 'U', 'G', 'E', 'X');
             """;
 
         var grants = principalNames.ToDictionary(name => name,
             _ => new Dictionary<(string Database, string? Schema), HashSet<Privilege>>(), StringComparer.OrdinalIgnoreCase);
+        var inherited = principalNames.ToDictionary(name => name,
+            _ => new Dictionary<(string Database, string? Schema), HashSet<Privilege>>(), StringComparer.OrdinalIgnoreCase);
         var errors = principalNames.ToDictionary(name => name,
             _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await using (var command = new SqlCommand(query, connection))
-        await using (var reader = await command.ExecuteReaderAsync(ct))
+        await using var inspectionCommand = new SqlCommand(query, connection);
+        inspectionCommand.Parameters.Add("@limited", System.Data.SqlDbType.Bit).Value = databases is not null;
+        await using (var reader = await inspectionCommand.ExecuteReaderAsync(ct))
         {
             while (await reader.ReadAsync(ct))
             {
@@ -166,6 +183,11 @@ public partial class AccountSqlInspector
                 if (!grants[principal].TryGetValue(key, out var privileges))
                     grants[principal][key] = privileges = new HashSet<Privilege>();
                 privileges.Add(privilege.Value);
+                if (reader.GetBoolean(8))
+                {
+                    if (!inherited[principal].TryGetValue(key, out var fromRoles)) inherited[principal][key] = fromRoles = [];
+                    fromRoles.Add(privilege.Value);
+                }
             }
             await reader.NextResultAsync(ct);
             while (await reader.ReadAsync(ct))
@@ -174,7 +196,8 @@ public partial class AccountSqlInspector
 
         return principalNames.ToDictionary(name => name, name => new SqlPrincipalPermissions(
             name, existing.Contains(name),
-            grants[name].Select(grant => new SqlActualGrant(grant.Key.Database, grant.Key.Schema, grant.Value)).ToList(),
+            grants[name].Select(grant => new SqlActualGrant(grant.Key.Database, grant.Key.Schema, grant.Value)
+                { Inherited = inherited[name].GetValueOrDefault(grant.Key) ?? [] }).ToList(),
             errors[name].Count == 0 ? null : "Unsupported SQL permissions cannot be represented safely by database/schema grants: "
                 + string.Join("; ", errors[name].Order(StringComparer.Ordinal))
                 + ". Permission comparison, import and resolution are disabled for this principal."), StringComparer.OrdinalIgnoreCase);

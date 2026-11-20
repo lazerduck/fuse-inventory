@@ -17,11 +17,11 @@ public sealed class ServiceBusIntegrationService(IFuseStore store, ServiceBusIns
     public async Task<ServiceBusConnection?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         (await GetAllAsync(ct)).FirstOrDefault(i => i.Id == id);
     public Task<Result<ServiceBusConnection>> CreateAsync(CreateServiceBusIntegration command, CancellationToken ct = default) =>
-        Save(null, command.Name, command.MessageBrokerId, command.NamespaceResourceId, command.AuthMode, ct);
+        Save(null, command.Name, command.MessageBrokerId, command.NamespaceResourceId, command.AuthMode, command.CredentialProfileId, false, ct);
     public Task<Result<ServiceBusConnection>> UpdateAsync(UpdateServiceBusIntegration command, CancellationToken ct = default) =>
-        Save(command.Id, command.Name, command.MessageBrokerId, command.NamespaceResourceId, command.AuthMode, ct);
+        Save(command.Id, command.Name, command.MessageBrokerId, command.NamespaceResourceId, command.AuthMode, command.CredentialProfileId, command.UseSharedCredential, ct);
 
-    private async Task<Result<ServiceBusConnection>> Save(Guid? id, string name, Guid brokerId, string resourceId, SecretProviderAuthMode mode, CancellationToken ct)
+    private async Task<Result<ServiceBusConnection>> Save(Guid? id, string name, Guid brokerId, string resourceId, SecretProviderAuthMode mode, Guid? profileId, bool useShared, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > 200 || !ServiceBusInspector.Valid(resourceId, mode))
             return Result<ServiceBusConnection>.Failure("Enter a name, an Azure Service Bus namespace resource ID and a valid authentication mode.");
@@ -30,6 +30,12 @@ public sealed class ServiceBusIntegrationService(IFuseStore store, ServiceBusIns
         {
             var existing = snapshot.ServiceBusIntegrations.FirstOrDefault(i => i.Id == id);
             if (id.HasValue && existing is null) return snapshot;
+            var selectedProfile = profileId ?? (useShared || mode != SecretProviderAuthMode.ClientSecret ? null : existing?.CredentialProfileId);
+            if (!AzureCredentialProfile.Allows(snapshot.AzureIntegrationManager, selectedProfile, resourceId, mode))
+            {
+                result = Result<ServiceBusConnection>.Failure("Select a credential profile for this Azure resource.");
+                return snapshot;
+            }
             if (!snapshot.MessageBrokers.Any(b => b.Id == brokerId && string.Equals(b.Kind, "Azure Service Bus", StringComparison.OrdinalIgnoreCase)))
             {
                 result = Result<ServiceBusConnection>.Failure("Select an Azure Service Bus message broker.");
@@ -41,7 +47,7 @@ public sealed class ServiceBusIntegrationService(IFuseStore store, ServiceBusIns
                 return snapshot;
             }
             var now = DateTime.UtcNow;
-            var item = new ServiceBusConnection(id ?? Guid.NewGuid(), name.Trim(), brokerId, resourceId.TrimEnd('/'), mode, existing?.CreatedAt ?? now, now);
+            var item = new ServiceBusConnection(id ?? Guid.NewGuid(), name.Trim(), brokerId, resourceId.TrimEnd('/'), mode, existing?.CreatedAt ?? now, now, selectedProfile);
             result = Result<ServiceBusConnection>.Success(item);
             return snapshot with { ServiceBusIntegrations = existing is null ? snapshot.ServiceBusIntegrations.Append(item).ToArray()
                 : snapshot.ServiceBusIntegrations.Select(i => i.Id == id ? item : i).ToArray() };
@@ -68,11 +74,11 @@ public sealed class ServiceBusIntegrationService(IFuseStore store, ServiceBusIns
 
     public async Task<Result<ServiceBusConnectionTestResult>> ValidateAsync(ValidateServiceBusConnection command, CancellationToken ct = default) =>
         ServiceBusInspector.Valid(command.NamespaceResourceId, command.AuthMode)
-            ? Result<ServiceBusConnectionTestResult>.Success(await inspector.ValidateAsync(command.NamespaceResourceId.TrimEnd('/'), command.AuthMode, ct))
+            ? Result<ServiceBusConnectionTestResult>.Success(await inspector.ValidateAsync(command.NamespaceResourceId.TrimEnd('/'), command.AuthMode, ct, command.CredentialProfileId))
             : Result<ServiceBusConnectionTestResult>.Failure("Enter a valid namespace resource ID and authentication mode.");
 
     public async Task<Result<ServiceBusConnectionTestResult>> ValidateSavedAsync(Guid id, CancellationToken ct = default) =>
-        await GetByIdAsync(id, ct) is { } item ? await ValidateAsync(new(item.NamespaceResourceId, item.AuthMode), ct)
+        await GetByIdAsync(id, ct) is { } item ? await ValidateAsync(new(item.NamespaceResourceId, item.AuthMode, item.CredentialProfileId), ct)
             : Result<ServiceBusConnectionTestResult>.Failure(Missing, ErrorType.NotFound);
 
     public async Task<Result<ServiceBusDiscoveryResponse>> DiscoverAsync(Guid id, CancellationToken ct = default)

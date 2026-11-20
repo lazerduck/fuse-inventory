@@ -30,6 +30,8 @@
         {{ data.overview.errorMessage }}
       </q-banner>
 
+      <q-btn v-if="fuseStore.hasPermission('integrationreviews:read')" flat class="q-mb-sm" icon="history"
+        label="Access reviews" :to="{ name: 'integrationReviews', query: { provider: 'sql', integration: integrationId } }" />
       <SqlPermissionsSummaryCard class="q-mb-md" :summary="data.overview?.summary" />
 
       <div v-if="hasResolvableAccounts && canBulkResolve" class="q-mb-md">
@@ -38,7 +40,7 @@
           :resolvable-drift-count="resolvableDriftCount"
           :skipped-accounts-count="skippedAccountsCount"
           :is-bulk-resolving="permissionStates.isBulkResolving?.value ?? false"
-          @bulk-resolve="showBulkResolveDialog = true"
+          @bulk-resolve="openBulkPreview"
         />
       </div>
 
@@ -93,9 +95,11 @@
 
     <BulkResolveDialog
       v-model="showBulkResolveDialog"
-      :resolvable-missing-count="resolvableMissingCount"
-      :resolvable-drift-count="resolvableDriftCount"
-      :skipped-accounts-count="skippedAccountsCount"
+      :operations="bulkPreview?.operations ?? []"
+      :can-confirm="!!bulkPreview?.revision"
+      :loading="loadingPreview"
+      :error="previewError"
+      @refresh="openBulkPreview"
       :is-bulk-resolving="permissionStates.isBulkResolving?.value ?? false"
       @confirm="handleBulkResolveConfirm"
     />
@@ -136,6 +140,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSqlPermissionsOverview } from '../composables/useSqlPermissionsOverview'
 import { useSqlIntegrations } from '../composables/useSqlIntegrations'
 import { useSqlPermissionsActions } from '../composables/useSqlPermissionsActions'
+import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
 import { PasswordSource, SyncStatus } from 'api/client'
 import { Permission } from 'permissions'
@@ -143,6 +148,7 @@ import type {
   AuthKind,
   SecretBindingKind,
   BulkResolveResponse,
+  SqlBulkPlan,
   CreateSqlAccountResponse,
   ImportOrphanPrincipalResponse,
   ImportPermissionsResponse,
@@ -263,6 +269,27 @@ const skippedAccountsCount = computed(() => {
   ).length
 })
 
+const bulkPreview = ref<SqlBulkPlan | null>(null)
+const loadingPreview = ref(false)
+const previewError = ref('')
+const sqlClient = useFuseClient()
+
+async function openBulkPreview() {
+  showBulkResolveDialog.value = true
+  bulkPreview.value = null
+  previewError.value = ''
+  loadingPreview.value = true
+  const requestedId = integrationId.value
+  try {
+    const result = await sqlClient.previewSqlBulkResolve(requestedId)
+    if (integrationId.value === requestedId) bulkPreview.value = result
+  } catch {
+    previewError.value = 'Could not verify a current plan. Refresh to inspect SQL Server again.'
+  } finally {
+    loadingPreview.value = false
+  }
+}
+
 const hasResolvableAccounts = computed(() => resolvableMissingCount.value > 0 || resolvableDriftCount.value > 0)
 
 const createDialogDefaultPasswordSource = computed(() => {
@@ -317,7 +344,9 @@ async function handleImportConfirm() {
 }
 
 async function handleBulkResolveConfirm() {
-  const result = await bulkResolveAll()
+  if (!bulkPreview.value?.revision) return
+  const result = await bulkResolveAll(bulkPreview.value.revision)
+  bulkPreview.value = null
   bulkResolveResult.value = result
   showBulkResolveDialog.value = false
   showBulkResolveResultDialog.value = true

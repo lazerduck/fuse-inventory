@@ -29,6 +29,9 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <IntegrationPasswordButton provider="mongodb" :integration-id="item.id" @saved="load" />
+            <q-btn v-if="store.hasPermission('integrationreviews:read')" flat label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'mongodb', integration: item.id } }" />
             <q-btn
               flat
               label="Inspect"
@@ -77,9 +80,31 @@
         >{{ warning }}</q-banner
       >
       <h3>Collections — {{ discovery.collectionsStatus }}</h3>
-      <p>
-        {{ discovery.collections.join(", ") || "No collections observed." }}
-      </p>
+      <q-list v-if="discovery.collections.length" bordered separator>
+        <q-item v-for="name in discovery.collections" :key="name">
+          <q-item-section>{{ name }}<q-item-label caption>{{ discovery.collectionTypes?.[name] }}</q-item-label></q-item-section>
+          <q-item-section side>
+            <q-btn v-if="discovery.collectionTypes?.[name] !== 'view'" flat dense
+              label="Indexes" :aria-label="'Inspect indexes on ' + name" :disable="busy" @click="loadIndexes(name)" />
+          </q-item-section>
+        </q-item>
+      </q-list>
+      <p v-else>No collections observed.</p>
+      <section v-if="indexInventory" aria-live="polite">
+        <h3>Indexes on {{ indexInventory.collection }}</h3>
+        <p>Visibility: {{ indexInventory.status }}</p>
+        <q-list v-if="indexInventory.indexes.length" bordered separator>
+          <q-item v-for="index in indexInventory.indexes" :key="index.name">
+            <q-item-section>
+              <q-item-label>{{ index.name }}</q-item-label>
+              <q-item-label caption>{{ index.keys.map(k => k.field + ' ' + k.order).join(', ') }}
+                · {{ index.unique ? 'Unique' : 'Non-unique' }}
+                · {{ index.expireAfterSeconds == null ? 'No TTL' : 'Expires after ' + index.expireAfterSeconds + ' s' }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </section>
       <h3>User discovery coverage</h3>
       <q-list bordered
         ><q-item
@@ -241,6 +266,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { useAuthToken } from "../composables/useAuthToken";
@@ -272,6 +298,7 @@ interface Discovery {
   connectionStatus: string;
   collectionsStatus: string;
   collections: string[];
+  collectionTypes?: Record<string, string>;
   rolesStatus: string;
   warnings: string[];
   roles: {
@@ -448,7 +475,29 @@ async function save() {
     saving.value = false;
   }
 }
+const inspectedId = ref("");
+interface IndexInventory {
+  collection: string;
+  status: string;
+  indexes: { name: string; keys: { field: string; order: string }[]; unique: boolean; expireAfterSeconds?: number }[];
+}
+const indexInventory = ref<IndexInventory | null>(null);
+async function loadIndexes(name: string) {
+  busy.value = true;
+  error.value = "";
+  indexInventory.value = null;
+  try {
+    indexInventory.value = await request<IndexInventory>(
+      "/" + inspectedId.value + "/indexes?collection=" + encodeURIComponent(name));
+  } catch (e) {
+    error.value = String(e);
+  } finally {
+    busy.value = false;
+  }
+}
 async function inspect(item: Integration) {
+  inspectedId.value = item.id;
+  indexInventory.value = null;
   busy.value = true;
   error.value = "";
   discovery.value = null;

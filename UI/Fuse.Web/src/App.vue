@@ -273,6 +273,10 @@
           </q-expansion-item>
 
           <q-expansion-item label="Integrations" icon="cloud_sync" dense expand-separator class="nav-group nav-group--integrations">
+            <q-item v-if="fuseStore.hasPermission('integrationreviews:read')" clickable v-ripple :to="{name:'integrationReviews'}" active-class="nav-active">
+              <q-item-section avatar><q-icon name="fact_check" /></q-item-section>
+              <q-item-section>Integration reviews</q-item-section>
+            </q-item>
             <q-item v-if="fuseStore.appSettings?.scrumPokerEnabled" clickable v-ripple :to="{ name: 'scrumPoker' }" active-class="nav-active">
               <q-item-section avatar><q-icon name="style" /></q-item-section>
               <q-item-section>Scrum Poker</q-item-section>

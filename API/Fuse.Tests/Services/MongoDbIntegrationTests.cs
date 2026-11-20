@@ -125,4 +125,32 @@ public class MongoDbIntegrationTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>new MongoDbInspector(session).ValidateAsync(new(new Uri("mongodb://localhost/lab_app"),"observer","secret","admin"),ct.Token));
         Assert.True(session.Disposed);
     }
+
+    [Theory]
+    [InlineData("{a:1,b:-1}", "Matched")]
+    [InlineData("{b:-1,a:1}", "Drift")]
+    public async Task IndexReviewPreservesKeyOrderAndProjectsOnlyExpectedMetadata(string keys, string expected)
+    {
+        var ds = Store;
+        var node = new MongoDbIntegration(Guid.NewGuid(), "Mongo", ds.Id, ds.ConnectionUri!, "observer", "private",
+            DateTime.UtcNow, DateTime.UtcNow, "admin", false);
+        var snapshot = new InMemoryFuseStore().Current! with { MongoDbIntegrations = [node], DataStores = [ds] };
+        using var session = new Session((db, command) =>
+        {
+            Assert.Equal("lab_app", db);
+            Assert.Equal("orders", command["listIndexes"].AsString);
+            return BsonDocument.Parse("{cursor:{id:0,firstBatch:[{name:'lookup',key:{a:1,b:-1},unique:true,expireAfterSeconds:12,private:'secret'}]}}");
+        });
+        var provider = new MongoDbReviewProvider(session);
+        var input = new Fuse.Core.Areas.IntegrationReviews.ReviewInput("mongodb", node.Id, "collection-index", null, new()
+        {
+            ["collection"]="orders", ["index"]="lookup", ["keys"]=BsonDocument.Parse(keys).ToJson(), ["unique"]="yes", ["ttl"]="12"
+        });
+        var result = await provider.InspectAsync(snapshot, input, default);
+        Assert.Equal(expected, result.Status.ToString());
+        Assert.DoesNotContain("secret", JsonSerializer.Serialize(result));
+        Assert.Single(session.Commands);
+        input.Fields["collection"]="system.users";
+        Assert.NotNull(provider.Validate(snapshot, input));
+    }
 }

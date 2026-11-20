@@ -2,4 +2,9 @@ namespace Fuse.Core.Models;
 
 /// <summary>Private connection configuration. Public API responses must use MongoDbIntegrationResponse.</summary>
 public record MongoDbIntegration(Guid Id, string Name, Guid DataStoreId, Uri Endpoint,
-    string Username, string? Password, DateTime CreatedAt, DateTime UpdatedAt, string AuthenticationDatabase, bool UseTls);
+    string Username, string? Password, DateTime CreatedAt, DateTime UpdatedAt, string AuthenticationDatabase, bool UseTls) : IPasswordConnection
+{
+    public BoundIntegrationPassword? PasswordBinding { get; init; }
+    IPasswordConnection IPasswordConnection.WithPassword(string? value, BoundIntegrationPassword? binding, DateTime updatedAt) =>
+        this with { Password = value, PasswordBinding = binding, UpdatedAt = updatedAt };
+}

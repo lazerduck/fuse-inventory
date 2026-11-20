@@ -14,7 +14,7 @@
         @click="edit()"
       />
     </div>
-    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md">{{
+    <q-banner v-if="error" class="review-error q-mb-md">{{
       error
     }}</q-banner>
     <q-linear-progress v-if="busy" indeterminate />
@@ -29,6 +29,13 @@
         >
         <q-item-section side
           ><div class="q-gutter-sm">
+            <IntegrationPasswordButton provider="rabbitmq" :integration-id="item.id" @saved="load" />
+            <q-btn
+              v-if="store.hasPermission('integrationreviews:read')"
+              flat
+              label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'rabbitmq', integration: item.id } }"
+            />
             <q-btn
               flat
               label="Inspect"
@@ -73,7 +80,7 @@
       <q-banner
         v-for="warning in discovery.warnings"
         :key="warning"
-        class="bg-orange-1 q-mb-sm"
+        class="review-warning q-mb-sm"
         >{{ warning }}</q-banner
       >
       <h3>Topology — {{ discovery.topologyStatus }}</h3>
@@ -83,6 +90,8 @@
             <th>Kind</th>
             <th>Name / source</th>
             <th>Type</th>
+            <th>Durability</th>
+            <th>Dead-letter exchange</th>
             <th>Destination</th>
             <th>Routing key</th>
           </tr>
@@ -92,6 +101,8 @@
             <td>{{ row.kind }}</td>
             <td>{{ row.name || "(default exchange)" }}</td>
             <td>{{ row.type }}</td>
+            <td>{{ row.durable == null ? '—' : row.durable ? 'Durable' : 'Transient' }}</td>
+            <td>{{ row.kind !== 'queues' ? '—' : row.deadLetterExchange === '' ? '(default exchange)' : row.deadLetterExchange ?? (row.routingOptionsKnown ? 'None' : 'Unknown') }}</td>
             <td>{{ row.destination }}</td>
             <td>{{ row.routingKey }}</td>
           </tr>
@@ -118,8 +129,7 @@
       >
       <h3>Virtual host permissions — {{ discovery.permissionsStatus }}</h3>
       <p>
-        Observed resource-name patterns. These do not evaluate topic permissions
-        or prove application access.
+        Resource-name patterns control broker operations. A topic exchange can also restrict the routing key for publishers.
       </p>
       <q-markup-table flat bordered wrap-cells
         ><thead>
@@ -139,6 +149,14 @@
           </tr>
         </tbody></q-markup-table
       >
+      <h3>Topic permissions — {{ discovery.topicPermissionsStatus }}</h3>
+      <q-markup-table v-if="discovery.topicPermissions?.length" flat bordered wrap-cells>
+        <thead><tr><th>User</th><th>Exchange</th><th>Write key pattern</th><th>Read key pattern</th></tr></thead>
+        <tbody><tr v-for="row in discovery.topicPermissions" :key="JSON.stringify([row.username, row.exchange])">
+          <td>{{ row.username }}</td><td>{{ row.exchange }}</td><td>{{ row.write }}</td><td>{{ row.read }}</td>
+        </tr></tbody>
+      </q-markup-table>
+      <p v-else>{{ discovery.topicPermissionsStatus === 'complete' ? 'No additional topic restrictions observed.' : 'Topic permission evidence is unavailable.' }}</p>
     </section>
     <q-dialog v-model="dialog"
       ><q-card style="width: 600px; max-width: 95vw"
@@ -200,6 +218,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import IntegrationPasswordButton from '../components/integrations/IntegrationPasswordButton.vue'
 import { ref, watch, onBeforeUnmount } from "vue";
 import { useQuasar } from "quasar";
 import { useAuthToken } from "../composables/useAuthToken";
@@ -228,9 +247,14 @@ interface Discovery {
     type?: string;
     destination?: string;
     routingKey?: string;
+    durable?: boolean;
+    deadLetterExchange?: string;
+    routingOptionsKnown?: boolean;
   }[];
   queues: { name: string; status: string }[];
   users: string[];
+  topicPermissionsStatus: string;
+  topicPermissions: { username: string; exchange: string; write: string; read: string }[];
   permissions: {
     username: string;
     configure: string;
@@ -385,6 +409,8 @@ onBeforeUnmount(() => controller.abort());
 </script>
 <style scoped src="../styles/pages.css"></style>
 <style scoped>
+.review-warning { background: var(--fuse-status-drift-bg); color: var(--fuse-text); }
+.review-error { background: var(--fuse-status-error-bg); color: var(--fuse-text); }
 h2 {
   font-size: 1.5rem;
   line-height: 1.4;

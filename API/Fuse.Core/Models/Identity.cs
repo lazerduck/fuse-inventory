@@ -19,7 +19,8 @@ public record Identity
     IReadOnlyList<IdentityAssignment> Assignments,
     HashSet<Guid> TagIds,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    AzurePrincipalBinding? AzurePrincipal = null
 );
 
 /// <summary>
@@ -45,3 +46,5 @@ public record IdentityAssignment
     string? Role,
     string? Notes
 );
+
+public record AzurePrincipalBinding(Guid TenantId, Guid ObjectId);

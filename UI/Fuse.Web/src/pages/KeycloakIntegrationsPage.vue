@@ -30,6 +30,12 @@
         <q-item-section side
           ><div>
             <q-btn
+              v-if="store.hasPermission('integrationreviews:read')"
+              flat
+              label="Reviews"
+              :to="{ name: 'integrationReviews', query: { provider: 'keycloak', integration: item.id } }"
+            />
+            <q-btn
               flat
               label="Inspect"
               :disable="busy"

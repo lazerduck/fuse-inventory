@@ -92,6 +92,7 @@
 
         <template #body-cell-actions="props">
           <q-td :props="props" class="text-right">
+            <SecretReferenceButton :provider="providerId" :name="props.row.name" />
             <q-btn aria-label="Reveal secret"
               v-if="canRevealSecret"
               flat
@@ -262,6 +263,7 @@
 </template>
 
 <script setup lang="ts">
+import SecretReferenceButton from "../components/secretProvider/SecretReferenceButton.vue"
 import { useDialogDraft } from '../composables/useDialogDraft'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { computed, ref, reactive } from 'vue'

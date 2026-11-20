@@ -20,6 +20,8 @@ public record Account
     DateTime UpdatedAt
 )
 {
+    public InventoryOrigin? ImportedFrom { get; init; }
+
     // Legacy property for backward compatibility during migration
     public string SecretRef => SecretBinding.Kind switch
     {

@@ -6,6 +6,7 @@ namespace Fuse.Core.Areas.SecretProvider;
 public interface IAzureIntegrationManagerService
 {
     Task<AzureIntegrationManager?> GetManagerAsync();
+    Task<SecretProviderCredentials?> GetProfileCredentialsAsync(Guid id, string resourceId) => Task.FromResult<SecretProviderCredentials?>(null);
     Task<SecretProviderCredentials?> GetClientSecretCredentialsAsync();
     Task<Result<AzureIntegrationManager>> UpdateClientSecretCredentialsAsync(SecretProviderCredentials credentials);
 }
