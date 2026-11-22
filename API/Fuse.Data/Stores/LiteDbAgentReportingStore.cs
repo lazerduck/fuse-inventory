@@ -156,10 +156,16 @@ public sealed class LiteDbAgentReportingStore : IAgentReportingStore, IDisposabl
                 CheckedAt = checkedAt > now ? now : checkedAt,
                 IndexUpdatedAt = indexAt > now.AddMinutes(1) ? null : indexAt
             };
-            if (binding.Assessment is null || assessment.CheckedAt >= binding.Assessment.CheckedAt)
+            var matchesCurrentJob = binding.CheckJob?.Id == report.CompletedJobId;
+            if (binding.CheckJob is { State: "running" } job && matchesCurrentJob)
+            {
+                // Delivery of this job establishes ordering even if the node's clock moved back.
                 binding.Assessment = assessment;
-            if (binding.CheckJob is { State: "running" } job && job.Id == report.CompletedJobId)
                 binding.CheckJob = job with { State = assessment.Error is null ? "succeeded" : "failed", CompletedAt = now };
+            }
+            else if ((report.CompletedJobId is null || matchesCurrentJob) &&
+                     (binding.Assessment is null || assessment.CheckedAt >= binding.Assessment.CheckedAt))
+                binding.Assessment = assessment;
         }
         if (!binding.SupportsAssessment || binding.CheckJob is not { State: "queued" or "running" } pending)
             return null;

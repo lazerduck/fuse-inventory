@@ -213,6 +213,40 @@ public sealed class PlatformAgentReportingTests : IDisposable
     }
 
     [Fact]
+    public async Task LatestRequestedCheckReplacesThePriorResultAfterTheNodeClockMovesBackwards()
+    {
+        await AddCluster();
+        using var db = Open();
+        var ticket = (await db.InviteAsync(Target, false, default)).Value!.Ticket;
+        Assert.True(await db.PairAsync(ticket, Credential, default));
+        await db.ReportAsync(Credential, "node", "2", new(2), default);
+
+        async Task<AgentCheckIn> CompleteCheck(AgentAssessment assessment)
+        {
+            var id = (await db.RequestCheckAsync(Target, default)).Value!.Id;
+            var delivery = await db.ReportAsync(Credential, "node", "2", new(2), default);
+            Assert.Equal(id, delivery!.Job!.Id);
+            var result = new AgentCheckIn(2, Assessment: assessment, CompletedJobId: id);
+            await db.ReportAsync(Credential, "node", "2", result, default);
+            return result;
+        }
+
+        var prior = new AgentAssessment(_clock.Now.UtcDateTime, null, [], [], null, null, null, "No APT indexes.");
+        var earlierJob = await CompleteCheck(prior);
+        _clock.Now = _clock.Now.AddMinutes(1);
+        var correctedTime = _clock.Now.AddHours(-2).UtcDateTime;
+        var fresh = await CompleteCheck(new(correctedTime, null, ["curl"], [], 1, 0, false, null));
+        await db.ReportAsync(Credential, "node", "2", earlierJob, default); // stale completion retried
+
+        var status = (await db.StatusAsync(Target, default))!;
+        Assert.Equal(fresh.CompletedJobId, status.CheckJob!.Id);
+        Assert.Equal("succeeded", status.CheckJob.State);
+        Assert.Equal(correctedTime, status.Assessment!.CheckedAt);
+        Assert.Null(status.Assessment.Error);
+        Assert.Equal("curl", Assert.Single(status.Assessment.Pending));
+    }
+
+    [Fact]
     public void TransportIdentityIsStableAcrossRestarts()
     {
         var options = new JsonFuseStoreOptions { DataDirectory = _directory };
