@@ -3,6 +3,7 @@ using Fuse.Core.Areas.Logging;
 using Fuse.Core.Interfaces;
 using Fuse.Core.Areas.Activity;
 using Fuse.Core.Areas.Audit;
+using Fuse.Core.Areas.PlatformAgent;
 using Fuse.Data.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,8 +16,8 @@ public static class FuseDataModule
         var dataDirectory = Environment.GetEnvironmentVariable("FUSE_DATA_DIR") 
             ?? Path.Combine(AppContext.BaseDirectory, "data");
         
-        services.AddSingleton<IFuseStore>(_ =>
-            new JsonFuseStore(new JsonFuseStoreOptions { DataDirectory = dataDirectory }));
+        services.AddSingleton(new JsonFuseStoreOptions { DataDirectory = dataDirectory });
+        services.AddSingleton<IFuseStore, JsonFuseStore>();
         
         services.AddSingleton<IAuditService>(provider =>
             new LiteDbAuditService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
@@ -28,5 +29,8 @@ public static class FuseDataModule
             new LiteDbVersionHistoryService(provider.GetRequiredService<IFuseStore>(), dataDirectory));
 
         services.AddSingleton<IHealthMonitoringStore>(_ => new LiteDbHealthMonitoringStore(dataDirectory));
+        services.AddSingleton<IAgentReportingStore>(provider => new LiteDbAgentReportingStore(
+            provider.GetRequiredService<IFuseStore>(),
+            provider.GetRequiredService<JsonFuseStoreOptions>().DataDirectory, TimeProvider.System));
     }
 }

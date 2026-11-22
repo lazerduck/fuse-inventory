@@ -310,6 +310,15 @@ public static class PermissionMatrixBuilder
     /// </summary>
     public static IReadOnlyList<EndpointAccessTest> CoreEndpointTests => new EndpointAccessTest[]
     {
+        new()
+        {
+            HttpMethod = "GET",
+            Endpoint = "/api/platforms/agents",
+            DisplayName = "Get registered devices",
+            ExpectedStatusCode = 200,
+            RequiredPermissionKey = PlatformPermissions.ReadKey
+        },
+
         // Account endpoints
         new()
         {

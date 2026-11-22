@@ -69,6 +69,22 @@ public class SecurityLevelOverrideTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task UnrestrictedStillRequiresAuthenticationToIssueOrRevokeAgentPairings()
+    {
+        await _adminClient!.ApiSecuritySettingsAsync(new UpdateSecuritySettings { Posture = ApiClient.SecurityPosture.Unrestricted });
+        using var http = _apiFixture.CreateUnauthenticatedHttpClient();
+        var route = $"/api/platforms/{Guid.NewGuid()}/agent";
+        using var pairing = await http.PostAsync(route + "/pair", System.Net.Http.Json.JsonContent.Create(new { replace = true }));
+        using var revoke = await http.DeleteAsync(route);
+        using var check = await http.PostAsync(route + "/check-updates", null);
+        using var release = await http.GetAsync(route + "/release");
+        Assert.Equal(HttpStatusCode.Unauthorized, pairing.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, revoke.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, check.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, release.StatusCode);
+    }
+
+    [Fact]
     public async Task SecurityLevel_None_Allows_Unauthenticated_Read_Access()
     {
         // Arrange: Set security level to None (public access)

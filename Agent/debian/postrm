@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+if [ "$1" = purge ]; then
+    rm -f /etc/fuse-agent/node.json
+    rmdir /etc/fuse-agent 2>/dev/null || true
+    # DynamicUser places StateDirectory data below /var/lib/private.
+    rm -f /var/lib/fuse-agent-reporting/apt-job.json /var/lib/fuse-agent-reporting/apt-job.json.tmp
+    rmdir /var/lib/private/fuse-agent-reporting 2>/dev/null || true
+    if [ -L /var/lib/fuse-agent-reporting ] && [ ! -e /var/lib/fuse-agent-reporting ]; then rm /var/lib/fuse-agent-reporting; fi
+fi
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+fi

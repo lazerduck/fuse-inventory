@@ -75,17 +75,19 @@ jobs:
   arm64-container:
     name: Native ARM64 Container Smoke
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v7
+      - name: Verify worker preview version ordering
+        run: sh Tests/Containers/agent-preview-version-check.sh
       - name: Build final image natively on ARM64
         run: |
           test "$(uname -m)" = aarch64
           docker build --platform linux/arm64 --tag fuse-container-smoke:arm64 .
       - name: Verify ARM64 runtime and native dependencies with disposable data
-        run: python3 Tests/Containers/runtime-smoke.py --image fuse-container-smoke:arm64 --architecture arm64
+        run: python3 Tests/Containers/runtime-smoke.py --image fuse-container-smoke:arm64 --architecture arm64 --install-agent-on-runner
 
   test:
     name: Run Tests with Coverage
@@ -178,9 +180,11 @@ jobs:
 
           SHORT_SHA="${GITHUB_SHA::7}"
           APP_VERSION="${BASE_VERSION}-pre.${SHORT_SHA}"
+          AGENT_VERSION=$(sh Agent/preview-version.sh)
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "agent_version=${AGENT_VERSION}" >> "$GITHUB_OUTPUT"
           echo "app_channel=pre-release" >> "$GITHUB_OUTPUT"
           echo "git_commit_id=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "git_commit_id_short=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
@@ -207,6 +211,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.buildmeta.outputs.git_commit_id_short }}
           build-args: |
             APP_VERSION=${{ steps.buildmeta.outputs.app_version }}
+            AGENT_VERSION=${{ steps.buildmeta.outputs.agent_version }}
             APP_CHANNEL=${{ steps.buildmeta.outputs.app_channel }}
             GIT_COMMIT_ID=${{ steps.buildmeta.outputs.git_commit_id }}
             GIT_COMMIT_ID_SHORT=${{ steps.buildmeta.outputs.git_commit_id_short }}

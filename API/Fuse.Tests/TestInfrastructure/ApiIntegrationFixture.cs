@@ -163,6 +163,8 @@ public class ApiIntegrationFixture : WebApplicationFactory<Program>, IAsyncLifet
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IFuseStore>();
+                services.RemoveAll<JsonFuseStoreOptions>();
+                services.AddSingleton(new JsonFuseStoreOptions { DataDirectory = dataDirectory });
                 services.RemoveAll<IAuditService>();
                 services.RemoveAll<ILogService>();
                 services.RemoveAll<IVersionHistoryService>();

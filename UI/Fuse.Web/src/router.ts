@@ -77,6 +77,11 @@ const router = createRouter({
       component: () => import('./pages/PlatformsPage.vue')
     },
     {
+      path: '/devices',
+      name: 'registeredDevices',
+      component: () => import('./pages/RegisteredDevicesPage.vue')
+    },
+    {
       path: '/environments',
       name: 'environments',
       component: () => import('./pages/EnvironmentsPage.vue')
