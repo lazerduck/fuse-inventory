@@ -182,6 +182,35 @@ individual operating the client.
 
 ---
 
+## Platform agent reporting
+
+Fuse images built from this source include a self-contained reporting agent for Debian and Ubuntu systemd hosts on AMD64 and ARM64. In **Platforms**, choose **Agent** beside a server or container host, or **Node agents** beside a cluster and select the node. Sign in as an administrator or with the `platforms:manage-agents` permission, choose **Set up agent**, and paste the command on that host within 15 minutes. Open the page at the address the server can reach.
+
+The command verifies the installer and package, then tests the encrypted connection before installing the service. A non-root operator needs `sudo` for the installation step. The agent checks in about every 30 seconds. Open the platform or node's **Agent** panel to see its hostname, agent version and last contact. Fuse marks a check-in overdue after 90 seconds and shows **No contact** after five minutes.
+
+- **Current usage** shows whole-host CPU average and peak, available and total RAM, space on local filesystems, and GPU utilization where the installed driver exposes it. The CPU peak is the busiest sampled interval in a report. Each CPU sample spans at least five seconds. Unsupported readings appear as unavailable.
+- **Usage history** offers one-hour, one-day, seven-day and 30-day views. Fuse retains 30-second buckets for 24 hours and five-minute summaries for 30 days. Gaps show when readings were unavailable.
+- **OS updates** shows updates available from the host's local APT index, packages held or kept back, and the reboot indicator when available. The worker checks on startup, about every six hours, and after installed packages change. A signed-in operator with `platforms:check-updates` can request a new assessment at the next check-in. The assessment simulates an upgrade using the host's existing indexes. Hosts refresh their indexes on their own schedule. The panel shows the last successful index refresh when APT recorded it.
+
+Healthy check-ins are silent in the host journal. If a check-in fails to reach Fuse or receive its acknowledgement, the worker logs the first failure, one reminder per hour while retries continue, and one recovery message when Fuse acknowledges a check-in again. View these events with `journalctl -u fuse-agent`.
+
+On the host, use `fuse-agent status`, `sudo fuse-agent stop` and `sudo fuse-agent start`. Run `sudo fuse-agent upgrade` to install the agent version served by the paired Fuse instance. For the original check-in-only agent, choose **Get upgrade command** in the platform's **Agent** panel and run it on the existing host. Both upgrade paths retain the enrolment and verify the upgraded service's check-in. To remove the agent, revoke access in Fuse and run `sudo dpkg --purge fuse-agent` on the host. Revoking or replacing an agent deletes its usage history.
+
+**Using NGINX on a trusted LAN.** Keep your existing Fuse URL and port. Forward ordinary `/agent/` downloads to the same Fuse backend as the UI and enable WebSocket upgrades on `/agent/connect`. If your proxy already forwards upgrades for all Fuse routes, it is ready. For example, alongside an existing catch-all proxy location, use the same upstream address in this block:
+
+```nginx
+location = /agent/connect {
+    proxy_pass http://fuse-app:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+
+On plain HTTP, the local network is trusted to deliver the initial command and protect the signed-in operator's session. The paired worker verifies Fuse's pinned public key and uses TLS inside the WebSocket. The installer verifies a signed package manifest using the build-specific public key embedded in the installer. Include the reporting database and `agent-identity/` directory in full-volume backups to preserve pairings.
+
+For development with `dotnet run`, first run `sh Agent/build-assets.sh /tmp/fuse-agent-assets 0.0.0` at the repository root, then set `Agent__AssetsDirectory=/tmp/fuse-agent-assets` for the API process. Docker builds include these assets automatically.
+
 ## 🧬 Core Model
 
 Fuse Inventory’s model reflects how real systems are structured:

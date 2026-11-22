@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Fuse.API.Controllers;
+using Fuse.API.Agents;
 using Fuse.API.Updates;
 using Fuse.API.CurrentUser;
 using Fuse.API.Middleware;
@@ -68,6 +69,10 @@ FuseDataModule.Register(builder.Services);
 FuseCodeModule.Register(builder.Services);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AgentReleaseAssets>();
+builder.Services.AddSingleton<AgentServerIdentity>();
+builder.Services.AddSingleton<AgentConnectionEndpoint>();
+builder.Services.AddHostedService<AgentHistoryRetentionService>();
 builder.Services.AddSingleton<Fuse.API.CurrentUser.RequestPermissions>();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddFuseMcp();
@@ -82,6 +87,8 @@ using (var scope = app.Services.CreateScope())
 {
     var appInitializationService = scope.ServiceProvider.GetRequiredService<IAppInitializationService>();
     await appInitializationService.InitializeAsync();
+    // Observe inventory deletions immediately, even before the first agent reconnects after restart.
+    scope.ServiceProvider.GetRequiredService<Fuse.Core.Areas.PlatformAgent.IAgentReportingStore>();
 }
 
 // Configure the HTTP request pipeline.
@@ -102,6 +109,7 @@ app.UseHttpsRedirection();
 
 // Explicit routing so that SecurityMiddleware can read endpoint metadata (e.g. [RequirePermission])
 app.UseRouting();
+app.UseWebSockets();
 
 // Only the OIDC callback needs the remote authentication handler. Other API routes use Fuse sessions.
 app.UseWhen(ctx => ctx.Request.Path == "/auth/entra/callback", branch =>
@@ -139,6 +147,9 @@ app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), branch =>
 });
 
 app.MapControllers();
+app.MapAgentDownloads();
+app.MapGet("/agent/connect", (HttpContext context, AgentConnectionEndpoint endpoint) => endpoint.HandleAsync(context))
+    .ExcludeFromDescription();
 app.MapFuseMcp();
 
 // Fallback to index.html for SPA routing (only in production)

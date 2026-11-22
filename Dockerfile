@@ -14,6 +14,13 @@ COPY UI/Fuse.Web/ ./
 # Build the Vue app
 RUN npm run build
 
+# Build both downloadable agent architectures regardless of the Fuse server architecture.
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS agent-build
+ARG APP_VERSION=0.0.0
+WORKDIR /src
+COPY Agent/ ./Agent/
+RUN sh Agent/build-assets.sh /agent-assets "${APP_VERSION:-0.0.0}"
+
 # Run the SDK natively and cross-publish the API for the requested runtime.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0 AS backend-build
 ARG TARGETARCH
@@ -34,6 +41,7 @@ COPY API/Fuse.API/ ./API/Fuse.API/
 COPY API/Fuse.Core/ ./API/Fuse.Core/
 COPY API/Fuse.MCP/ ./API/Fuse.MCP/
 COPY API/Fuse.Data/ ./API/Fuse.Data/
+COPY Agent/Protocol/ ./Agent/Protocol/
 
 # Copy the already-built frontend to satisfy the SpaRoot reference
 COPY --from=frontend-build /app/frontend/dist /app/UI/Fuse.Web/dist
@@ -55,6 +63,7 @@ ARG BUILD_DATE
 
 # Copy published API
 COPY --from=backend-build /app/publish ./
+COPY --from=agent-build /agent-assets ./agent-assets
 
 # Copy built frontend to wwwroot
 COPY --from=frontend-build /app/frontend/dist ./wwwroot

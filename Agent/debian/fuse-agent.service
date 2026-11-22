@@ -1,0 +1,32 @@
+[Unit]
+Description=Fuse Inventory reporting agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/fuse-agent run
+Restart=on-failure
+RestartSec=5
+DynamicUser=yes
+User=fuse-agent
+LoadCredential=node.json:/etc/fuse-agent/node.json
+RuntimeDirectory=fuse-agent
+RuntimeDirectoryMode=0755
+StateDirectory=fuse-agent-reporting
+StateDirectoryMode=0700
+# A systemd dynamic user has no login home. .NET requires one for its TLS store.
+Environment=HOME=/run/fuse-agent
+UMask=0022
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

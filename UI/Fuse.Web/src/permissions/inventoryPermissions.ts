@@ -27,6 +27,8 @@ export const InventoryPermissions = {
   PlatformsRead: 'platforms:read',
   PlatformsCreate: 'platforms:create',
   PlatformsUpdate: 'platforms:update',
+  PlatformsManageAgents: 'platforms:manage-agents',
+  PlatformsCheckUpdates: 'platforms:check-updates',
   PlatformsDelete: 'platforms:delete',
   EnvironmentsRead: 'environments:read',
   EnvironmentsCreate: 'environments:create',

@@ -75,7 +75,7 @@ jobs:
   arm64-container:
     name: Native ARM64 Container Smoke
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -85,7 +85,7 @@ jobs:
           test "$(uname -m)" = aarch64
           docker build --platform linux/arm64 --tag fuse-container-smoke:arm64 .
       - name: Verify ARM64 runtime and native dependencies with disposable data
-        run: python3 Tests/Containers/runtime-smoke.py --image fuse-container-smoke:arm64 --architecture arm64
+        run: python3 Tests/Containers/runtime-smoke.py --image fuse-container-smoke:arm64 --architecture arm64 --install-agent-on-runner
 
   test:
     name: Run Tests with Coverage

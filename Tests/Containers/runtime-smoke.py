@@ -51,6 +51,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", required=True, help="An existing local image; never pulled")
     parser.add_argument("--architecture", required=True, choices=("amd64", "arm64"))
+    parser.add_argument("--install-agent-on-runner", action="store_true",
+                        help="Install, verify and purge the reporting agent on a disposable GitHub-hosted runner")
     args = parser.parse_args()
     rid, machine = {"amd64": ("linux-x64", 62), "arm64": ("linux-arm64", 183)}[args.architecture]
     name = "fuse-runtime-smoke-" + secrets.token_hex(12)
@@ -107,6 +109,9 @@ def main():
                 and license_state.get("message") == "The license signature is invalid.",
                 "Invalid license did not reach native signature verification")
         require(request(base, "/api/Health/ready").get("status") == "ready", "Application is not ready")
+        if args.install_agent_on_runner:
+            from agent_install_check import verify_agent_install
+            verify_agent_install(base, token, request, HTTP)
         passed = True
     finally:
         if created_container and not passed:

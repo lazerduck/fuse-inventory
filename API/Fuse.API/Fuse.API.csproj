@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../../Agent/Protocol/WebSocketByteStream.cs" Link="Agents/WebSocketByteStream.cs" />
     <ProjectReference Include="../Fuse.Data/Fuse.Data.csproj" />
     <ProjectReference Include="../Fuse.MCP/Fuse.MCP.csproj" />
   </ItemGroup>

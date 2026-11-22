@@ -57,6 +57,14 @@
             {{ props.row.kind ?? '—' }}
           </q-td>
         </template>
+        <template #body-cell-agent="props">
+          <q-td :props="props">
+            <q-btn v-if="hasAgentTargets(props.row)" flat dense no-caps color="primary"
+              icon="sensors" :label="props.row.kind === PlatformKind.Cluster ? 'Node agents' : 'Agent'"
+              :aria-label="`View agent reporting for ${props.row.displayName}`" @click="openAgent(props.row)" />
+            <span v-else>—</span>
+          </q-td>
+        </template>
         <template #body-cell-tags="props">
           <q-td :props="props">
             <div v-if="props.row.tagIds?.length" class="tag-list">
@@ -109,6 +117,26 @@
         @cancel="closeDialog"
       />
     </q-dialog>
+
+    <q-dialog v-if="fuseStore.hasPermission(Permission.PlatformsRead)" v-model="agentDialogOpen" @hide="agentPlatform = null">
+      <q-card v-if="agentPlatform" class="agent-dialog">
+        <q-card-section class="row items-center justify-between">
+          <div>
+            <h2 class="text-h6 q-my-none">Agent reporting</h2>
+            <div class="text-subtitle2">{{ agentPlatform.displayName }}</div>
+          </div>
+          <q-btn v-close-popup flat round dense icon="close" aria-label="Close agent reporting" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <q-select v-if="agentPlatform.kind === PlatformKind.Cluster" v-model="agentNodeId"
+            class="q-mb-md" outlined dense label="Cluster node" emit-value map-options
+            :options="agentPlatform.nodes" option-value="id" option-label="displayName" />
+          <PlatformAgentPanel v-if="agentPlatform.id && (agentPlatform.kind !== PlatformKind.Cluster || agentNodeId)"
+            :key="agentNodeId || agentPlatform.id" :platform-id="agentPlatform.id" :node-id="agentNodeId" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -117,7 +145,7 @@ import { computed, reactive, ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { Notify, Dialog } from 'quasar'
 import type { QTableColumn } from 'quasar'
-import { Platform, CreatePlatform, UpdatePlatform, PlatformNodeInput } from 'api/client'
+import { Platform, CreatePlatform, UpdatePlatform, PlatformNodeInput, PlatformKind } from 'api/client'
 import { Permission } from 'permissions'
 import { useFuseClient } from '../composables/useFuseClient'
 import { useFuseStore } from '../stores/FuseStore'
@@ -126,6 +154,7 @@ import { useTags } from '../composables/useTags'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import PlatformForm, { type PlatformFormModel } from '../components/platforms/PlatformForm.vue'
+import PlatformAgentPanel from '../components/platforms/PlatformAgentPanel.vue'
 import TagChip from '../components/tags/TagChip.vue'
 
 const client = useFuseClient()
@@ -167,6 +196,7 @@ const columns: QTableColumn<Platform>[] = [
   { name: 'kind', label: 'Kind', field: 'kind', align: 'left' },
   { name: 'ipAddresses', label: 'IPs', field: row => row.ipAddresses?.join(', ') ?? '', align: 'left' },
   { name: 'nodes', label: 'Nodes', field: row => row.nodes?.length ?? 0, align: 'left', sortable: true },
+  { name: 'agent', label: 'Reporting', field: 'id', align: 'left' },
   { name: 'tags', label: 'Tags', field: 'tagIds', align: 'left' },
   { name: 'actions', label: '', field: (row) => row.id, align: 'right' }
 ]
@@ -174,6 +204,20 @@ const columns: QTableColumn<Platform>[] = [
 const isDialogOpen = ref(false)
 const dialogMode = ref<'create' | 'edit'>('create')
 const selectedPlatform = ref<Platform | null>(null)
+const agentPlatform = ref<Platform | null>(null)
+const agentDialogOpen = ref(false)
+const agentNodeId = ref<string>()
+
+function hasAgentTargets(platform: Platform) {
+  return platform.kind === PlatformKind.Server || platform.kind === PlatformKind.ContainerHost ||
+    (platform.kind === PlatformKind.Cluster && !!platform.nodes?.length)
+}
+
+function openAgent(platform: Platform) {
+  agentPlatform.value = platform
+  agentNodeId.value = platform.kind === PlatformKind.Cluster ? platform.nodes?.[0]?.id : undefined
+  agentDialogOpen.value = true
+}
 
 function openCreateDialog() {
   selectedPlatform.value = null
@@ -282,4 +326,9 @@ function confirmDelete(platform: Platform) {
 
 <style scoped>
 @import '../styles/pages.css';
+
+.agent-dialog {
+  width: 760px;
+  max-width: calc(100vw - 32px);
+}
 </style>
