@@ -52,7 +52,7 @@ WORKDIR /app/API/Fuse.API
 RUN dotnet publish -c Release -a "$TARGETARCH" --self-contained false -p:UseAppHost=false -o /app/publish --no-restore /p:BuildSpa=false
 
 # Stage 3: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 
 WORKDIR /app
 
