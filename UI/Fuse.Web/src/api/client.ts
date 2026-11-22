@@ -1291,6 +1291,70 @@ export interface IFuseApiClient {
   platformDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
   /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentStatus(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentReportingStatus>;
+
+  /**
+   * @param nodeId (optional)
+   * @return No Content
+   */
+  platformAgentRevoke(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
+  /**
+   * @param nodeId (optional)
+   * @param body (optional)
+   * @return OK
+   */
+  platformAgentPair(
+    platformId: string,
+    nodeId: string | undefined,
+    body: AgentPairingRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentPairingResponse>;
+
+  /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentRelease(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentReleaseResponse>;
+
+  /**
+   * @param nodeId (optional)
+   * @param hours (optional)
+   * @return OK
+   */
+  platformAgentHistory(
+    platformId: string,
+    nodeId: string | undefined,
+    hours: number | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentHistory>;
+
+  /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentCheckUpdates(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentCheckJob>;
+
+  /**
    * @return OK
    */
   positionAll(signal?: AbortSignal): Promise<Position[]>;
@@ -14372,6 +14436,437 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentStatus(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentReportingStatus> {
+    let url_ = this.baseUrl + "/api/platforms/{platformId}/agent?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentStatus(_response);
+    });
+  }
+
+  protected processPlatformAgentStatus(
+    response: Response,
+  ): Promise<AgentReportingStatus> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AgentReportingStatus.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentReportingStatus>(null as any);
+  }
+
+  /**
+   * @param nodeId (optional)
+   * @return No Content
+   */
+  platformAgentRevoke(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let url_ = this.baseUrl + "/api/platforms/{platformId}/agent?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentRevoke(_response);
+    });
+  }
+
+  protected processPlatformAgentRevoke(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @param nodeId (optional)
+   * @param body (optional)
+   * @return OK
+   */
+  platformAgentPair(
+    platformId: string,
+    nodeId: string | undefined,
+    body: AgentPairingRequest | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentPairingResponse> {
+    let url_ = this.baseUrl + "/api/platforms/{platformId}/agent/pair?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(body);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentPair(_response);
+    });
+  }
+
+  protected processPlatformAgentPair(
+    response: Response,
+  ): Promise<AgentPairingResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AgentPairingResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status === 503) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "Service Unavailable",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentPairingResponse>(null as any);
+  }
+
+  /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentRelease(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentReleaseResponse> {
+    let url_ = this.baseUrl + "/api/platforms/{platformId}/agent/release?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentRelease(_response);
+    });
+  }
+
+  protected processPlatformAgentRelease(
+    response: Response,
+  ): Promise<AgentReleaseResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AgentReleaseResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 503) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "Service Unavailable",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentReleaseResponse>(null as any);
+  }
+
+  /**
+   * @param nodeId (optional)
+   * @param hours (optional)
+   * @return OK
+   */
+  platformAgentHistory(
+    platformId: string,
+    nodeId: string | undefined,
+    hours: number | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentHistory> {
+    let url_ = this.baseUrl + "/api/platforms/{platformId}/agent/history?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    if (hours === null)
+      throw new globalThis.Error("The parameter 'hours' cannot be null.");
+    else if (hours !== undefined)
+      url_ += "hours=" + encodeURIComponent("" + hours) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentHistory(_response);
+    });
+  }
+
+  protected processPlatformAgentHistory(
+    response: Response,
+  ): Promise<AgentHistory> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AgentHistory.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentHistory>(null as any);
+  }
+
+  /**
+   * @param nodeId (optional)
+   * @return OK
+   */
+  platformAgentCheckUpdates(
+    platformId: string,
+    nodeId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<AgentCheckJob> {
+    let url_ =
+      this.baseUrl + "/api/platforms/{platformId}/agent/check-updates?";
+    if (platformId === undefined || platformId === null)
+      throw new globalThis.Error("The parameter 'platformId' must be defined.");
+    url_ = url_.replace("{platformId}", encodeURIComponent("" + platformId));
+    if (nodeId === null)
+      throw new globalThis.Error("The parameter 'nodeId' cannot be null.");
+    else if (nodeId !== undefined)
+      url_ += "nodeId=" + encodeURIComponent("" + nodeId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentCheckUpdates(_response);
+    });
+  }
+
+  protected processPlatformAgentCheckUpdates(
+    response: Response,
+  ): Promise<AgentCheckJob> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AgentCheckJob.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        let resultData409 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result409 = ProblemDetails.fromJS(resultData409);
+        return throwException(
+          "Conflict",
+          status,
+          _responseText,
+          _headers,
+          result409,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentCheckJob>(null as any);
+  }
+
+  /**
    * @return OK
    */
   positionAll(signal?: AbortSignal): Promise<Position[]> {
@@ -25234,6 +25729,720 @@ export interface IActivityFeedResult {
   pageSize?: number;
 }
 
+export class AgentAssessment implements IAgentAssessment {
+  checkedAt?: Date;
+  indexUpdatedAt?: Date | undefined;
+  pending?: string[] | undefined;
+  held?: string[] | undefined;
+  pendingCount?: number | undefined;
+  heldCount?: number | undefined;
+  rebootRequired?: boolean | undefined;
+  error?: string | undefined;
+
+  constructor(data?: IAgentAssessment) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.checkedAt = _data["checkedAt"]
+        ? new Date(_data["checkedAt"].toString())
+        : (undefined as any);
+      this.indexUpdatedAt = _data["indexUpdatedAt"]
+        ? new Date(_data["indexUpdatedAt"].toString())
+        : (undefined as any);
+      if (Array.isArray(_data["pending"])) {
+        this.pending = [] as any;
+        for (let item of _data["pending"]) this.pending!.push(item);
+      }
+      if (Array.isArray(_data["held"])) {
+        this.held = [] as any;
+        for (let item of _data["held"]) this.held!.push(item);
+      }
+      this.pendingCount = _data["pendingCount"];
+      this.heldCount = _data["heldCount"];
+      this.rebootRequired = _data["rebootRequired"];
+      this.error = _data["error"];
+    }
+  }
+
+  static fromJS(data: any): AgentAssessment {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentAssessment();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["checkedAt"] = this.checkedAt
+      ? this.checkedAt.toISOString()
+      : (undefined as any);
+    data["indexUpdatedAt"] = this.indexUpdatedAt
+      ? this.indexUpdatedAt.toISOString()
+      : (undefined as any);
+    if (Array.isArray(this.pending)) {
+      data["pending"] = [];
+      for (let item of this.pending) data["pending"].push(item);
+    }
+    if (Array.isArray(this.held)) {
+      data["held"] = [];
+      for (let item of this.held) data["held"].push(item);
+    }
+    data["pendingCount"] = this.pendingCount;
+    data["heldCount"] = this.heldCount;
+    data["rebootRequired"] = this.rebootRequired;
+    data["error"] = this.error;
+    return data;
+  }
+}
+
+export interface IAgentAssessment {
+  checkedAt?: Date;
+  indexUpdatedAt?: Date | undefined;
+  pending?: string[] | undefined;
+  held?: string[] | undefined;
+  pendingCount?: number | undefined;
+  heldCount?: number | undefined;
+  rebootRequired?: boolean | undefined;
+  error?: string | undefined;
+}
+
+export class AgentAssetChecksums implements IAgentAssetChecksums {
+  installerSha256?: string | undefined;
+  amd64Sha256?: string | undefined;
+  arm64Sha256?: string | undefined;
+
+  constructor(data?: IAgentAssetChecksums) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.installerSha256 = _data["installerSha256"];
+      this.amd64Sha256 = _data["amd64Sha256"];
+      this.arm64Sha256 = _data["arm64Sha256"];
+    }
+  }
+
+  static fromJS(data: any): AgentAssetChecksums {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentAssetChecksums();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["installerSha256"] = this.installerSha256;
+    data["amd64Sha256"] = this.amd64Sha256;
+    data["arm64Sha256"] = this.arm64Sha256;
+    return data;
+  }
+}
+
+export interface IAgentAssetChecksums {
+  installerSha256?: string | undefined;
+  amd64Sha256?: string | undefined;
+  arm64Sha256?: string | undefined;
+}
+
+export class AgentCheckJob implements IAgentCheckJob {
+  id?: string;
+  state?: string | undefined;
+  requestedAt?: Date;
+  completedAt?: Date | undefined;
+
+  constructor(data?: IAgentCheckJob) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.state = _data["state"];
+      this.requestedAt = _data["requestedAt"]
+        ? new Date(_data["requestedAt"].toString())
+        : (undefined as any);
+      this.completedAt = _data["completedAt"]
+        ? new Date(_data["completedAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): AgentCheckJob {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentCheckJob();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["state"] = this.state;
+    data["requestedAt"] = this.requestedAt
+      ? this.requestedAt.toISOString()
+      : (undefined as any);
+    data["completedAt"] = this.completedAt
+      ? this.completedAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IAgentCheckJob {
+  id?: string;
+  state?: string | undefined;
+  requestedAt?: Date;
+  completedAt?: Date | undefined;
+}
+
+export class AgentDiskReading implements IAgentDiskReading {
+  id?: string | undefined;
+  path?: string | undefined;
+  totalBytes?: number | undefined;
+  availableBytes?: number | undefined;
+
+  constructor(data?: IAgentDiskReading) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.path = _data["path"];
+      this.totalBytes = _data["totalBytes"];
+      this.availableBytes = _data["availableBytes"];
+    }
+  }
+
+  static fromJS(data: any): AgentDiskReading {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentDiskReading();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["path"] = this.path;
+    data["totalBytes"] = this.totalBytes;
+    data["availableBytes"] = this.availableBytes;
+    return data;
+  }
+}
+
+export interface IAgentDiskReading {
+  id?: string | undefined;
+  path?: string | undefined;
+  totalBytes?: number | undefined;
+  availableBytes?: number | undefined;
+}
+
+export class AgentGpuReading implements IAgentGpuReading {
+  id?: string | undefined;
+  name?: string | undefined;
+  utilizationPercent?: number | undefined;
+
+  constructor(data?: IAgentGpuReading) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.id = _data["id"];
+      this.name = _data["name"];
+      this.utilizationPercent = _data["utilizationPercent"];
+    }
+  }
+
+  static fromJS(data: any): AgentGpuReading {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentGpuReading();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["id"] = this.id;
+    data["name"] = this.name;
+    data["utilizationPercent"] = this.utilizationPercent;
+    return data;
+  }
+}
+
+export interface IAgentGpuReading {
+  id?: string | undefined;
+  name?: string | undefined;
+  utilizationPercent?: number | undefined;
+}
+
+export class AgentHistory implements IAgentHistory {
+  from?: Date;
+  to?: Date;
+  intervalSeconds?: number;
+  points?: AgentHistoryPoint[] | undefined;
+
+  constructor(data?: IAgentHistory) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.from = _data["from"]
+        ? new Date(_data["from"].toString())
+        : (undefined as any);
+      this.to = _data["to"]
+        ? new Date(_data["to"].toString())
+        : (undefined as any);
+      this.intervalSeconds = _data["intervalSeconds"];
+      if (Array.isArray(_data["points"])) {
+        this.points = [] as any;
+        for (let item of _data["points"])
+          this.points!.push(AgentHistoryPoint.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): AgentHistory {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentHistory();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["from"] = this.from ? this.from.toISOString() : (undefined as any);
+    data["to"] = this.to ? this.to.toISOString() : (undefined as any);
+    data["intervalSeconds"] = this.intervalSeconds;
+    if (Array.isArray(this.points)) {
+      data["points"] = [];
+      for (let item of this.points)
+        data["points"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IAgentHistory {
+  from?: Date;
+  to?: Date;
+  intervalSeconds?: number;
+  points?: AgentHistoryPoint[] | undefined;
+}
+
+export class AgentHistoryPoint implements IAgentHistoryPoint {
+  at?: Date;
+  cpuAveragePercent?: number | undefined;
+  cpuPeakPercent?: number | undefined;
+  memoryUsedPercent?: number | undefined;
+  diskUsedPercent?: number | undefined;
+  gpuUsagePercent?: number | undefined;
+
+  constructor(data?: IAgentHistoryPoint) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.at = _data["at"]
+        ? new Date(_data["at"].toString())
+        : (undefined as any);
+      this.cpuAveragePercent = _data["cpuAveragePercent"];
+      this.cpuPeakPercent = _data["cpuPeakPercent"];
+      this.memoryUsedPercent = _data["memoryUsedPercent"];
+      this.diskUsedPercent = _data["diskUsedPercent"];
+      this.gpuUsagePercent = _data["gpuUsagePercent"];
+    }
+  }
+
+  static fromJS(data: any): AgentHistoryPoint {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentHistoryPoint();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["at"] = this.at ? this.at.toISOString() : (undefined as any);
+    data["cpuAveragePercent"] = this.cpuAveragePercent;
+    data["cpuPeakPercent"] = this.cpuPeakPercent;
+    data["memoryUsedPercent"] = this.memoryUsedPercent;
+    data["diskUsedPercent"] = this.diskUsedPercent;
+    data["gpuUsagePercent"] = this.gpuUsagePercent;
+    return data;
+  }
+}
+
+export interface IAgentHistoryPoint {
+  at?: Date;
+  cpuAveragePercent?: number | undefined;
+  cpuPeakPercent?: number | undefined;
+  memoryUsedPercent?: number | undefined;
+  diskUsedPercent?: number | undefined;
+  gpuUsagePercent?: number | undefined;
+}
+
+export class AgentPairingRequest implements IAgentPairingRequest {
+  replace?: boolean;
+
+  constructor(data?: IAgentPairingRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.replace = _data["replace"];
+    }
+  }
+
+  static fromJS(data: any): AgentPairingRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentPairingRequest();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["replace"] = this.replace;
+    return data;
+  }
+}
+
+export interface IAgentPairingRequest {
+  replace?: boolean;
+}
+
+export class AgentPairingResponse implements IAgentPairingResponse {
+  ticket?: string | undefined;
+  pin?: string | undefined;
+  expiresAt?: Date;
+  artifacts?: AgentAssetChecksums;
+
+  constructor(data?: IAgentPairingResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.ticket = _data["ticket"];
+      this.pin = _data["pin"];
+      this.expiresAt = _data["expiresAt"]
+        ? new Date(_data["expiresAt"].toString())
+        : (undefined as any);
+      this.artifacts = _data["artifacts"]
+        ? AgentAssetChecksums.fromJS(_data["artifacts"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): AgentPairingResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentPairingResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["ticket"] = this.ticket;
+    data["pin"] = this.pin;
+    data["expiresAt"] = this.expiresAt
+      ? this.expiresAt.toISOString()
+      : (undefined as any);
+    data["artifacts"] = this.artifacts
+      ? this.artifacts.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IAgentPairingResponse {
+  ticket?: string | undefined;
+  pin?: string | undefined;
+  expiresAt?: Date;
+  artifacts?: AgentAssetChecksums;
+}
+
+export class AgentReleaseResponse implements IAgentReleaseResponse {
+  version?: string | undefined;
+  artifacts?: AgentAssetChecksums;
+
+  constructor(data?: IAgentReleaseResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.version = _data["version"];
+      this.artifacts = _data["artifacts"]
+        ? AgentAssetChecksums.fromJS(_data["artifacts"])
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): AgentReleaseResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentReleaseResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["version"] = this.version;
+    data["artifacts"] = this.artifacts
+      ? this.artifacts.toJSON()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IAgentReleaseResponse {
+  version?: string | undefined;
+  artifacts?: AgentAssetChecksums;
+}
+
+export class AgentReportingStatus implements IAgentReportingStatus {
+  state?: string | undefined;
+  lastSeenAt?: Date | undefined;
+  hostname?: string | undefined;
+  version?: string | undefined;
+  firstSeenAt?: Date | undefined;
+  expiresAt?: Date | undefined;
+  telemetry?: AgentTelemetry;
+  telemetryAt?: Date | undefined;
+  assessment?: AgentAssessment;
+  checkJob?: AgentCheckJob;
+  supportsAssessment?: boolean;
+
+  constructor(data?: IAgentReportingStatus) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.state = _data["state"];
+      this.lastSeenAt = _data["lastSeenAt"]
+        ? new Date(_data["lastSeenAt"].toString())
+        : (undefined as any);
+      this.hostname = _data["hostname"];
+      this.version = _data["version"];
+      this.firstSeenAt = _data["firstSeenAt"]
+        ? new Date(_data["firstSeenAt"].toString())
+        : (undefined as any);
+      this.expiresAt = _data["expiresAt"]
+        ? new Date(_data["expiresAt"].toString())
+        : (undefined as any);
+      this.telemetry = _data["telemetry"]
+        ? AgentTelemetry.fromJS(_data["telemetry"])
+        : (undefined as any);
+      this.telemetryAt = _data["telemetryAt"]
+        ? new Date(_data["telemetryAt"].toString())
+        : (undefined as any);
+      this.assessment = _data["assessment"]
+        ? AgentAssessment.fromJS(_data["assessment"])
+        : (undefined as any);
+      this.checkJob = _data["checkJob"]
+        ? AgentCheckJob.fromJS(_data["checkJob"])
+        : (undefined as any);
+      this.supportsAssessment = _data["supportsAssessment"];
+    }
+  }
+
+  static fromJS(data: any): AgentReportingStatus {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentReportingStatus();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["state"] = this.state;
+    data["lastSeenAt"] = this.lastSeenAt
+      ? this.lastSeenAt.toISOString()
+      : (undefined as any);
+    data["hostname"] = this.hostname;
+    data["version"] = this.version;
+    data["firstSeenAt"] = this.firstSeenAt
+      ? this.firstSeenAt.toISOString()
+      : (undefined as any);
+    data["expiresAt"] = this.expiresAt
+      ? this.expiresAt.toISOString()
+      : (undefined as any);
+    data["telemetry"] = this.telemetry
+      ? this.telemetry.toJSON()
+      : (undefined as any);
+    data["telemetryAt"] = this.telemetryAt
+      ? this.telemetryAt.toISOString()
+      : (undefined as any);
+    data["assessment"] = this.assessment
+      ? this.assessment.toJSON()
+      : (undefined as any);
+    data["checkJob"] = this.checkJob
+      ? this.checkJob.toJSON()
+      : (undefined as any);
+    data["supportsAssessment"] = this.supportsAssessment;
+    return data;
+  }
+}
+
+export interface IAgentReportingStatus {
+  state?: string | undefined;
+  lastSeenAt?: Date | undefined;
+  hostname?: string | undefined;
+  version?: string | undefined;
+  firstSeenAt?: Date | undefined;
+  expiresAt?: Date | undefined;
+  telemetry?: AgentTelemetry;
+  telemetryAt?: Date | undefined;
+  assessment?: AgentAssessment;
+  checkJob?: AgentCheckJob;
+  supportsAssessment?: boolean;
+}
+
+export class AgentTelemetry implements IAgentTelemetry {
+  cpuAveragePercent?: number | undefined;
+  cpuPeakPercent?: number | undefined;
+  memoryTotalBytes?: number | undefined;
+  memoryAvailableBytes?: number | undefined;
+  disks?: AgentDiskReading[] | undefined;
+  gpus?: AgentGpuReading[] | undefined;
+  sampledAt?: Date | undefined;
+
+  constructor(data?: IAgentTelemetry) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.cpuAveragePercent = _data["cpuAveragePercent"];
+      this.cpuPeakPercent = _data["cpuPeakPercent"];
+      this.memoryTotalBytes = _data["memoryTotalBytes"];
+      this.memoryAvailableBytes = _data["memoryAvailableBytes"];
+      if (Array.isArray(_data["disks"])) {
+        this.disks = [] as any;
+        for (let item of _data["disks"])
+          this.disks!.push(AgentDiskReading.fromJS(item));
+      }
+      if (Array.isArray(_data["gpus"])) {
+        this.gpus = [] as any;
+        for (let item of _data["gpus"])
+          this.gpus!.push(AgentGpuReading.fromJS(item));
+      }
+      this.sampledAt = _data["sampledAt"]
+        ? new Date(_data["sampledAt"].toString())
+        : (undefined as any);
+    }
+  }
+
+  static fromJS(data: any): AgentTelemetry {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentTelemetry();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["cpuAveragePercent"] = this.cpuAveragePercent;
+    data["cpuPeakPercent"] = this.cpuPeakPercent;
+    data["memoryTotalBytes"] = this.memoryTotalBytes;
+    data["memoryAvailableBytes"] = this.memoryAvailableBytes;
+    if (Array.isArray(this.disks)) {
+      data["disks"] = [];
+      for (let item of this.disks)
+        data["disks"].push(item ? item.toJSON() : (undefined as any));
+    }
+    if (Array.isArray(this.gpus)) {
+      data["gpus"] = [];
+      for (let item of this.gpus)
+        data["gpus"].push(item ? item.toJSON() : (undefined as any));
+    }
+    data["sampledAt"] = this.sampledAt
+      ? this.sampledAt.toISOString()
+      : (undefined as any);
+    return data;
+  }
+}
+
+export interface IAgentTelemetry {
+  cpuAveragePercent?: number | undefined;
+  cpuPeakPercent?: number | undefined;
+  memoryTotalBytes?: number | undefined;
+  memoryAvailableBytes?: number | undefined;
+  disks?: AgentDiskReading[] | undefined;
+  gpus?: AgentGpuReading[] | undefined;
+  sampledAt?: Date | undefined;
+}
+
 export class ApiKeyCreatedResult implements IApiKeyCreatedResult {
   info?: ApiKeyInfo;
   plainTextKey?: string | undefined;
@@ -26304,6 +27513,9 @@ export enum AuditAction {
   PostgreSqlGrantRepairRequested = "PostgreSqlGrantRepairRequested",
   PostgreSqlGrantRepairApplied = "PostgreSqlGrantRepairApplied",
   IntegrationPasswordBindingChanged = "IntegrationPasswordBindingChanged",
+  PlatformAgentInvitationIssued = "PlatformAgentInvitationIssued",
+  PlatformAgentRevoked = "PlatformAgentRevoked",
+  PlatformAgentAssessmentRequested = "PlatformAgentAssessmentRequested",
 }
 
 export enum AuditArea {
