@@ -19,10 +19,17 @@ public sealed record AgentReportingStatus(string State, DateTime? LastSeenAt = n
     AgentTelemetry? Telemetry = null, DateTime? TelemetryAt = null, AgentAssessment? Assessment = null,
     AgentCheckJob? CheckJob = null, bool SupportsAssessment = false);
 
+public sealed record AgentFleetDevice(Guid PlatformId, string PlatformName, PlatformKind PlatformKind,
+    Guid? NodeId, string? NodeName, string? Hostname, string State, DateTime LastSeenAt, DateTime? TelemetryAt,
+    double? CpuAveragePercent, long? MemoryTotalBytes, long? MemoryAvailableBytes, decimal? DiskTotalBytes,
+    decimal? DiskAvailableBytes, DateTime? AssessmentAt, DateTime? IndexUpdatedAt, int? PendingCount,
+    string? AssessmentError);
+
 public sealed record AgentInvitation(string Ticket, DateTime ExpiresAt);
 
 public interface IAgentReportingStore
 {
+    Task<IReadOnlyList<AgentFleetDevice>> FleetAsync(CancellationToken ct);
     Task<AgentReportingStatus?> StatusAsync(AgentTarget target, CancellationToken ct);
     Task<Result<AgentInvitation>> InviteAsync(AgentTarget target, bool replace, CancellationToken ct);
     Task<bool> RevokeAsync(AgentTarget target, CancellationToken ct);

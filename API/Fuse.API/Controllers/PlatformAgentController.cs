@@ -19,6 +19,13 @@ public sealed record AgentReleaseResponse(string Version, AgentAssetChecksums Ar
 public sealed class PlatformAgentController(
     IAgentReportingStore agents, IAuditService audit, ICurrentUser user) : ControllerBase
 {
+    [HttpGet("/api/platforms/agents")]
+    [SwaggerOperation(OperationId = "PlatformAgentFleet")]
+    [RequirePermissionKey(PlatformPermissions.ReadKey)]
+    [ProducesResponseType<IReadOnlyList<AgentFleetDevice>>(200)]
+    public async Task<ActionResult<IReadOnlyList<AgentFleetDevice>>> Fleet(CancellationToken ct) =>
+        Ok(await agents.FleetAsync(ct));
+
     [HttpGet]
     [SwaggerOperation(OperationId = "PlatformAgentStatus")]
     [RequirePermissionKey(PlatformPermissions.ReadKey)]

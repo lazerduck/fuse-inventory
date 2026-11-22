@@ -44,12 +44,50 @@ public sealed class LiteDbAgentReportingStore : IAgentReportingStore, IDisposabl
                 return binding?.ExpiresAt > now
                     ? new("pending", ExpiresAt: binding.ExpiresAt)
                     : new("not-enrolled");
-            var age = now - seen;
-            var state = age >= TimeSpan.FromMinutes(5) ? "no-contact" :
-                age >= TimeSpan.FromSeconds(90) ? "overdue" : "reporting";
-            return new(state, seen, binding.Hostname, binding.Version, binding.FirstSeenAt,
+            return new(ContactState(now, seen), seen, binding.Hostname, binding.Version, binding.FirstSeenAt,
                 Telemetry: binding.Telemetry, TelemetryAt: binding.TelemetryAt, Assessment: binding.Assessment,
                 CheckJob: CurrentJob(binding, now), SupportsAssessment: binding.SupportsAssessment);
+        }
+    }
+
+    private static string ContactState(DateTime now, DateTime lastSeen)
+    {
+        var age = now - lastSeen;
+        return age >= TimeSpan.FromMinutes(5) ? "no-contact" : age >= TimeSpan.FromSeconds(90) ? "overdue" : "reporting";
+    }
+
+    public async Task<IReadOnlyList<AgentFleetDevice>> FleetAsync(CancellationToken ct)
+    {
+        var inventory = await _inventory.GetAsync(ct);
+        lock (_gate)
+        {
+            var targets = new Dictionary<AgentTarget, (string PlatformName, PlatformKind Kind, string? NodeName)>();
+            foreach (var platform in (_inventory.Current ?? inventory).Platforms)
+            {
+                if (platform.Kind is PlatformKind.Server or PlatformKind.ContainerHost)
+                    targets[new(platform.Id, null)] = (platform.DisplayName, platform.Kind.Value, null);
+                else if (platform.Kind == PlatformKind.Cluster && platform.Nodes is { } nodes)
+                    foreach (var node in nodes)
+                        targets[new(platform.Id, node.Id)] = (platform.DisplayName, PlatformKind.Cluster, node.DisplayName);
+            }
+
+            var now = _clock.GetUtcNow().UtcDateTime;
+            var result = new List<AgentFleetDevice>();
+            foreach (var binding in _bindings.Find(b => b.FirstSeenAt != null && b.LastSeenAt != null))
+            {
+                ct.ThrowIfCancellationRequested();
+                if (!targets.TryGetValue(Target(binding), out var target)) continue;
+                var seen = binding.LastSeenAt!.Value;
+                var telemetry = binding.Telemetry;
+                var disk = telemetry?.DiskCapacity();
+                var assessment = binding.Assessment;
+                result.Add(new(binding.PlatformId, target.PlatformName, target.Kind, binding.NodeId, target.NodeName,
+                    binding.Hostname, ContactState(now, seen), seen, binding.TelemetryAt, telemetry?.CpuAveragePercent,
+                    telemetry?.MemoryTotalBytes, telemetry?.MemoryAvailableBytes, disk?.Total, disk?.Available,
+                    assessment?.CheckedAt, assessment?.IndexUpdatedAt, assessment?.Error is null ? assessment?.PendingCount : null,
+                    assessment?.Error));
+            }
+            return result;
         }
     }
 

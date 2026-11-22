@@ -27,6 +27,105 @@ public sealed class PlatformAgentReportingTests : IDisposable
     });
 
     [Fact]
+    public async Task FleetSummarisesRegisteredTargetsWithSharedContactAndAssessmentStates()
+    {
+        await AddCluster();
+        var containerId = Guid.NewGuid();
+        var serverId = Guid.NewGuid();
+        var pendingId = Guid.NewGuid();
+        var secondNodeId = Guid.NewGuid();
+        await _inventory.UpdateAsync(s => s with
+        {
+            Platforms = [s.Platforms[0] with
+                { Nodes = [.. s.Platforms[0].Nodes!, new(secondNodeId, "second node", null, null, [], null)] },
+                s.Platforms[0] with { Id = serverId, DisplayName = "Database", Kind = PlatformKind.Server, Nodes = null },
+                s.Platforms[0] with { Id = containerId, DisplayName = "Docker", Kind = PlatformKind.ContainerHost, Nodes = null },
+                s.Platforms[0] with { Id = pendingId, DisplayName = "Pending", Kind = PlatformKind.Server, Nodes = null }]
+        });
+        using var db = Open();
+        var pending = (await db.InviteAsync(new(pendingId, null), false, default)).Value!;
+        Assert.True(await db.PairAsync(pending.Ticket, new string('p', 43), default));
+        Assert.Empty(await db.FleetAsync(default));
+
+        async Task Register(AgentTarget target, string credential, string hostname, AgentCheckIn report)
+        {
+            var invitation = (await db.InviteAsync(target, false, default)).Value!;
+            Assert.True(await db.PairAsync(invitation.Ticket, credential, default));
+            Assert.NotNull(await db.ReportAsync(credential, hostname, "1", report, default));
+        }
+
+        await Register(new(serverId, null), OtherCredential, "old-server", new());
+        _clock.Now = _clock.Now.AddSeconds(210);
+        var checkedAt = _clock.Now.UtcDateTime;
+        var indexAt = checkedAt.AddDays(-2);
+        var telemetry = new AgentTelemetry(25, 55, 1000, 750,
+            [new("root", "/", 2000, 500), new("data", "/data", 8000, 1000), new("unknown", "/missing", 2000, null)], []);
+        await Register(Target, Credential, "node-01", new(2, telemetry,
+            new(checkedAt, indexAt, ["curl"], [], 3, 0, null, null)));
+        _clock.Now = _clock.Now.AddSeconds(90);
+        await Register(new(containerId, null), new string('c', 43), "docker", new(2,
+            Assessment: new(_clock.Now.UtcDateTime, null, [], [], 0, 0, null, "No local indexes.")));
+        await Register(new(_platformId, secondNodeId), new string('d', 43), "node-02", new(2,
+            Assessment: new(_clock.Now.UtcDateTime, _clock.Now.UtcDateTime, [], [], 0, 0, null, null)));
+
+        var devices = (await db.FleetAsync(default)).ToDictionary(d => new AgentTarget(d.PlatformId, d.NodeId));
+        Assert.Equal(4, devices.Count);
+        var server = devices[new(serverId, null)];
+        Assert.Equal("no-contact", server.State);
+        Assert.Equal("Database", server.PlatformName);
+        Assert.Null(server.NodeId);
+        Assert.Null(server.PendingCount);
+        Assert.Null(server.DiskTotalBytes);
+        var node = devices[Target];
+        Assert.Equal("overdue", node.State);
+        Assert.Equal("node-01", node.Hostname);
+        Assert.Equal(("cluster", PlatformKind.Cluster, _nodeId, "node"),
+            (node.PlatformName, node.PlatformKind, node.NodeId!.Value, node.NodeName));
+        Assert.Equal((25d, 1000L, 750L), (node.CpuAveragePercent!.Value, node.MemoryTotalBytes!.Value, node.MemoryAvailableBytes!.Value));
+        Assert.Equal((10000m, 1500m), (node.DiskTotalBytes!.Value, node.DiskAvailableBytes!.Value));
+        Assert.Equal(checkedAt, node.TelemetryAt);
+        Assert.Equal(checkedAt, node.AssessmentAt);
+        Assert.Equal(indexAt, node.IndexUpdatedAt);
+        Assert.Equal(3, node.PendingCount);
+        Assert.Equal(0, devices[new(_platformId, secondNodeId)].PendingCount);
+        var container = devices[new(containerId, null)];
+        Assert.Equal(PlatformKind.ContainerHost, container.PlatformKind);
+        Assert.Equal("reporting", container.State);
+        Assert.Null(container.PendingCount);
+        Assert.Equal("No local indexes.", container.AssessmentError);
+    }
+
+    [Fact]
+    public async Task FleetFollowsNodeRenamesRevocationsReplacementsAndRemoval()
+    {
+        await AddCluster();
+        using var db = Open();
+        async Task Enrol(string token)
+        {
+            var invitation = (await db.InviteAsync(Target, false, default)).Value!;
+            Assert.True(await db.PairAsync(invitation.Ticket, token, default));
+            Assert.NotNull(await db.ReportAsync(token, "worker", "2", new(2), default));
+        }
+        await Enrol(Credential);
+        await _inventory.UpdateAsync(s => s with
+        {
+            Platforms = [s.Platforms[0] with { DisplayName = "Renamed cluster", Nodes =
+                [s.Platforms[0].Nodes![0] with { DisplayName = "Renamed node" }] }]
+        });
+        var device = Assert.Single(await db.FleetAsync(default));
+        Assert.Equal(("Renamed cluster", "Renamed node"), (device.PlatformName, device.NodeName));
+
+        Assert.True((await db.InviteAsync(Target, true, default)).IsSuccess);
+        Assert.Empty(await db.FleetAsync(default));
+        await Enrol(OtherCredential);
+        Assert.True(await db.RevokeAsync(Target, default));
+        Assert.Empty(await db.FleetAsync(default));
+        await Enrol(Credential);
+        await _inventory.UpdateAsync(s => s with { Platforms = [s.Platforms[0] with { Nodes = [] }] });
+        Assert.Empty(await db.FleetAsync(default));
+    }
+
+    [Fact]
     public async Task OnlyInstalledCheckInActivatesNodeAndSurvivesRestart()
     {
         await AddCluster();

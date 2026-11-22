@@ -142,6 +142,12 @@
               </q-item-section>
             </q-item>
 
+            <q-item v-if="fuseStore.hasPermission(Permission.PlatformsRead)" clickable v-ripple
+              :to="{ name: 'registeredDevices' }" active-class="nav-active">
+              <q-item-section avatar><q-icon name="devices" /></q-item-section>
+              <q-item-section>Registered devices</q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple :to="{ name: 'environments' }" active-class="nav-active"
               v-if="fuseStore.hasPermission(Permission.EnvironmentsRead)"
               data-tour-id="nav-environments">

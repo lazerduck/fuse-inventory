@@ -5,13 +5,17 @@
         <h1>Platforms</h1>
         <p class="subtitle">Catalogue infrastructure and link it to applications.</p>
       </div>
-      <q-btn 
-        color="primary" 
-        label="Create Platform" 
-        icon="add" 
-        :disable="!fuseStore.hasPermission(Permission.PlatformsCreate)"
-        @click="openCreateDialog" 
-      />
+      <div class="row items-center q-gutter-sm">
+        <q-btn v-if="fuseStore.hasPermission(Permission.PlatformsRead)" outline color="primary" icon="devices"
+          label="Registered devices" :to="{ name: 'registeredDevices' }" />
+        <q-btn
+          color="primary"
+          label="Create Platform"
+          icon="add"
+          :disable="!fuseStore.hasPermission(Permission.PlatformsCreate)"
+          @click="openCreateDialog"
+        />
+      </div>
     </div>
 
     <q-banner v-if="platformError" dense class="bg-red-1 text-negative q-mb-md">
@@ -118,25 +122,13 @@
       />
     </q-dialog>
 
-    <q-dialog v-if="fuseStore.hasPermission(Permission.PlatformsRead)" v-model="agentDialogOpen" @hide="agentPlatform = null">
-      <q-card v-if="agentPlatform" class="agent-dialog">
-        <q-card-section class="row items-center justify-between">
-          <div>
-            <h2 class="text-h6 q-my-none">Agent reporting</h2>
-            <div class="text-subtitle2">{{ agentPlatform.displayName }}</div>
-          </div>
-          <q-btn v-close-popup flat round dense icon="close" aria-label="Close agent reporting" />
-        </q-card-section>
-        <q-separator />
-        <q-card-section>
-          <q-select v-if="agentPlatform.kind === PlatformKind.Cluster" v-model="agentNodeId"
-            class="q-mb-md" outlined dense label="Cluster node" emit-value map-options
-            :options="agentPlatform.nodes" option-value="id" option-label="displayName" />
-          <PlatformAgentPanel v-if="agentPlatform.id && (agentPlatform.kind !== PlatformKind.Cluster || agentNodeId)"
-            :key="agentNodeId || agentPlatform.id" :platform-id="agentPlatform.id" :node-id="agentNodeId" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
+    <PlatformAgentDialog v-if="fuseStore.hasPermission(Permission.PlatformsRead) && agentPlatform?.id && (agentPlatform.kind !== PlatformKind.Cluster || agentNodeId)"
+      v-model="agentDialogOpen" :platform-id="agentPlatform.id" :platform-name="agentPlatform.displayName"
+      :node-id="agentNodeId" @hide="agentPlatform = null">
+      <q-select v-if="agentPlatform.kind === PlatformKind.Cluster" v-model="agentNodeId"
+        class="q-mb-md" outlined dense label="Cluster node" emit-value map-options
+        :options="agentPlatform.nodes" option-value="id" option-label="displayName" />
+    </PlatformAgentDialog>
   </div>
 </template>
 
@@ -154,7 +146,7 @@ import { useTags } from '../composables/useTags'
 import { usePersistedTableState } from '../composables/usePersistedTableState'
 import { getErrorMessage } from '../utils/error'
 import PlatformForm, { type PlatformFormModel } from '../components/platforms/PlatformForm.vue'
-import PlatformAgentPanel from '../components/platforms/PlatformAgentPanel.vue'
+import PlatformAgentDialog from '../components/platforms/PlatformAgentDialog.vue'
 import TagChip from '../components/tags/TagChip.vue'
 
 const client = useFuseClient()
@@ -326,9 +318,4 @@ function confirmDelete(platform: Platform) {
 
 <style scoped>
 @import '../styles/pages.css';
-
-.agent-dialog {
-  width: 760px;
-  max-width: calc(100vw - 32px);
-}
 </style>

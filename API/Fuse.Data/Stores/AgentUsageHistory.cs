@@ -23,9 +23,8 @@ internal sealed class AgentUsageHistory
         sample.Cpu.Add(reading.CpuAveragePercent);
         sample.CpuPeak = reading.CpuPeakPercent;
         sample.Memory.Add(UsedPercent(reading.MemoryTotalBytes, reading.MemoryAvailableBytes));
-        var disks = reading.Disks.Where(d => d.TotalBytes is > 0 && d.AvailableBytes.HasValue).ToList();
-        if (disks.Count > 0)
-            sample.Disk.Add(100 * (1 - disks.Sum(d => (double)d.AvailableBytes!.Value) / disks.Sum(d => (double)d.TotalBytes!.Value)));
+        if (reading.DiskCapacity() is { } disk)
+            sample.Disk.Add(100 * (1 - (double)(disk.Available / disk.Total)));
         sample.Gpu.Add(reading.Gpus.Select(g => g.UtilizationPercent).Max());
         AddTo(_raw, targetId, Floor(at, 30), sample);
         AddTo(_summaries, targetId, Floor(at, 300), sample);

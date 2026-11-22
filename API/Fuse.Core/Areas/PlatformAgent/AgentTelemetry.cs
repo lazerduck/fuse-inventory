@@ -5,7 +5,20 @@ public sealed record AgentGpuReading(string Id, string Name, double? Utilization
 
 public sealed record AgentTelemetry(double? CpuAveragePercent, double? CpuPeakPercent,
     long? MemoryTotalBytes, long? MemoryAvailableBytes, AgentDiskReading[] Disks, AgentGpuReading[] Gpus,
-    DateTime? SampledAt = null);
+    DateTime? SampledAt = null)
+{
+    public (decimal Total, decimal Available)? DiskCapacity()
+    {
+        decimal total = 0, available = 0;
+        foreach (var disk in Disks)
+        {
+            if (disk.TotalBytes is not > 0 || disk.AvailableBytes is null) continue;
+            total += disk.TotalBytes.Value;
+            available += disk.AvailableBytes.Value;
+        }
+        return total > 0 ? (total, available) : null;
+    }
+}
 
 public sealed record AgentAssessment(DateTime CheckedAt, DateTime? IndexUpdatedAt,
     string[] Pending, string[] Held, int? PendingCount, int? HeldCount, bool? RebootRequired, string? Error);

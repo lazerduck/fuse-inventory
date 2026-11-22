@@ -1291,6 +1291,11 @@ export interface IFuseApiClient {
   platformDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
   /**
+   * @return OK
+   */
+  platformAgentFleet(signal?: AbortSignal): Promise<AgentFleetDevice[]>;
+
+  /**
    * @param nodeId (optional)
    * @return OK
    */
@@ -14436,6 +14441,63 @@ export class FuseApiClient implements IFuseApiClient {
   }
 
   /**
+   * @return OK
+   */
+  platformAgentFleet(signal?: AbortSignal): Promise<AgentFleetDevice[]> {
+    let url_ = this.baseUrl + "/api/platforms/agents";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processPlatformAgentFleet(_response);
+    });
+  }
+
+  protected processPlatformAgentFleet(
+    response: Response,
+  ): Promise<AgentFleetDevice[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(AgentFleetDevice.fromJS(item));
+        } else {
+          result200 = null as any;
+        }
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<AgentFleetDevice[]>(null as any);
+  }
+
+  /**
    * @param nodeId (optional)
    * @return OK
    */
@@ -25959,6 +26021,126 @@ export interface IAgentDiskReading {
   path?: string | undefined;
   totalBytes?: number | undefined;
   availableBytes?: number | undefined;
+}
+
+export class AgentFleetDevice implements IAgentFleetDevice {
+  platformId?: string;
+  platformName?: string | undefined;
+  platformKind?: PlatformKind;
+  nodeId?: string | undefined;
+  nodeName?: string | undefined;
+  hostname?: string | undefined;
+  state?: string | undefined;
+  lastSeenAt?: Date;
+  telemetryAt?: Date | undefined;
+  cpuAveragePercent?: number | undefined;
+  memoryTotalBytes?: number | undefined;
+  memoryAvailableBytes?: number | undefined;
+  diskTotalBytes?: number | undefined;
+  diskAvailableBytes?: number | undefined;
+  assessmentAt?: Date | undefined;
+  indexUpdatedAt?: Date | undefined;
+  pendingCount?: number | undefined;
+  assessmentError?: string | undefined;
+
+  constructor(data?: IAgentFleetDevice) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.platformId = _data["platformId"];
+      this.platformName = _data["platformName"];
+      this.platformKind = _data["platformKind"];
+      this.nodeId = _data["nodeId"];
+      this.nodeName = _data["nodeName"];
+      this.hostname = _data["hostname"];
+      this.state = _data["state"];
+      this.lastSeenAt = _data["lastSeenAt"]
+        ? new Date(_data["lastSeenAt"].toString())
+        : (undefined as any);
+      this.telemetryAt = _data["telemetryAt"]
+        ? new Date(_data["telemetryAt"].toString())
+        : (undefined as any);
+      this.cpuAveragePercent = _data["cpuAveragePercent"];
+      this.memoryTotalBytes = _data["memoryTotalBytes"];
+      this.memoryAvailableBytes = _data["memoryAvailableBytes"];
+      this.diskTotalBytes = _data["diskTotalBytes"];
+      this.diskAvailableBytes = _data["diskAvailableBytes"];
+      this.assessmentAt = _data["assessmentAt"]
+        ? new Date(_data["assessmentAt"].toString())
+        : (undefined as any);
+      this.indexUpdatedAt = _data["indexUpdatedAt"]
+        ? new Date(_data["indexUpdatedAt"].toString())
+        : (undefined as any);
+      this.pendingCount = _data["pendingCount"];
+      this.assessmentError = _data["assessmentError"];
+    }
+  }
+
+  static fromJS(data: any): AgentFleetDevice {
+    data = typeof data === "object" ? data : {};
+    let result = new AgentFleetDevice();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["platformId"] = this.platformId;
+    data["platformName"] = this.platformName;
+    data["platformKind"] = this.platformKind;
+    data["nodeId"] = this.nodeId;
+    data["nodeName"] = this.nodeName;
+    data["hostname"] = this.hostname;
+    data["state"] = this.state;
+    data["lastSeenAt"] = this.lastSeenAt
+      ? this.lastSeenAt.toISOString()
+      : (undefined as any);
+    data["telemetryAt"] = this.telemetryAt
+      ? this.telemetryAt.toISOString()
+      : (undefined as any);
+    data["cpuAveragePercent"] = this.cpuAveragePercent;
+    data["memoryTotalBytes"] = this.memoryTotalBytes;
+    data["memoryAvailableBytes"] = this.memoryAvailableBytes;
+    data["diskTotalBytes"] = this.diskTotalBytes;
+    data["diskAvailableBytes"] = this.diskAvailableBytes;
+    data["assessmentAt"] = this.assessmentAt
+      ? this.assessmentAt.toISOString()
+      : (undefined as any);
+    data["indexUpdatedAt"] = this.indexUpdatedAt
+      ? this.indexUpdatedAt.toISOString()
+      : (undefined as any);
+    data["pendingCount"] = this.pendingCount;
+    data["assessmentError"] = this.assessmentError;
+    return data;
+  }
+}
+
+export interface IAgentFleetDevice {
+  platformId?: string;
+  platformName?: string | undefined;
+  platformKind?: PlatformKind;
+  nodeId?: string | undefined;
+  nodeName?: string | undefined;
+  hostname?: string | undefined;
+  state?: string | undefined;
+  lastSeenAt?: Date;
+  telemetryAt?: Date | undefined;
+  cpuAveragePercent?: number | undefined;
+  memoryTotalBytes?: number | undefined;
+  memoryAvailableBytes?: number | undefined;
+  diskTotalBytes?: number | undefined;
+  diskAvailableBytes?: number | undefined;
+  assessmentAt?: Date | undefined;
+  indexUpdatedAt?: Date | undefined;
+  pendingCount?: number | undefined;
+  assessmentError?: string | undefined;
 }
 
 export class AgentGpuReading implements IAgentGpuReading {
