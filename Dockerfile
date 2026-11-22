@@ -17,9 +17,10 @@ RUN npm run build
 # Build both downloadable agent architectures regardless of the Fuse server architecture.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS agent-build
 ARG APP_VERSION=0.0.0
+ARG AGENT_VERSION
 WORKDIR /src
 COPY Agent/ ./Agent/
-RUN sh Agent/build-assets.sh /agent-assets "${APP_VERSION:-0.0.0}"
+RUN sh Agent/build-assets.sh /agent-assets "${AGENT_VERSION:-${APP_VERSION:-0.0.0}}"
 
 # Run the SDK natively and cross-publish the API for the requested runtime.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0 AS backend-build
