@@ -20,7 +20,7 @@
     <!-- Keep SqlClient's PKCS dependency on the supported, security-patched .NET 10 line. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0" />
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
