@@ -7,6 +7,15 @@ An integration review records what an application needs from one saved connectio
 3. Save and select **Check now**. Expand the result for the observation time, scope, provider evidence, affected applications and inspection history.
 4. Open an affected instance to see its other findings alongside recorded health transitions. Fuse follows account and identity dependencies and explicit instance links. Owners, environments and assigned responsibilities appear according to the viewer's inventory permissions.
 
+## Access on an application instance
+
+Open an application instance and select **Access**. Each entry shows the dependency, the account or managed identity it uses, the documented expectation, the latest observation and when it was checked. You can open the underlying review for its history. **Check now** runs the inspection again for users with refresh permission.
+
+- **SQL account.** Document whole-database privileges on the account linked to the data-store dependency. Set up its grant review from **Access**. For example, if the account needs database-wide EXECUTE and SQL verifies access to 30 of 50 procedures through individual grants, the view can show both the missing database grant and the observed procedure count.
+- **Service Bus managed identity.** Link the broker dependency to a Fuse managed identity with its Entra tenant and principal object IDs. Add a queue expectation and select the built-in role, for example **Sender** on `orders`. The observation shows where Azure assigned that role. Select **Queue only** when an inherited assignment should count as drift. [Service Bus role evidence](servicebus.md#saved-reviews)
+
+A dependency can appear before its first check. **Undocumented** means there is no recorded access expectation. **Unknown coverage** means Fuse lacks evidence for a comparison. Opening the view reads saved observations. Refresh after an external permission change to see its effect.
+
 ## Reading a result
 
 | Result | Meaning |

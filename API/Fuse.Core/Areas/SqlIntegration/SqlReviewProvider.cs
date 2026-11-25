@@ -31,10 +31,44 @@ public sealed class SqlReviewProvider(ISqlPermissionsInspector inspector, IAccou
         var status = result.Status switch { SyncStatus.InSync => ReviewStatus.Matched,
             SyncStatus.DriftDetected or SyncStatus.MissingPrincipal => ReviewStatus.Drift, _ => ReviewStatus.Unknown };
         var details = result.PermissionComparisons.SelectMany(x =>
-            x.MissingPrivileges.Order().Select(p => $"{x.Database} · missing {p}")
-            .Concat(x.ExtraPrivileges.Order().Select(p => $"{x.Database} · unexpected {p}"))).ToArray();
+            x.MissingPrivileges.Order().Select(p => $"{x.Database} · missing whole-database {p}")
+            .Concat(x.ExtraPrivileges.Order().Select(p => $"{x.Database} · unexpected whole-database {p}"))).ToArray();
         return new(status, result.Status switch { SyncStatus.InSync => "Whole-database grants match the configuration.",
             SyncStatus.MissingPrincipal => "The documented principal is missing.", SyncStatus.DriftDetected => "Whole-database grants differ from the configuration.",
-            _ => result.CoverageWarning ?? "Grant coverage is unavailable." }, details);
+            _ => result.CoverageWarning ?? "Grant coverage is unavailable." }, details)
+        {
+            ObservedAccess = DescribeAccess(result)
+        };
+    }
+
+    private static IReadOnlyList<string> DescribeAccess(AccountSqlStatusResponse result)
+    {
+        if (result.Status == SyncStatus.MissingPrincipal) return ["SQL Server did not find the principal."];
+        if (result.Status is not (SyncStatus.InSync or SyncStatus.DriftDetected))
+            return [result.CoverageWarning ?? "SQL Server could not verify this account’s grants."];
+
+        var wholeDatabase = result.PermissionComparisons.Where(c => c.ActualPrivileges.Count != 0)
+            .OrderBy(c => c.Database, StringComparer.Ordinal)
+            .Select(c => $"{c.Database} · {string.Join(", ", c.ActualPrivileges.Order())} (whole database)");
+        var scopes = result.Coverage.Where(c => Enum.TryParse<Privilege>(c.Permission, true, out _) &&
+            (c.Basis != "DatabaseGrant" || c.ProcedureAccess != null || c.Evidence.Any(e => e.Inherited)))
+            .OrderByDescending(c => c.Level == SqlCoverageLevel.Some && c.ProcedureAccess != null)
+            .ThenByDescending(c => c.Level == SqlCoverageLevel.Some)
+            .ThenBy(c => c.Database, StringComparer.Ordinal).ThenBy(c => c.Permission, StringComparer.Ordinal)
+            .Select(c =>
+            {
+                var level = c.Basis == "CurrentObjects" && c.Level == SqlCoverageLevel.All ? "All current objects" : c.Level.ToString();
+                var line = $"{c.Database} · {c.Permission}: {level}";
+                if (c.ProcedureAccess is {} count)
+                    line += $". Can execute {count.Executable} of {count.Total} {(count.Total == 1 ? "procedure" : "procedures")}";
+                var inherited = c.Evidence.Where(e => e.Inherited && e.State is "GRANT" or "GRANT_WITH_GRANT_OPTION")
+                    .Select(e => e.Grantee).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+                if (inherited.Length != 0) line += $" (includes grants through {string.Join(", ", inherited)})";
+                return line;
+            });
+        var facts = scopes.Concat(wholeDatabase).ToArray();
+        if (facts.Length == 0) return ["No managed database privileges were observed."];
+        const int limit = 100;
+        return facts.Length > limit ? [.. facts.Take(limit), $"{facts.Length - limit} more entries in the SQL permissions overview."] : facts;
     }
 }

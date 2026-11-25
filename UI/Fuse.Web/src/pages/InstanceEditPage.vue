@@ -5,7 +5,7 @@
         <q-btn aria-label="Go back" flat round dense icon="arrow_back" @click="navigateBack" class="q-mr-md" />
         <div style="display: inline-block">
           <h1>{{ pageTitle }}</h1>
-          <p class="subtitle">Manage instance details and dependencies.</p>
+          <p class="subtitle">Manage instance details, dependencies and access.</p>
         </div>
       </div>
       <div class="row items-center q-gutter-xs">
@@ -31,10 +31,15 @@
 
     <q-tabs v-model="activeTab" align="left" narrow-indicator class="text-primary">
       <q-tab name="details" label="Details" />
+      <q-tab v-if="canReadInstance" name="access" label="Access" />
       <q-tab v-if="fuseStore.hasPermission('integrationreviews:read')" name="integration-reviews" label="Integration findings" />
       <q-tab name="dependencies" :label="`Dependencies (${instance?.dependencies?.length ?? 0})`" />
     </q-tabs>
     <q-tab-panels v-model="activeTab" keep-alive class="bg-transparent">
+      <q-tab-panel name="access" class="q-px-none">
+        <InstanceAccess v-if="canReadInstance && activeTab === 'access'" :application-id="applicationId" :instance-id="instanceId"
+          @show-dependencies="activeTab = 'dependencies'" />
+      </q-tab-panel>
       <q-tab-panel name="integration-reviews"><IntegrationFindings :instance-id="instanceId" /></q-tab-panel>
       <q-tab-panel name="details" class="q-pa-none">
         <q-card class="content-card q-mb-md">
@@ -236,6 +241,7 @@
 <script setup lang="ts">
 import SecretReferenceButton from "../components/secretProvider/SecretReferenceButton.vue"
 import IntegrationFindings from '../components/integrations/IntegrationFindings.vue'
+import InstanceAccess from '../components/applications/InstanceAccess.vue'
 import type { QForm } from 'quasar'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { usePersistedFilter } from '../composables/usePersistedTableState'
@@ -274,8 +280,10 @@ const instanceId = computed(() => route.params.instanceId as string)
 
 const activeTab = ref('details')
 usePersistedFilter(`instance_${instanceId.value}_tab`, activeTab)
-watch(() => route.query.tab, tab => {
-  if (tab === 'dependencies' || tab === 'details') activeTab.value = tab
+const canReadInstance = computed(() => fuseStore.hasPermission(Permission.ApplicationsRead))
+watch([() => route.query.tab, canReadInstance], ([tab, canRead]) => {
+  if (tab === 'dependencies' || tab === 'details' || (tab === 'access' && canRead)) activeTab.value = tab
+  else if (activeTab.value === 'access' && !canRead) activeTab.value = 'details'
 }, { immediate: true })
 
 const showApiKey = ref(false)

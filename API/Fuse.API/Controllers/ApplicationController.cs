@@ -123,6 +123,19 @@ namespace Fuse.API.Controllers
         }
 
         // Instances
+        [HttpGet("{applicationId:guid}/instances/{instanceId:guid}/access")]
+        [SwaggerOperation(OperationId = "instanceAccessGet")]
+        [RequirePermissionKey(ApplicationPermissions.ReadKey)]
+        [ProducesResponseType(200, Type = typeof(InstanceAccessResponse))]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<InstanceAccessResponse>> GetInstanceAccess(Guid applicationId, Guid instanceId,
+            [FromServices] IFuseStore store, [FromServices] CurrentUser.RequestPermissions permissions, CancellationToken ct)
+        {
+            var snapshot = await store.GetAsync(ct);
+            var instance = snapshot.Applications.FirstOrDefault(a => a.Id == applicationId)?.Instances.FirstOrDefault(i => i.Id == instanceId);
+            return instance is null ? NotFound() : Ok(InstanceAccess.Describe(snapshot, instance, key => permissions.Allows(User, snapshot, key)));
+        }
+
         [HttpPost("{appId}/instances")]
         [SwaggerOperation(OperationId = "instancesPOST")]
         [RequirePermissionKey(ApplicationPermissions.CreateInstanceKey)]

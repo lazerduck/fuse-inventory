@@ -1,5 +1,7 @@
 <template>
   <div class="page-container reviews">
+    <q-btn v-if="accessInstanceRoute" flat dense no-caps color="primary" icon="arrow_back"
+      label="Back to instance access" :to="accessInstanceRoute" />
     <div class="page-header">
       <div>
         <h1>Integration reviews</h1>
@@ -238,7 +240,7 @@
             <q-select
               v-model="sourceId"
               label="Integration"
-              :options="sources"
+              :options="formSources"
               :option-label="sourceLabel"
               option-value="id"
               emit-value
@@ -247,9 +249,16 @@
               :rules="[required]"
               @update:model-value="switchSource"
             />
+            <p v-if="accessContext && !formSources.length" role="status">
+              No {{ providerNames[accessContext.provider] }} integration is linked to this target.
+              <router-link :to="{ name: accessContext.provider === 'sql' ? 'sqlIntegrations' : 'serviceBusIntegrations' }">
+                View integrations
+              </router-link>
+            </p>
             <q-select
               v-model="kind"
               label="Check"
+              :disable="!!accessContext"
               :options="availableChecks"
               option-value="kind"
               option-label="label"
@@ -259,9 +268,10 @@
               @update:model-value="setFields"
             />
             <q-select
-              v-if="check?.requiresAccount || accountOptions.length"
+              v-if="check?.requiresAccount || (!accessContext && accountOptions.length)"
               v-model="accountId"
               label="Inventory account"
+              :disable="!!accessContext"
               :options="accountOptions"
               emit-value
               map-options
@@ -276,6 +286,7 @@
                 "
                 v-model="fields[field.key]"
                 :label="field.label"
+                :disable="!!accessContext && field.key === 'identityId'"
                 :options="
                   field.key === 'identityId' ? identityOptions : peerOptions
                 "
@@ -315,6 +326,7 @@
               v-if="canApps"
               v-model="instanceIds"
               label="Linked application instances"
+              :disable="!!accessContext"
               :options="instances"
               multiple
               use-chips
@@ -331,6 +343,9 @@
               max="10080"
               hint="Use 0 for manual checks or 15–10080 minutes for scheduled checks."
             />
+            <p v-if="accessContext && sourceId && !accessContextReady" role="status">
+              The linked instance or principal is unavailable. Reopen Access to check the current dependency.
+            </p>
             <p v-if="formError" class="error" role="alert">
               {{ formError }}
             </p> </q-card-section
@@ -340,6 +355,7 @@
               type="submit"
               color="primary"
               label="Save review"
+              :disable="!!accessContext && !accessContextReady"
               :loading="saving"
           /></q-card-actions> </q-form></q-card
     ></q-dialog>
@@ -408,6 +424,11 @@ const peerOptions = computed(() =>
     .map((s) => ({ value: s.id, label: s.name })),
 );
 const sources = computed(() => catalog.value.flatMap((s) => s.sources ?? []));
+const accessContext = ref<{ provider: 'sql' | 'servicebus'; target: string; principal: string; instance: string }>();
+const formSources = computed(() => {
+  const context = accessContext.value;
+  return context ? sources.value.filter(s => s.provider === context.provider && s.targetId === context.target) : sources.value;
+});
 const providerOptions = computed(() =>
   catalog.value.map((c) => ({
     value: c.provider,
@@ -477,6 +498,11 @@ const availableChecks = computed(
 const check = computed(() =>
   availableChecks.value.find((c) => c.kind === kind.value),
 );
+const accessContextReady = computed(() => {
+  const context = accessContext.value;
+  return !!context && !!check.value && instanceIds.value.includes(context.instance) &&
+    (context.provider === 'sql' ? accountId.value : fields.value.identityId) === context.principal;
+});
 const importProviders = [
   "postgresql",
   "redis",
@@ -499,6 +525,12 @@ const instances = computed(() =>
     })),
   ),
 );
+const accessInstanceRoute = computed(() => {
+  const instanceId = route.query.instance;
+  if (route.query.newReview !== '1' || typeof instanceId !== 'string' || !canApps.value) return;
+  const app = apps.value.find(a => a.instances?.some(i => i.id === instanceId));
+  return app?.id ? { name: 'instanceEdit', params: { applicationId: app.id, instanceId }, query: { tab: 'access' } } : undefined;
+});
 const accountOptions = computed(() =>
   accounts.value
     .filter((a) =>
@@ -589,6 +621,7 @@ watch(
       if (signal.aborted) return;
       catalog.value = result;
       await Promise.all([load(), loadOptions()]);
+      if (signal.aborted) return;
       providerFilter.value =
         typeof route.query.provider === "string"
           ? route.query.provider
@@ -599,7 +632,7 @@ watch(
           : undefined;
       expanded.value =
         typeof route.query.review === "string" ? route.query.review : undefined;
-      if (route.query.newReview === "1" && canManage.value) edit();
+      if (route.query.newReview === "1" && canManage.value) edit(undefined, true);
     });
   },
   { immediate: true },
@@ -612,18 +645,31 @@ function setFields() {
   );
 }
 function switchSource() {
-  kind.value = availableChecks.value[0]?.kind;
+  const context = accessContext.value;
+  kind.value = context ? (context.provider === 'sql' ? 'account-grants' : 'data-role') : availableChecks.value[0]?.kind;
   accountId.value = undefined;
   setFields();
+  if (!source.value || !context) return;
+  if (context.provider === 'sql' && accountOptions.value.some(a => a.value === context.principal)) {
+    accountId.value = context.principal;
+  } else if (context.provider === 'servicebus' && identityOptions.value.some(i => i.value === context.principal)) {
+    fields.value.identityId = context.principal;
+  }
 }
-function edit(r?: ReviewDefinition) {
+function edit(r?: ReviewDefinition, fromLink = false) {
   edited.value = r;
   formError.value = "";
+  const { provider, target, principal, instance } = route.query;
+  accessContext.value = fromLink && (provider === 'sql' || provider === 'servicebus') &&
+    typeof target === 'string' && typeof principal === 'string' && typeof instance === 'string'
+    ? { provider, target, principal, instance } : undefined;
   name.value = r?.name ?? "";
-  sourceId.value =
-    r?.input?.integrationId ??
-    integrationFilter.value ??
-    filteredSources.value[0]?.id;
+  if (accessContext.value) {
+    sourceId.value = formSources.value.find(s => s.id === integrationFilter.value)?.id ??
+      (formSources.value.length === 1 ? formSources.value[0]?.id : undefined);
+  } else {
+    sourceId.value = r?.input?.integrationId ?? integrationFilter.value ?? filteredSources.value[0]?.id;
+  }
   switchSource();
   if (r?.input) {
     kind.value = r.input.kind;
@@ -631,7 +677,8 @@ function edit(r?: ReviewDefinition) {
     accountId.value = r.input.accountId;
   }
   minutes.value = r?.refreshMinutes ?? 0;
-  instanceIds.value = [...(r?.applicationInstanceIds ?? [])];
+  instanceIds.value = accessContext.value && instances.value.some(i => i.value === accessContext.value?.instance)
+    ? [accessContext.value.instance] : [...(r?.applicationInstanceIds ?? [])];
   dialog.value = true;
 }
 async function save() {

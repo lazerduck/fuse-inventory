@@ -266,6 +266,9 @@
           </q-item>
         </q-list>
       </section>
+      <section v-if="application?.id && store.hasPermission('application:read')" class="detail-section">
+        <InstanceAccess :application-id="application.id" :instance-id="id" readonly />
+      </section>
       <IntegrationFindings :instance-id="id" />
     </div>
   </ReadOnlyShell>
@@ -273,6 +276,7 @@
 
 <script setup lang="ts">
 import IntegrationFindings from '../../components/integrations/IntegrationFindings.vue'
+import InstanceAccess from '../../components/applications/InstanceAccess.vue'
 import SecretReferenceButton from "../../components/secretProvider/SecretReferenceButton.vue"
 import { useRoute, useRouter } from 'vue-router'
 import { computed, ref, watch } from 'vue'

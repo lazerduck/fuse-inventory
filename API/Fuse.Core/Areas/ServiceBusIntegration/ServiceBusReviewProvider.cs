@@ -20,7 +20,8 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
             new("queue", "Queue (queue scope)", false), new("policy", "Policy"), new("rights", "Expected rights", Hint: "Comma-separated Send, Listen or Manage"),
             new("localAuth", "Expected SAS authentication", false, ["enabled", "disabled"])]),
         new("data-role", "Entra queue data-role assignment", [new("queue", "Queue"), new("identityId", "Fuse identity"),
-            new("role", "Built-in data role", Choices: ["Sender", "Receiver", "Owner"])]),
+            new("role", "Built-in data role", Choices: ["Sender", "Receiver", "Owner"]),
+            new("assignmentScope", "Scope of direct grants covering this queue", false, ["Queue or inherited", "Queue only"])]),
         new("subscription-filter", "Topic subscription SQL filter", [new("topic", "Topic"), new("subscription", "Subscription"), new("rule", "Rule"),
             new("filter", "Expected SQL expression")]),
         new("topic-fan-out", "Topic fan-out across named rules", [new("topic", "Topic"), new("property", "Example application property"),
@@ -77,7 +78,7 @@ public sealed class ServiceBusReviewProvider(ServiceBusInspector inspector) : II
             if (input.Kind == "topic-fan-out")
                 return await ServiceBusFanOut.Check(session, item.NamespaceResourceId + "/topics/" + input.Fields["topic"], input);
             if (input.Kind == "data-role") return await AzureRoleReview.Bus(session, item.NamespaceResourceId + "/queues/" + queue!.Replace('/', '~'),
-                AzureRoleReview.Identity(snapshot, input)!, input.Fields["role"]);
+                AzureRoleReview.Identity(snapshot, input)!, input.Fields["role"], Field(input, "assignmentScope") == "Queue only");
             var entity = "/topics/" + input.Fields["topic"] + "/subscriptions/" + input.Fields["subscription"] + "/rules/" + Uri.EscapeDataString(input.Fields["rule"]);
             var rule = await session.Resource(item.NamespaceResourceId + entity, r =>
             {

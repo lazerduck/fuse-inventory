@@ -227,6 +227,15 @@ export interface IFuseApiClient {
   applicationDELETE(id: string, signal?: AbortSignal): Promise<void>;
 
   /**
+   * @return OK
+   */
+  instanceAccessGet(
+    applicationId: string,
+    instanceId: string,
+    signal?: AbortSignal,
+  ): Promise<InstanceAccessResponse>;
+
+  /**
    * @param body (optional)
    * @return Created
    */
@@ -4541,6 +4550,90 @@ export class FuseApiClient implements IFuseApiClient {
       });
     }
     return Promise.resolve<void>(null as any);
+  }
+
+  /**
+   * @return OK
+   */
+  instanceAccessGet(
+    applicationId: string,
+    instanceId: string,
+    signal?: AbortSignal,
+  ): Promise<InstanceAccessResponse> {
+    let url_ =
+      this.baseUrl +
+      "/api/Application/{applicationId}/instances/{instanceId}/access";
+    if (applicationId === undefined || applicationId === null)
+      throw new globalThis.Error(
+        "The parameter 'applicationId' must be defined.",
+      );
+    url_ = url_.replace(
+      "{applicationId}",
+      encodeURIComponent("" + applicationId),
+    );
+    if (instanceId === undefined || instanceId === null)
+      throw new globalThis.Error("The parameter 'instanceId' must be defined.");
+    url_ = url_.replace("{instanceId}", encodeURIComponent("" + instanceId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processInstanceAccessGet(_response);
+    });
+  }
+
+  protected processInstanceAccessGet(
+    response: Response,
+  ): Promise<InstanceAccessResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = InstanceAccessResponse.fromJS(resultData200);
+        return result200;
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        let resultData404 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result404 = ProblemDetails.fromJS(resultData404);
+        return throwException(
+          "Not Found",
+          status,
+          _responseText,
+          _headers,
+          result404,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<InstanceAccessResponse>(null as any);
   }
 
   /**
@@ -33231,6 +33324,158 @@ export interface IImportSelection {
   instanceId?: string | undefined;
 }
 
+export class InstanceAccessResponse implements IInstanceAccessResponse {
+  rows?: InstanceAccessRow[] | undefined;
+
+  constructor(data?: IInstanceAccessResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      if (Array.isArray(_data["rows"])) {
+        this.rows = [] as any;
+        for (let item of _data["rows"])
+          this.rows!.push(InstanceAccessRow.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): InstanceAccessResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new InstanceAccessResponse();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    if (Array.isArray(this.rows)) {
+      data["rows"] = [];
+      for (let item of this.rows)
+        data["rows"].push(item ? item.toJSON() : (undefined as any));
+    }
+    return data;
+  }
+}
+
+export interface IInstanceAccessResponse {
+  rows?: InstanceAccessRow[] | undefined;
+}
+
+export class InstanceAccessRow implements IInstanceAccessRow {
+  dependencyId?: string;
+  provider?: string | undefined;
+  targetId?: string;
+  targetName?: string | undefined;
+  principalId?: string | undefined;
+  principalName?: string | undefined;
+  integrationId?: string | undefined;
+  reviewId?: string | undefined;
+  expected?: string[] | undefined;
+  observed?: string[] | undefined;
+  status?: InstanceAccessStatus;
+  checkedAt?: Date | undefined;
+  canConfigureReview?: boolean;
+
+  constructor(data?: IInstanceAccessRow) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.dependencyId = _data["dependencyId"];
+      this.provider = _data["provider"];
+      this.targetId = _data["targetId"];
+      this.targetName = _data["targetName"];
+      this.principalId = _data["principalId"];
+      this.principalName = _data["principalName"];
+      this.integrationId = _data["integrationId"];
+      this.reviewId = _data["reviewId"];
+      if (Array.isArray(_data["expected"])) {
+        this.expected = [] as any;
+        for (let item of _data["expected"]) this.expected!.push(item);
+      }
+      if (Array.isArray(_data["observed"])) {
+        this.observed = [] as any;
+        for (let item of _data["observed"]) this.observed!.push(item);
+      }
+      this.status = _data["status"];
+      this.checkedAt = _data["checkedAt"]
+        ? new Date(_data["checkedAt"].toString())
+        : (undefined as any);
+      this.canConfigureReview = _data["canConfigureReview"];
+    }
+  }
+
+  static fromJS(data: any): InstanceAccessRow {
+    data = typeof data === "object" ? data : {};
+    let result = new InstanceAccessRow();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["dependencyId"] = this.dependencyId;
+    data["provider"] = this.provider;
+    data["targetId"] = this.targetId;
+    data["targetName"] = this.targetName;
+    data["principalId"] = this.principalId;
+    data["principalName"] = this.principalName;
+    data["integrationId"] = this.integrationId;
+    data["reviewId"] = this.reviewId;
+    if (Array.isArray(this.expected)) {
+      data["expected"] = [];
+      for (let item of this.expected) data["expected"].push(item);
+    }
+    if (Array.isArray(this.observed)) {
+      data["observed"] = [];
+      for (let item of this.observed) data["observed"].push(item);
+    }
+    data["status"] = this.status;
+    data["checkedAt"] = this.checkedAt
+      ? this.checkedAt.toISOString()
+      : (undefined as any);
+    data["canConfigureReview"] = this.canConfigureReview;
+    return data;
+  }
+}
+
+export interface IInstanceAccessRow {
+  dependencyId?: string;
+  provider?: string | undefined;
+  targetId?: string;
+  targetName?: string | undefined;
+  principalId?: string | undefined;
+  principalName?: string | undefined;
+  integrationId?: string | undefined;
+  reviewId?: string | undefined;
+  expected?: string[] | undefined;
+  observed?: string[] | undefined;
+  status?: InstanceAccessStatus;
+  checkedAt?: Date | undefined;
+  canConfigureReview?: boolean;
+}
+
+export enum InstanceAccessStatus {
+  Matched = "Matched",
+  Drift = "Drift",
+  Unknown = "Unknown",
+  Unchecked = "Unchecked",
+  Undocumented = "Undocumented",
+}
+
 export class InstanceHealthResult implements IInstanceHealthResult {
   instanceId?: string;
   applicationId?: string;
@@ -37931,6 +38176,7 @@ export class ReviewEvidence implements IReviewEvidence {
   status?: ReviewStatus;
   summary?: string | undefined;
   details?: string[] | undefined;
+  observedAccess?: string[] | undefined;
 
   constructor(data?: IReviewEvidence) {
     if (data) {
@@ -37948,6 +38194,11 @@ export class ReviewEvidence implements IReviewEvidence {
       if (Array.isArray(_data["details"])) {
         this.details = [] as any;
         for (let item of _data["details"]) this.details!.push(item);
+      }
+      if (Array.isArray(_data["observedAccess"])) {
+        this.observedAccess = [] as any;
+        for (let item of _data["observedAccess"])
+          this.observedAccess!.push(item);
       }
     }
   }
@@ -37967,6 +38218,10 @@ export class ReviewEvidence implements IReviewEvidence {
       data["details"] = [];
       for (let item of this.details) data["details"].push(item);
     }
+    if (Array.isArray(this.observedAccess)) {
+      data["observedAccess"] = [];
+      for (let item of this.observedAccess) data["observedAccess"].push(item);
+    }
     return data;
   }
 }
@@ -37975,6 +38230,7 @@ export interface IReviewEvidence {
   status?: ReviewStatus;
   summary?: string | undefined;
   details?: string[] | undefined;
+  observedAccess?: string[] | undefined;
 }
 
 export class ReviewField implements IReviewField {
