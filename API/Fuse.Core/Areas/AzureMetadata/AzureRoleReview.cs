@@ -30,7 +30,7 @@ internal static class AzureRoleReview
     private static ReviewEvidence Unknown(string detail) => new(ReviewStatus.Unknown, "Data-role assignment could not be verified", [detail]);
     private static ReviewEvidence TenantMismatch() => Unknown("The ARM token did not establish the directory tenant of the selected identity.");
 
-    public static async Task<ReviewEvidence> Bus(ArmMetadataSession session, string queueId, AzurePrincipalBinding identity, string role)
+    public static async Task<ReviewEvidence> Bus(ArmMetadataSession session, string queueId, AzurePrincipalBinding identity, string role, bool queueOnly)
     {
         if (session.TenantId != identity.TenantId) return TenantMismatch();
         var rows = await session.List(queueId + "/providers/Microsoft.Authorization/roleAssignments", ReadAssignment,
@@ -38,10 +38,35 @@ internal static class AzureRoleReview
         if (!ServiceBusRoles.TryGetValue(role, out var roleId)) return Unknown("Unknown built-in data role.");
         var direct = rows.Items.Where(a => Guid.TryParse(a.Principal, out var id) && id == identity.ObjectId &&
             Covers(a.Scope, queueId, StringComparison.OrdinalIgnoreCase) && a.Definition.EndsWith("/" + roleId, StringComparison.OrdinalIgnoreCase)).ToArray();
-        var assignment = direct.FirstOrDefault(a => !a.Conditional);
-        return assignment is null ? Unknown(direct.Length > 0 ? "The matching role assignment is conditional."
-            : "No direct built-in assignment observed. Group, custom and conditional access may differ. Listing: " + rows.Status)
-            : new(ReviewStatus.Matched, "Azure Service Bus Data " + role, ["Assigned to principal " + identity.ObjectId, "Scope: " + assignment.Scope]);
+        var scopes = direct.Where(a => !a.Conditional).Select(a => a.Scope.TrimEnd('/'))
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s.Length).ThenBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (scopes.Length == 0) return Unknown(direct.Length > 0 ? "The matching role assignment is conditional."
+            : "No direct built-in assignment observed. Group, custom and conditional access may differ. Listing: " + rows.Status);
+
+        var broadest = scopes[0];
+        var atQueue = queueId.Equals(broadest, StringComparison.OrdinalIgnoreCase);
+        var summary = $"Azure Service Bus Data {role} on {BusScopeLabel(broadest)}";
+        List<string> details = ["Assigned to principal " + identity.ObjectId];
+        details.AddRange(scopes.Select(scope => "Scope: " + scope));
+        if (queueOnly && !atQueue)
+            return new(ReviewStatus.Drift, summary, [.. details, "A direct assignment covers more than the selected queue."]);
+        if (queueOnly && (rows.Status != "visible" || direct.Any(a => a.Conditional && !queueId.Equals(a.Scope.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))))
+            return new(ReviewStatus.Unknown, summary, [.. details, "The queue grant is visible, but the inspection could not rule out a broader matching grant."]);
+        return new(ReviewStatus.Matched, summary, details);
+    }
+
+    private static string BusScopeLabel(string scope)
+    {
+        var parts = scope.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return "inherited scope";
+        return parts[^2].ToLowerInvariant() switch
+        {
+            "queues" => "queue " + parts[^1],
+            "namespaces" => "namespace " + parts[^1],
+            "resourcegroups" => "resource group " + parts[^1],
+            "subscriptions" => "subscription " + parts[^1],
+            _ => "inherited scope"
+        };
     }
 
     public static async Task<ReviewEvidence> Cosmos(ArmMetadataSession session, string accountId, string db, string container, AzurePrincipalBinding identity, string action)

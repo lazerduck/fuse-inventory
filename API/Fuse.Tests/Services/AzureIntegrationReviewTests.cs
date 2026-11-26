@@ -72,6 +72,49 @@ public sealed class AzureIntegrationReviewTests
     }
 
     [Theory]
+    [InlineData(null, true, false, ReviewStatus.Matched)]
+    [InlineData("Queue only", true, false, ReviewStatus.Drift)]
+    [InlineData("Queue only", true, true, ReviewStatus.Unknown)]
+    [InlineData("Queue only", false, false, ReviewStatus.Matched)]
+    public async Task BusReviewChecksTheScopeOfAllMatchingDirectGrants(string? limit, bool inherited, bool conditional, ReviewStatus expected)
+    {
+        var queue = Bus.NamespaceResourceId + "/queues/orders";
+        object Grant(string scope, bool hasCondition) => new { properties = new { principalId = Binding.ObjectId, scope,
+            roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/69a216fc-b8fb-44d8-bc22-1f3c2cd27a39",
+            condition = hasCondition ? "condition" : null } };
+        List<object> grants = [Grant(queue, false), Grant(Bus.NamespaceResourceId + "/queues/elsewhere", false)];
+        if (inherited) grants.Add(Grant(Bus.NamespaceResourceId, conditional));
+        using var http = Http(_ => Json(new { value = grants }));
+        var provider = new ServiceBusReviewProvider(new(http, Mock.Of<IAzureIntegrationManagerService>(), Factory()));
+        var input = new ReviewInput("servicebus", Bus.Id, "data-role", null, new() { ["identityId"] = Identity.Id.ToString(), ["queue"] = "orders", ["role"] = "Sender" });
+        if (limit is not null) input.Fields["assignmentScope"] = limit;
+        var evidence = await provider.InspectAsync(State, input, default);
+        Assert.Equal(expected, evidence.Status);
+        Assert.Contains("Scope: " + queue, evidence.Details);
+        Assert.DoesNotContain(evidence.Details, line => line.Contains("elsewhere"));
+        Assert.Contains(inherited && !conditional ? "namespace lab-bus" : "queue orders", evidence.Summary);
+    }
+
+    [Theory]
+    [InlineData(false, ReviewStatus.Matched)]
+    [InlineData(true, ReviewStatus.Unknown)]
+    public async Task BusQueueGrantWithAnIncompleteListingCanOnlyProveMinimumAccess(bool queueOnly, ReviewStatus expected)
+    {
+        var queue = Bus.NamespaceResourceId + "/queues/orders";
+        using var http = Http(url => url.Query.Contains("page=2") ? new(HttpStatusCode.Forbidden) : Json(new {
+            value = new[] { new { properties = new { principalId = Binding.ObjectId, scope = queue,
+                roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/69a216fc-b8fb-44d8-bc22-1f3c2cd27a39" } } },
+            nextLink = url.GetLeftPart(UriPartial.Path) + "?page=2"
+        }));
+        var provider = new ServiceBusReviewProvider(new(http, Mock.Of<IAzureIntegrationManagerService>(), Factory()));
+        var input = new ReviewInput("servicebus", Bus.Id, "data-role", null, new() { ["identityId"] = Identity.Id.ToString(), ["queue"] = "orders", ["role"] = "Sender" });
+        if (queueOnly) input.Fields["assignmentScope"] = "Queue only";
+        var evidence = await provider.InspectAsync(State, input, default);
+        Assert.Equal(expected, evidence.Status);
+        Assert.Contains("Scope: " + queue, evidence.Details);
+    }
+
+    [Theory]
     [InlineData("lab", "Matched")]
     [InlineData("Lab", "Unknown")]
     public async Task CosmosNativeRolesRespectCaseSensitiveDatabaseScope(string database, string expected)

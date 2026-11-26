@@ -10,6 +10,7 @@ import DependencyView from '../src/pages/readonly/DependencyView.vue'
 import { DependencyAuthKind, TargetKind, type IApplicationInstanceDependency } from 'api/client'
 
 const api = vi.hoisted(() => ({
+  instanceAccessGet: vi.fn(),
   reviewsList: vi.fn(), applicationAll: vi.fn(), environmentAll: vi.fn(), platformAll: vi.fn(), identityAll: vi.fn(), accountAll: vi.fn(),
   dataStoreAll: vi.fn(), externalResourceAll: vi.fn(), messageBrokerAll: vi.fn(), secretProviderAll: vi.fn(), tagAll: vi.fn()
 }))
@@ -44,6 +45,7 @@ beforeEach(() => {
   permissions.identities = true
   permissions.appConfiguration = true
   api.reviewsList.mockResolvedValue([])
+  api.instanceAccessGet.mockResolvedValue({ rows: [] })
   api.applicationAll.mockResolvedValue(inventory())
   api.environmentAll.mockResolvedValue([{ id: 'prod', name: 'Production' }])
   api.platformAll.mockResolvedValue([])
